@@ -98,7 +98,7 @@
 
         /* Horizontal resizable divider (between chess tabs and right content) */
         .horizontal-divider {
-            width: 8px;
+            width: 10px;
             background-color: #f0f0f0;
             cursor: col-resize;
             border-left: 1px solid #ccc;
@@ -127,10 +127,9 @@
 
         /* Triangle buttons for collapsing divider */
         .triangle-button {
-            width: 6px; /* Smaller width */
-            height: 6px; /* Smaller height */
+            width: 8px;
+            height: 8px;
             padding: 0;
-            margin: 2px 0; /* Vertical margin instead of horizontal */
             background-color: #f0f0f0;
             border: none; /* Remove borders */
             cursor: pointer;
@@ -151,7 +150,7 @@
 
         /* Vertical resizable divider (between main console and chat tabs) */
         .vertical-divider {
-            height: 8px;
+            height: 10px;
             background-color: #f0f0f0;
             cursor: row-resize;
             border-top: 1px solid #ccc;
@@ -171,15 +170,14 @@
         /* Vertical divider controls */
         .divider-controls.vertical {
             flex-direction: row; /* Horizontal arrangement for vertical divider */
-            top: -1px; /* Move up 5px from previous position (4px - 5px = -1px) */
             left: 50%; /* Center horizontally */
             transform: translateX(-50%); /* Center the control precisely */
         }
 
         /* Ensure buttons on both dividers have the same size */
         .divider-controls.vertical .triangle-button {
-            width: 12px; /* Match horizontal divider button width */
-            height: 12px; /* Match horizontal divider button height */
+            width: 8px; /* Match horizontal divider button width */
+            height: 8px; /* Match horizontal divider button height */
             font-size: 8px; /* Match horizontal divider button font size */
         }
 
@@ -892,12 +890,16 @@
         // Collapse to the left (hide chess tabs)
         chessTabsContainer.style.flexBasis = '0%';
         topDivider.style.left = '0%';
+        // Scroll consoles to bottom after collapsing with a delay
+        setTimeout(scrollConsolesToBottom, 100);
     });
 
     collapseRightBtn.addEventListener('click', function() {
         // Collapse to the right (maximize chess tabs)
         chessTabsContainer.style.flexBasis = '100%';
         topDivider.style.left = '100%';
+        // Scroll consoles to bottom after collapsing with a delay
+        setTimeout(scrollConsolesToBottom, 100);
     });
 
     // Add event listeners for the vertical divider (between main console and chat tabs)
@@ -919,12 +921,16 @@
         // Collapse upward (maximize main console)
         mainConsole.style.flexBasis = '100%';
         rightDivider.style.top = '100%';
+        // Scroll consoles to bottom after collapsing with a delay
+        setTimeout(scrollConsolesToBottom, 100);
     });
 
     collapseDownBtn.addEventListener('click', function() {
         // Collapse downward (minimize main console)
         mainConsole.style.flexBasis = '0%';
         rightDivider.style.top = '0%';
+        // Scroll consoles to bottom after collapsing with a delay
+        setTimeout(scrollConsolesToBottom, 100);
     });
 
     function resizeDividers(e) {
@@ -957,12 +963,62 @@
             // Update the divider position
             rightDivider.style.top = `${percentage}%`;
         }
+
+        // During active resize, we'll just scroll the main text area directly
+        // This is more efficient than scrolling all text areas during rapid resize events
+        if (mainTextArea) {
+            mainTextArea.scrollTop = mainTextArea.scrollHeight;
+        }
+    }
+
+    // Helper function to scroll all text areas to the bottom
+    function scrollConsolesToBottom() {
+        // Use setTimeout to ensure this runs after the browser has updated the layout
+        setTimeout(() => {
+            console.log('Scrolling consoles to bottom');
+
+            // Scroll main console to bottom
+            if (mainTextArea) {
+                console.log('Main text area scrollHeight:', mainTextArea.scrollHeight);
+                mainTextArea.scrollTop = mainTextArea.scrollHeight;
+            }
+
+            // Scroll all tab text areas to bottom
+            const tabTextAreas = document.querySelectorAll('.tab-text-area');
+            console.log('Found', tabTextAreas.length, 'tab text areas');
+
+            tabTextAreas.forEach(textArea => {
+                console.log('Tab text area scrollHeight:', textArea.scrollHeight);
+                textArea.scrollTop = textArea.scrollHeight;
+            });
+
+            // Also try to scroll any visible active tab content
+            const activeTabContents = document.querySelectorAll('.tab-content-active');
+            activeTabContents.forEach(tabContent => {
+                const textAreas = tabContent.querySelectorAll('textarea');
+                textAreas.forEach(textArea => {
+                    console.log('Active tab textarea scrollHeight:', textArea.scrollHeight);
+                    textArea.scrollTop = textArea.scrollHeight;
+                });
+            });
+        }, 50); // Small delay to ensure DOM updates have completed
     }
 
     function stopResize() {
         activeResizer = null;
         document.removeEventListener('mousemove', resizeDividers);
         document.removeEventListener('mouseup', stopResize);
+
+        // Scroll consoles to bottom after resize is complete
+        // Use a slightly longer delay to ensure layout has fully updated
+        setTimeout(scrollConsolesToBottom, 100);
+
+        // Also try a direct approach for the main text area
+        setTimeout(() => {
+            if (mainTextArea) {
+                mainTextArea.scrollTop = mainTextArea.scrollHeight;
+            }
+        }, 200);
     }
 
     // Global preferences object to store user preferences in memory
