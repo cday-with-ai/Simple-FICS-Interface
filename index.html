@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple FICS Interface</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     <style>
 
         body {
@@ -39,14 +41,19 @@
             position: relative;
         }
 
-        /* Chess tabs on the left */
-        .chess-tabs {
+        /* Chess board area on the left */
+        .chess-board-area {
             flex: 0 0 50%;
-            overflow-x: auto; /* Allow horizontal scrolling */
-            overflow-y: hidden; /* Prevent vertical scrolling */
+            overflow-y: auto;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
             border-right: 1px solid #ccc;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            height: 100%;
+            min-width: 0; /* Allow flex item to shrink below content size */
         }
 
         /* Right side content container */
@@ -306,6 +313,34 @@
             margin: 20px auto;
             display: inline-block;
         }
+
+        /* Board toolbar styles */
+        .board-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            padding: 5px;
+            background-color: #f5f5f5;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .board-toolbar button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            margin: 0 2px;
+            border-radius: 4px;
+        }
+
+        .board-toolbar button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .board-toolbar button i {
+            font-size: 18px;
+        }
         .chess-board {
             width: 400px;
             height: 400px;
@@ -367,22 +402,25 @@
             top: 2px;
             right: 2px;
             left: auto !important; /* Force right alignment */
-            font-size: 10px;
+            font-size: 8px;
             font-weight: bold;
-            color: white;
-            opacity: 0.7;
+            font-family: "Noto Sans", Sans-Serif;
+            /* Color will be set dynamically based on square color */
+            opacity: 1.0;
             text-shadow: 0px 0px 2px #000;
             pointer-events: none;
             z-index: 5;
         }
         .file-label {
             position: absolute;
-            bottom: 2px;
-            right: 2px;
-            font-size: 10px;
+            bottom: 1px;
+            left: 1px;
+            right: auto;
+            font-size: 8px;
             font-weight: bold;
-            color: white;
-            opacity: 0.7;
+            font-family: "Noto Sans", Sans-Serif;
+            /* Color will be set dynamically based on square color */
+            opacity: 1.0;
             text-shadow: 0px 0px 2px #000;
             pointer-events: none;
             z-index: 5;
@@ -391,20 +429,21 @@
             position: absolute;
             right: 0;
             bottom: 0;
-            width: 15px;
-            height: 15px;
+            width: 10px;
+            height: 10px;
             background-color: #555;
             cursor: nwse-resize;
-            border-top-left-radius: 3px;
+            border-top-left-radius: 2px;
             z-index: 10;
+            opacity: 0.6;
         }
         /* Add diagonal lines to the resize handle to make it more visible */
         .resize-handle::before {
             content: '';
             position: absolute;
-            right: 3px;
-            bottom: 3px;
-            width: 6px;
+            right: 2px;
+            bottom: 2px;
+            width: 4px;
             height: 1px;
             background-color: #fff;
             transform: rotate(-45deg);
@@ -412,9 +451,9 @@
         .resize-handle::after {
             content: '';
             position: absolute;
-            right: 6px;
-            bottom: 6px;
-            width: 6px;
+            right: 4px;
+            bottom: 4px;
+            width: 4px;
             height: 1px;
             background-color: #fff;
             transform: rotate(-45deg);
@@ -745,6 +784,8 @@
                 </div>
             </div>
 
+
+
         </div>
 
         <!-- Tabs Preferences -->
@@ -783,6 +824,11 @@
                         <input type="checkbox" id="prefFlashTabsOnActivity" style="width: auto; margin-right: 10px;" checked>
                         <label for="prefFlashTabsOnActivity" style="font-weight: normal;">Flash tabs on new activity</label>
                     </div>
+
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <input type="checkbox" id="prefShowStyle12Events" style="width: auto; margin-right: 10px;">
+                        <label for="prefShowStyle12Events" style="font-weight: normal;">Show Style12 events in console (for debugging)</label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -796,11 +842,9 @@
 <div class="main-container">
     <!-- Top section with chess tabs and right side content -->
     <div class="top-section">
-        <!-- Chess board tabs (left side) -->
-        <div class="chess-tabs">
-            <div id="chessTabset" class="tabset">
-                <div id="chessTabs" class="tabs"></div>
-            </div>
+        <!-- Chess board (left side) -->
+        <div class="chess-board-area">
+            <!-- Board will be created here dynamically -->
         </div>
 
         <!-- Horizontal resizable divider with collapse buttons -->
@@ -819,7 +863,7 @@
                     <div class="grid-row" style="flex: 1; display: flex; flex-direction: column;">
                         <textarea id="mainTextArea" class="ics-text-area" readonly style="flex: 1; min-height: 100px; max-height: calc(100% - 15px);"></textarea>
                     </div>
-                    <div class="grid-row" style="padding-bottom: 15px; margin-top: 0px">
+                    <div class="grid-row" style="padding-bottom: 5px; margin-top: 0px">
                         <input id="mainInput" class="ics-input"/>
                     </div>
                 </div>
@@ -850,20 +894,51 @@
     const statusDiv = document.getElementById('status');
     const tabSet = document.getElementById('tabset');
     const tabs = document.getElementById('tabs');
-    const chessTabSet = document.getElementById('chessTabset');
-    const chessTabs = document.getElementById('chessTabs');
+    const moveAudio = new Audio('sounds/move.ogg');
+    const captureAudio = new Audio('sounds/capture.ogg');
     let chess = new Chess(); // Using the chess.js library
     let selectedSquare = null;
     let validMoves = [];
-    let gameTabId = null;
     let myColor = 'white'; // Will be updated based on game info
     let isLoggingIn = false;
     let ws = null;
+    let boardInitialized = false; // Track if the board has been initialized
+
+    // Game information variables
+    let whitePlayerName = '';
+    let blackPlayerName = '';
+    let whitePlayerClock = '00:00';
+    let blackPlayerClock = '00:00';
+    let currentTurn = 'w'; // 'w' for white, 'b' for black
+    let whiteTimeSeconds = 0;
+    let blackTimeSeconds = 0;
+    let clockTimer = null;
+    let isClockRunning = false;
+
+    // Additional Style 12 information
+    let gameInfo = {
+        gameNumber: 0,
+        initialTime: 0,      // Initial time in seconds
+        increment: 0,        // Increment in seconds
+        whiteMaterial: 0,    // White material strength
+        blackMaterial: 0,    // Black material strength
+        moveNumber: 0,       // Number of the move about to be made
+        lastMove: '',        // Verbose coordinate notation for the previous move
+        lastMoveTime: '',    // Time taken to make previous move
+        lastMovePretty: '',  // Pretty notation for the previous move
+        relation: 0,         // My relation to this game (-1, 0, 1, etc.)
+        doublePawnPush: -1,  // -1 if no double pawn push, otherwise the file (0-7 for a-h)
+        whiteCastleShort: 0, // Can White castle short? (0=no, 1=yes)
+        whiteCastleLong: 0,  // Can White castle long? (0=no, 1=yes)
+        blackCastleShort: 0, // Can Black castle short? (0=no, 1=yes)
+        blackCastleLong: 0,  // Can Black castle long? (0=no, 1=yes)
+        irreversibleCount: 0 // Moves since last irreversible move (for 50-move rule)
+    };
 
     // Set up the resizable dividers
     const topDivider = document.getElementById('topDivider');
     const rightDivider = document.getElementById('rightDivider');
-    const chessTabsContainer = document.querySelector('.chess-tabs');
+    const chessBoardArea = document.querySelector('.chess-board-area');
     const rightContent = document.querySelector('.right-content');
     const mainConsole = document.querySelector('.main-console');
     const chatTabsContainer = document.querySelector('.chat-tabs-container');
@@ -887,16 +962,16 @@
     const collapseRightBtn = document.getElementById('collapseRight');
 
     collapseLeftBtn.addEventListener('click', function() {
-        // Collapse to the left (hide chess tabs)
-        chessTabsContainer.style.flexBasis = '0%';
+        // Collapse to the left (hide chess board area)
+        chessBoardArea.style.flexBasis = '0%';
         topDivider.style.left = '0%';
         // Scroll consoles to bottom after collapsing with a delay
         setTimeout(scrollConsolesToBottom, 100);
     });
 
     collapseRightBtn.addEventListener('click', function() {
-        // Collapse to the right (maximize chess tabs)
-        chessTabsContainer.style.flexBasis = '100%';
+        // Collapse to the right (maximize chess board area)
+        chessBoardArea.style.flexBasis = '100%';
         topDivider.style.left = '100%';
         // Scroll consoles to bottom after collapsing with a delay
         setTimeout(scrollConsolesToBottom, 100);
@@ -943,8 +1018,8 @@
             // Limit the minimum and maximum sizes
             percentage = Math.max(20, Math.min(80, percentage));
 
-            // Update the flex-basis of the chess tabs container
-            chessTabsContainer.style.flexBasis = `${percentage}%`;
+            // Update the flex-basis of the chess board area
+            chessBoardArea.style.flexBasis = `${percentage}%`;
 
             // Update the divider position
             topDivider.style.left = `${percentage}%`;
@@ -1031,14 +1106,15 @@
         // FICS preferences
         ficsUsername: '',
         ficsPassword: '',
-        autoLogin: true,
+        autoLogin: false,
 
         // Tabs preferences
         channelTellsToTabs: true,
-        directTellsToTabs: true,
-        gameTellsToTabs: true,
+        directTellsToTabs: false,
+        gameTellsToTabs: false,
         autoSwitchToNewTabs: true,
-        flashTabsOnActivity: true
+        flashTabsOnActivity: true,
+        showStyle12Events: false
     };
 
     // Default preferences
@@ -1091,6 +1167,7 @@
             document.getElementById('prefGameTellsToTabs').checked = preferences.gameTellsToTabs;
             document.getElementById('prefAutoSwitchToNewTabs').checked = preferences.autoSwitchToNewTabs;
             document.getElementById('prefFlashTabsOnActivity').checked = preferences.flashTabsOnActivity;
+            document.getElementById('prefShowStyle12Events').checked = preferences.showStyle12Events;
 
             // Initialize the piece set preview
             updatePieceSetPreview(preferences.pieceSet);
@@ -1125,6 +1202,7 @@
         preferences.gameTellsToTabs = document.getElementById('prefGameTellsToTabs').checked;
         preferences.autoSwitchToNewTabs = document.getElementById('prefAutoSwitchToNewTabs').checked;
         preferences.flashTabsOnActivity = document.getElementById('prefFlashTabsOnActivity').checked;
+        preferences.showStyle12Events = document.getElementById('prefShowStyle12Events').checked;
 
         // Save to local storage
         localStorage.setItem('chessPreferences', JSON.stringify(preferences));
@@ -1150,6 +1228,36 @@
         darkSquares.forEach(square => {
             square.style.backgroundColor = darkSquareColor;
         });
+
+        // Update rank and file label colors based on square colors
+        const rankLabels = document.querySelectorAll('.rank-label');
+        const fileLabels = document.querySelectorAll('.file-label');
+
+        rankLabels.forEach(label => {
+            // Get the parent square
+            const square = label.parentElement;
+            // Set color based on square type for better contrast
+            if (square.classList.contains('light-square')) {
+                // If it's a light square, use dark square color
+                label.style.color = darkSquareColor;
+            } else {
+                // If it's a dark square, use light square color
+                label.style.color = lightSquareColor;
+            }
+        });
+
+        fileLabels.forEach(label => {
+            // Get the parent square
+            const square = label.parentElement;
+            // Set color based on square type for better contrast
+            if (square.classList.contains('light-square')) {
+                // If it's a light square, use dark square color
+                label.style.color = darkSquareColor;
+            } else {
+                // If it's a dark square, use light square color
+                label.style.color = lightSquareColor;
+            }
+        });
     }
 
     mainInput.addEventListener('keypress', (event) => {
@@ -1169,12 +1277,11 @@
                const reader = new FileReader();
                reader.onload = function(e) {
                  var msg = reader.result;
-                 // Route the message (which will also check for password prompt)
                  routeMessage(msg);
                };
                reader.readAsText(event.data);
              } else {
-               routeMessage(event.data); // Handle text data
+               routeMessage(event.data);
              }
            });
 
@@ -1441,6 +1548,11 @@
         tabDivSpan.innerHTML = "x";
         tabDivSpan.classList.add('close-btn');
         tabDivSpan.addEventListener('click', function(event) {
+            // If this is the active game tab, stop the clock
+            if (id === gameTabId) {
+                stopClock();
+            }
+
             closeTab(id);
             gameTabId = null;
         });
@@ -1453,13 +1565,73 @@
         tabContent.classList.add('grid-container');
         chessTabSet.append(tabContent);
 
-        // Chess board and controls container
-        const boardAndControlsContainer = document.createElement('div');
-        boardAndControlsContainer.classList.add('grid-row');
-        boardAndControlsContainer.style.display = 'flex';
-        boardAndControlsContainer.style.justifyContent = 'center';
-        boardAndControlsContainer.style.alignItems = 'flex-start';
-        boardAndControlsContainer.style.gap = '15px';
+        // Main container for board and toolbar
+        const boardAndToolbarContainer = document.createElement('div');
+        boardAndToolbarContainer.classList.add('grid-row');
+        boardAndToolbarContainer.style.display = 'flex';
+        boardAndToolbarContainer.style.flexDirection = 'column';
+        boardAndToolbarContainer.style.alignItems = 'center';
+
+        // Create toolbar
+        const toolbar = document.createElement('div');
+        toolbar.classList.add('board-toolbar');
+        toolbar.style.width = '400px'; // Match board width
+
+        // Create toolbar buttons
+        if (opponent === "Practice") {
+            // Reset button
+            const resetBtn = document.createElement('button');
+            resetBtn.title = 'Reset Board';
+            resetBtn.innerHTML = '<i class="material-icons">restart_alt</i>';
+            resetBtn.onclick = () => {
+                chess.reset();
+                updateBoardFromChessJS();
+            };
+            toolbar.appendChild(resetBtn);
+        } else {
+            // Game control buttons
+            const startBtn = document.createElement('button');
+            startBtn.title = 'Start Game';
+            startBtn.innerHTML = '<i class="material-icons">play_arrow</i>';
+            startBtn.onclick = () => ws.send(`match ${opponent}\n\r`);
+            toolbar.appendChild(startBtn);
+
+            const drawBtn = document.createElement('button');
+            drawBtn.title = 'Offer Draw';
+            drawBtn.innerHTML = '<i class="material-icons">handshake</i>';
+            drawBtn.onclick = () => ws.send('draw\n\r');
+            toolbar.appendChild(drawBtn);
+
+            const resignBtn = document.createElement('button');
+            resignBtn.title = 'Resign';
+            resignBtn.innerHTML = '<i class="material-icons">flag</i>';
+            resignBtn.onclick = () => ws.send('resign\n\r');
+            toolbar.appendChild(resignBtn);
+        }
+
+        // Flip board button (for all boards)
+        const flipBtn = document.createElement('button');
+        flipBtn.title = 'Flip Board';
+        flipBtn.innerHTML = '<i class="material-icons">swap_vert</i>';
+        flipBtn.onclick = () => {
+            // Send flip command to FICS
+            ws.send('flip\n\r');
+
+            // Send refresh command after a short delay to ensure the board is updated
+            setTimeout(() => {
+                ws.send('refresh\n\r');
+                console.log('Sent refresh command after flip');
+            }, 300);
+
+            // Also update local board orientation
+            myColor = myColor === 'white' ? 'black' : 'white';
+            updateBoardFromChessJS();
+            updatePlayerInfo();
+        };
+        toolbar.appendChild(flipBtn);
+
+        // Add toolbar to container
+        boardAndToolbarContainer.appendChild(toolbar);
 
         // Chess board container
         const boardContainer = document.createElement('div');
@@ -1470,110 +1642,81 @@
         boardContainer.append(board);
         createChessBoard(board);
 
-        // Board controls container (on the right side)
-        const boardControlsContainer = document.createElement('div');
-        boardControlsContainer.classList.add('board-controls');
-        boardControlsContainer.style.display = 'flex';
-        boardControlsContainer.style.flexDirection = 'column';
-        boardControlsContainer.style.gap = '10px';
-        boardControlsContainer.style.padding = '10px';
-        boardControlsContainer.style.border = '1px solid #ccc';
-        boardControlsContainer.style.borderRadius = '4px';
-        boardControlsContainer.style.backgroundColor = '#f5f5f5';
+        // Add board container to main container
+        boardAndToolbarContainer.appendChild(boardContainer);
 
-        // Add containers to the main container
-        boardAndControlsContainer.append(boardContainer);
-        boardAndControlsContainer.append(boardControlsContainer);
+        // Player info container (above the board)
+        const topPlayerInfo = document.createElement('div');
+        topPlayerInfo.classList.add('player-info');
+        topPlayerInfo.classList.add('top-player');
+        topPlayerInfo.style.display = 'flex';
+        topPlayerInfo.style.justifyContent = 'space-between';
+        topPlayerInfo.style.padding = '5px';
+        topPlayerInfo.style.marginBottom = '10px';
+        topPlayerInfo.style.border = '1px solid #ccc';
+        topPlayerInfo.style.borderRadius = '4px';
 
-        // Game controls
-        const controls = document.createElement('div');
-        controls.classList.add('grid-row');
-        controls.classList.add('game-controls');
+        // Top player name
+        const topPlayerName = document.createElement('div');
+        topPlayerName.classList.add('player-name');
+        topPlayerName.id = 'topPlayerName';
+        topPlayerName.innerText = 'Opponent';
+        topPlayerName.style.fontWeight = 'bold';
 
-        // Different controls for practice board vs actual games
-        if (opponent === "Practice") {
-            // Create buttons for the board controls container
-            const resetBtn = document.createElement('button');
-            resetBtn.innerText = 'Reset Board';
-            resetBtn.style.padding = '8px 12px';
-            resetBtn.style.width = '100%';
-            resetBtn.onclick = () => {
-                chess.reset();
-                updateBoardFromChessJS();
-                const status = document.getElementById('gameStatus');
-                if (status) {
-                    status.innerText = 'Practice board - White to move';
-                }
-            };
+        // Top player clock
+        const topPlayerClock = document.createElement('div');
+        topPlayerClock.classList.add('player-clock');
+        topPlayerClock.id = 'topPlayerClock';
+        topPlayerClock.innerText = '00:00';
+        topPlayerClock.style.fontFamily = 'monospace';
+        topPlayerClock.style.fontSize = '1.2em';
 
-            const flipBtn = document.createElement('button');
-            flipBtn.innerText = 'Flip Board';
-            flipBtn.style.padding = '8px 12px';
-            flipBtn.style.width = '100%';
-            flipBtn.onclick = () => {
-                myColor = myColor === 'white' ? 'black' : 'white';
-                updateBoardFromChessJS();
-                const status = document.getElementById('gameStatus');
-                if (status) {
-                    status.innerText = `Practice board - ${chess.turn() === 'w' ? 'White' : 'Black'} to move`;
-                }
-            };
+        topPlayerInfo.appendChild(topPlayerName);
+        topPlayerInfo.appendChild(topPlayerClock);
 
-            // Add title to the board controls container
-            const controlsTitle = document.createElement('div');
-            controlsTitle.innerText = 'Board Controls';
-            controlsTitle.style.fontWeight = 'bold';
-            controlsTitle.style.marginBottom = '10px';
-            controlsTitle.style.textAlign = 'center';
+        // Player info container (below the board)
+        const bottomPlayerInfo = document.createElement('div');
+        bottomPlayerInfo.classList.add('player-info');
+        bottomPlayerInfo.classList.add('bottom-player');
+        bottomPlayerInfo.style.display = 'flex';
+        bottomPlayerInfo.style.justifyContent = 'space-between';
+        bottomPlayerInfo.style.padding = '5px';
+        bottomPlayerInfo.style.marginTop = '10px';
+        bottomPlayerInfo.style.marginBottom = '10px';
+        bottomPlayerInfo.style.border = '1px solid #ccc';
+        bottomPlayerInfo.style.borderRadius = '4px';
 
-            // Add practice board control buttons to the board controls container
-            boardControlsContainer.append(controlsTitle);
-            boardControlsContainer.append(resetBtn);
-            boardControlsContainer.append(flipBtn);
-        } else {
-            // Create buttons for the board controls container
-            const startBtn = document.createElement('button');
-            startBtn.innerText = 'Start Game';
-            startBtn.style.padding = '8px 12px';
-            startBtn.style.width = '100%';
-            startBtn.onclick = () => ws.send(`match ${opponent}\n\r`);
+        // Bottom player name
+        const bottomPlayerName = document.createElement('div');
+        bottomPlayerName.classList.add('player-name');
+        bottomPlayerName.id = 'bottomPlayerName';
+        bottomPlayerName.innerText = 'You';
+        bottomPlayerName.style.fontWeight = 'bold';
 
-            const drawBtn = document.createElement('button');
-            drawBtn.innerText = 'Offer Draw';
-            drawBtn.style.padding = '8px 12px';
-            drawBtn.style.width = '100%';
-            drawBtn.onclick = () => ws.send('draw\n\r');
+        // Bottom player clock
+        const bottomPlayerClock = document.createElement('div');
+        bottomPlayerClock.classList.add('player-clock');
+        bottomPlayerClock.id = 'bottomPlayerClock';
+        bottomPlayerClock.innerText = '00:00';
+        bottomPlayerClock.style.fontFamily = 'monospace';
+        bottomPlayerClock.style.fontSize = '1.2em';
 
-            const resignBtn = document.createElement('button');
-            resignBtn.innerText = 'Resign';
-            resignBtn.style.padding = '8px 12px';
-            resignBtn.style.width = '100%';
-            resignBtn.onclick = () => ws.send('resign\n\r');
+        bottomPlayerInfo.appendChild(bottomPlayerName);
+        bottomPlayerInfo.appendChild(bottomPlayerClock);
 
-            // Add title to the board controls container
-            const controlsTitle = document.createElement('div');
-            controlsTitle.innerText = 'Game Controls';
-            controlsTitle.style.fontWeight = 'bold';
-            controlsTitle.style.marginBottom = '10px';
-            controlsTitle.style.textAlign = 'center';
-
-            // Add game control buttons to the board controls container
-            boardControlsContainer.append(controlsTitle);
-            boardControlsContainer.append(startBtn);
-            boardControlsContainer.append(drawBtn);
-            boardControlsContainer.append(resignBtn);
+        // Add player info elements to the board container
+        // First, remove the board from its parent
+        if (board.parentNode) {
+            board.parentNode.removeChild(board);
         }
 
-        // Game status
-        const status = document.createElement('div');
-        status.classList.add('grid-row');
-        status.classList.add('game-status');
-        status.id = 'gameStatus';
-        status.innerText = 'Game not started';
+        // Now add elements in the correct order
+        boardContainer.appendChild(topPlayerInfo);
+        boardContainer.appendChild(board);
+        boardContainer.appendChild(bottomPlayerInfo);
 
-        // No chat area for game
-        tabContent.append(boardAndControlsContainer);
-        tabContent.append(status);
+        // Add container to the tab content
+        tabContent.append(boardAndToolbarContainer);
     }
 
     function closeTab(typeAndName) {
@@ -1611,6 +1754,7 @@
 
     function routeMessage(msg) {
         msg = msg.replaceAll("\n\r","\n");
+        msg = msg.replaceAll("\u0007","");
         if (!msg.endsWith("\n")) {
             msg += "\n";
         }
@@ -1639,37 +1783,19 @@
             isLoggingIn = false;
         }
 
-        // Check for Style 12 board representation
-        if (msg.includes('<12>')) {
-            // Don't display Style 12 messages in the console
-            // Extract game information from Style 12
-            const style12Regex = /<12>\s+(.*)\s+(.*)\s+(.*)\s+(.*)\s+(.*)\s+(.*)\s+(.*)\s+(.*)\s+([WB])\s+(-?\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)/;
-            const match = msg.match(style12Regex);
-
-            if (match) {
-                // If we don't have a game tab yet, create one
-                if (!gameTabId) {
-                    // Try to extract opponent name from the message
-                    // For simplicity, we'll use "Opponent" as a placeholder
-                    // In a real implementation, you'd extract this from other FICS messages
-                    createGameTab("Opponent");
-                }
-
-                // Update the chess board with the Style 12 data
-                updateChessBoard(msg);
-
-                // Skip displaying this message in the main console
-                return;
-            }
+        if (msg.indexOf('\n**** Starting FICS session as') >=0) {
+            ws.send('set style 12\n\r');
         }
 
         // Check for game start messages
         if (msg.includes('Creating: ') && msg.includes('vs.')) {
             const match = msg.match(/Creating: .* (\w+) vs\. (\w+)/);
             if (match && match.length >= 3) {
-                const opponent = match[2]; // Assuming the second player is the opponent
-                createGameTab(opponent);
-                console.log("Created game tab from game creation message");
+                // Initialize the board if it hasn't been done yet
+                if (!boardInitialized) {
+                    initializeChessBoard();
+                }
+                console.log("Game creation message detected");
             }
         }
 
@@ -1711,22 +1837,29 @@
             }
         }
 
-        // Handle direct tells (to be implemented)
-        // if (msg.match(/^[a-zA-Z0-9]+ tells you:/)) {
-        //     // Direct tell handling logic
-        // }
+        if (isMain && msg.trim() !== '') {
+            const style12Start = msg.startsWith("<12>") ? 0 : msg.lastIndexOf("\n<12>");
+            if (style12Start >= 0) {
+                const end = msg.indexOf("\n",style12Start+1);
 
-        // Handle game tells (to be implemented)
-        // if (gameTabId && msg.match(/^[a-zA-Z0-9]+ \(your opponent\) tells you:/)) {
-        //     // Game tell handling logic
-        // }
+                if (end>=0) {
+                    const style12Message = msg.substring(style12Start,end);
+                    if (!preferences.showStyle12Events) {
+                        msg = msg.substring(0,style12Start) + msg.substring(end + 1,msg.length);
+                    }
 
-        // Always show in main if not routed elsewhere or if routing is disabled
-        if (isMain) {
+                    if (!boardInitialized) {
+                        initializeChessBoard();
+                    }
+                    updateChessBoard(style12Message);
+                    parseStyle12Info(style12Message);
+                }
+            }
             const autoScroll = mainTextArea.scrollHeight - mainTextArea.scrollTop <= mainTextArea.clientHeight;
             mainTextArea.value += msg;
-            if (autoScroll)
+            if (autoScroll) {
                 mainTextArea.scrollTop = mainTextArea.scrollHeight;
+            }
         }
     }
 
@@ -1745,12 +1878,13 @@
 
         board.innerHTML = '';
 
-        // Set explicit dimensions for the board
-        board.style.width = '400px';
-        board.style.height = '400px';
+        // Set up the board as a responsive grid
         board.style.display = 'grid';
         board.style.gridTemplateColumns = 'repeat(8, 1fr)';
         board.style.gridTemplateRows = 'repeat(8, 1fr)';
+        board.style.width = '100%';
+        board.style.height = '100%';
+        board.style.aspectRatio = '1 / 1'; // Maintain square aspect ratio
 
         // Create the chess squares with embedded rank and file labels
         for (let rank = 8; rank >= 1; rank--) {
@@ -1765,6 +1899,7 @@
 
                 // Add both click and drag-drop event listeners
                 square.addEventListener('click', () => handleSquareClick(file, rank));
+
 
                 // Add dragover and drop events for the square
                 square.addEventListener('dragover', (e) => {
@@ -1846,7 +1981,7 @@
                 // Update font size of rank and file labels based on square size
                 const rankLabels = board.querySelectorAll('.rank-label');
                 const fileLabels = board.querySelectorAll('.file-label');
-                const labelFontSize = Math.max(Math.floor(squareSize * 0.2), 8) + 'px';
+                const labelFontSize = Math.max(Math.floor(squareSize * 0.15), 6) + 'px';
 
                 rankLabels.forEach(label => {
                     label.style.fontSize = labelFontSize;
@@ -1938,23 +2073,11 @@
         const square = `${String.fromCharCode(96 + file)}${rank}`;
         const squareDiv = document.getElementById(`square-${file}-${rank}`);
 
-        // Check if this is a practice board or a real game
-        const isPracticeBoard = gameTabId && gameTabId === "game-Practice";
-
-        // For real games, check if it's the player's turn
-        if (!isPracticeBoard) {
-            const playerColor = myColor === 'white' ? 'w' : 'b';
-            if (chess.turn() !== playerColor) {
-                // If it's not the player's turn, just show a message
-                const status = document.getElementById('gameStatus');
-                if (status) {
-                    status.innerText = "It's not your turn";
-                    setTimeout(() => {
-                        status.innerText = chess.turn() === 'w' ? 'White to move' : 'Black to move';
-                    }, 1500);
-                }
-                return;
-            }
+        // Check if it's the player's turn
+        const playerColor = myColor === 'white' ? 'w' : 'b';
+        if (chess.turn() !== playerColor) {
+            // If it's not the player's turn, just return
+            return;
         }
 
         if (selectedSquare === square) {
@@ -1998,16 +2121,18 @@
             selectedSquare = null;
             validMoves = [];
             updateBoardFromChessJS();
+
+            // Update the current turn and restart the clock
+            currentTurn = chess.turn();
+            restartClock(); // Restart the clock for the new player
         } else {
             // Check if the square has a piece
             const piece = chess.get(square);
             if (piece) {
-                // For practice board, allow selecting any piece
-                // For real games, only allow selecting pieces of the player's color
+                // Only allow selecting pieces of the player's color
                 const playerColor = myColor === 'white' ? 'w' : 'b';
-                const isPracticeBoard = gameTabId && gameTabId === "game-Practice";
 
-                if (isPracticeBoard || piece.color === playerColor) {
+                if (piece.color === playerColor) {
                     // Select new square and highlight valid moves
                     selectedSquare = square;
                     validMoves = chess.moves({ square: square, verbose: true }).map(move => move.to);
@@ -2032,7 +2157,7 @@
         const board = document.getElementById('chessBoard');
         const squareSize = board ? board.clientWidth / 8 : 50;
         const fontSize = Math.max(Math.floor(squareSize * 0.8), 24) + 'px';
-        const labelFontSize = Math.max(Math.floor(squareSize * 0.2), 8) + 'px';
+        const labelFontSize = Math.max(Math.floor(squareSize * 0.15), 6) + 'px';
 
         for (let rank = 8; rank >= 1; rank--) {
             for (let file = 1; file <= 8; file++) {
@@ -2084,12 +2209,21 @@
                 fileLabel.style.fontSize = labelFontSize;
                 fileLabel.style.display = rank === 1 ? 'block' : 'none';
                 fileLabel.style.bottom = '2px'; // Ensure it's always at the bottom
-                fileLabel.style.right = '2px'; // Default position on the right
+                fileLabel.style.left = '2px'; // Position on the left
+                fileLabel.style.right = 'auto'; // Clear any right positioning
 
-                // Move the h-file label to the left to avoid the resize handle
-                if (rank === 1 && file === 8) {
-                    fileLabel.style.right = '15px';
+                // Set label colors based on square color for better contrast
+                if (squareDiv.classList.contains('light-square')) {
+                    // If it's a light square, use dark square color
+                    rankLabel.style.color = darkSquareColor;
+                    fileLabel.style.color = darkSquareColor;
+                } else {
+                    // If it's a dark square, use light square color
+                    rankLabel.style.color = lightSquareColor;
+                    fileLabel.style.color = lightSquareColor;
                 }
+
+                // No need for special handling of h-file label anymore since all labels are on the left
 
                 // Create a piece element or update existing one
                 let pieceElement = squareDiv.querySelector('.chess-piece');
@@ -2175,9 +2309,321 @@
         // Update game status
         const status = document.getElementById('gameStatus');
         if (status) {
-            status.innerText = chess.game_over() ? 'Game Over' : chess.turn() === 'w' ? 'White to move' : 'Black to move';
-            if (chess.in_checkmate()) status.innerText += ': Checkmate';
-            else if (chess.in_draw()) status.innerText += ': Draw';
+            if (chess.game_over()) {
+                status.innerText = 'Game Over';
+                if (chess.in_checkmate()) status.innerText += ': Checkmate';
+                else if (chess.in_draw()) status.innerText += ': Draw';
+
+                // Stop the clock when the game is over
+                stopClock();
+            } else {
+                status.innerText = chess.turn() === 'w' ? 'White to move' : 'Black to move';
+            }
+        }
+
+        // Update current turn and player info
+        currentTurn = chess.turn();
+        updatePlayerInfo();
+    }
+
+    // Function to process Style12 messages
+    function processStyle12Message(msg) {
+        console.log('Processing Style12 message, preferences.showStyle12Events =', showStyle12Events);
+
+        // Initialize the board if it hasn't been done yet
+        if (!boardInitialized) {
+            initializeChessBoard();
+        }
+
+        // Update the chess board with the Style 12 data
+        updateChessBoard(msg);
+
+        // Also directly parse the Style 12 message for player info and clock times
+        // This ensures the info is updated even if the board update fails
+        parseStyle12Info(msg);
+    }
+
+    // Function to parse Style 12 messages for game information
+    function parseStyle12Info(style12Message) {
+        const lines = style12Message.split('\n');
+        const boardLineIndex = lines.findIndex(line => line.trim().startsWith('<12>'));
+
+        if (boardLineIndex !== -1) {
+            const boardLine = lines[boardLineIndex].trim();
+            const parts = boardLine.split(' ');
+
+            // Log the Style 12 message for debugging
+            console.log('Style 12 message:', boardLine);
+            console.log('Parts length:', parts.length);
+
+            // According to FICS Style 12 documentation:
+            // https://www.freechess.org/Help/HelpFiles/style12.html
+            // There are always exactly 31 non-empty fields separated by blanks
+
+            if (parts.length >= 31) { // Make sure we have enough parts
+                try {
+                    // Extract all information from the Style 12 format
+                    // Field 0: <12> identifier
+                    // Fields 1-8: Board position (8 ranks)
+                    // Field 9: Color to move (B or W)
+                    const colorToMove = parts[9] === 'W' ? 'w' : 'b';
+
+                    // Field 10: Double pawn push file or -1
+                    const doublePawnPush = parseInt(parts[10], 10);
+
+                    // Fields 11-14: Castling availability
+                    const whiteCastleShort = parseInt(parts[11], 10);
+                    const whiteCastleLong = parseInt(parts[12], 10);
+                    const blackCastleShort = parseInt(parts[13], 10);
+                    const blackCastleLong = parseInt(parts[14], 10);
+
+                    // Field 15: Irreversible count (for 50-move rule)
+                    const irreversibleCount = parseInt(parts[15], 10);
+
+                    // Field 16: Game number
+                    const gameNumber = parseInt(parts[16], 10);
+
+                    // Fields 17-18: Player names
+                    const whiteName = parts[17];
+                    const blackName = parts[18];
+
+                    // Field 19: My relation to this game
+                    const relation = parseInt(parts[19], 10);
+
+                    // Fields 20-21: Initial time and increment
+                    const initialTime = parseInt(parts[20], 10);
+                    const increment = parseInt(parts[21], 10);
+
+                    // Fields 22-23: Material strength
+                    const whiteMaterial = parseInt(parts[22], 10);
+                    const blackMaterial = parseInt(parts[23], 10);
+
+                    // Fields 24-25: Remaining time in seconds
+                    // According to FICS Style12 format, these are in seconds
+                    const whiteTimeSecs = parseFloat(parts[24]);
+                    const blackTimeSecs = parseFloat(parts[25]);
+
+                    console.log('Raw time values from Style12 - White:', parts[24], 'seconds, Black:', parts[25], 'seconds');
+
+                    // Field 26: Move number
+                    const moveNumber = parseInt(parts[26], 10);
+
+                    // Field 27: Verbose coordinate notation for previous move
+                    const lastMove = parts[27];
+
+                    // Field 28: Time taken for previous move
+                    const lastMoveTime = parts[28];
+
+                    // Field 29: Pretty notation for previous move
+                    const lastMovePretty = parts[29];
+                    console.log('Parsed lastMovePretty from Style12:', lastMovePretty, 'from parts[29]:', parts[29]);
+
+                    // Field 30: Board orientation (1 = Black at bottom, 0 = White at bottom)
+                    const flipBoard = parseInt(parts[30], 10) === 1;
+
+                    // Format clock times
+                    const whiteTime = formatClockTime(whiteTimeSecs);
+                    const blackTime = formatClockTime(blackTimeSecs);
+
+                    console.log('Parsed Style 12 - White time:', whiteTime, 'Black time:', blackTime);
+
+                    // Update global variables
+                    whitePlayerName = whiteName;
+                    blackPlayerName = blackName;
+
+                    // Store the time in seconds for the clock timer
+                    // Style12 times always take precedence over local timers
+                    whiteTimeSeconds = whiteTimeSecs;
+                    blackTimeSeconds = blackTimeSecs;
+                    whitePlayerClock = whiteTime;
+                    blackPlayerClock = blackTime;
+
+                    console.log('Received new times from Style12 - White:', whiteTime, 'Black:', blackTime);
+
+                    // Always stop any existing clock and restart with the new times
+                    stopClock();
+                    currentTurn = colorToMove;
+                    updatePlayerInfo(); // Update UI with new times
+                    startClock(); // Start the clock with the new times
+
+                    // Update gameInfo object with all the parsed information
+                    gameInfo = {
+                        gameNumber,
+                        initialTime,
+                        increment,
+                        whiteMaterial,
+                        blackMaterial,
+                        moveNumber,
+                        lastMove,
+                        lastMoveTime,
+                        lastMovePretty,
+                        relation,
+                        doublePawnPush,
+                        whiteCastleShort,
+                        whiteCastleLong,
+                        blackCastleShort,
+                        blackCastleLong,
+                        irreversibleCount
+                    };
+
+                    console.log('Updated gameInfo object with lastMovePretty:', gameInfo.lastMovePretty);
+
+                    if (gameInfo.lastMovePretty && gameInfo.lastMovePretty.includes("x")) {
+                        console.log('Playing capture sound for move:', gameInfo.lastMovePretty);
+                        captureAudio.play();
+                    } else if (gameInfo.lastMovePretty) {
+                        console.log('Playing regular move sound for move:', gameInfo.lastMovePretty);
+                        moveAudio.play();
+                    }
+
+                    console.log('Updated game info:', gameInfo);
+                    console.log('Last move pretty:', gameInfo.lastMovePretty);
+                    console.log('Updated player info - White:', whitePlayerName, whitePlayerClock, 'Black:', blackPlayerName, blackPlayerClock, 'Turn:', currentTurn);
+
+                    // Update the UI
+                    updatePlayerInfo();
+                } catch (e) {
+                    console.error('Error parsing Style 12 message:', e);
+                }
+            } else {
+                console.warn('Style 12 message has fewer than 31 parts:', parts.length);
+            }
+        }
+    }
+
+    // Function to start the clock timer
+    function startClock() {
+        if (isClockRunning) return; // Don't start if already running
+
+        console.log('Starting clock for', currentTurn === 'w' ? 'White' : 'Black');
+        isClockRunning = true;
+
+        // Clear any existing timer
+        if (clockTimer) {
+            clearInterval(clockTimer);
+        }
+
+        // Start a new timer that ticks every second
+        clockTimer = setInterval(() => {
+            // Decrement the time of the player whose turn it is
+            if (currentTurn === 'w') {
+                whiteTimeSeconds = Math.max(0, whiteTimeSeconds - 1);
+                whitePlayerClock = formatClockTime(whiteTimeSeconds);
+                console.log('White clock tick:', whiteTimeSeconds, 'seconds =', whitePlayerClock);
+            } else {
+                blackTimeSeconds = Math.max(0, blackTimeSeconds - 1);
+                blackPlayerClock = formatClockTime(blackTimeSeconds);
+                console.log('Black clock tick:', blackTimeSeconds, 'seconds =', blackPlayerClock);
+            }
+
+            // Update the UI
+            updatePlayerInfo();
+
+            // Check for time forfeit
+            if ((currentTurn === 'w' && whiteTimeSeconds <= 0) ||
+                (currentTurn === 'b' && blackTimeSeconds <= 0)) {
+                stopClock();
+                console.log('Time forfeit for', currentTurn === 'w' ? 'White' : 'Black');
+            }
+        }, 1000); // Update every second
+    }
+
+    // Function to stop the clock timer
+    function stopClock() {
+        if (!isClockRunning) return; // Don't stop if not running
+
+        console.log('Stopping clock');
+        isClockRunning = false;
+
+        // Clear the timer
+        if (clockTimer) {
+            clearInterval(clockTimer);
+            clockTimer = null;
+        }
+    }
+
+    // Function to restart the clock (stop and start)
+    function restartClock() {
+        stopClock();
+        updatePlayerInfo(); // Update UI with current times
+        startClock();
+    }
+
+    // Function to format clock time in MM:SS format
+    function formatClockTime(seconds) {
+        // Handle invalid input
+        if (isNaN(seconds) || seconds < 0) {
+            console.warn('Invalid time value:', seconds);
+            return '05:00'; // Default to 5 minutes
+        }
+
+        // Convert seconds to minutes and seconds
+        // For example, 624 seconds = 10 minutes and 24 seconds
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+
+        console.log(`Converting ${seconds} seconds to ${minutes}:${remainingSeconds}`);
+
+        // Format as MM:SS
+        return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+
+    // Function to update player info in the UI
+    function updatePlayerInfo() {
+        console.log('Updating player info UI');
+
+        // Get the player info elements
+        const topPlayerName = document.getElementById('topPlayerName');
+        const topPlayerClock = document.getElementById('topPlayerClock');
+        const bottomPlayerName = document.getElementById('bottomPlayerName');
+        const bottomPlayerClock = document.getElementById('bottomPlayerClock');
+        const lastMoveDisplay = document.getElementById('lastMoveDisplay');
+        console.log('Player info elements:', {
+            topPlayerName: topPlayerName ? 'found' : 'not found',
+            topPlayerClock: topPlayerClock ? 'found' : 'not found',
+            bottomPlayerName: bottomPlayerName ? 'found' : 'not found',
+            bottomPlayerClock: bottomPlayerClock ? 'found' : 'not found',
+            lastMoveDisplay: lastMoveDisplay ? 'found' : 'not found'
+        });
+
+        if (!topPlayerName || !topPlayerClock || !bottomPlayerName || !bottomPlayerClock) {
+            console.warn('Player info elements not found');
+            return; // Elements not found
+        }
+
+        // Determine which player is on top/bottom based on myColor
+        if (myColor === 'white') {
+            // White pieces at bottom, black at top
+            topPlayerName.innerText = blackPlayerName || 'Black';
+            topPlayerClock.innerText = blackPlayerClock;
+            bottomPlayerName.innerText = whitePlayerName || 'White';
+            bottomPlayerClock.innerText = whitePlayerClock;
+
+            // Set clock colors based on whose turn it is
+            topPlayerClock.style.color = currentTurn === 'b' ? 'green' : 'black';
+            bottomPlayerClock.style.color = currentTurn === 'w' ? 'green' : 'black';
+        } else {
+            // Black pieces at bottom, white at top
+            topPlayerName.innerText = whitePlayerName || 'White';
+            topPlayerClock.innerText = whitePlayerClock;
+            bottomPlayerName.innerText = blackPlayerName || 'Black';
+            bottomPlayerClock.innerText = blackPlayerClock;
+
+            // Set clock colors based on whose turn it is
+            topPlayerClock.style.color = currentTurn === 'w' ? 'green' : 'black';
+            bottomPlayerClock.style.color = currentTurn === 'b' ? 'green' : 'black';
+        }
+
+        // Update last move display if available
+        console.log('gameInfo:', gameInfo);
+        console.log('lastMovePretty:', gameInfo ? gameInfo.lastMovePretty : 'gameInfo not available');
+
+        if (lastMoveDisplay && gameInfo && gameInfo.lastMovePretty) {
+            console.log('Setting last move display to:', gameInfo.lastMovePretty);
+            lastMoveDisplay.innerText = `Last move: ${gameInfo.lastMovePretty}`;
+        } else if (lastMoveDisplay) {
+            console.log('Clearing last move display');
+            lastMoveDisplay.innerText = '';
         }
     }
 
@@ -2306,6 +2752,9 @@
                             updateBoardFromChessJS();
                         }
                     }
+
+                    // Note: parseStyle12Info is now called directly from routeMessage
+                    // to ensure it's always called, even if board update fails
                 } catch (e) {
                     // Silently handle parsing errors
                 }
@@ -2380,6 +2829,10 @@
 
             // Update the board
             updateBoardFromChessJS();
+
+            // Update the current turn and restart the clock
+            currentTurn = chess.turn();
+            restartClock(); // Restart the clock for the new player
         }
     }
 
@@ -2491,6 +2944,18 @@
         // Reset the chess board to the starting position
         chess.reset();
 
+        // Set default player names and clocks for practice board
+        whitePlayerName = 'White';
+        blackPlayerName = 'Black';
+        whiteTimeSeconds = 300; // 5 minutes in seconds
+        blackTimeSeconds = 300; // 5 minutes in seconds
+        whitePlayerClock = formatClockTime(whiteTimeSeconds);
+        blackPlayerClock = formatClockTime(blackTimeSeconds);
+        currentTurn = 'w';
+
+        // Start the clock for the practice board
+        restartClock();
+
         // Update the board display
         updateBoardFromChessJS();
 
@@ -2501,7 +2966,267 @@
         }
     }
 
+    // Test function to verify clock time parsing
+    function testClockParsing() {
+        const testStyle12 = "<12> ------k- -p--r-pp p-p----- -------n ----B--- ------P- PPPq---P -K--R--- W -1 0 0 0 0 1 10 venugopal kunde 0 15 0 13 22 624 769 27 Q/g5-d2 (0:04) Qd2 0 1 112";
+        const parts = testStyle12.split(' ');
+
+        // Fields 24-25 should be the clock times in seconds
+        const whiteTimeSecs = parseFloat(parts[24]); // 624 seconds = 10 minutes and 24 seconds
+        const blackTimeSecs = parseFloat(parts[25]); // 769 seconds = 12 minutes and 49 seconds
+
+        console.log('Test Style12 parsing:');
+        console.log('Raw time values - White:', parts[24], 'seconds, Black:', parts[25], 'seconds');
+        console.log('White time calculation:', whiteTimeSecs, 'seconds =', Math.floor(whiteTimeSecs / 60), 'minutes and', Math.floor(whiteTimeSecs % 60), 'seconds');
+        console.log('Black time calculation:', blackTimeSecs, 'seconds =', Math.floor(blackTimeSecs / 60), 'minutes and', Math.floor(blackTimeSecs % 60), 'seconds');
+        console.log('Formatted times - White:', formatClockTime(whiteTimeSecs), 'Black:', formatClockTime(blackTimeSecs));
+        console.log('Expected times - White: 10:24, Black: 12:49');
+    }
+
+    // Function to initialize the chess board
+    function initializeChessBoard() {
+        if (boardInitialized) return; // Don't initialize twice
+
+        const boardArea = document.querySelector('.chess-board-area');
+        if (!boardArea) return;
+
+        // Clear any existing content
+        boardArea.innerHTML = '';
+
+        // Create board container with toolbar
+        const boardAndToolbarContainer = document.createElement('div');
+        boardAndToolbarContainer.classList.add('grid-row');
+        boardAndToolbarContainer.style.display = 'flex';
+        boardAndToolbarContainer.style.flexDirection = 'column';
+        boardAndToolbarContainer.style.alignItems = 'center';
+        boardAndToolbarContainer.style.width = '100%';
+        boardAndToolbarContainer.style.minWidth = '0'; // Allow container to shrink below content size
+        boardAndToolbarContainer.style.overflow = 'hidden'; // Prevent overflow
+
+        // Create toolbar
+        const toolbar = document.createElement('div');
+        toolbar.style.padding = '5px';
+        toolbar.classList.add('board-toolbar');
+        toolbar.style.width = '100%'; // Full width
+        toolbar.style.maxWidth = '800px'; // Maximum width
+
+        // Reset button
+        const resetBtn = document.createElement('button');
+        resetBtn.title = 'Reset Board';
+        resetBtn.innerHTML = '<i class="material-icons">restart_alt</i>';
+        resetBtn.onclick = () => {
+            chess.reset();
+            updateBoardFromChessJS();
+        };
+        toolbar.appendChild(resetBtn);
+
+        // Flip board button
+        const flipBtn = document.createElement('button');
+        flipBtn.title = 'Flip Board';
+        flipBtn.innerHTML = '<i class="material-icons">swap_vert</i>';
+        flipBtn.onclick = () => {
+            // Send flip command to FICS
+            ws.send('flip\n\r');
+
+            // Send refresh command after a short delay to ensure the board is updated
+            setTimeout(() => {
+                ws.send('refresh\n\r');
+                console.log('Sent refresh command after flip');
+            }, 300);
+
+            // Also update local board orientation
+            myColor = myColor === 'white' ? 'black' : 'white';
+            updateBoardFromChessJS();
+            updatePlayerInfo();
+        };
+        toolbar.appendChild(flipBtn);
+
+        // Add toolbar to container
+        boardAndToolbarContainer.appendChild(toolbar);
+
+        // Create board container
+        const boardContainer = document.createElement('div');
+        boardContainer.style.flexShrink = '1'; // Allow shrinking
+        boardContainer.style.width = '100%';
+        boardContainer.style.maxWidth = '800px';
+        boardContainer.style.display = 'flex';
+        boardContainer.style.flexDirection = 'column';
+        boardContainer.style.alignItems = 'center';
+        boardContainer.style.minWidth = '0'; // Allow container to shrink below content size
+        boardContainer.style.overflow = 'hidden'; // Prevent overflow
+
+        // Create player info container (above the board)
+        const topPlayerInfo = document.createElement('div');
+        topPlayerInfo.classList.add('player-info');
+        topPlayerInfo.classList.add('top-player');
+        topPlayerInfo.style.display = 'flex';
+        topPlayerInfo.style.justifyContent = 'space-between';
+        topPlayerInfo.style.padding = '5px';
+        topPlayerInfo.style.marginBottom = '10px';
+        topPlayerInfo.style.border = '1px solid #ccc';
+        topPlayerInfo.style.borderRadius = '4px';
+        topPlayerInfo.style.width = '100%';
+        topPlayerInfo.style.maxWidth = '800px';
+        topPlayerInfo.style.minWidth = '0'; // Allow container to shrink below content size
+        topPlayerInfo.style.boxSizing = 'border-box'; // Include padding in width calculation
+
+        // Top player name
+        const topPlayerName = document.createElement('div');
+        topPlayerName.classList.add('player-name');
+        topPlayerName.id = 'topPlayerName';
+        topPlayerName.innerText = 'Opponent';
+        topPlayerName.style.fontWeight = 'bold';
+
+        // Top player clock
+        const topPlayerClock = document.createElement('div');
+        topPlayerClock.classList.add('player-clock');
+        topPlayerClock.id = 'topPlayerClock';
+        topPlayerClock.innerText = '00:00';
+        topPlayerClock.style.fontFamily = 'monospace';
+        topPlayerClock.style.fontSize = '1.2em';
+
+        topPlayerInfo.appendChild(topPlayerName);
+        topPlayerInfo.appendChild(topPlayerClock);
+
+        // Create the chess board
+        const board = document.createElement('div');
+        board.id = 'chessBoard';
+        board.classList.add('chess-board');
+        board.style.width = '100%';
+        board.style.maxWidth = '800px';
+        board.style.aspectRatio = '1 / 1'; // Maintain square aspect ratio
+        boardContainer.appendChild(board);
+
+        // Create player info container (below the board)
+        const bottomPlayerInfo = document.createElement('div');
+        bottomPlayerInfo.classList.add('player-info');
+        bottomPlayerInfo.classList.add('bottom-player');
+        bottomPlayerInfo.style.display = 'flex';
+        bottomPlayerInfo.style.justifyContent = 'space-between';
+        bottomPlayerInfo.style.padding = '5px';
+        bottomPlayerInfo.style.marginTop = '10px';
+        bottomPlayerInfo.style.marginBottom = '10px';
+        bottomPlayerInfo.style.border = '1px solid #ccc';
+        bottomPlayerInfo.style.borderRadius = '4px';
+        bottomPlayerInfo.style.width = '100%';
+        bottomPlayerInfo.style.maxWidth = '800px';
+        bottomPlayerInfo.style.minWidth = '0'; // Allow container to shrink below content size
+        bottomPlayerInfo.style.boxSizing = 'border-box'; // Include padding in width calculation
+
+        // Bottom player name
+        const bottomPlayerName = document.createElement('div');
+        bottomPlayerName.classList.add('player-name');
+        bottomPlayerName.id = 'bottomPlayerName';
+        bottomPlayerName.innerText = 'You';
+        bottomPlayerName.style.fontWeight = 'bold';
+
+        // Bottom player clock
+        const bottomPlayerClock = document.createElement('div');
+        bottomPlayerClock.classList.add('player-clock');
+        bottomPlayerClock.id = 'bottomPlayerClock';
+        bottomPlayerClock.innerText = '00:00';
+        bottomPlayerClock.style.fontFamily = 'monospace';
+        bottomPlayerClock.style.fontSize = '1.2em';
+
+        bottomPlayerInfo.appendChild(bottomPlayerName);
+        bottomPlayerInfo.appendChild(bottomPlayerClock);
+
+        // Create last move display (outside the player info container)
+        const lastMoveDisplay = document.createElement('div');
+        lastMoveDisplay.classList.add('last-move');
+        lastMoveDisplay.id = 'lastMoveDisplay';
+        lastMoveDisplay.innerText = '';
+        lastMoveDisplay.style.fontSize = '0.9em';
+        lastMoveDisplay.style.color = '#666';
+        lastMoveDisplay.style.marginTop = '5px';
+        lastMoveDisplay.style.textAlign = 'right';
+        lastMoveDisplay.style.width = '100%';
+        lastMoveDisplay.style.maxWidth = '800px';
+        lastMoveDisplay.style.minWidth = '0';
+        lastMoveDisplay.style.boxSizing = 'border-box';
+
+        // Add elements to the board container
+        boardContainer.appendChild(topPlayerInfo);
+        boardContainer.appendChild(board);
+        boardContainer.appendChild(bottomPlayerInfo);
+        boardContainer.appendChild(lastMoveDisplay);
+
+        // Add board container to the main container
+        boardAndToolbarContainer.appendChild(boardContainer);
+
+        // Add the container to the board area
+        boardArea.appendChild(boardAndToolbarContainer);
+
+        // Initialize the chess board
+        createChessBoard(board);
+
+        // Add resize observer to adjust board size when container changes
+        const resizeObserver = new ResizeObserver(() => {
+            // Get the available width in the chess board area
+            const chessBoardArea = document.querySelector('.chess-board-area');
+            if (!chessBoardArea) return;
+
+            // Get the available width and height, accounting for padding
+            const availableWidth = chessBoardArea.clientWidth - 40; // Subtract padding
+            const availableHeight = chessBoardArea.clientHeight - 200; // Subtract space for toolbar and player info
+
+            // Ensure we never try to use more width than is available
+            const maxWidth = Math.max(100, availableWidth); // Minimum size of 100px
+
+            // Calculate the maximum size that fits while maintaining square aspect ratio
+            const maxSize = Math.min(maxWidth, availableHeight, 800); // Cap at 800px
+
+            // Update board size
+            board.style.width = maxSize + 'px';
+            board.style.height = maxSize + 'px';
+
+            // Update toolbar and player info widths to match
+            // Use min to ensure they don't exceed the container width
+            const containerWidth = chessBoardArea.clientWidth - 40;
+            const elementWidth = Math.min(maxSize, containerWidth);
+
+            toolbar.style.width = elementWidth + 'px';
+            topPlayerInfo.style.width = elementWidth + 'px';
+            bottomPlayerInfo.style.width = elementWidth + 'px';
+
+            // Force a redraw of the board
+            updateBoardFromChessJS();
+        });
+
+        // Observe the chess board area for size changes
+        resizeObserver.observe(document.querySelector('.chess-board-area'));
+
+        // Also trigger resize when the window is resized
+        window.addEventListener('resize', () => {
+            resizeObserver.disconnect();
+            setTimeout(() => {
+                resizeObserver.observe(document.querySelector('.chess-board-area'));
+            }, 100);
+        });
+
+        // Set default player names and clocks
+        whitePlayerName = 'White';
+        blackPlayerName = 'Black';
+        whiteTimeSeconds = 300; // 5 minutes in seconds
+        blackTimeSeconds = 300; // 5 minutes in seconds
+        whitePlayerClock = formatClockTime(whiteTimeSeconds);
+        blackPlayerClock = formatClockTime(blackTimeSeconds);
+        currentTurn = 'w';
+
+        // Reset the chess board to the starting position
+        chess.reset();
+        updateBoardFromChessJS();
+
+        // Start the clock
+        restartClock();
+
+        boardInitialized = true;
+    }
+
     window.onload = function() {
+        // Run the test function
+        testClockParsing();
+
         connectWebSocket();
         loadPreferences();
         setupPreferencesMenu();
@@ -2509,8 +3234,8 @@
         // Initialize tabs visibility (should hide chat tabs initially)
         updateTabsVisibility();
 
-        // Create a default chess tab with starting position
-        setTimeout(createDefaultChessTab, 500); // Small delay to ensure DOM is fully loaded
+        // Initialize the chess board
+        setTimeout(initializeChessBoard, 500); // Small delay to ensure DOM is fully loaded
     };
 </script>
 </body>
