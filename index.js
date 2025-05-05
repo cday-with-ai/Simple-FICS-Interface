@@ -3,6 +3,11 @@ const wsUrl = 'wss://www.freechess.org:5001';
 let ws = null;
 let isLoggingIn = false;
 
+// Message history for input fields
+const messageHistory = {};
+const messageHistoryPosition = {};
+const MAX_HISTORY_LENGTH = 100;
+
 // DOM elements
 const mainTextArea = document.getElementById('mainTextArea');
 const mainInput = document.getElementById('mainInput');
@@ -19,6 +24,7 @@ const chatTabsContainer = document.querySelector('.chat-tabs-container');
 // Audio elements
 const moveAudio = new Audio('sounds/move.ogg');
 const captureAudio = new Audio('sounds/capture.ogg');
+const bellAudio = new Audio('sounds/bell.ogg');
 
 // Chess game variables
 let chess = new Chess();
@@ -129,12 +135,89 @@ document.addEventListener('DOMContentLoaded', function() {
     document.head.appendChild(metaBuildTime);
 });
 
+// Function to add a message to history
+function addToMessageHistory(inputId, message) {
+    if (!message.trim()) return; // Don't add empty messages
+
+    // Initialize history array if it doesn't exist
+    if (!messageHistory[inputId]) {
+        messageHistory[inputId] = [];
+    }
+
+    // Don't add if it's the same as the last message
+    if (messageHistory[inputId].length > 0 &&
+        messageHistory[inputId][messageHistory[inputId].length - 1] === message) {
+        return;
+    }
+
+    // Add message to history
+    messageHistory[inputId].push(message);
+
+    // Limit history length
+    if (messageHistory[inputId].length > MAX_HISTORY_LENGTH) {
+        messageHistory[inputId].shift(); // Remove oldest message
+    }
+
+    // Reset position to beyond the newest message
+    messageHistoryPosition[inputId] = messageHistory[inputId].length;
+}
+
+// Function to handle arrow key navigation
+function handleArrowKeys(event, inputElement) {
+    const inputId = inputElement.id;
+
+    // Initialize history if it doesn't exist
+    if (!messageHistory[inputId]) {
+        messageHistory[inputId] = [];
+    }
+
+    // Initialize position if it doesn't exist
+    if (messageHistoryPosition[inputId] === undefined) {
+        messageHistoryPosition[inputId] = messageHistory[inputId].length;
+    }
+
+    if (event.key === "ArrowUp") {
+        event.preventDefault(); // Prevent cursor from moving to start of input
+
+        // Store current input if we're at the end of history
+        if (messageHistoryPosition[inputId] === messageHistory[inputId].length) {
+            inputElement._currentInput = inputElement.value;
+        }
+
+        // Move up in history if possible
+        if (messageHistoryPosition[inputId] > 0) {
+            messageHistoryPosition[inputId]--;
+            inputElement.value = messageHistory[inputId][messageHistoryPosition[inputId]];
+        }
+    } else if (event.key === "ArrowDown") {
+        event.preventDefault(); // Prevent cursor from moving to end of input
+
+        // Move down in history if possible
+        if (messageHistoryPosition[inputId] < messageHistory[inputId].length) {
+            messageHistoryPosition[inputId]++;
+
+            if (messageHistoryPosition[inputId] === messageHistory[inputId].length) {
+                // Restore current input when we reach the end
+                inputElement.value = inputElement._currentInput || '';
+            } else {
+                inputElement.value = messageHistory[inputId][messageHistoryPosition[inputId]];
+            }
+        }
+    }
+}
+
+// Main input event listeners
 mainInput.addEventListener('keypress', (event) => {
     if (event.key === "Enter") {
         const message = mainInput.value;
         ws.send(filterInvalid(message) + '\n\r');
+        addToMessageHistory('mainInput', message);
         mainInput.value = '';
     }
+});
+
+mainInput.addEventListener('keydown', (event) => {
+    handleArrowKeys(event, mainInput);
 });
 
 // Horizontal divider
@@ -525,6 +608,15 @@ function filterInvalid(msg) {
     return result;
 }
 
+function wrapInClassExceptPrompt(text, className) {
+   var promptIndex = text.lastIndexOf('\nfics% ');
+   if (promptIndex > 0) {
+      return '<span class="' + className + '">' + text.substring(0,promptIndex) + '</span>' + text.substring(promptIndex);
+   } else {
+      return '<span class="' + className + '">' + text + '</span>';
+   }
+}
+
 // Function to convert plain text to HTML with links and colors
 function processTextToHTML(text) {
     if (!text) return '';
@@ -532,45 +624,59 @@ function processTextToHTML(text) {
     // Sanitize the text to prevent XSS
     text = sanitizeHTML(text);
 
-    // Color sent messages (must be first to catch the pattern before other rules)
-    text = text.replace(
-        /^Sent `(.+)`$/gm,
-        '<span class="sent-message">Sent: <span class="sent-message-content">$1</span></span>');
-
     // Convert URLs to clickable links
     text = text.replace(
         /(https?:\/\/[^\s]+)/g,
         '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
 
-    // Color channel tells - using same color for the entire message
-    text = text.replace(
-        /^([a-zA-Z0-9]+)\(([0-9]+)\):(.*)/gm,
-        '<span class="channel-tell">$1($2):$3</span>');
+    // Color sent messages (must be first to catch the pattern before other rules)
+    if (text.match(/Sent `(.+)`$/gm) != null) {
+        return wrapInClassExceptPrompt(text,'sent-message');
+    }
 
-    // Color tells (personal messages)
-    text = text.replace(
-        /^([a-zA-Z0-9]+) tells you:(.*)/gm,
-        '<span class="tell-label">$1 tells you:</span><span class="tell-content">$2</span>');
+    // Color channel tells - using specific colors for certain channels
+    var channelMatch = text.match(/^([a-zA-Z0-9()*]+)\(([0-9]+)\):(.*)/gm);
+    if (channelMatch != null) {
+       const channelEnd = text.indexOf("):");
+       if (channelEnd > 0) {
+           var channelStart = -1;
+           for (var i = channelEnd - 1; i >= 0; i--) {
+               if (text.charAt(i) == '(') {
+                   channelStart = i;
+                   break;
+               }
+           }
+           if (channelStart >= 0) {
+               const channel = text.substring(channelStart + 1,channelEnd);
+               const specialChannels = ['2', '10', '36', '37', '39', '40', '41', '49', '50', '53', '64', '85', '88'];
+               if (specialChannels.includes(channel)) {
+                   return wrapInClassExceptPrompt(text,'channel-' + channel);
+               } else {
+                   return wrapInClassExceptPrompt(text,'channel-tells');
+               }
+           }
+        }
+     }
 
-    // Color your tells to others
-    text = text.replace(
-        /^You tell ([a-zA-Z0-9]+):(.*)/gm,
-        '<span class="tell-label">You tell $1:</span><span class="tell-content">$2</span>');
+    // Color direct tells (personal messages)
+    if (text.match(/^([a-zA-Z0-9()*]+) tells you:(.*)/gm) != null) {
+        return wrapInClassExceptPrompt(text,'direct-tell');
+    }
 
     // Color shouts
-    text = text.replace(
-        /^([a-zA-Z0-9]+) shouts:(.*)/gm,
-        '<span class="shout-label">$1 shouts:</span><span class="shout-content">$2</span>');
+    if (text.match(/^([a-zA-Z0-9()*]+) shouts:(.*)/gm) != null) {
+        return wrapInClassExceptPrompt(text,'shout-message');
+    }
+
+    // Color c-shouts
+    if (text.match(/^([a-zA-Z0-9()*]+) c-shouts:(.*)/gm) != null) {
+        return wrapInClassExceptPrompt(text,'cshout-message');
+    }
 
     // Color system messages
-    text = text.replace(
-        /^\*\*\*\* (.*)/gm,
-        '<span class="system-message">**** $1</span>');
-
-    // Highlight chess moves (e.g., e2-e4, Nf3, etc.)
-    text = text.replace(
-        /\b([a-h][1-8]-[a-h][1-8]|[KQRBNP][a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?|O-O(?:-O)?)\b(?:\+\+|\+|#)?/g,
-        '<span class="chess-move">$&</span>');
+    if (text.match(/^\*\*\*\* (.*)/gm) != null) {
+        return wrapInClassExceptPrompt(text,'system-message');
+    }
 
     return text;
 }
@@ -628,11 +734,12 @@ function updateTabsVisibility() {
     if (tabElements.length > 0) {
         // Show the divider and set 50/50 split when tabs exist
         rightDivider.style.display = 'block';
-        mainConsole.style.flex = '0 0 50%';
+        mainConsole.style.flex = '0 0 75%';
         chatTabsContainer.style.display = 'flex';
 
-        // Explicitly set the divider position to 50%
-        rightDivider.style.top = '50%';
+        // Explicitly set the divider position to 75% (75% chess board, 25% console)
+        rightDivider.style.top = '75%';
+        mainConsole.style.flexBasis = '75%';
 
         // Force a layout recalculation to ensure the divider is positioned correctly
         setTimeout(() => {
@@ -733,13 +840,35 @@ function createTab(type, name) {
     input.id='input-' + id;
 
     input.addEventListener('keypress', (event) => {
-        switch (event.key) {
-            case "Enter":
-              const message = input.value;
-              ws.send("tell " + name + " " + filterInvalid(message) + '\n\r');
-              input.value = '';
-              break;
+        if (event.key === "Enter") {
+            const message = input.value;
+            //prevent mistells.
+            if (message.startsWith("tell ") ||
+                message.startsWith("history") ||
+                message.startsWith("examine") ||
+                message.startsWith("hi") ||
+                message.startsWith("ex") ||
+                message.startsWith("m ") ||
+                message.startsWith("match ") ||
+                message.startsWith("obs") ||
+                message.startsWith("observe") ||
+                message.startsWith("follow") ||
+                message.startsWith("journal")) {
+                    ws.send(filterInvalid(message) + '\n\r');
+                    addToMessageHistory(input.id, message);
+                    input.value = '';
+            }
+            else if (message.trim()) { // Only send non-empty messages
+                ws.send("tell " + name + " " + filterInvalid(message) + '\n\r');
+                addToMessageHistory(input.id, message);
+                input.value = '';
+            }
         }
+    });
+
+    // Add arrow key navigation for tab input
+    input.addEventListener('keydown', (event) => {
+        handleArrowKeys(event, input);
     });
 
     row1.append(textArea);
@@ -750,6 +879,9 @@ function createTab(type, name) {
 
     // Update tabs visibility after creating a new tab
     updateTabsVisibility();
+
+    // Scroll the main console to the bottom when a tab is opened for the first time
+    mainTextArea.scrollTop = mainTextArea.scrollHeight;
 }
 
 function createGameTab(opponent) {
@@ -981,8 +1113,25 @@ function closeTab(typeAndName) {
 }
 
 function routeMessage(msg) {
+
+    // Telnet uses \n\r for newlines so replace it with \n
     msg = msg.replaceAll("\n\r","\n");
+
+    // Handle this case:
+    //ROBOadmin(*)(TD) tells you: Welcome to FICS - the Free Internet Chess Server.
+    //\   Please visit our homepage at http://www.freechess.org. From there you can
+    //\   register or download a graphical interface. You can get help by typing
+    //\   "help intro_playing". Or just ask a SR or admin - use "showsr" or "showa",
+    //\   then "tell <name> My question is..."
+    msg = msg.replaceAll('\n\\','\n');
+
+    // Play bell sound
+    if (msg.indexOf("\u0007") >= 0) {
+        bellAudio.play();
+    }
     msg = msg.replaceAll("\u0007","");
+
+
     if (!msg.endsWith("\n")) {
         msg += "\n";
     }
@@ -1048,6 +1197,8 @@ function routeMessage(msg) {
         name = msg.split(/[()]/)[1].trim();
 
         if (channelTellsToTabs) {
+            msg = msg.replaceAll("\nfics% ","");
+
             var tabId = type + "-" + name;
             var tab = document.getElementById("tab-" + tabId);
             if (!tab) {
@@ -1098,7 +1249,6 @@ function routeMessage(msg) {
         // Check if the main console already ends with the prompt
         const consoleEndsWithPrompt = mainTextArea.innerHTML.endsWith('fics%');
 
-        // Only append if it's not a duplicate prompt
         if (!(isFicsPrompt && consoleEndsWithPrompt)) {
             const autoScroll = mainTextArea.scrollHeight - mainTextArea.scrollTop <= mainTextArea.clientHeight;
             mainTextArea.innerHTML += processTextToHTML(msg);
