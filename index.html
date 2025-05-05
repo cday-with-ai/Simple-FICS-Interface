@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Cache control meta tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Simple FICS Interface</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
@@ -717,7 +721,7 @@
             <div class="preference-group">
                 <label for="prefAutoLogin">Auto Login:</label>
                 <div style="display: flex; align-items: center;">
-                    <input type="checkbox" id="prefAutoLogin" style="width: auto; margin-right: 5px;" checked>
+                    <input type="checkbox" id="prefAutoLogin" style="width: auto; margin-right: 5px;">
                     <span>Automatically login when connecting to FICS</span>
                 </div>
             </div>
@@ -826,17 +830,17 @@
 
                 <div style="margin-top: 10px;">
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                        <input type="checkbox" id="prefChannelTellsToTabs" style="width: auto; margin-right: 10px;" checked>
+                        <input type="checkbox" id="prefChannelTellsToTabs" style="width: auto; margin-right: 10px;">
                         <label for="prefChannelTellsToTabs" style="font-weight: normal;">Send all channel tells to channel tabs</label>
                     </div>
 
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                        <input type="checkbox" id="prefDirectTellsToTabs" style="width: auto; margin-right: 10px;" checked>
+                        <input type="checkbox" id="prefDirectTellsToTabs" style="width: auto; margin-right: 10px;">
                         <label for="prefDirectTellsToTabs" style="font-weight: normal;">Send all direct tells to direct tell tab</label>
                     </div>
 
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                        <input type="checkbox" id="prefGameTellsToTabs" style="width: auto; margin-right: 10px;" checked>
+                        <input type="checkbox" id="prefGameTellsToTabs" style="width: auto; margin-right: 10px;">
                         <label for="prefGameTellsToTabs" style="font-weight: normal;">Send all game tells to game tab</label>
                     </div>
                 </div>
@@ -847,12 +851,12 @@
 
                 <div style="margin-top: 10px;">
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                        <input type="checkbox" id="prefAutoSwitchToNewTabs" style="width: auto; margin-right: 10px;" checked>
+                        <input type="checkbox" id="prefAutoSwitchToNewTabs" style="width: auto; margin-right: 10px;">
                         <label for="prefAutoSwitchToNewTabs" style="font-weight: normal;">Automatically switch to new tabs when created</label>
                     </div>
 
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
-                        <input type="checkbox" id="prefFlashTabsOnActivity" style="width: auto; margin-right: 10px;" checked>
+                        <input type="checkbox" id="prefFlashTabsOnActivity" style="width: auto; margin-right: 10px;">
                         <label for="prefFlashTabsOnActivity" style="font-weight: normal;">Flash tabs on new activity</label>
                     </div>
 
@@ -919,6 +923,24 @@
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
 <script>
+    // Add timestamp to prevent caching
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add timestamp to any resources that might be cached
+        const timestamp = new Date().getTime();
+        const links = document.querySelectorAll('link[rel="stylesheet"]');
+        links.forEach(link => {
+            if (!link.href.includes('fonts.googleapis.com')) {
+                link.href = link.href + '?v=' + timestamp;
+            }
+        });
+
+        // Add a meta tag with the build time
+        const metaBuildTime = document.createElement('meta');
+        metaBuildTime.name = 'build-time';
+        metaBuildTime.content = new Date().toISOString();
+        document.head.appendChild(metaBuildTime);
+    });
+
     const wsUrl = 'wss://www.freechess.org:5001';
     const mainTextArea = document.getElementById('mainTextArea');
     const mainInput = document.getElementById('mainInput');
@@ -1148,10 +1170,10 @@
         showStyle12Events: false
     };
 
-    // Default preferences
-    let currentPieceSet = 'alpha';
-    let lightSquareColor = '#e8e0c8';
-    let darkSquareColor = '#AB8B69';
+    // Default preferences for board colors and piece set
+    let currentPieceSet = preferences.pieceSet;
+    let lightSquareColor = preferences.lightSquareColor;
+    let darkSquareColor = preferences.darkSquareColor;
 
     // Load preferences from local storage
     function loadPreferences() {
@@ -1207,8 +1229,31 @@
             applyPreferences();
         } else {
             // Initialize with default piece set
-            updatePieceSetPreview('alpha');
-            console.log('No stored preferences found, using defaults');
+            updatePieceSetPreview(preferences.pieceSet);
+
+            // Update UI to reflect default preferences
+            document.getElementById('prefPieceSet').value = preferences.pieceSet;
+            document.getElementById('prefLightSquare').value = preferences.lightSquareColor;
+            document.getElementById('prefDarkSquare').value = preferences.darkSquareColor;
+            document.getElementById('lightSquarePreview').style.backgroundColor = preferences.lightSquareColor;
+            document.getElementById('darkSquarePreview').style.backgroundColor = preferences.darkSquareColor;
+
+            // FICS preferences UI
+            document.getElementById('prefFicsUsername').value = preferences.ficsUsername || '';
+            document.getElementById('prefAutoLogin').checked = preferences.autoLogin;
+
+            // Tabs preferences UI
+            document.getElementById('prefChannelTellsToTabs').checked = preferences.channelTellsToTabs;
+            document.getElementById('prefDirectTellsToTabs').checked = preferences.directTellsToTabs;
+            document.getElementById('prefGameTellsToTabs').checked = preferences.gameTellsToTabs;
+            document.getElementById('prefAutoSwitchToNewTabs').checked = preferences.autoSwitchToNewTabs;
+            document.getElementById('prefFlashTabsOnActivity').checked = preferences.flashTabsOnActivity;
+            document.getElementById('prefShowStyle12Events').checked = preferences.showStyle12Events;
+
+            console.log('No stored preferences found, using defaults:', preferences);
+
+            // Apply default preferences
+            applyPreferences();
         }
     }
 
