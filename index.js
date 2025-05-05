@@ -22,9 +22,11 @@ const mainConsole = document.querySelector('.main-console');
 const chatTabsContainer = document.querySelector('.chat-tabs-container');
 
 // Audio elements
-const moveAudio = new Audio('sounds/move.ogg');
-const captureAudio = new Audio('sounds/capture.ogg');
-const bellAudio = new Audio('sounds/bell.ogg');
+const moveAudio = new Audio('sounds/Move.ogg');
+const captureAudio = new Audio('sounds/Capture.ogg');
+const bellAudio = new Audio('sounds/Alert.wav');
+const gameStartAudio = new Audio('sounds/GameStart.wav');
+const gameEndAudio = new Audio('sounds/GameEnd.wav');
 
 // Chess game variables
 let chess = new Chess();
