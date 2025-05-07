@@ -5,7 +5,7 @@
 /* Font definitions */
 @font-face {
     font-family: 'Digital';
-    src: url('https://db.onlinewebfonts.com/t/8e22783d707ad140bffe18b2a3812529.woff2') format('woff2');
+    src: url('/fonts/digitalFont.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
 }
@@ -47,22 +47,22 @@ body {
     position: relative;
 }
 
-/* Chess board area on the left */
 .chess-board-area {
     flex: 0 0 65%;
     overflow-y: auto;
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start; /* Align content at the top */
+    align-items: flex-end;
+    justify-content: flex-start;
     box-sizing: border-box;
     height: 100%;
-    min-width: 0; /* Allow flex item to shrink below content size */
-    padding-right: 50px; /* Add padding to ensure space for divider */
+    min-width: 0;
+    padding-left: 50px;
+    padding-right: 50px;
 }
 
-/* Right side content container */
+/* Left side content container */
 .right-content {
     flex: 1;
     display: flex;
@@ -70,13 +70,13 @@ body {
     position: relative;
 }
 
-/* Main console on the top right */
+/* Main console on the top left */
 .main-console {
     flex: 0 0 35%;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    margin-left: 20px;
+    margin-right: 20px;
     position: relative; /* For absolute positioning of input row */
 }
 
@@ -109,7 +109,6 @@ body {
     height: 100%;
 }
 
-/* Horizontal resizable divider (between chess tabs and right content) */
 .horizontal-divider {
     width: 15px;
     max-width: 200px;
@@ -118,14 +117,14 @@ body {
     cursor: col-resize;
     position: absolute;
     top: 50%;
-    left: 65%;
+    left: 64%;
     transform: translate(-50%, -50%);
     z-index: 10;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px; /* Match chess board */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, .75); /* Match chess board */
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, .75);
 }
 
 /* Divider control buttons container */
@@ -162,7 +161,6 @@ body {
     background-color: #d0d0d0;
 }
 
-/* Vertical resizable divider (between main console and chat tabs) */
 .vertical-divider {
     height: 15px;
     max-height: 200px;
@@ -171,15 +169,15 @@ body {
     cursor: row-resize;
     position: absolute;
     left: 50%;
-    top: 75%; /* Default to 75% (75% chess board, 25% console) */
+    top: var(--vertical-divider-position);
     transform: translate(-50%, -50%);
     z-index: 10;
-    transition: opacity 0.2s ease; /* Smooth transition when showing/hiding */
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 10px; /* Match chess board */
-    box-shadow: 0 4px 6px rgba(0, 0, 0, .75); /* Match chess board */
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, .75);
+    transition: top 0.1s ease-out, opacity 0.2s ease;
 }
 
 
@@ -471,7 +469,7 @@ body {
 .board-main-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-end;
     width: 100%;
     min-width: 0;
     overflow: hidden;
@@ -479,18 +477,19 @@ body {
 
 .board-container {
     flex-shrink: 1;
-    width: 100%;
+    width: auto;
     display: flex;
     flex-direction: row;
     align-items: flex-start;
     min-width: 0;
     overflow: hidden;
+    margin-left: auto;
 }
 
 .board-only-container {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-end;
     flex-shrink: 0;
     position: relative;
 }
@@ -546,10 +545,9 @@ body {
 
 .player-clock {
     font-family: "Digital", "Orbitron", "Share Tech Mono", monospace;
-    font-weight: bold;
     font-size: calc(4em * var(--font-scale, 1));
-    padding-right: 20px;
-    padding-left: 7px;
+    padding-right: 10px;
+    padding-left: 10px;
     letter-spacing: 0.05em;
     text-shadow: 0 0 5px rgba(50, 205, 50, 0.7);
 }
@@ -613,8 +611,9 @@ body {
 }
 
 .player-clock-display {
-    font-family: monospace;
-    font-size: 1.2em;
+    font-family: 'Digital', monospace;
+    font-size: calc(3em * var(--font-scale, 1));
+    transition: color 0.3s ease;
 }
 
 /* Chat tab styles */
@@ -694,8 +693,7 @@ body {
 
 /* Player divider box */
 .player-divider {
-    width: 90%;
-    height: 150px;
+    width: 97%;
     margin: 5px 0;
     background-color: white;
     border: none;
@@ -710,8 +708,7 @@ body {
 
 /* Responsive player divider based on board size */
 .chess-board-area[data-max-size] .player-divider {
-    height: calc(150px * var(--font-scale, 1) * 1.33);
-    width: calc(90% * var(--font-scale, 1) * 1.33);
+    height: calc(150px * var(--font-scale, 1) * 1.5);
     border-radius: calc(10px * var(--font-scale, 1));
     box-shadow: 0 calc(4px * var(--font-scale, 1)) calc(6px * var(--font-scale, 1)) rgba(0, 0, 0, .75);
     padding: calc(5px * var(--font-scale, 1)) calc(10px * var(--font-scale, 1));
@@ -773,7 +770,7 @@ body {
 }
 
 .chess-board-container {
-    margin: 20px auto 0;
+    margin: 20px 0 0 auto;
     position: relative;
 }
 
@@ -790,7 +787,7 @@ body {
 
 .rank-label-common {
     position: absolute;
-    font-size: 6px;
+    font-size: 4px;
     font-weight: bold;
     font-family: "Noto Sans", Sans-Serif;
     opacity: 1.0;
@@ -802,7 +799,7 @@ body {
 
 .file-label-common {
     position: absolute;
-    font-size: 6px;
+    font-size: 4px;
     font-weight: bold;
     font-family: "Noto Sans", Sans-Serif;
     opacity: 1.0;

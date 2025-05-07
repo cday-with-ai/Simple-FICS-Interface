@@ -21,6 +21,16 @@ const rightContent = document.querySelector('.right-content');
 const mainConsole = document.querySelector('.main-console');
 const chatTabsContainer = document.querySelector('.chat-tabs-container');
 
+const ficsCommandRegex = [/^(history$)|(history [a-zA-Z0-9]+$)/gm,
+/^(examine$)|(examine [a-zA-Z0-9]+$)/gm, /^(ex$)|(ex [a-zA-Z0-9]+$)/gm,
+/^(unexamine$)|(unexamine [a-zA-Z0-9]+$)/gm, /^(unex$)|(unex [a-zA-Z0-9]+$)/gm,
+/^(history$)|(history [a-zA-Z0-9]+$)/gm, /^(hi$)|(hi [a-zA-Z0-9]+$)/gm,
+/^(match .*$)/gm, /^m .*$/gm,
+/^(observe$)|(observe [a-zA-Z0-9]+$)/gm, /^(obs$)|(obs [a-zA-Z0-9]+$)/gm,
+/^(unobserve$)|(unobserve [a-zA-Z0-9]+$)/gm, /^(unobs$)|(unobs [a-zA-Z0-9]+$)/gm,
+/^(tell [a-zA-Z0-9]+ .*$)|(t [a-zA-Z0-9]+ .*$)/gm,
+/^message .*$/gm];
+
 // Audio elements
 const moveAudio = new Audio('sounds/Move.ogg');
 const captureAudio = new Audio('sounds/Capture.ogg');
@@ -59,7 +69,7 @@ let activeResizer = null;
 // Preferences
 let preferences = {
     pieceSet: 'cburnett',
-    lightSquareColor: '#0dab5',
+    lightSquareColor: '#f0dab5',
     darkSquareColor: '#b58763',
     ficsUsername: '',
     ficsPassword: '',
@@ -236,13 +246,15 @@ topDivider.addEventListener('mousedown', function(e) {
 collapseLeftBtn.addEventListener('click', function() {
     chessBoardArea.style.flexBasis = '0%';
     topDivider.style.left = '0%';
-    setTimeout(scrollConsolesToBottom, 100);
+    // Use requestAnimationFrame instead of setTimeout
+    requestAnimationFrame(scrollConsolesToBottom);
 });
 
 collapseRightBtn.addEventListener('click', function() {
     chessBoardArea.style.flexBasis = '100%';
     topDivider.style.left = '100%';
-    setTimeout(scrollConsolesToBottom, 100);
+    // Use requestAnimationFrame instead of setTimeout
+    requestAnimationFrame(scrollConsolesToBottom);
 });
 
 // Vertical divider
@@ -261,13 +273,15 @@ const collapseDownBtn = document.getElementById('collapseDown');
 collapseUpBtn.addEventListener('click', function() {
     mainConsole.style.flexBasis = '100%';
     rightDivider.style.top = '100%';
-    setTimeout(scrollConsolesToBottom, 100);
+    // Use requestAnimationFrame instead of setTimeout
+    requestAnimationFrame(scrollConsolesToBottom);
 });
 
 collapseDownBtn.addEventListener('click', function() {
     mainConsole.style.flexBasis = '0%';
     rightDivider.style.top = '0%';
-    setTimeout(scrollConsolesToBottom, 100);
+    // Use requestAnimationFrame instead of setTimeout
+    requestAnimationFrame(scrollConsolesToBottom);
 });
 
 window.onload = function() {
@@ -276,7 +290,11 @@ window.onload = function() {
     loadPreferences();
     setupPreferencesMenu();
     updateTabsVisibility();
-    setTimeout(initializeChessBoard, 500);
+    // Use requestAnimationFrame instead of setTimeout
+    requestAnimationFrame(() => {
+        // Wait for two animation frames to ensure DOM is fully loaded
+        requestAnimationFrame(initializeChessBoard);
+    });
 };
 
 function resizeDividers(e) {
@@ -285,15 +303,14 @@ function resizeDividers(e) {
         const container = document.querySelector('.top-section');
         const containerRect = container.getBoundingClientRect();
         let percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-
         // Limit the minimum and maximum sizes
-        percentage = Math.max(20, Math.min(80, percentage));
+        percentage = Math.max(0, Math.min(100, percentage));
 
         // Update the flex-basis of the chess board area
         chessBoardArea.style.flexBasis = `${percentage}%`;
 
         // Update the divider position
-        topDivider.style.left = `${percentage}%`;
+        topDivider.style.left = `${percentage - 1}%`;
     } else if (activeResizer === 'vertical') {
         // Resize vertical divider (top-bottom)
         const container = rightContent;
@@ -301,7 +318,7 @@ function resizeDividers(e) {
         let percentage = ((e.clientY - containerRect.top) / containerRect.height) * 100;
 
         // Limit the minimum and maximum sizes
-        percentage = Math.max(20, Math.min(80, percentage));
+        percentage = Math.max(0, Math.min(100, percentage));
 
         // Update the flex-basis of the main console
         mainConsole.style.flexBasis = `${percentage}%`;
@@ -319,10 +336,10 @@ function resizeDividers(e) {
 
 // Helper function to scroll all text areas to the bottom
 function scrollConsolesToBottom() {
-    // Use setTimeout to ensure this runs after the browser has updated the layout
-    setTimeout(() => {
-        console.log('Scrolling consoles to bottom');
+    console.log('Scrolling consoles to bottom');
 
+    // Use requestAnimationFrame to ensure this runs after the browser has updated the layout
+    requestAnimationFrame(() => {
         // Scroll main console to bottom
         if (mainTextArea) {
             console.log('Main text area scrollHeight:', mainTextArea.scrollHeight);
@@ -347,7 +364,7 @@ function scrollConsolesToBottom() {
                 textArea.scrollTop = textArea.scrollHeight;
             });
         });
-    }, 50); // Small delay to ensure DOM updates have completed
+    });
 }
 
 function stopResize() {
@@ -356,21 +373,24 @@ function stopResize() {
     document.removeEventListener('mouseup', stopResize);
 
     // Scroll consoles to bottom after resize is complete
-    // Use a slightly longer delay to ensure layout has fully updated
-    setTimeout(scrollConsolesToBottom, 100);
+    // Use requestAnimationFrame to ensure layout has been updated
+    requestAnimationFrame(() => {
+        // First animation frame - wait for next frame for layout to be fully updated
+        requestAnimationFrame(() => {
+            scrollConsolesToBottom();
 
-    // Also try a direct approach for the main text area
-    setTimeout(() => {
-        if (mainTextArea) {
-            mainTextArea.scrollTop = mainTextArea.scrollHeight;
-        }
+            // Also try a direct approach for the main text area
+            if (mainTextArea) {
+                mainTextArea.scrollTop = mainTextArea.scrollHeight;
+            }
 
-        // Also scroll all tab text areas
-        const tabTextAreas = document.querySelectorAll('.tab-text-area');
-        tabTextAreas.forEach(textArea => {
-            textArea.scrollTop = textArea.scrollHeight;
+            // Also scroll all tab text areas
+            const tabTextAreas = document.querySelectorAll('.tab-text-area');
+            tabTextAreas.forEach(textArea => {
+                textArea.scrollTop = textArea.scrollHeight;
+            });
         });
-    }, 200);
+    });
 }
 
 // Preferences are now declared at the top of the file
@@ -575,14 +595,30 @@ function connectWebSocket() {
 
     ws.onerror = (error) => {
         routeMessage(`Error: ${JSON.stringify(error)}\n`);
-        statusDiv.textContent = 'Error';
+        if (statusDiv) {
+            statusDiv.textContent = 'Error';
+        }
     };
 
     ws.onclose = () => {
         routeMessage('Disconnected\n');
-        statusDiv.textContent = 'Disconnected';
+        if (statusDiv) {
+            statusDiv.textContent = 'Disconnected';
+        }
         ws = null;
-        setTimeout(connectWebSocket, 5000);
+
+        // Use requestAnimationFrame with timestamp checking instead of setTimeout
+        const reconnectTime = Date.now() + 5000; // 5 seconds from now
+
+        const checkTimeAndReconnect = () => {
+            if (Date.now() >= reconnectTime) {
+                connectWebSocket();
+            } else {
+                requestAnimationFrame(checkTimeAndReconnect);
+            }
+        };
+
+        requestAnimationFrame(checkTimeAndReconnect);
     };
 }
 
@@ -650,12 +686,7 @@ function processTextToHTML(text) {
            }
            if (channelStart >= 0) {
                const channel = text.substring(channelStart + 1,channelEnd);
-               const specialChannels = ['2', '10', '36', '37', '39', '40', '41', '49', '50', '53', '64', '85', '88'];
-               if (specialChannels.includes(channel)) {
-                   return wrapInClassExceptPrompt(text,'channel-' + channel);
-               } else {
-                   return wrapInClassExceptPrompt(text,'channel-tells');
-               }
+               return wrapInClassExceptPrompt(text,'channel-' + channel);
            }
         }
      }
@@ -744,10 +775,11 @@ function updateTabsVisibility() {
         mainConsole.style.flexBasis = '75%';
 
         // Force a layout recalculation to ensure the divider is positioned correctly
-        setTimeout(() => {
+        // Use requestAnimationFrame instead of setTimeout
+        requestAnimationFrame(() => {
             // Trigger a resize event to ensure all elements are properly positioned
             window.dispatchEvent(new Event('resize'));
-        }, 0);
+        });
     } else {
         // Hide the divider and give full height to main console when no tabs
         rightDivider.style.display = 'none';
@@ -845,20 +877,21 @@ function createTab(type, name) {
         if (event.key === "Enter") {
             const message = input.value;
             //prevent mistells.
-            if (message.startsWith("tell ") ||
-                message.startsWith("history") ||
-                message.startsWith("examine") ||
-                message.startsWith("hi") ||
-                message.startsWith("ex") ||
-                message.startsWith("m ") ||
-                message.startsWith("match ") ||
-                message.startsWith("obs") ||
-                message.startsWith("observe") ||
-                message.startsWith("follow") ||
-                message.startsWith("journal")) {
-                    ws.send(filterInvalid(message) + '\n\r');
-                    addToMessageHistory(input.id, message);
-                    input.value = '';
+            var isFicsCommand = false;
+            // Use for...of to iterate through array values instead of for...in
+            for (var regex of ficsCommandRegex) {
+                // Reset lastIndex to avoid issues with global flag
+                regex.lastIndex = 0;
+                if (regex.test(message)) {
+                    isFicsCommand = true;
+                    break;
+                }
+            }
+            if (isFicsCommand) {
+                // Send directly to FICS if it's a command
+                ws.send(filterInvalid(message) + '\n\r');
+                addToMessageHistory(input.id, message);
+                input.value = '';
             }
             else if (message.trim()) { // Only send non-empty messages
                 ws.send("tell " + name + " " + filterInvalid(message) + '\n\r');
@@ -992,10 +1025,19 @@ function createGameTab(opponent) {
         ws.send('flip\n\r');
 
         // Send refresh command after a short delay to ensure the board is updated
-        setTimeout(() => {
-            ws.send('refresh\n\r');
-            console.log('Sent refresh command after flip');
-        }, 300);
+        // Use requestAnimationFrame with timestamp checking instead of setTimeout
+        const refreshTime = Date.now() + 300; // 300ms from now
+
+        const checkTimeAndRefresh = () => {
+            if (Date.now() >= refreshTime) {
+                ws.send('refresh\n\r');
+                console.log('Sent refresh command after flip');
+            } else {
+                requestAnimationFrame(checkTimeAndRefresh);
+            }
+        };
+
+        requestAnimationFrame(checkTimeAndRefresh);
 
         // Also update local board orientation
         myColor = myColor === 'white' ? 'black' : 'white';
@@ -1674,18 +1716,29 @@ function animatePieceMove(fromSquare, toSquare, callback) {
     animatedPiece.style.left = startX + 'px';
     animatedPiece.style.top = startY + 'px';
 
-    // Start the animation
-    setTimeout(() => {
+    // Start the animation using requestAnimationFrame instead of setTimeout
+    requestAnimationFrame(() => {
+        // Force a reflow to ensure the initial position is applied
+        animatedPiece.getBoundingClientRect();
+
+        // Apply the transition and move to end position
         animatedPiece.style.transition = 'left 0.225s ease-out, top 0.225s ease-out';
         animatedPiece.style.left = endX + 'px';
         animatedPiece.style.top = endY + 'px';
 
-        // Remove the animated piece and update the destination square after animation completes
-        setTimeout(() => {
-            animatedPiece.remove();
-            if (callback) callback();
-        }, 225); // Match the transition duration (25% faster than 300ms)
-    }, 10);
+        // Listen for the transition end event instead of using setTimeout
+        animatedPiece.addEventListener('transitionend', function onTransitionEnd(e) {
+            // Only handle the first transition end event (there will be one for each property)
+            if (e.propertyName === 'left') {
+                // Remove the event listener to prevent multiple calls
+                animatedPiece.removeEventListener('transitionend', onTransitionEnd);
+
+                // Remove the animated piece and call the callback
+                animatedPiece.remove();
+                if (callback) callback();
+            }
+        });
+    });
 }
 
 function updateBoardFromChessJS(lastMove) {
@@ -1798,10 +1851,10 @@ function updateBoardFromChessJS(lastMove) {
                         validMoves = chess.moves({ square: square, verbose: true }).map(move => move.to);
                         updateBoardHighlights();
 
-                        // Add dragging class for styling
-                        setTimeout(() => {
+                        // Add dragging class for styling using requestAnimationFrame instead of setTimeout
+                        requestAnimationFrame(() => {
                             pieceElement.classList.add('dragging');
-                        }, 0);
+                        });
                     });
 
                     pieceElement.addEventListener('dragend', () => {
@@ -2023,86 +2076,75 @@ function parseStyle12Info(style12Message) {
     }
 }
 
-// Function to start the clock timer
 function startClock() {
-    if (isClockRunning) return; // Don't start if already running
+    if (isClockRunning) return;
 
-    console.log('Starting clock for', currentTurn === 'w' ? 'White' : 'Black');
     isClockRunning = true;
+    clockTimer = null;
+    let lastUpdateTime = Date.now();
 
-    // Clear any existing timer
-    if (clockTimer) {
-        clearInterval(clockTimer);
-    }
+    const updateClock = () => {
+        if (!isClockRunning) return;
 
-    // Start a new timer that ticks every second
-    clockTimer = setInterval(() => {
-        // Decrement the time of the player whose turn it is
-        if (currentTurn === 'w') {
-            whiteTimeSeconds = Math.max(0, whiteTimeSeconds - 1);
-            whitePlayerClock = formatClockTime(whiteTimeSeconds);
-        } else {
-            blackTimeSeconds = Math.max(0, blackTimeSeconds - 1);
-            blackPlayerClock = formatClockTime(blackTimeSeconds);
+        const now = Date.now();
+        const deltaTime = now - lastUpdateTime;
+
+        if (deltaTime >= 1000) {
+            if (currentTurn === 'w') {
+                whiteTimeSeconds = Math.max(0, whiteTimeSeconds - 1);
+                whitePlayerClock = formatClockTime(whiteTimeSeconds);
+            } else {
+                blackTimeSeconds = Math.max(0, blackTimeSeconds - 1);
+                blackPlayerClock = formatClockTime(blackTimeSeconds);
+            }
+
+            updatePlayerInfo();
+
+            if ((currentTurn === 'w' && whiteTimeSeconds <= 0) ||
+                (currentTurn === 'b' && blackTimeSeconds <= 0)) {
+                stopClock();
+                return;
+            }
+
+            lastUpdateTime = now - (deltaTime % 1000);
         }
 
-        // Update the UI
-        updatePlayerInfo();
+        clockTimer = requestAnimationFrame(updateClock);
+    };
 
-        // Check for time forfeit
-        if ((currentTurn === 'w' && whiteTimeSeconds <= 0) ||
-            (currentTurn === 'b' && blackTimeSeconds <= 0)) {
-            stopClock();
-            console.log('Time forfeit for', currentTurn === 'w' ? 'White' : 'Black');
-        }
-    }, 1000); // Update every second
+    clockTimer = requestAnimationFrame(updateClock);
 }
 
-// Function to stop the clock timer
 function stopClock() {
-    if (!isClockRunning) return; // Don't stop if not running
+    if (!isClockRunning) return;
 
-    console.log('Stopping clock');
     isClockRunning = false;
 
-    // Clear the timer
     if (clockTimer) {
-        clearInterval(clockTimer);
+        cancelAnimationFrame(clockTimer);
         clockTimer = null;
     }
 }
 
-// Function to restart the clock (stop and start)
 function restartClock() {
     stopClock();
-    updatePlayerInfo(); // Update UI with current times
+    updatePlayerInfo();
     startClock();
 }
 
-// Function to format clock time in MM:SS format
 function formatClockTime(seconds) {
-    // Handle invalid input
     if (isNaN(seconds) || seconds < 0) {
         console.warn('Invalid time value:', seconds);
         return '05:00'; // Default to 5 minutes
     }
 
-    // Convert seconds to minutes and seconds
-    // For example, 624 seconds = 10 minutes and 24 seconds
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
 
-    console.log(`Converting ${seconds} seconds to ${minutes}:${remainingSeconds}`);
-
-    // Format as MM:SS
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-// Function to update player info in the UI
 function updatePlayerInfo() {
-    console.log('Updating player info UI');
-
-    // Get the player info elements
     const topPlayerName = document.getElementById('topPlayerName');
     const topPlayerClock = document.getElementById('topPlayerClock');
     const bottomPlayerName = document.getElementById('bottomPlayerName');
@@ -2110,54 +2152,37 @@ function updatePlayerInfo() {
     const topMoveIndicator = document.getElementById('topMoveIndicator');
     const bottomMoveIndicator = document.getElementById('bottomMoveIndicator');
     const lastMoveDisplay = document.getElementById('lastMoveDisplay');
-    console.log('Player info elements:', {
-        topPlayerName: topPlayerName ? 'found' : 'not found',
-        topPlayerClock: topPlayerClock ? 'found' : 'not found',
-        bottomPlayerName: bottomPlayerName ? 'found' : 'not found',
-        bottomPlayerClock: bottomPlayerClock ? 'found' : 'not found',
-        topMoveIndicator: topMoveIndicator ? 'found' : 'not found',
-        bottomMoveIndicator: bottomMoveIndicator ? 'found' : 'not found',
-        lastMoveDisplay: lastMoveDisplay ? 'found' : 'not found'
-    });
 
     if (!topPlayerName || !topPlayerClock || !bottomPlayerName || !bottomPlayerClock ||
         !topMoveIndicator || !bottomMoveIndicator) {
         console.warn('Player info elements not found');
-        return; // Elements not found
+        return;
     }
 
-    // Determine which player is on top/bottom based on myColor
     if (myColor === 'white') {
-        // White pieces at bottom, black at top
         topPlayerName.innerText = blackPlayerName || 'Black';
         topPlayerClock.innerText = blackPlayerClock;
         bottomPlayerName.innerText = whitePlayerName || 'White';
         bottomPlayerClock.innerText = whitePlayerClock;
 
-        // Set clock colors and move indicators based on whose turn it is
-        topPlayerClock.style.color = currentTurn === 'b' ? '#32CD32' : '#800020'; // Lime green : Burgundy red
-        bottomPlayerClock.style.color = currentTurn === 'w' ? '#32CD32' : '#800020'; // Lime green : Burgundy red
+        // Lime green for active player, burgundy for inactive
+        topPlayerClock.style.color = currentTurn === 'b' ? '#32CD32' : '#800020';
+        bottomPlayerClock.style.color = currentTurn === 'w' ? '#32CD32' : '#800020';
 
-        // Update move indicators
-        topMoveIndicator.style.backgroundColor = currentTurn === 'b' ? '#32CD32' : 'transparent'; // Lime green
-        bottomMoveIndicator.style.backgroundColor = currentTurn === 'w' ? '#32CD32' : 'transparent'; // Lime green
+        topMoveIndicator.style.backgroundColor = currentTurn === 'b' ? '#32CD32' : 'transparent';
+        bottomMoveIndicator.style.backgroundColor = currentTurn === 'w' ? '#32CD32' : 'transparent';
     } else {
-        // Black pieces at bottom, white at top
         topPlayerName.innerText = whitePlayerName || 'White';
         topPlayerClock.innerText = whitePlayerClock;
         bottomPlayerName.innerText = blackPlayerName || 'Black';
         bottomPlayerClock.innerText = blackPlayerClock;
 
-        // Set clock colors and move indicators based on whose turn it is
-        topPlayerClock.style.color = currentTurn === 'w' ? '#32CD32' : '#800020'; // Lime green : Burgundy red
-        bottomPlayerClock.style.color = currentTurn === 'b' ? '#32CD32' : '#800020'; // Lime green : Burgundy red
+        topPlayerClock.style.color = currentTurn === 'w' ? '#32CD32' : '#800020';
+        bottomPlayerClock.style.color = currentTurn === 'b' ? '#32CD32' : '#800020';
 
-        // Update move indicators
-        topMoveIndicator.style.backgroundColor = currentTurn === 'w' ? '#32CD32' : 'transparent'; // Lime green
-        bottomMoveIndicator.style.backgroundColor = currentTurn === 'b' ? '#32CD32' : 'transparent'; // Lime green
+        topMoveIndicator.style.backgroundColor = currentTurn === 'w' ? '#32CD32' : 'transparent';
+        bottomMoveIndicator.style.backgroundColor = currentTurn === 'b' ? '#32CD32' : 'transparent';
     }
-
-    // Update last move display if available
 
     if (lastMoveDisplay && gameInfo && gameInfo.lastMovePretty) {
         lastMoveDisplay.innerText = `Last move: ${gameInfo.lastMovePretty} ${gameInfo.lastMoveTime}`;
@@ -2634,7 +2659,7 @@ function initializeChessBoard() {
 
     // Top player clock
     const topPlayerClock = document.createElement('div');
-    topPlayerClock.classList.add('player-clock', 'top-player-clock');
+    topPlayerClock.classList.add('player-clock', 'top-player-clock', 'player-clock-display');
     topPlayerClock.id = 'topPlayerClock';
     topPlayerClock.innerText = '00:00';
 
@@ -2670,7 +2695,7 @@ function initializeChessBoard() {
 
     // Bottom player clock
     const bottomPlayerClock = document.createElement('div');
-    bottomPlayerClock.classList.add('player-clock', 'bottom-player-clock');
+    bottomPlayerClock.classList.add('player-clock', 'bottom-player-clock', 'player-clock-display');
     bottomPlayerClock.id = 'bottomPlayerClock';
     bottomPlayerClock.innerText = '00:00';
 
@@ -2704,10 +2729,19 @@ function initializeChessBoard() {
         ws.send('flip\n\r');
 
         // Send refresh command after a short delay to ensure the board is updated
-        setTimeout(() => {
-            ws.send('refresh\n\r');
-            console.log('Sent refresh command after flip');
-        }, 300);
+        // Use requestAnimationFrame with timestamp checking instead of setTimeout
+        const refreshTime = Date.now() + 300; // 300ms from now
+
+        const checkTimeAndRefresh = () => {
+            if (Date.now() >= refreshTime) {
+                ws.send('refresh\n\r');
+                console.log('Sent refresh command after flip');
+            } else {
+                requestAnimationFrame(checkTimeAndRefresh);
+            }
+        };
+
+        requestAnimationFrame(checkTimeAndRefresh);
 
         // Also update local board orientation
         myColor = myColor === 'white' ? 'black' : 'white';
@@ -2821,9 +2855,18 @@ function initializeChessBoard() {
     // Also trigger resize when the window is resized
     window.addEventListener('resize', () => {
         resizeObserver.disconnect();
-        setTimeout(() => {
-            resizeObserver.observe(document.querySelector('.chess-board-area'));
-        }, 100);
+        // Use requestAnimationFrame with timestamp checking instead of setTimeout
+        const reconnectTime = Date.now() + 100; // 100ms from now
+
+        const checkTimeAndReconnect = () => {
+            if (Date.now() >= reconnectTime) {
+                resizeObserver.observe(document.querySelector('.chess-board-area'));
+            } else {
+                requestAnimationFrame(checkTimeAndReconnect);
+            }
+        };
+
+        requestAnimationFrame(checkTimeAndReconnect);
     });
 
     // Set default player names and clocks

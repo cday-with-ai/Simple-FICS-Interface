@@ -12,7 +12,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link href="index.css" rel="stylesheet">
+    <!-- Load index.css with cache-busting query parameter -->
+    <link href="index.css?v=1" rel="stylesheet">
 </head>
 <body>
 <!-- Hamburger Menu -->
@@ -251,11 +252,7 @@
     </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
-<script>
-    // Add timestamp to prevent caching of index.js
-    const scriptElement = document.createElement('script');
-    scriptElement.src = 'index.js?v=' + new Date().getTime();
-    document.body.appendChild(scriptElement);
-</script>
+<!-- Load index.js with cache-busting query parameter -->
+<script src="index.js?v=1"></script>
 </body>
 </html>
