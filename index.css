@@ -2,12 +2,77 @@
  * Main CSS file for Simple FICS Interface
  */
 
-/* Font definitions */
-@font-face {
-    font-family: 'Digital';
-    src: url('/fonts/digitalFont.woff2') format('woff2');
-    font-weight: normal;
-    font-style: normal;
+/* View toggle radio buttons */
+.top-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+}
+
+.view-toggle-container {
+    display: flex;
+    align-items: center;
+}
+
+.view-toggle-container.left {
+    flex: 1;
+}
+
+.view-toggle-container.right {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.view-toggle-label {
+    font-weight: bold;
+    margin: 0 10px;
+    font-size: 20px;
+}
+
+.view-toggle {
+    display: flex;
+    border-radius: 20px;
+    padding: 3px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.view-toggle input[type="radio"] {
+    display: none;
+}
+
+.view-toggle label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0 3px;
+}
+
+.view-toggle label svg {
+    fill: #95a5a6;
+    transition: fill 0.3s ease;
+}
+
+.view-toggle input[type="radio"]:checked + label {
+    background-color: #3498db;
+}
+
+.view-toggle input[type="radio"]:checked + label svg {
+    fill: white;
+}
+
+.view-toggle label:hover {
+    background-color: #2980b9;
+}
+
+.view-toggle label:hover svg {
+    fill: #ecf0f1;
 }
 
 /* Basic page styling */
@@ -48,12 +113,12 @@ body {
 }
 
 .chess-board-area {
-    flex: 0 0 65%;
+    flex: 0 0 50%;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: center; /* Changed from flex-end to center */
     justify-content: flex-start;
     box-sizing: border-box;
     height: 100%;
@@ -117,7 +182,7 @@ body {
     cursor: col-resize;
     position: absolute;
     top: 50%;
-    left: 64%;
+    left: 49%;
     transform: translate(-50%, -50%);
     z-index: 10;
     display: flex;
@@ -127,39 +192,19 @@ body {
     box-shadow: 0 4px 6px rgba(0, 0, 0, .75);
 }
 
-/* Divider control buttons container */
-.divider-controls {
+/* Add drag indicator to horizontal divider */
+.horizontal-divider::before {
     position: absolute;
-    display: flex;
-    flex-direction: column; /* Stack buttons vertically */
-    background-color: transparent; /* Make container transparent */
-    z-index: 11;
-    left: 40%; /* Shift 4px to the right from center */
-    transform: translateX(-50%);
+    top: 43%;
+    left: 5%;
+    content: "⋮⋮";
+    font-size: 20px;
+    color: #666;
+    line-height: 1;
+    display: block;
 }
 
-/* Triangle buttons for collapsing divider */
-.triangle-button {
-    width: 12px;
-    height: 12px;
-    padding: 5px 5px;
-    background-color: #f0f0f0;
-    border: none; /* Remove borders */
-    cursor: pointer;
-    font-size: 10px; /* Smaller font size */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-}
-
-.triangle-button:hover {
-    background-color: #e0e0e0;
-}
-
-.triangle-button:active {
-    background-color: #d0d0d0;
-}
+/* Divider controls removed */
 
 .vertical-divider {
     height: 15px;
@@ -177,7 +222,24 @@ body {
     justify-content: center;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, .75);
-    transition: top 0.1s ease-out, opacity 0.2s ease;
+    transition: opacity 0.2s ease; /* Removed transition for top property */
+}
+
+/* Add class for when divider is being dragged */
+.vertical-divider.dragging {
+    transition: none; /* No transition during dragging */
+}
+
+/* Add drag indicator to vertical divider */
+.vertical-divider::before {
+    content: "⋮⋮";
+    font-size: 20px;
+    color: #666;
+    line-height: 1;
+    position: absolute; /* Position absolutely to ensure rotation works */
+    top: 45%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg); /* Center and rotate by 90 degrees */
 }
 
 
@@ -193,6 +255,10 @@ body {
 .horizontal-divider:hover, .vertical-divider:hover {
     background-color: #ddd;
     box-shadow: 0 5px 8px rgba(0, 0, 0, .85); /* Enhanced shadow on hover */
+}
+
+.horizontal-divider:hover::before, .vertical-divider:hover::before {
+    color: #333; /* Darker color on hover for better visibility */
 }
 
 /* Tab styles for both sections */
@@ -224,6 +290,10 @@ body {
 }
 
 /* Make text areas fill available space */
+:root {
+    --console-font-scale: 1; /* Default console font scale */
+}
+
 .ics-text-area, .tab-text-area {
     flex: 1;
     min-height: 100px;
@@ -232,7 +302,7 @@ body {
     background-color: blue;
     color: white;
     font-family: 'Courier New', Courier, Monospace;
-    font-size: medium;
+    font-size: calc(14px * var(--console-font-scale)); /* Responsive font size */
     font-weight: bold;
     border-radius: 10px; /* Match chessboard border radius */
     box-shadow: 0 4px 6px rgba(0, 0, 0, .75); /* Match chessboard shadow */
@@ -348,11 +418,7 @@ body {
     color: #CCCCCC; /* Light gray */
 }
 
-/* Chess moves */
-.chess-move {
-    color: #FFFF00; /* Yellow */
-    font-weight: bold;
-}
+/* Chess move styles moved to chess.css */
 
 .ics-input {
     vertical-align: top;
@@ -363,11 +429,12 @@ body {
     border: none; /* Remove default border */
     background-color: blue;
     color: white;
+    font-family: 'Courier New', Courier, Monospace; /* Match text area font */
     border-radius: 10px; /* Match chessboard border radius */
     box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Slightly smaller shadow than textarea */
     margin-top: 5px; /* Add some space between textarea and input */
     margin-bottom: 5px; /* Add bottom margin to prevent running off screen */
-    font-size: 16px; /* Larger font size for better visibility */
+    font-size: calc(14px * var(--console-font-scale)); /* Match text area font size */
 }
 
 .tab-input {
@@ -379,12 +446,13 @@ body {
     border: none; /* Remove default border */
     background-color: blue;
     color: white;
+    font-family: 'Courier New', Courier, Monospace; /* Match text area font */
     border-radius: 10px; /* Match chessboard border radius */
     box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Slightly smaller shadow than textarea */
     margin-top: 0px; /* Add some space between textarea and input */
     margin-left: 5px; /* Add left margin to prevent running off screen */
     margin-right: 5px; /* Add right margin to prevent running off screen */
-    font-size: 16px; /* Larger font size for better visibility */
+    font-size: calc(14px * var(--console-font-scale)); /* Match text area font size */
 }
 
 .tab-input-label {
@@ -410,7 +478,7 @@ body {
     border-radius: 5px 5px 0 0;
     position: relative;
     top: 2px;
-    font-family: ' Courier, Monospace;
+    font-family: 'Courier, Monospace';
     font-size: medium;
     font-weight: bold;
     background: #f1f1f1;
@@ -465,156 +533,9 @@ body {
     display: inline-block;
 }
 
-/* Chess board layout classes */
-.board-main-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    width: 100%;
-    min-width: 0;
-    overflow: hidden;
-}
+/* Chess board layout classes moved to chess.css */
 
-.board-container {
-    flex-shrink: 1;
-    width: auto;
-    display: flex;
-    flex-direction: row;
-    align-items: flex-start;
-    min-width: 0;
-    overflow: hidden;
-    margin-left: auto;
-}
-
-.board-only-container {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    flex-shrink: 0;
-    position: relative;
-}
-
-.player-info-container {
-    display: flex;
-    flex-direction: column;
-    width: auto;
-    justify-content: center;
-    height: 100%;
-    box-sizing: border-box; /* Include padding in width calculation */
-    margin-right: 5px; /* Add explicit right margin to prevent overlap */
-}
-
-/* Responsive margin based on font scale */
-.chess-board-area[data-font-scale] .player-info-container {
-    margin-left: calc(15px * var(--font-scale, 1));
-    margin-right: calc(15px * var(--font-scale, 1)); /* Responsive right margin */
-    width: auto; /* Let width be determined by content and margins */
-}
-
-/* Player info styles */
-.player-info {
-    display: flex;
-    flex-direction: column;
-    border: none;
-    border-radius: 4px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.player-name-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-}
-
-.player-name {
-    font-weight: bold;
-    font-size: calc(1.3em * var(--font-scale, 1));
-    color: #333;
-}
-
-.move-indicator {
-    width: calc(12px * var(--font-scale, 1));
-    height: calc(12px * var(--font-scale, 1));
-    border-radius: 50%;
-    border: 2px solid #333;
-    background-color: transparent;
-    display: inline-block;
-    vertical-align: middle;
-}
-
-.player-clock {
-    font-family: "Digital", "Orbitron", "Share Tech Mono", monospace;
-    font-size: calc(4em * var(--font-scale, 1));
-    padding-right: 10px;
-    padding-left: 10px;
-    letter-spacing: 0.05em;
-    text-shadow: 0 0 5px rgba(50, 205, 50, 0.7);
-}
-
-.top-player-clock {
-    margin-bottom: 10px;
-    margin-left: 10px;
-    border-radius: calc(10px * var(--font-scale, 1));
-    box-shadow: 0 calc(4px * var(--font-scale, 1)) calc(6px * var(--font-scale, 1)) rgba(0, 0, 0, .75);
-    background: #F0F0F0;
-
-}
-
-.bottom-player-clock {
-    margin-top: 10px;
-    margin-left: 10px;
-    border-radius: calc(10px * var(--font-scale, 1));
-    box-shadow: 0 calc(4px * var(--font-scale, 1)) calc(6px * var(--font-scale, 1)) rgba(0, 0, 0, .75);
-    background: #F0F0F0;
-}
-
-/* Board menu styles */
-.board-menu-button {
-    position: static;
-    top: auto;
-    right: auto;
-    margin-left: auto;
-    cursor: pointer;
-    z-index: 1000;
-    font-size: 24px;
-    background: none;
-    border: none;
-    color: #333;
-}
-
-/* Game tab styles */
-.board-and-toolbar-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.board-toolbar {
-    width: 400px;
-}
-
-.board-container {
-    flex-shrink: 0;
-}
-
-.player-info-box {
-    display: flex;
-    justify-content: space-between;
-    padding: 2px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.player-name-display {
-    font-weight: bold;
-}
-
-.player-clock-display {
-    font-family: 'Digital', monospace;
-    font-size: calc(3em * var(--font-scale, 1));
-    transition: color 0.3s ease;
-}
+/* Board menu and game tab styles moved to chess.css */
 
 /* Chat tab styles */
 .tab-content-flex {
@@ -691,224 +612,9 @@ body {
     vertical-align: middle;
 }
 
-/* Player divider box */
-.player-divider {
-    width: 97%;
-    margin: 5px 0;
-    background-color: white;
-    border: none;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, .75);
-    border-radius: 10px;
-    padding: 5px 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-}
+/* Player divider box styles moved to chess.css */
 
-/* Responsive player divider based on board size */
-.chess-board-area[data-max-size] .player-divider {
-    height: calc(150px * var(--font-scale, 1) * 1.5);
-    border-radius: calc(10px * var(--font-scale, 1));
-    box-shadow: 0 calc(4px * var(--font-scale, 1)) calc(6px * var(--font-scale, 1)) rgba(0, 0, 0, .75);
-    padding: calc(5px * var(--font-scale, 1)) calc(10px * var(--font-scale, 1));
-}
-
-.top-name-container {
-    position: absolute;
-    top: 5px;
-    left: 0;
-    width: 100%;
-    text-align: left;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.bottom-name-container {
-    position: absolute;
-    bottom: 5px;
-    left: 0;
-    width: 100%;
-    text-align: left;
-    box-sizing: border-box;
-}
-
-/* Responsive name containers based on board size */
-.chess-board-area[data-font-scale] .top-name-container,
-.chess-board-area[data-font-scale] .bottom-name-container {
-    padding: calc(2px * var(--font-scale, 1)) calc(10px * var(--font-scale, 1));
-}
-
-.chess-board-area[data-font-scale] .top-name-container {
-    top: calc(5px * var(--font-scale, 1));
-}
-
-.chess-board-area[data-font-scale] .bottom-name-container {
-    bottom: calc(5px * var(--font-scale, 1));
-}
-
-/* Chess board styles */
-.chess-board {
-    width: 400px;
-    height: 400px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, .75);
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    margin: 0 auto;
-    position: relative;
-    resize: both;
-    overflow: hidden;
-    min-width: 50px;
-    min-height: 50px;
-    max-width: 1500px;
-    max-height: 1500px;
-    aspect-ratio: 1 / 1; /* Force square aspect ratio */
-}
-
-.chess-board-container {
-    margin: 20px 0 0 auto;
-    position: relative;
-}
-
-.chess-square {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 36px;
-    cursor: pointer;
-    position: relative;
-    width: 100%;
-    height: 100%;
-}
-
-.rank-label-common {
-    position: absolute;
-    font-size: 4px;
-    font-weight: bold;
-    font-family: "Noto Sans", Sans-Serif;
-    opacity: 1.0;
-    pointer-events: none;
-    z-index: 5;
-    padding: 0px 1px;
-    border-radius: 2px;
-}
-
-.file-label-common {
-    position: absolute;
-    font-size: 4px;
-    font-weight: bold;
-    font-family: "Noto Sans", Sans-Serif;
-    opacity: 1.0;
-    pointer-events: none;
-    z-index: 5;
-    padding: 0px 1px;
-    border-radius: 2px;
-    bottom: 1px;
-    left: 1px;
-}
-
-.chess-piece {
-    position: absolute;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-    cursor: grab;
-}
-
-.animated-piece {
-    position: absolute;
-    z-index: 1000;
-    pointer-events: none;
-    transition: left 0.225s ease-out, top 0.225s ease-out;
-}
-
-.chess-piece.dragging {
-    position: fixed;
-    width: 50px;
-    height: 50px;
-    pointer-events: none;
-    z-index: 1;
-
-}
-
-.chess-piece img {
-    width: 95%;
-    height: 95%;
-    object-fit: contain;
-}
-
-.light-square {
-    background-color: #e8e0c8; /* Default lighter beige color - will be overridden by preferences */
-}
-
-.dark-square {
-    background-color: #AB8B69; /* Default darker brown color - will be overridden by preferences */
-}
-
-.rank-label {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    left: auto !important; /* Force right alignment */
-    font-size: 6px; /* Smaller font size */
-    font-weight: bold;
-    font-family: "Noto Sans", Sans-Serif;
-    opacity: 1.0;
-    pointer-events: none;
-    z-index: 5;
-    padding: 0px 1px;
-    border-radius: 2px;
-}
-
-.file-label {
-    position: absolute;
-    bottom: 1px;
-    left: 1px;
-    right: auto;
-    font-size: 6px; /* Smaller font size */
-    font-weight: bold;
-    font-family: "Noto Sans", Sans-Serif;
-    opacity: 1.0;
-    pointer-events: none;
-    z-index: 5;
-    padding: 0px 1px;
-    border-radius: 2px;
-}
-
-.resize-handle {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 8px;
-    height: 8px;
-    cursor: nwse-resize;
-    z-index: 10;
-    background-color: transparent;
-}
-
-.selected {
-    background-color: rgba(173, 216, 230, 0.7) !important; /* Light blue highlight */
-}
-
-.valid-move {
-    background-color: rgba(144, 238, 144, 0.5) !important; /* Light green highlight */
-}
-
-.game-controls {
-    margin-top: 10px;
-}
-
-.game-controls button {
-    margin-right: 10px;
-    padding: 5px 10px;
-}
+/* Chess board styles moved to chess.css */
 
 .game-status {
     font-weight: bold;
@@ -916,34 +622,40 @@ body {
     color: blue;
 }
 
-/* Last move display */
-.last-move-display {
-    font-size: 1.0em;
-    color: #333;
-    font-weight: bold;
-    margin-top: 5px;
-    text-align: right;
-    width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-    padding-right: 5px;
-}
+/* Last move display styles moved to chess.css */
 
 /* Hamburger Menu Styles */
 .hamburger-menu {
-    position: absolute;
-    top: 5px;
-    left: 20px;
     cursor: pointer;
     z-index: 1000;
-    font-size: 24px;
+    margin-right: 15px;
+    color: #ecf0f1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #3498db; /* Match the selected mode button color */
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Match the mode buttons shadow */
+}
+
+.hamburger-menu:hover {
+    background-color: #2980b9; /* Match the hover color of mode buttons */
+}
+
+.hamburger-menu svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
 }
 
 /* Preferences Panel Styles */
 .preferences-panel {
     position: absolute;
-    top: 10px;
-    left: 30px;
+    top: 30px;
+    left: 75px;
     background-color: white;
     border: 1px solid #ccc;
     border-radius: 5px;

@@ -12,12 +12,78 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <!-- Load index.css with cache-busting query parameter -->
+    <!-- Load CSS files with cache-busting query parameters -->
     <link href="index.css?v=1" rel="stylesheet">
+    <link href="chess.css?v=1" rel="stylesheet">
 </head>
 <body>
 <!-- Hamburger Menu -->
-<div class="hamburger-menu" id="hamburgerMenu">☰</div>
+<div class="top-controls">
+    <div class="view-toggle-container left">
+        <div class="hamburger-menu" id="hamburgerMenu">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+                <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
+            </svg>
+        </div>
+        <span class="view-toggle-label" style="font-size: 20px">Simple FICS Interface</span>
+    </div>
+    <div class="view-toggle-container right">
+        <span class="view-toggle-label">Mode:</span>
+        <div class="view-toggle">
+            <input type="radio" id="view-both" name="view-mode" value="both" checked>
+            <label for="view-both" title="Chess and Chat" >
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <!-- Left side: Chess board (smaller) -->
+                    <rect x="2" y="4" width="10" height="16" fill="#34495e" stroke="#ecf0f1" stroke-width="0.5"/>
+                    <!-- Board squares (simplified) -->
+                    <rect x="2" y="4" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="7" y="4" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="4.5" y="8" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="9.5" y="8" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="2" y="12" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="7" y="12" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="4.5" y="16" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="9.5" y="16" width="2.5" height="4" fill="#ecf0f1"/>
+
+                    <!-- Divider -->
+                    <rect x="13" y="4" width="1" height="16" fill="#ecf0f1"/>
+
+                    <!-- Right side: Chat -->
+                    <rect x="15" y="4" width="7" height="16" rx="1" ry="1" fill="#34495e" stroke="#ecf0f1" stroke-width="0.5"/>
+                    <!-- Chat lines -->
+                    <line x1="16" y1="8" x2="21" y2="8" stroke="#ecf0f1" stroke-width="0.7"/>
+                    <line x1="16" y1="11" x2="21" y2="11" stroke="#ecf0f1" stroke-width="0.7"/>
+                    <line x1="16" y1="14" x2="21" y2="14" stroke="#ecf0f1" stroke-width="0.7"/>
+                    <line x1="16" y1="17" x2="19" y2="17" stroke="#ecf0f1" stroke-width="0.7"/>
+                </svg>
+            </label>
+
+            <input type="radio" id="view-chess" name="view-mode" value="chess">
+            <label for="view-chess" title="Chess Only">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <!-- Chess board icon -->
+                    <rect x="2" y="2" width="20" height="20" fill="#34495e" stroke="#ecf0f1" stroke-width="0.5"/>
+                    <!-- Board squares -->
+                    <rect x="2" y="2" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="12" y="2" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="7" y="7" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="17" y="7" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="2" y="12" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="12" y="12" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="7" y="17" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="17" y="17" width="5" height="5" fill="#ecf0f1"/>
+                </svg>
+            </label>
+
+            <input type="radio" id="view-chat" name="view-mode" value="chat">
+            <label for="view-chat" title="Chat Only">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4A2,2 0 0,0 20,2M6,9H18V11H6M14,14H6V12H14M18,8H6V6H18"/>
+                </svg>
+            </label>
+        </div>
+    </div>
+</div>
 
 <h2 id="title"></h2>
 <div class="main-container">
@@ -28,13 +94,8 @@
             <!-- Board will be created here dynamically -->
         </div>
 
-        <!-- Horizontal resizable divider with collapse buttons -->
-        <div class="divider horizontal-divider" id="topDivider">
-            <div class="divider-controls">
-                <button id="collapseLeft" class="triangle-button" title="Collapse to left">◀</button>
-                <button id="collapseRight" class="triangle-button" title="Collapse to right">▶</button>
-            </div>
-        </div>
+        <!-- Horizontal resizable divider -->
+        <div class="divider horizontal-divider" id="topDivider"></div>
 
         <!-- Right side content (main console and chat tabs) -->
         <div class="right-content">
@@ -50,13 +111,8 @@
                 </div>
             </div>
 
-            <!-- Vertical resizable divider with collapse buttons -->
-            <div class="divider vertical-divider" id="rightDivider" style="display: none;margin-left: 3px">
-                <div class="divider-controls vertical">
-                    <button id="collapseUp" class="triangle-button" title="Collapse upward">▲</button>
-                    <button id="collapseDown" class="triangle-button" title="Collapse downward">▼</button>
-                </div>
-            </div>
+            <!-- Vertical resizable divider -->
+            <div class="divider vertical-divider" id="rightDivider" style="display: none;margin-left: 3px"></div>
 
             <!-- Chat tabs (bottom right) -->
             <div class="chat-tabs-container">
@@ -158,17 +214,17 @@
                     </div>
                     <div class="preview-row">
                         <div class="preview-cell"><img id="preview-bP" src="" alt="bP"></div>
-                        <div class="preview-cell"><img id="preview-bP" src="" alt="bP"></div>
-                        <div class="preview-cell"><img id="preview-bP" src="" alt="bP"></div>
-                        <div class="preview-cell"><img id="preview-bP" src="" alt="bP"></div>
-                        <div class="preview-cell"><img id="preview-bP" src="" alt="bP"></div>
+                        <div class="preview-cell"><img id="preview-bP2" src="" alt="bP"></div>
+                        <div class="preview-cell"><img id="preview-bP3" src="" alt="bP"></div>
+                        <div class="preview-cell"><img id="preview-bP4" src="" alt="bP"></div>
+                        <div class="preview-cell"><img id="preview-bP5" src="" alt="bP"></div>
                     </div>
                     <div class="preview-row">
                         <div class="preview-cell"><img id="preview-wP" src="" alt="wP"></div>
-                        <div class="preview-cell"><img id="preview-wP" src="" alt="wP"></div>
-                        <div class="preview-cell"><img id="preview-wP" src="" alt="wP"></div>
-                        <div class="preview-cell"><img id="preview-wP" src="" alt="wP"></div>
-                        <div class="preview-cell"><img id="preview-wP" src="" alt="wP"></div>
+                        <div class="preview-cell"><img id="preview-wP2" src="" alt="wP"></div>
+                        <div class="preview-cell"><img id="preview-wP3" src="" alt="wP"></div>
+                        <div class="preview-cell"><img id="preview-wP4" src="" alt="wP"></div>
+                        <div class="preview-cell"><img id="preview-wP5" src="" alt="wP"></div>
                     </div>
                     <div class="preview-row">
                         <div class="preview-cell"><img id="preview-wR" src="" alt="wR"></div>
@@ -252,7 +308,7 @@
     </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
-<!-- Load index.js with cache-busting query parameter -->
-<script src="index.js?v=1"></script>
+<script src="chess.js?v=1" type="module"></script>
+<script src="index.js?v=1" type="module"></script>
 </body>
 </html>
