@@ -81,8 +81,6 @@
     margin-left: 10px;
 }
 
-/* Move indicator removed */
-
 /* Clock styles */
 .player-clock, .player-clock-display {
     font-family: "Digital", "Orbitron", "Share Tech Mono", monospace !important;
@@ -175,7 +173,7 @@
     /* Width and height will be determined by the original piece size */
     pointer-events: none;
     z-index: 100;
-    opacity: 0.8;
+    opacity: 1.0;
     transform: translate(-50%, -50%);
     filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
 }
@@ -437,7 +435,7 @@
 .move-san {
     cursor: pointer;
     flex-grow: 1;
-    font-size: 1.25em;
+    font-size: 1.15em;
     font-family: 'Noto Sans', sans-serif; /* Ensure good Unicode support */
 }
 

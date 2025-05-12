@@ -11,6 +11,7 @@ let validMoves = [];
 let myColor = 'white'; // 'white' or 'black', perspective of the board
 let boardInitialized = false; // Tracks if the main board display structure is up
 let previousPosition = null; // For animation
+let userManuallyFlipped = false; // Track if user has manually flipped the board
 
 // Drag and Drop State
 let draggedPiece = null;
@@ -32,11 +33,12 @@ let isClockRunning = false;
 let currentGameNumber = 0; // Current game number for matching with moves list
 let requestedMovesForGames = new Set(); // Track games for which we've requested moves
 
-// Audio
-const moveAudio = new Audio('sounds/Move.ogg');
-const captureAudio = new Audio('sounds/Capture.ogg');
-const gameStartAudio = new Audio('sounds/GameStart.wav');
-const gameEndAudio = new Audio('sounds/GameEnd.wav');
+const sounds = {
+    move: new Audio('sounds/Move.ogg'),
+    capture: new Audio('sounds/Capture.ogg'),
+    gameStart: new Audio('sounds/GameStart.wav'),
+    gameEnd: new Audio('sounds/GameEnd.wav')
+};
 
 // GameRelation Enum
 const GameRelation = {
@@ -81,8 +83,8 @@ export function processStyle12Message(msg) {
     if (gameInfo && gameInfo.relation === GameRelation.OBSERVING_PLAYED && gameInfo.gameNumber > 0) {
         // Check if we already have the moves list for this game
         const alreadyHaveMovesList = gameHeaderInfo &&
-                                    gameHeaderInfo.gameNumber &&
-                                    parseInt(gameHeaderInfo.gameNumber) === gameInfo.gameNumber;
+            gameHeaderInfo.gameNumber &&
+            parseInt(gameHeaderInfo.gameNumber) === gameInfo.gameNumber;
 
         // Check if we've already requested moves for this game
         const alreadyRequestedMoves = requestedMovesForGames.has(gameInfo.gameNumber);
@@ -163,6 +165,19 @@ export function createChessBoardSquares(boardElement) {
     createBoardSquaresInternal(boardElement);
 }
 
+function playSound(sound) {
+    const playableSound = sounds[sound];
+
+    if (!playableSound.paused) {
+        // The previous sound is playing. We could reset the current sound with
+        // playableSound.currentTime = 0
+        // but we probably don't want to cut off that sound, so lets make a copy of the
+        // sound and dereference the previous one
+        sounds[sound] = new Audio(playableSound.src);
+    }
+    sounds[sound].play();
+}
+
 
 // --- Internal Functions (not directly exported, but used by exported ones) ---
 function createBoardSquaresInternal(boardElement) {
@@ -179,14 +194,26 @@ function createBoardSquaresInternal(boardElement) {
     boardElement.style.height = '100%'; // Handled by parent sizer
     boardElement.style.aspectRatio = '1 / 1';
 
-    for (let rank = 8; rank >= 1; rank--) {
+    // Determine the rank order based on myColor
+    const startRank = myColor === 'white' ? 8 : 1;
+    const endRank = myColor === 'white' ? 1 : 8;
+    const rankStep = myColor === 'white' ? -1 : 1;
+
+    // Debug log to help diagnose orientation issues
+    if (prefs && prefs.showStyle12Events) {
+        console.log(`Creating board with myColor=${myColor}, startRank=${startRank}, endRank=${endRank}, rankStep=${rankStep}`);
+    }
+
+    for (let rank = startRank; myColor === 'white' ? rank >= endRank : rank <= endRank; rank += rankStep) {
         for (let file = 1; file <= 8; file++) {
             const squareDiv = document.createElement('div');
             squareDiv.classList.add('chess-square');
-            squareDiv.classList.add((rank + file) % 2 === 0 ? (prefs ? prefs.lightSquareColor : '#e8e0c8') : (prefs ? prefs.darkSquareColor : '#AB8B69'));
+            // In standard chess notation, a1 should be a dark square
+            // This means (rank + file) % 2 should be 1 for dark squares, not 0
+            squareDiv.classList.add((rank + file) % 2 === 1 ? (prefs ? prefs.lightSquareColor : '#e8e0c8') : (prefs ? prefs.darkSquareColor : '#AB8B69'));
             // Apply actual color via class or direct style if prefs are available
-            squareDiv.style.backgroundColor = (rank + file) % 2 === 0 ? (prefs ? prefs.lightSquareColor : '#e8e0c8') : (prefs ? prefs.darkSquareColor : '#AB8B69');
-            if ((rank + file) % 2 === 0) {
+            squareDiv.style.backgroundColor = (rank + file) % 2 === 1 ? (prefs ? prefs.lightSquareColor : '#e8e0c8') : (prefs ? prefs.darkSquareColor : '#AB8B69');
+            if ((rank + file) % 2 === 1) {
                 squareDiv.classList.add('light-square');
             } else {
                 squareDiv.classList.add('dark-square');
@@ -243,7 +270,8 @@ function createBoardSquaresInternal(boardElement) {
                 rankLabel.textContent = rank;
                 squareDiv.appendChild(rankLabel);
             }
-            if (rank === 1) {
+            // Add file labels to the bottom row (rank 1 when white, rank 8 when black)
+            if ((myColor === 'white' && rank === 1) || (myColor === 'black' && rank === 8)) {
                 const fileLabel = document.createElement('div');
                 fileLabel.classList.add('file-label');
                 fileLabel.textContent = String.fromCharCode(96 + file);
@@ -277,7 +305,11 @@ function createBoardSquaresInternal(boardElement) {
             fileLabels.forEach(label => {
                 label.style.fontSize = labelFontSize;
                 const sqElement = label.parentElement;
-                label.style.display = sqElement && parseInt(sqElement.dataset.rank) === 1 ? 'block' : 'none';
+                // Show file labels on the bottom row regardless of orientation
+                label.style.display = sqElement && (
+                    (myColor === 'white' && parseInt(sqElement.dataset.rank) === 1) ||
+                    (myColor === 'black' && parseInt(sqElement.dataset.rank) === 8)
+                ) ? 'block' : 'none';
                 // Ensure bottom-left alignment for file labels
                 label.style.bottom = '1px';
                 label.style.left = '1px';
@@ -331,7 +363,17 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
     const pieceFontSize = Math.max(Math.floor(squareSize * 0.8), 24) + 'px';
     const labelFontSize = Math.max(Math.floor(squareSize * 0.15), 6) + 'px';
 
-    for (let rank = 8; rank >= 1; rank--) {
+    // Determine the rank order based on myColor
+    const startRank = myColor === 'white' ? 8 : 1;
+    const endRank = myColor === 'white' ? 1 : 8;
+    const rankStep = myColor === 'white' ? -1 : 1;
+
+    // Debug log to help diagnose orientation issues
+    if (prefs && prefs.showStyle12Events) {
+        console.log(`Updating board graphics with myColor=${myColor}, startRank=${startRank}, endRank=${endRank}, rankStep=${rankStep}`);
+    }
+
+    for (let rank = startRank; myColor === 'white' ? rank >= endRank : rank <= endRank; rank += rankStep) {
         for (let file = 1; file <= 8; file++) {
             const squareAlg = `${String.fromCharCode(96 + file)}${rank}`;
             const squareDiv = document.getElementById(`square-${file}-${rank}`);
@@ -357,7 +399,8 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
             }
             if (fileLabel) {
                 fileLabel.style.fontSize = labelFontSize;
-                fileLabel.style.display = rank === 1 ? 'block' : 'none';
+                // Show file labels on the bottom row regardless of orientation
+                fileLabel.style.display = ((myColor === 'white' && rank === 1) || (myColor === 'black' && rank === 8)) ? 'block' : 'none';
                 fileLabel.style.color = squareDiv.classList.contains('light-square') ? prefs.darkSquareColor : prefs.lightSquareColor;
             }
 
@@ -390,7 +433,7 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
                 // 3. When it's my turn in a game I'm playing
                 if (gameInfo === null ||
                     (gameInfo && gameInfo.relation !== GameRelation.PLAYING_OPPONENT_MOVE &&
-                     gameInfo.relation !== GameRelation.PLAYING_MY_MOVE)) {
+                        gameInfo.relation !== GameRelation.PLAYING_MY_MOVE)) {
                     // Allow any piece to be dragged when analyzing or observing
                     shouldBeDraggable = true;
                 } else if (pieceData.color === playerBoardColor && chess.turn() === playerBoardColor) {
@@ -408,17 +451,28 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
                         updateBoardHighlightsInternal();
 
                         // Create a custom drag image that matches the original piece size
-                        const dragImage = pieceElement.cloneNode(true);
+                        const dragImage = document.createElement('div');
                         const squareSize = pieceElement.offsetWidth;
+
+                        // Copy the piece content
+                        dragImage.innerHTML = pieceElement.innerHTML;
+
+                        // Set styles for the drag image
                         dragImage.style.width = `${squareSize}px`;
                         dragImage.style.height = `${squareSize}px`;
                         dragImage.style.fontSize = pieceElement.style.fontSize;
-                        dragImage.style.display = 'flex';
+                        dragImage.style.display = 'none';
                         dragImage.style.justifyContent = 'center';
                         dragImage.style.alignItems = 'center';
-                        document.body.appendChild(dragImage);
-                        dragImage.style.position = 'absolute';
-                        dragImage.style.top = '-1000px';
+                        dragImage.style.position = 'none';
+                        dragImage.style.top = '-9999px';
+                        dragImage.style.left = '-9999px';
+                        dragImage.style.zIndex = '-2';
+                        dragImage.style.pointerEvents = 'none';
+                        dragImage.style.opacity = '1';
+
+                        // Add to document but keep it invisible
+                       document.body.appendChild(dragImage);
 
                         // Set the drag image, centered on the cursor
                         const centerOffset = squareSize / 2;
@@ -434,12 +488,6 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
                             // Make the original piece semi-transparent instead of hiding it completely
                             pieceElement.classList.remove('piece-visible', 'piece-hidden');
                             pieceElement.classList.add('piece-semi-transparent');
-                            // Remove the temporary drag image after a short delay
-                            setTimeout(() => {
-                                if (document.body.contains(dragImage)) {
-                                    document.body.removeChild(dragImage);
-                                }
-                            }, 100);
                         });
                     });
                     pieceElement.addEventListener('dragend', () => {
@@ -448,8 +496,7 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
                         pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
                         pieceElement.classList.add('piece-visible');
 
-                        // Use setTimeout to ensure this runs after the drop event
-                        setTimeout(() => {
+
                             // If the piece is still being dragged (not dropped on a valid square)
                             if (draggedPiece) {
                                 draggedPiece = null;
@@ -464,7 +511,6 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
                                     pieceElement.classList.add('piece-visible');
                                 }
                             }
-                        }, 50); // Small delay to ensure drop event processes first
                     });
                 } else {
                     pieceElement.setAttribute('draggable', 'false');
@@ -635,17 +681,55 @@ function parseStyle12InfoInternal(style12Message) {
                 currentTurn = gameInfo.colorToMove; // This is critical
                 currentGameNumber = gameInfo.gameNumber; // Store current game number
 
-                // Determine myColor based on relation or flipBoard
-                // This logic might need refinement based on how FICS sets relation for player
-                if (gameInfo.relation === GameRelation.PLAYING_MY_MOVE || gameInfo.relation === GameRelation.PLAYING_OPPONENT_MOVE) {
-                    myColor = (gameInfo.colorToMove === 'w' && gameInfo.relation === GameRelation.PLAYING_MY_MOVE) ||
-                    (gameInfo.colorToMove === 'b' && gameInfo.relation === GameRelation.PLAYING_OPPONENT_MOVE)
-                        ? 'white' : 'black';
+                // Store the previous color to detect changes
+                const previousColor = myColor;
+
+                // If the user has manually flipped the board, respect that choice
+                if (userManuallyFlipped) {
+                    if (prefs && prefs.showStyle12Events) {
+                        console.log(`Respecting user's manual flip. Keeping orientation: ${myColor}`);
+                    }
+                } else {
+                    // Determine myColor based on relation
+                    if (gameInfo.relation === GameRelation.PLAYING_MY_MOVE || gameInfo.relation === GameRelation.PLAYING_OPPONENT_MOVE) {
+                        // If I'm playing, determine my color based on the relation
+                        if (prefs && prefs.showStyle12Events) {
+                            console.log(`Playing game: relation=${gameInfo.relation}, colorToMove=${gameInfo.colorToMove}`);
+                        }
+
+                        // If I'm playing white, set myColor to 'white'
+                        // If I'm playing black, set myColor to 'black'
+                        if (gameInfo.relation === GameRelation.PLAYING_MY_MOVE) {
+                            // It's my move, so my color is the color to move
+                            myColor = gameInfo.colorToMove === 'w' ? 'white' : 'black';
+                        } else { // PLAYING_OPPONENT_MOVE
+                            // It's opponent's move, so my color is the opposite of color to move
+                            myColor = gameInfo.colorToMove === 'w' ? 'black' : 'white';
+                        }
+
+                        if (prefs && prefs.showStyle12Events) {
+                            console.log(`Set myColor to ${myColor} based on playing relation`);
+                        }
+                    } else {
+                        // For observing or examining, use flipBoard
+                        if (gameInfo.flipBoard) { // FICS says black is at bottom
+                            myColor = 'black';
+                        } else { // FICS says white is at bottom
+                            myColor = 'white';
+                        }
+
+                        if (prefs && prefs.showStyle12Events) {
+                            console.log(`Set myColor to ${myColor} based on flipBoard=${gameInfo.flipBoard}`);
+                        }
+                    }
                 }
-                if (gameInfo.flipBoard) { // FICS says black is at bottom
-                    myColor = 'black';
-                } else { // FICS says white is at bottom
-                    myColor = 'white';
+
+                // If the color has changed, recreate the board with the new orientation
+                if (previousColor !== myColor) {
+                    const boardElement = document.getElementById('chessBoard');
+                    if (boardElement) {
+                        createBoardSquaresInternal(boardElement);
+                    }
                 }
 
 
@@ -716,9 +800,9 @@ function updateBoardFromFICSInternal(style12Message, gameInfo) {
                     chess.load(fen); // Load new position first for diff
                     detectAndAnimateMoveInternal(previousPosition, chess.fen(), gameInfo, () => {
                         if (gameInfo && gameInfo.lastMovePretty && gameInfo.lastMovePretty.includes('x')) {
-                            captureAudio.play();
+                            playSound('capture');
                         } else if (gameInfo && gameInfo.lastMovePretty) { // any move
-                            moveAudio.play();
+                            playSound('move');
                         }
                         updateBoardGraphicsInternal(gameInfo.lastMove, gameInfo);
                     });
@@ -767,7 +851,7 @@ function handleSquareClickInternal(file, rank) {
             // Animation is complex here because chess.js state is already updated.
             // We'd ideally animate then update, or use the FICS echo.
             // For now, direct update after sending.
-            if (moveResult.captured) captureAudio.play(); else moveAudio.play();
+            if (moveResult.captured) playSound('capture'); else playSound('move');
 
             // Hide the piece at the original square
             const fromSquareDiv = document.getElementById(`square-${selectedSquare.charCodeAt(0) - 96}-${selectedSquare.charAt(1)}`);
@@ -827,7 +911,7 @@ function handleDropInternal(targetSquareAlg) {
     if (moveResult && ws) {
         ws.send(`${moveStringPart}\n\r`);
 
-        if (moveResult.captured) captureAudio.play(); else moveAudio.play();
+        if (moveResult.captured) playSound('capture'); else playSound('move');
 
         // We'll make the original piece fully transparent but not rely solely on this
         if (draggedPieceElement) {
@@ -931,17 +1015,18 @@ function animatePieceMoveInternal(fromSquare, toSquare, callback) {
     board.appendChild(animatedPiece); // Append to board for correct relative positioning
     animatedPiece.style.position = 'absolute'; // Crucial for animation
 
+    // Calculate positions based on board orientation
     const startX = (fromSquare.file - 1) * squareSize;
-    const startY = (8 - fromSquare.rank) * squareSize;
+    const startY = myColor === 'white' ? (8 - fromSquare.rank) * squareSize : (fromSquare.rank - 1) * squareSize;
     const endX = (toSquare.file - 1) * squareSize;
-    const endY = (8 - toSquare.rank) * squareSize;
+    const endY = myColor === 'white' ? (8 - toSquare.rank) * squareSize : (toSquare.rank - 1) * squareSize;
 
     animatedPiece.style.left = startX + 'px';
     animatedPiece.style.top = startY + 'px';
 
     requestAnimationFrame(() => {
         animatedPiece.getBoundingClientRect(); // Force reflow
-        animatedPiece.style.transition = 'left 0.225s ease-out, top 0.225s ease-out';
+        animatedPiece.style.transition = 'left 0.1s ease-out, top 0.1s ease-out';
         animatedPiece.style.left = endX + 'px';
         animatedPiece.style.top = endY + 'px';
 
@@ -959,7 +1044,12 @@ function updateBoardHighlightsInternal() {
     const board = document.getElementById('chessBoard');
     if (!board) return;
 
-    for (let rank = 8; rank >= 1; rank--) {
+    // Determine the rank order based on myColor
+    const startRank = myColor === 'white' ? 8 : 1;
+    const endRank = myColor === 'white' ? 1 : 8;
+    const rankStep = myColor === 'white' ? -1 : 1;
+
+    for (let rank = startRank; myColor === 'white' ? rank >= endRank : rank <= endRank; rank += rankStep) {
         for (let file = 1; file <= 8; file++) {
             const squareAlg = `${String.fromCharCode(96 + file)}${rank}`;
             const squareDiv = document.getElementById(`square-${file}-${rank}`);
@@ -1882,17 +1972,22 @@ function setupMainChessBoardDisplay() {
     flipBtn.title = 'Flip Board';
     flipBtn.innerHTML = '<i class="material-icons">swap_vert</i>';
     flipBtn.onclick = () => {
-        if (ws) ws.send('flip\n\r');
-        const refreshTime = Date.now() + 300;
-        const checkTimeAndRefresh = () => {
-            if (Date.now() >= refreshTime) {
-                if (ws) ws.send('refresh\n\r');
-            } else {
-                requestAnimationFrame(checkTimeAndRefresh);
-            }
-        };
-        requestAnimationFrame(checkTimeAndRefresh);
+        // Toggle the board orientation
         myColor = myColor === 'white' ? 'black' : 'white';
+
+        // Set the flag to indicate user manually flipped the board
+        userManuallyFlipped = true;
+
+        if (prefs && prefs.showStyle12Events) {
+            console.log(`User manually flipped board. New orientation: ${myColor}`);
+        }
+
+        // Recreate the board with the new orientation
+        const boardElement = document.getElementById('chessBoard');
+        if (boardElement) {
+            createBoardSquaresInternal(boardElement);
+        }
+
         updateBoardGraphicsInternal(null, null);
         updatePlayerInfoUIInternal(null);
         boardMenu.classList.remove('show');

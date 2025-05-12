@@ -1,3 +1,4 @@
+- Fix artifact when dragging a piece.
 - Add a layout when width is an issue. Put clocks on top and bottom.
 - Fix game end.
 - Fix bug where tells from channel tabs are not sent.
