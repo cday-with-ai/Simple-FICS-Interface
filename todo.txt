@@ -1,0 +1,6 @@
+- Add a layout when width is an issue. Put clocks on top and bottom.
+- Make close and player info area the same color.
+- Fix game end.
+- Fix bug where tells from channel tabs are not sent.
+- Start working on drag and drop functionality.
+- Possibly rework clocks to not be distracting.

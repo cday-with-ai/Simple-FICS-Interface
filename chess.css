@@ -78,28 +78,37 @@
 .player-name, .player-name-display {
     font-weight: bold;
     font-size: .9em; /* Fixed size, not based on board size */
-    color: #333;
     margin-left: 10px;
 }
 
 /* Move indicator removed */
 
+/* Clock styles */
 .player-clock, .player-clock-display {
     font-family: "Digital", "Orbitron", "Share Tech Mono", monospace !important;
-    font-size: 3em; /* Fixed size, not based on board size */
-    padding-right: 10px;
-    padding-left: 10px;
+    font-size: 2.25em; /* Fixed size, not based on board size */
+    padding-left: 8px;
+    margin-left: 10px;
     letter-spacing: 0.05em;
-    text-shadow: 0 0 5px rgba(50, 205, 50, 0.7);
+    width: 67%;
     transition: color 0.3s ease;
-    max-width: 40%;
+}
+
+/* Active clock (player to move) */
+.clock-active {
+    background-color: white;
+    color: black; /* Bright green */
+}
+
+/* Inactive clock (waiting player) */
+.clock-inactive {
+    text-shadow: none;
+    color: darkgray;
 }
 
 .top-player-clock, .bottom-player-clock {
-    margin-left: 10px;
     border-radius: 10px; /* Fixed size, not based on board size */
     box-shadow: 0 4px 6px rgba(0, 0, 0, .75); /* Fixed size, not based on board size */
-    background: #F0F0F0;
 }
 
 .top-player-clock {
@@ -123,9 +132,8 @@
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    margin: 0 auto;
+    margin: 5px;
     position: relative;
-    resize: both;
     overflow: hidden;
     min-width: 50px;
     min-height: 50px;
@@ -164,10 +172,28 @@
 
 .chess-piece.dragging {
     position: fixed;
-    width: 50px;
-    height: 50px;
+    /* Width and height will be determined by the original piece size */
     pointer-events: none;
-    z-index: 1;
+    z-index: 100;
+    opacity: 0.8;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+}
+
+/* Piece opacity classes */
+.piece-visible {
+    opacity: 1 !important;
+    transition: opacity 0.1s ease;
+}
+
+.piece-semi-transparent {
+    opacity: 0.3 !important;
+    transition: opacity 0.1s ease;
+}
+
+.piece-hidden {
+    opacity: 0 !important;
+    transition: opacity 0.1s ease;
 }
 
 .chess-piece img {
@@ -202,8 +228,8 @@
 .file-label {
     position: absolute;
     bottom: 1px;
-    left: 1px;
-    right: auto;
+    left: 1px !important; /* Force left alignment for all file labels */
+    right: auto !important; /* Ensure right is not set */
     font-size: 6px; /* Smaller font size */
     font-weight: bold;
     font-family: "Noto Sans", Sans-Serif;
@@ -214,16 +240,7 @@
     border-radius: 2px;
 }
 
-.resize-handle {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 8px;
-    height: 8px;
-    cursor: nwse-resize;
-    z-index: 10;
-    background-color: transparent;
-}
+/* Resize handle removed */
 
 .selected {
     background-color: rgba(173, 216, 230, 0.7) !important; /* Light blue highlight */
@@ -231,6 +248,11 @@
 
 .valid-move {
     background-color: rgba(144, 238, 144, 0.5) !important; /* Light green highlight */
+}
+
+.valid-move-hover {
+    background-color: rgba(144, 238, 144, 0.8) !important; /* Brighter green highlight for hover */
+    box-shadow: inset 0 0 10px rgba(0, 128, 0, 0.5) !important; /* Inner glow effect */
 }
 
 .game-controls {
@@ -271,14 +293,11 @@
 
 /* Player divider box */
 .player-divider {
-    width: 90%;
+    width: 150px;
     height: 130px; /* Increased height to accommodate navigation buttons */
-    margin: 5px 0;
-    background-color: white;
     border: none;
     box-shadow: 0 4px 6px rgba(0, 0, 0, .75);
     border-radius: 10px;
-    padding: 5px 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -316,10 +335,7 @@
 /* Responsive margin based on font scale */
 .chess-board-area[data-font-scale] .player-info-container {
     width: auto;
-    min-width: 300px;
 }
-
-
 
 /* Chess move */
 .chess-move {
@@ -329,13 +345,11 @@
 
 /* Moves list styles */
 .moves-list-container {
-    width: 90%;
+    width: 150px;
     display: flex;
     flex-direction: column;
-    background-color: white;
     border-radius: 5px;
     margin: 5px 0;
-    padding: 5px;
     font-size: 0.9em;
     position: absolute;
     top: 50%;
@@ -349,9 +363,6 @@
     display: flex;
     justify-content: center;
     margin-bottom: 5px;
-    gap: 5px;
-    padding-bottom: 5px;
-    border-bottom: 1px solid #ddd;
 }
 
 .moves-list-display {
@@ -405,11 +416,10 @@
 .moves-table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 1px 1px;
+    background-color: white;
 }
 
 .moves-table td {
-    padding: 1px 1px;
     font-size: 0.85em;
     vertical-align: middle;
 }
@@ -417,23 +427,15 @@
 .move-number {
     width: 24px;
     text-align: center;
-    padding: 2px 4px;
     color: #444;
     font-size: 0.85em;
     font-weight: bold;
-    text-shadow: 1px 1px 0 #fff, -1px -1px 0 rgba(0,0,0,0.2);
     position: relative;
-    /* 3D effect to make it look pushed out */
-    background: linear-gradient(135deg, #f0f0f0, #d8d8d8);
-    border-radius: 3px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6);
-    display: inline-block;
+    background-color: #ecebe9;
 }
 
 .move-san {
     cursor: pointer;
-    padding: 1px 3px;
-    border-radius: 3px;
     flex-grow: 1;
     font-size: 1.25em;
     font-family: 'Noto Sans', sans-serif; /* Ensure good Unicode support */
@@ -446,8 +448,8 @@
 /* Move times removed */
 
 .selected-move {
-    background-color: #4CAF50;
-    color: white;
+    background-color: lightblue;
+    color: black;
 }
 
 .moves-list-footer-info {

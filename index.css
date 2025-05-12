@@ -1,6 +1,9 @@
 /*
  * Main CSS file for Simple FICS Interface
  */
+body {
+    background-color: #ecebe9;
+}
 
 /* View toggle radio buttons */
 .top-controls {
@@ -36,6 +39,7 @@
     border-radius: 20px;
     padding: 3px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    background-color: white;
 }
 
 .view-toggle input[type="radio"] {
@@ -427,8 +431,8 @@ body {
     overflow: hidden;
     font-weight: bold;
     border: none; /* Remove default border */
-    background-color: blue;
-    color: white;
+    background-color: white;
+    color: black;
     font-family: 'Courier New', Courier, Monospace; /* Match text area font */
     border-radius: 10px; /* Match chessboard border radius */
     box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Slightly smaller shadow than textarea */
@@ -444,8 +448,6 @@ body {
     overflow: hidden;
     font-weight: bold;
     border: none; /* Remove default border */
-    background-color: blue;
-    color: white;
     font-family: 'Courier New', Courier, Monospace; /* Match text area font */
     border-radius: 10px; /* Match chessboard border radius */
     box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Slightly smaller shadow than textarea */
@@ -456,8 +458,7 @@ body {
 }
 
 .tab-input-label {
-    font-weight: bold;
-    color: blue;
+    color: black;
     position: relative;
     top: 5px
 }
@@ -487,7 +488,8 @@ body {
 .tab-active {
     border-bottom: none;
     font-weight: bold;
-    color: green;
+    background-color: white;
+    color: black;
 }
 
 .tab-inactive {
@@ -496,7 +498,6 @@ body {
 
 .tab-content {
     padding: 5px 5px;
-    background: #fff;
     display: none; /* Hidden by default */
     flex-direction: column; /* For proper layout of children */
     height: 100%; /* Fill available height */
@@ -636,7 +637,7 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background-color: #3498db; /* Match the selected mode button color */
+    background-color: white; /* Match the selected mode button color */
     transition: all 0.3s ease;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); /* Match the mode buttons shadow */
 }
@@ -648,7 +649,7 @@ body {
 .hamburger-menu svg {
     width: 24px;
     height: 24px;
-    fill: white;
+    fill: black;
 }
 
 /* Preferences Panel Styles */

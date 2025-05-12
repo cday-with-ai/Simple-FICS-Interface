@@ -202,17 +202,39 @@ function createBoardSquaresInternal(boardElement) {
                 e.preventDefault();
                 if (validMoves.includes(squareDiv.dataset.algebraic)) {
                     squareDiv.classList.add('valid-move');
+                    // Set the drop effect to indicate a valid move
+                    e.dataTransfer.dropEffect = 'move';
+                } else {
+                    // Set the drop effect to indicate an invalid move
+                    e.dataTransfer.dropEffect = 'none';
+                }
+            });
+            squareDiv.addEventListener('dragenter', (e) => {
+                e.preventDefault();
+                if (validMoves.includes(squareDiv.dataset.algebraic)) {
+                    squareDiv.classList.add('valid-move-hover');
                 }
             });
             squareDiv.addEventListener('dragleave', (e) => {
                 squareDiv.classList.remove('valid-move');
+                squareDiv.classList.remove('valid-move-hover');
             });
             squareDiv.addEventListener('drop', (e) => {
                 e.preventDefault();
-                if (draggedPiece && startSquare) {
-                    handleDropInternal(squareDiv.dataset.algebraic);
-                }
                 squareDiv.classList.remove('valid-move');
+                squareDiv.classList.remove('valid-move-hover');
+
+                // Store the current dragged piece element for reference
+                const currentDraggedElement = draggedPieceElement;
+
+                if (draggedPiece && startSquare && validMoves.includes(squareDiv.dataset.algebraic)) {
+                    // Process the drop
+                    handleDropInternal(squareDiv.dataset.algebraic);
+                } else if (currentDraggedElement) {
+                    // If the drop is invalid but we have a dragged element, make sure it's visible
+                    currentDraggedElement.classList.remove('piece-hidden', 'piece-semi-transparent');
+                    currentDraggedElement.classList.add('piece-visible');
+                }
             });
 
             if (file === 8) {
@@ -260,10 +282,7 @@ function createBoardSquaresInternal(boardElement) {
                 label.style.bottom = '1px';
                 label.style.left = '1px';
                 label.style.right = 'auto';
-                if (sqElement && parseInt(sqElement.dataset.file) === 8 && parseInt(sqElement.dataset.rank) === 1) { // h1 square
-                    label.style.right = '15px'; // Avoid resize handle
-                    label.style.left = 'auto';
-                }
+                // No special handling for h1 square - all file labels should be left-aligned
             });
         }
     });
@@ -303,6 +322,10 @@ function createBoardSquaresInternal(boardElement) {
 function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
     const board = document.getElementById('chessBoard');
     if (!board || !prefs) return;
+
+    board.querySelectorAll('.chess-piece.dragging').forEach(piece => {
+        piece.classList.remove('dragging');
+    });
 
     const squareSize = board.clientWidth / 8;
     const pieceFontSize = Math.max(Math.floor(squareSize * 0.8), 24) + 'px';
@@ -357,8 +380,25 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
             pieceElement.style.fontSize = pieceFontSize; // Ensure img scales if CSS relies on font size
 
             if (pieceData) {
+                // Determine if this piece should be draggable
+                let shouldBeDraggable = false;
                 const playerBoardColor = myColor === 'white' ? 'w' : 'b';
-                if (pieceData.color === playerBoardColor && chess.turn() === playerBoardColor) {
+
+                // Allow dragging in these cases:
+                // 1. When gameInfo is null (analyzing or local position)
+                // 2. When not playing a game (observing or examining)
+                // 3. When it's my turn in a game I'm playing
+                if (gameInfo === null ||
+                    (gameInfo && gameInfo.relation !== GameRelation.PLAYING_OPPONENT_MOVE &&
+                     gameInfo.relation !== GameRelation.PLAYING_MY_MOVE)) {
+                    // Allow any piece to be dragged when analyzing or observing
+                    shouldBeDraggable = true;
+                } else if (pieceData.color === playerBoardColor && chess.turn() === playerBoardColor) {
+                    // Allow only my pieces to be dragged when it's my turn in a game
+                    shouldBeDraggable = true;
+                }
+
+                if (shouldBeDraggable) {
                     pieceElement.setAttribute('draggable', 'true');
                     pieceElement.addEventListener('dragstart', (e) => {
                         draggedPiece = pieceData;
@@ -366,17 +406,65 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
                         startSquare = squareAlg;
                         validMoves = chess.moves({ square: squareAlg, verbose: true }).map(move => move.to);
                         updateBoardHighlightsInternal();
-                        requestAnimationFrame(() => pieceElement.classList.add('dragging'));
+
+                        // Create a custom drag image that matches the original piece size
+                        const dragImage = pieceElement.cloneNode(true);
+                        const squareSize = pieceElement.offsetWidth;
+                        dragImage.style.width = `${squareSize}px`;
+                        dragImage.style.height = `${squareSize}px`;
+                        dragImage.style.fontSize = pieceElement.style.fontSize;
+                        dragImage.style.display = 'flex';
+                        dragImage.style.justifyContent = 'center';
+                        dragImage.style.alignItems = 'center';
+                        document.body.appendChild(dragImage);
+                        dragImage.style.position = 'absolute';
+                        dragImage.style.top = '-1000px';
+
+                        // Set the drag image, centered on the cursor
+                        const centerOffset = squareSize / 2;
+                        e.dataTransfer.setDragImage(dragImage, centerOffset, centerOffset);
+
+                        // Set the drag effect
+                        e.dataTransfer.effectAllowed = 'move';
+
+                        // Instead of hiding the original piece, we'll keep it visible but with reduced opacity
+                        // This ensures it's still there if the drag operation fails
+                        requestAnimationFrame(() => {
+                            pieceElement.classList.add('dragging');
+                            // Make the original piece semi-transparent instead of hiding it completely
+                            pieceElement.classList.remove('piece-visible', 'piece-hidden');
+                            pieceElement.classList.add('piece-semi-transparent');
+                            // Remove the temporary drag image after a short delay
+                            setTimeout(() => {
+                                if (document.body.contains(dragImage)) {
+                                    document.body.removeChild(dragImage);
+                                }
+                            }, 100);
+                        });
                     });
                     pieceElement.addEventListener('dragend', () => {
                         pieceElement.classList.remove('dragging');
-                        if (draggedPiece) { // If not dropped successfully
-                            draggedPiece = null;
-                            draggedPieceElement = null;
-                            startSquare = null;
-                            validMoves = [];
-                            updateBoardHighlightsInternal();
-                        }
+                        // Always restore the piece's visibility on dragend
+                        pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
+                        pieceElement.classList.add('piece-visible');
+
+                        // Use setTimeout to ensure this runs after the drop event
+                        setTimeout(() => {
+                            // If the piece is still being dragged (not dropped on a valid square)
+                            if (draggedPiece) {
+                                draggedPiece = null;
+                                draggedPieceElement = null;
+                                startSquare = null;
+                                validMoves = [];
+                                updateBoardHighlightsInternal();
+
+                                // Make sure the piece is visible
+                                if (pieceElement) {
+                                    pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
+                                    pieceElement.classList.add('piece-visible');
+                                }
+                            }
+                        }, 50); // Small delay to ensure drop event processes first
                     });
                 } else {
                     pieceElement.setAttribute('draggable', 'false');
@@ -385,6 +473,14 @@ function updateBoardGraphicsInternal(lastMove, gameInfo = null) {
         }
     }
     updateBoardHighlightsInternal();
+
+    // Ensure all pieces have proper opacity
+    const allPieces = document.querySelectorAll('.chess-piece');
+    allPieces.forEach(piece => {
+        // Remove any opacity classes and add the visible class
+        piece.classList.remove('piece-hidden', 'piece-semi-transparent');
+        piece.classList.add('piece-visible');
+    });
 
     const statusDiv = document.getElementById('gameStatus'); // Assuming gameStatus div exists
     if (statusDiv) {
@@ -457,8 +553,11 @@ function updatePlayerInfoUIInternal(gameInfo) {
         bottomPlayerNameEl.innerText = whiteNameWithRating;
         bottomPlayerClockEl.innerText = whitePlayerClockDisplay;
 
-        topPlayerClockEl.style.color = currentTurn === 'b' ? '#32CD32' : '#800020';
-        bottomPlayerClockEl.style.color = currentTurn === 'w' ? '#32CD32' : '#800020';
+        // Update clock styles using CSS classes
+        topPlayerClockEl.classList.remove('clock-active', 'clock-inactive');
+        bottomPlayerClockEl.classList.remove('clock-active', 'clock-inactive');
+        topPlayerClockEl.classList.add(currentTurn === 'b' ? 'clock-active' : 'clock-inactive');
+        bottomPlayerClockEl.classList.add(currentTurn === 'w' ? 'clock-active' : 'clock-inactive');
         // Move indicators removed
     } else { // myColor is 'black'
         topPlayerNameEl.innerText = whiteNameWithRating;
@@ -466,8 +565,11 @@ function updatePlayerInfoUIInternal(gameInfo) {
         bottomPlayerNameEl.innerText = blackNameWithRating;
         bottomPlayerClockEl.innerText = blackPlayerClockDisplay;
 
-        topPlayerClockEl.style.color = currentTurn === 'w' ? '#32CD32' : '#800020';
-        bottomPlayerClockEl.style.color = currentTurn === 'b' ? '#32CD32' : '#800020';
+        // Update clock styles using CSS classes
+        topPlayerClockEl.classList.remove('clock-active', 'clock-inactive');
+        bottomPlayerClockEl.classList.remove('clock-active', 'clock-inactive');
+        topPlayerClockEl.classList.add(currentTurn === 'w' ? 'clock-active' : 'clock-inactive');
+        bottomPlayerClockEl.classList.add(currentTurn === 'b' ? 'clock-active' : 'clock-inactive');
         // Move indicators removed
     }
 
@@ -666,6 +768,16 @@ function handleSquareClickInternal(file, rank) {
             // We'd ideally animate then update, or use the FICS echo.
             // For now, direct update after sending.
             if (moveResult.captured) captureAudio.play(); else moveAudio.play();
+
+            // Hide the piece at the original square
+            const fromSquareDiv = document.getElementById(`square-${selectedSquare.charCodeAt(0) - 96}-${selectedSquare.charAt(1)}`);
+            if (fromSquareDiv) {
+                const pieceElement = fromSquareDiv.querySelector('.chess-piece');
+                if (pieceElement) {
+                    pieceElement.style.opacity = '0';
+                }
+            }
+
             updateBoardGraphicsInternal(moveStringPart, null); // Update with local move
             restartClockInternal(null); // Restart clock for opponent
         } else if (!moveResult) {
@@ -699,7 +811,7 @@ function handleDropInternal(targetSquareAlg) {
     const isPromotion = piece && piece.type === 'p' &&
         ((piece.color === 'w' && targetRank === 8) || (piece.color === 'b' && targetRank === 1));
     let moveObject;
-    let moveStringPart = `${startSquare}${targetSquareAlg}`;
+    let moveStringPart = `${startSquare}-${targetSquareAlg}`;
 
     if (isPromotion) {
         const promotionPiece = prompt('Promote pawn to: (q)ueen, (r)ook, (b)ishop, (n)knight', 'q');
@@ -711,16 +823,33 @@ function handleDropInternal(targetSquareAlg) {
     }
 
     const moveResult = chess.move(moveObject);
+    var moveToMake = null;
     if (moveResult && ws) {
-        ws.send(`move ${moveStringPart}\n\r`);
+        ws.send(`${moveStringPart}\n\r`);
+
         if (moveResult.captured) captureAudio.play(); else moveAudio.play();
+
+        // We'll make the original piece fully transparent but not rely solely on this
+        if (draggedPieceElement) {
+            draggedPieceElement.classList.remove('piece-visible', 'piece-semi-transparent');
+            draggedPieceElement.classList.add('piece-hidden');
+        }
+
+        // Update the board graphics which will create the piece at the new location
         updateBoardGraphicsInternal(moveStringPart, null);
         restartClockInternal(null);
     } else if (!moveResult) {
         console.error("Invalid move by drop:", moveObject);
         chess.undo();
+
+        // Restore the original piece visibility if the move failed
+        if (draggedPieceElement) {
+            draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
+            draggedPieceElement.classList.add('piece-visible');
+        }
     }
 
+    // Clear drag state variables
     draggedPiece = null;
     draggedPieceElement = null;
     startSquare = null;
@@ -836,7 +965,7 @@ function updateBoardHighlightsInternal() {
             const squareDiv = document.getElementById(`square-${file}-${rank}`);
             if (!squareDiv) continue;
 
-            squareDiv.classList.remove('selected', 'valid-move');
+            squareDiv.classList.remove('selected', 'valid-move', 'valid-move-hover');
             if (squareAlg === selectedSquare || squareAlg === startSquare) {
                 squareDiv.classList.add('selected');
             } else if (validMoves.includes(squareAlg)) {
@@ -853,12 +982,6 @@ function updatePieceSizesInternal(squareSize) {
     const fontSize = Math.max(Math.floor(squareSize * 0.8), 24) + 'px';
     pieceElements.forEach(piece => {
         piece.style.fontSize = fontSize;
-        // If using img, ensure its container (the pieceElement) allows it to scale
-        const img = piece.querySelector('img');
-        if (img) {
-            img.style.width = '95%'; // Example, adjust as needed
-            img.style.height = '95%';
-        }
     });
 }
 
@@ -952,6 +1075,28 @@ export function initChessSystem(websocket, preferencesObject) {
 
     applyChessRelatedPreferences(); // Apply initial preferences
     // testClockParsingInternal(); // You might want to keep or remove this
+
+    // Add a global mouseup event listener to ensure pieces are visible
+    // This helps catch cases where the dragend event might not fire properly
+    document.addEventListener('mouseup', () => {
+        // After a short delay, ensure all pieces are visible
+        setTimeout(() => {
+            const allPieces = document.querySelectorAll('.chess-piece');
+            allPieces.forEach(piece => {
+                piece.classList.remove('piece-hidden', 'piece-semi-transparent');
+                piece.classList.add('piece-visible');
+            });
+
+            // Also reset drag state if needed
+            if (draggedPiece) {
+                draggedPiece = null;
+                draggedPieceElement = null;
+                startSquare = null;
+                validMoves = [];
+                updateBoardHighlightsInternal();
+            }
+        }, 100);
+    });
 }
 
 // --- Moves List Processing ---
@@ -1169,8 +1314,6 @@ function updateMovesListDisplayInternal() {
                 whiteSanSpan.onclick = () => handleMoveNavigationClickInternal(move.number, 'w');
                 whiteSanSpan.style.cursor = 'pointer';
                 whiteCell.appendChild(whiteSanSpan);
-
-                // Move times removed
             } else {
                 whiteCell.innerHTML = '&nbsp;'; // Empty cell if no white move
             }
@@ -1183,8 +1326,6 @@ function updateMovesListDisplayInternal() {
                 blackSanSpan.onclick = () => handleMoveNavigationClickInternal(move.number, 'b');
                 blackSanSpan.style.cursor = 'pointer';
                 blackCell.appendChild(blackSanSpan);
-
-                // Move times removed
             } else {
                 blackCell.innerHTML = '&nbsp;'; // Keep cell structure
             }
@@ -1824,7 +1965,7 @@ function setupMainChessBoardDisplay() {
         const chessBoardArea = document.querySelector('.chess-board-area');
         if (!chessBoardArea || !board) return;
 
-        const availableWidth = chessBoardArea.clientWidth - 400; // Adjusted for potential player info width
+        const availableWidth = chessBoardArea.clientWidth - 275; // Adjusted for potential player info width
         const availableHeight = chessBoardArea.clientHeight - 40; // Adjusted for potential margins/padding
         const maxWidth = Math.max(100, availableWidth);
         const maxSize = Math.min(maxWidth, availableHeight, 1500);
