@@ -181,7 +181,7 @@ body {
 .horizontal-divider {
     width: 15px;
     max-width: 200px;
-    height: 200px;
+    height: 400px;
     background-color: #f0f0f0;
     cursor: col-resize;
     position: absolute;
@@ -199,8 +199,8 @@ body {
 /* Add drag indicator to horizontal divider */
 .horizontal-divider::before {
     position: absolute;
-    top: 43%;
-    left: 5%;
+    top: 47%;
+    left: 6%;
     content: "⋮⋮";
     font-size: 20px;
     color: #666;

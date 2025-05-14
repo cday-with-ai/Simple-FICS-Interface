@@ -7,11 +7,12 @@ Currently, under construction. It is usable to observe games, but you might run 
 
 Road Map:
 - Fix artifact when dragging a piece.
-- Add a layout when width is an issue. Put clocks on top and bottom.
+- Responsive web design that works on mobile and tablets.
+  - Add a layout when width is an issue. Put clocks on top and bottom.
 - Fix game end.
+- Add premove.
 - Fix bug where tells from channel tabs are not sent.
 - Add timeseal2.
-- Responsive web design that works on mobile and tablets.
 
 Won't be implemented:
 - Bughouse/Crazyhouse support.

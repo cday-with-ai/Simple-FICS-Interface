@@ -6,6 +6,7 @@ import {
     processStyle12Message,
     processMovesList,
     processGameEndMessage,
+    processGameCreationMessage,
     applyChessRelatedPreferences,
     createChessBoardSquares // Specifically for createGameTab
 } from './chess.js';
@@ -774,9 +775,6 @@ function createGameTab(opponent) {
     // Populate this specific board
     if (typeof createChessBoardSquares === 'function') {
         createChessBoardSquares(gameBoardDiv);
-        // Further updates to this board would need to target its specific chess instance
-        // This implies chess.js needs to support multiple instances if game tabs are independent.
-        // For now, this creates the squares, but interaction might still go to the global chess object.
     }
 }
 
@@ -887,6 +885,39 @@ function routeMessage(msg) {
         }
     }
 
+    // Handle game creation messages like "Creating: GriffyJr (1937) cday (1677) unrated blitz 2 12"
+    // or "Creating: GuestHVZN (++++) GriffyJr (1937) unrated blitz 2 12"
+    // For observing: Game 27: Geforce (2140) konozrout (2081) rated blitz 5 0
+    const containsGameStart = msg.startsWith("Creating: ");
+    var gameStartStr  = null;
+    if (containsGameStart) {
+        gameStartStr = msg.substring(10);
+    } else {
+        const index = msg.indexOf("\nCreating: ");
+        if (index != -1) {
+            gameStartStr = msg.substring(index+11);
+        } else {
+            if (msg.startsWith("Game ")) {
+                const colonIndex = msg.indexOf(":",index + 5);
+                if (colonIndex != -1) {
+                    gameStartStr = msg.substring(colonIndex + 1);
+                }
+            } else {
+                const index = msg.indexOf("\nGame ");
+                if (index != -1) {
+                    const colonIndex = msg.indexOf(":",index + 6);
+                    if (colonIndex != -1) {
+                        gameStartStr = msg.substring(colonIndex + 1);
+                    }
+                }
+            }
+        }
+    }
+    if (gameStartStr != null) {
+        processGameCreationMessage(gameStartStr.trim());
+    }
+
+
     // Style12 handling
     const style12Start = msg.startsWith("<12>") ? 0 : msg.lastIndexOf("\n<12>");
     if (style12Start >= 0) {
@@ -910,7 +941,8 @@ function routeMessage(msg) {
 
 
     // Handle moves command response
-    if (msg.includes('Movelist for game')) {
+    const moveslistIndex = msg.indexOf('Movelist for game');
+    if (moveslistIndex != -1 && (moveslistIndex == 0 || msg.indexOf(moveslistIndex - 1) == '/n')) {
         if (typeof processMovesList === 'function') {
             processMovesList(msg);
         } else {
@@ -921,20 +953,20 @@ function routeMessage(msg) {
     // Handle game end messages like "{Game 12 (genieman vs. Pawnlightly) genieman resigns} 0-1"
     // or "{Game 12 (GuestNTLW vs. GuestNJVP) Game drawn by repetition} 1/2-1/2"
     // or "{Game 4 (FIRECAPTAIN vs. guanin) guanin forfeits on time} 1-0"
-    const gameEndRegex = /^\{Game \d+ \([^)]+\s+vs\.\s+[^)]+\) .*\}\s*[0-1\/2-]+$/;
-    const trimmedMsg = msg.trim();
-    if (gameEndRegex.test(trimmedMsg)) {
-        if (preferences.showStyle12Events) { // Use the debug preference for logging
-            console.log("Detected game end message:", trimmedMsg);
+    // or {Game 13 (GriffySr vs. GuestNCLZ) GuestNCLZ resigns} 1-0
+    // {Game 19 (GriffySr vs. GuestYLLZ) GuestYLLZ resigns} 1-0
+    const gameEndStart = msg.startsWith("{Game ");
+    var gameEndString = null;
+    if (!gameEndStart) {
+        const index = msg.indexOf("\n{Game ");
+        if (index != -1) {
+            gameEndString = msg.substring(index+7);
         }
-        if (typeof processGameEndMessage === 'function') {
-            const result = processGameEndMessage(trimmedMsg);
-            if (preferences.showStyle12Events && !result) { // Use the debug preference for logging
-                console.log("Game end message was not processed (might be for a different game)");
-            }
-        } else {
-            console.error("processGameEndMessage not available from chess.js");
-        }
+    } else {
+        gameEndString = msg.substring(6);
+    }
+    if (gameEndString != null) {
+        processGameEndMessage(gameEndString);
     }
 
     if (isMainConsoleMessage && msg.trim() !== '' && mainTextArea) {
