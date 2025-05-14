@@ -250,44 +250,6 @@ function createBoardSquaresInternal(boardElement) {
             squareDiv.dataset.algebraic = `${String.fromCharCode(96 + file)}${rank}`;
 
             squareDiv.addEventListener('click', () => handleSquareClickInternal(file, rank));
-            squareDiv.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                if (gameState.validMoves.includes(squareDiv.dataset.algebraic)) {
-                    squareDiv.classList.add('valid-move');
-                    // Set the drop effect to indicate a valid move
-                    e.dataTransfer.dropEffect = 'move';
-                } else {
-                    // Set the drop effect to indicate an invalid move
-                    e.dataTransfer.dropEffect = 'none';
-                }
-            });
-            squareDiv.addEventListener('dragenter', (e) => {
-                e.preventDefault();
-                if (gameState.validMoves.includes(squareDiv.dataset.algebraic)) {
-                    squareDiv.classList.add('valid-move-hover');
-                }
-            });
-            squareDiv.addEventListener('dragleave', (e) => {
-                squareDiv.classList.remove('valid-move');
-                squareDiv.classList.remove('valid-move-hover');
-            });
-            squareDiv.addEventListener('drop', (e) => {
-                e.preventDefault();
-                squareDiv.classList.remove('valid-move');
-                squareDiv.classList.remove('valid-move-hover');
-
-                // Store the current dragged piece element for reference
-                const currentDraggedElement = gameState.draggedPieceElement;
-
-                if (gameState.draggedPiece && gameState.startSquare && gameState.validMoves.includes(squareDiv.dataset.algebraic)) {
-                    // Process the drop
-                    handleDropInternal(squareDiv.dataset.algebraic);
-                } else if (currentDraggedElement) {
-                    // If the drop is invalid but we have a dragged element, make sure it's visible
-                    currentDraggedElement.classList.remove('piece-hidden', 'piece-semi-transparent');
-                    currentDraggedElement.classList.add('piece-visible');
-                }
-            });
 
             if (file === 8) {
                 const rankLabel = document.createElement('div');
@@ -454,78 +416,159 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                          (!gameState.isPlayerWhite && pieceData.color == 'b')))
 
                 if (shouldBeDraggable) {
-                    pieceElement.setAttribute('draggable', 'true');
-                    pieceElement.addEventListener('dragstart', (e) => {
+                    // Add a custom mousedown handler to initialize the drag
+                    pieceElement.addEventListener('mousedown', (e) => {
+                        // Prevent the default browser drag behavior
+                        e.preventDefault();
+
+                        // Store the piece and square information
                         gameState.draggedPiece = pieceData;
                         gameState.draggedPieceElement = pieceElement;
                         gameState.startSquare = squareAlg;
-                        gameState.validMoves = chess.moves({ square: squareAlg, verbose: true }).map(move => move.to);
+
+                        // Get valid moves for this piece
+                        const verboseMoves = chess.moves({ square: squareAlg, verbose: true });
+                        gameState.validMoves = verboseMoves.map(move => move.to);
+
+                        console.log("Mouse down on piece:", pieceData,
+                                    "Start square:", squareAlg,
+                                    "Valid moves:", gameState.validMoves);
+
+                        // Update board highlights to show valid moves
                         updateBoardHighlightsInternal();
 
-                        // Create a custom drag image that matches the original piece size
-                        const dragImage = document.createElement('div');
-                        const squareSize = pieceElement.offsetWidth;
+                        // Create a clone for dragging
+                        const clone = pieceElement.cloneNode(true);
+                        clone.id = 'dragging-piece';
+                        clone.style.position = 'fixed';
+                        clone.style.zIndex = '9999';
+                        clone.style.pointerEvents = 'none';
+                        clone.style.width = `${pieceElement.offsetWidth}px`;
+                        clone.style.height = `${pieceElement.offsetHeight}px`;
+                        clone.style.left = `${e.clientX}px`;
+                        clone.style.top = `${e.clientY}px`;
+                        document.body.appendChild(clone);
 
-                        // Copy the piece content
-                        dragImage.innerHTML = pieceElement.innerHTML;
+                        // Store the clone reference
+                        gameState.dragClone = clone;
 
-                        // Set styles for the drag image
-                        dragImage.style.width = `${squareSize}px`;
-                        dragImage.style.height = `${squareSize}px`;
-                        dragImage.style.fontSize = pieceElement.style.fontSize;
-                        dragImage.style.display = 'none';
-                        dragImage.style.justifyContent = 'center';
-                        dragImage.style.alignItems = 'center';
-                        dragImage.style.position = 'none';
-                        dragImage.style.top = '-9999px';
-                        dragImage.style.left = '-9999px';
-                        dragImage.style.zIndex = '-2';
-                        dragImage.style.pointerEvents = 'none';
-                        dragImage.style.opacity = '1';
+                        // Make the original piece semi-transparent
+                        pieceElement.classList.remove('piece-visible', 'piece-hidden');
+                        pieceElement.classList.add('piece-semi-transparent');
 
-                        // Add to document but keep it invisible
-                        document.body.appendChild(dragImage);
+                        // Add mousemove and mouseup event listeners to the document
+                        const onMouseMove = (e) => {
+                            if (!gameState.dragClone) return;
 
-                        // Set the drag image, centered on the cursor
-                        const centerOffset = squareSize / 2;
-                        e.dataTransfer.setDragImage(dragImage, centerOffset, centerOffset);
+                            // Move the clone with the cursor
+                            gameState.dragClone.style.left = `${e.clientX}px`;
+                            gameState.dragClone.style.top = `${e.clientY}px`;
 
-                        // Set the drag effect
-                        e.dataTransfer.effectAllowed = 'move';
+                            // Find the square under the cursor
+                            const elementsUnderPoint = document.elementsFromPoint(e.clientX, e.clientY);
 
-                        // Instead of hiding the original piece, we'll keep it visible but with reduced opacity
-                        // This ensures it's still there if the drag operation fails
-                        requestAnimationFrame(() => {
-                            pieceElement.classList.add('dragging');
-                            // Make the original piece semi-transparent instead of hiding it completely
-                            pieceElement.classList.remove('piece-visible', 'piece-hidden');
-                            pieceElement.classList.add('piece-semi-transparent');
-                        });
-                    });
-                    pieceElement.addEventListener('dragend', () => {
-                        pieceElement.classList.remove('dragging');
-                        // Always restore the piece's visibility on dragend
-                        pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
-                        pieceElement.classList.add('piece-visible');
+                            // Try to find a chess square or a piece element
+                            let squareUnder = elementsUnderPoint.find(el => el.classList.contains('chess-square'));
 
+                            // If we found a piece instead of a square, get its parent square
+                            if (!squareUnder) {
+                                const pieceUnder = elementsUnderPoint.find(el => el.classList.contains('chess-piece'));
+                                if (pieceUnder) {
+                                    squareUnder = pieceUnder.closest('.chess-square');
+                                }
+                            }
 
-                            // If the piece is still being dragged (not dropped on a valid square)
-                            if (gameState.draggedPiece) {
+                            // Remove hover class from all squares
+                            document.querySelectorAll('.valid-move-hover').forEach(sq => {
+                                sq.classList.remove('valid-move-hover');
+                            });
+
+                            // Add hover class to the square under the cursor if it's a valid move
+                            if (squareUnder &&
+                                gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
+                                squareUnder.dataset.algebraic !== gameState.startSquare) {
+                                squareUnder.classList.add('valid-move-hover');
+                            }
+                        };
+
+                        const onMouseUp = (e) => {
+                            // Remove the event listeners
+                            document.removeEventListener('mousemove', onMouseMove);
+                            document.removeEventListener('mouseup', onMouseUp);
+
+                            // Remove the clone
+                            if (gameState.dragClone) {
+                                gameState.dragClone.remove();
+                                gameState.dragClone = null;
+                            }
+
+                            // Find the square under the cursor
+                            const elementsUnderPoint = document.elementsFromPoint(e.clientX, e.clientY);
+
+                            // Try to find a chess square or a piece element
+                            let squareUnder = elementsUnderPoint.find(el => el.classList.contains('chess-square'));
+
+                            // If we found a piece instead of a square, get its parent square
+                            if (!squareUnder) {
+                                const pieceUnder = elementsUnderPoint.find(el => el.classList.contains('chess-piece'));
+                                if (pieceUnder) {
+                                    squareUnder = pieceUnder.closest('.chess-square');
+                                }
+                            }
+
+                            console.log("Mouse up on square:", squareUnder ? squareUnder.dataset.algebraic : 'none');
+
+                            // Process the drop if it's a valid move and not the same square
+                            if (squareUnder &&
+                                gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
+                                squareUnder.dataset.algebraic !== gameState.startSquare) {
+                                console.log("Valid move to:", squareUnder.dataset.algebraic, "from:", gameState.startSquare);
+                                handleDropInternal(squareUnder.dataset.algebraic);
+                            } else {
+                                // Check if we're trying to drop on the same square we picked up from
+                                if (squareUnder && squareUnder.dataset.algebraic === gameState.startSquare) {
+                                    console.log("Dropped on same square, canceling move");
+                                } else {
+                                    console.log("Invalid move or no square found");
+                                }
+
+                                // If the drop is invalid, reset the piece
+                                pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
+                                pieceElement.classList.add('piece-visible');
+
+                                // Reset the drag state
                                 gameState.draggedPiece = null;
                                 gameState.draggedPieceElement = null;
                                 gameState.startSquare = null;
                                 gameState.validMoves = [];
                                 updateBoardHighlightsInternal();
-
-                                // Make sure the piece is visible
-                                if (pieceElement) {
-                                    pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
-                                    pieceElement.classList.add('piece-visible');
-                                }
                             }
+
+                            // Remove hover class from all squares
+                            document.querySelectorAll('.valid-move-hover').forEach(sq => {
+                                sq.classList.remove('valid-move-hover');
+                            });
+                        };
+
+                        // Add the event listeners
+                        document.addEventListener('mousemove', onMouseMove);
+                        document.addEventListener('mouseup', onMouseUp);
                     });
-                } else {
-                    pieceElement.setAttribute('draggable', 'false');
+
+                    // Initialize interact.js for draggable pieces (disabled for now)
+                    /*
+                    interact(pieceElement).draggable({
+                        inertia: false,
+                        // Remove the restriction modifier as it might be causing issues
+                        modifiers: [],
+                        autoScroll: true,
+                        // Add a small threshold to prevent accidental drags
+                        manualStart: false,
+                        startAxis: 'xy',
+                        lockAxis: false,
+                        listeners: {}
+                    });
+                    */
                 }
             }
         }
@@ -972,15 +1015,40 @@ function handleSquareClickInternal(file, rank) {
 }
 
 function handleDropInternal(targetSquareAlg) {
-    if (!gameState.validMoves.includes(targetSquareAlg) || !gameState.draggedPiece || !gameState.startSquare) return;
+    console.log("handleDropInternal called with targetSquareAlg:", targetSquareAlg,
+                "validMoves:", gameState.validMoves,
+                "draggedPiece:", gameState.draggedPiece,
+                "startSquare:", gameState.startSquare);
 
+    // Check if we're trying to move to the same square
+    if (targetSquareAlg === gameState.startSquare) {
+        console.log("Trying to move to the same square, canceling move");
+        if (gameState.draggedPieceElement) {
+            gameState.draggedPieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
+            gameState.draggedPieceElement.classList.add('piece-visible');
+        }
+        return;
+    }
+
+    if (!gameState.validMoves.includes(targetSquareAlg) || !gameState.draggedPiece || !gameState.startSquare) {
+        console.log("Invalid drop detected:",
+                    "validMoves.includes(targetSquareAlg):", gameState.validMoves.includes(targetSquareAlg),
+                    "draggedPiece exists:", !!gameState.draggedPiece,
+                    "startSquare exists:", !!gameState.startSquare);
+        // Reset the piece visibility if the move is invalid
+        if (gameState.draggedPieceElement) {
+            gameState.draggedPieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
+            gameState.draggedPieceElement.classList.add('piece-visible');
+        }
+        return;
+    }
 
     const piece = chess.get(gameState.startSquare); // Get piece from current board state at gameState.startSquare
     const targetRank = parseInt(targetSquareAlg.charAt(1));
     const isPromotion = piece && piece.type === 'p' &&
         ((piece.color === 'w' && targetRank === 8) || (piece.color === 'b' && targetRank === 1));
     let moveObject;
-    let moveStringPart = `${gameState.startSquare}-${targetSquareAlg}`;
+    let moveStringPart = `${gameState.startSquare}${targetSquareAlg}`;
 
     if (isPromotion) {
         const promotionPiece = prompt('Promote pawn to: (q)ueen, (r)ook, (b)ishop, (n)knight', 'q');
@@ -991,7 +1059,9 @@ function handleDropInternal(targetSquareAlg) {
         moveObject = { from: gameState.startSquare, to: targetSquareAlg };
     }
 
+    console.log("Attempting move:", moveObject);
     const moveResult = chess.move(moveObject);
+    console.log("Move result:", moveResult);
     var moveToMake = null;
     if (moveResult && ws) {
         if (gameState.relation != GameRelation.ISOLATED_POSITION &&
@@ -1012,7 +1082,7 @@ function handleDropInternal(targetSquareAlg) {
         updateECOLabelFromLastMove();
 
         // Update the lastMovePretty property so the move list can be updated
-        gameState.lastMovePretty = moveObject.san;
+        gameState.lastMovePretty = moveResult.san;
 
         // Update the board graphics which will create the piece at the new location
         updateBoardGraphicsInternal(moveStringPart, null);
@@ -1034,6 +1104,13 @@ function handleDropInternal(targetSquareAlg) {
     gameState.startSquare = null;
     gameState.selectedSquare = null;
     gameState.validMoves = [];
+
+    // Remove any drag clone that might still exist
+    if (gameState.dragClone) {
+        gameState.dragClone.remove();
+        gameState.dragClone = null;
+    }
+
     updateBoardHighlightsInternal(); // Clear highlights
 }
 
@@ -1334,8 +1411,7 @@ export function initChessSystem(websocket, preferencesObject) {
     applyChessRelatedPreferences(); // Apply initial preferences
     // testClockParsingInternal(); // You might want to keep or remove this
 
-    // Add a global mouseup event listener to ensure pieces are visible
-    // This helps catch cases where the dragend event might not fire properly
+    // Add a global mouseup event listener to ensure pieces are visible and clean up any drag operations
     document.addEventListener('mouseup', () => {
         // After a short delay, ensure all pieces are visible
         setTimeout(() => {
@@ -1344,6 +1420,12 @@ export function initChessSystem(websocket, preferencesObject) {
                 piece.classList.remove('piece-hidden', 'piece-semi-transparent');
                 piece.classList.add('piece-visible');
             });
+
+            // Remove any drag clone that might still exist
+            if (gameState.dragClone) {
+                gameState.dragClone.remove();
+                gameState.dragClone = null;
+            }
 
             // Also reset drag state if needed
             if (gameState.draggedPiece) {

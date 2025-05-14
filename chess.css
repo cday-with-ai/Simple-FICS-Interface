@@ -226,14 +226,19 @@
     align-items: center;
 }
 
-.chess-piece.dragging {
-    position: fixed;
-    /* Width and height will be determined by the original piece size */
-    pointer-events: none;
-    z-index: 100;
-    opacity: 1.0;
-    transform: translate(-50%, -50%);
+/* Interact.js dragging styles */
+#dragging-piece {
+    position: fixed !important;
+    pointer-events: none !important;
+    z-index: 9999 !important;
+    opacity: 1.0 !important;
     filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+    will-change: transform, left, top;
+    transition: none !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    transform: translate(-50%, -50%) !important; /* Center the piece on the cursor */
 }
 
 /* Piece opacity classes */

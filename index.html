@@ -31,7 +31,7 @@
         <span class="view-toggle-label">Mode:</span>
         <div class="view-toggle">
             <input type="radio" id="view-both" name="view-mode" value="both" checked>
-            <label for="view-both" title="Chess and Chat" >
+            <label for="view-both" title="Chess and Chat">
                 <svg viewBox="0 0 24 24" width="24" height="24">
                     <!-- Left side: Chess board (smaller) -->
                     <rect x="2" y="4" width="10" height="16" fill="#34495e" stroke="#ecf0f1" stroke-width="0.5"/>
@@ -49,7 +49,8 @@
                     <rect x="13" y="4" width="1" height="16" fill="#ecf0f1"/>
 
                     <!-- Right side: Chat -->
-                    <rect x="15" y="4" width="7" height="16" rx="1" ry="1" fill="#34495e" stroke="#ecf0f1" stroke-width="0.5"/>
+                    <rect x="15" y="4" width="7" height="16" rx="1" ry="1" fill="#34495e" stroke="#ecf0f1"
+                          stroke-width="0.5"/>
                     <!-- Chat lines -->
                     <line x1="16" y1="8" x2="21" y2="8" stroke="#ecf0f1" stroke-width="0.7"/>
                     <line x1="16" y1="11" x2="21" y2="11" stroke="#ecf0f1" stroke-width="0.7"/>
@@ -102,10 +103,13 @@
             <!-- Main console (top right) -->
             <div class="main-console">
                 <div class="grid-container">
-                    <div class="grid-row" style="flex: 1; padding: 0 3px 0 0; display: flex; flex-direction: column; height: calc(100% - 70px); max-height: calc(100% - 70px);">
-                        <div id="mainTextArea" class="ics-text-area" style="flex: 1; min-height: 100px; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;"></div>
+                    <div class="grid-row"
+                         style="flex: 1; padding: 0 3px 0 0; display: flex; flex-direction: column; height: calc(100% - 70px); max-height: calc(100% - 70px);">
+                        <div id="mainTextArea" class="ics-text-area"
+                             style="flex: 1; min-height: 100px; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;"></div>
                     </div>
-                    <div class="grid-row" style="padding: 0 6px 10px 10px; margin-top: 6px; height: 50px; min-height: 50px; position: absolute; bottom: 0; left: -10px; right: 0;">
+                    <div class="grid-row"
+                         style="padding: 0 6px 10px 10px; margin-top: 6px; height: 50px; min-height: 50px; position: absolute; bottom: 0; left: -10px; right: 0;">
                         <input id="mainInput" class="ics-input"/>
                     </div>
                 </div>
@@ -253,7 +257,6 @@
             </div>
 
 
-
         </div>
 
         <!-- Tabs Preferences -->
@@ -264,17 +267,20 @@
                 <div style="margin-top: 10px;">
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
                         <input type="checkbox" id="prefChannelTellsToTabs" style="width: auto; margin-right: 10px;">
-                        <label for="prefChannelTellsToTabs" style="font-weight: normal;">Send all channel tells to channel tabs</label>
+                        <label for="prefChannelTellsToTabs" style="font-weight: normal;">Send all channel tells to
+                            channel tabs</label>
                     </div>
 
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
                         <input type="checkbox" id="prefDirectTellsToTabs" style="width: auto; margin-right: 10px;">
-                        <label for="prefDirectTellsToTabs" style="font-weight: normal;">Send all direct tells to direct tell tab</label>
+                        <label for="prefDirectTellsToTabs" style="font-weight: normal;">Send all direct tells to direct
+                            tell tab</label>
                     </div>
 
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
                         <input type="checkbox" id="prefGameTellsToTabs" style="width: auto; margin-right: 10px;">
-                        <label for="prefGameTellsToTabs" style="font-weight: normal;">Send all game tells to game tab</label>
+                        <label for="prefGameTellsToTabs" style="font-weight: normal;">Send all game tells to game
+                            tab</label>
                     </div>
                 </div>
             </div>
@@ -285,17 +291,20 @@
                 <div style="margin-top: 10px;">
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
                         <input type="checkbox" id="prefAutoSwitchToNewTabs" style="width: auto; margin-right: 10px;">
-                        <label for="prefAutoSwitchToNewTabs" style="font-weight: normal;">Automatically switch to new tabs when created</label>
+                        <label for="prefAutoSwitchToNewTabs" style="font-weight: normal;">Automatically switch to new
+                            tabs when created</label>
                     </div>
 
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
                         <input type="checkbox" id="prefFlashTabsOnActivity" style="width: auto; margin-right: 10px;">
-                        <label for="prefFlashTabsOnActivity" style="font-weight: normal;">Flash tabs on new activity</label>
+                        <label for="prefFlashTabsOnActivity" style="font-weight: normal;">Flash tabs on new
+                            activity</label>
                     </div>
 
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
                         <input type="checkbox" id="prefShowStyle12Events" style="width: auto; margin-right: 10px;">
-                        <label for="prefShowStyle12Events" style="font-weight: normal;">Show Style12 events in console (for debugging)</label>
+                        <label for="prefShowStyle12Events" style="font-weight: normal;">Show Style12 events in console
+                            (for debugging)</label>
                     </div>
                 </div>
             </div>
@@ -308,7 +317,9 @@
     </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
 <script src="chess.js?v=1" type="module"></script>
 <script src="index.js?v=1" type="module"></script>
+
 </body>
 </html>
