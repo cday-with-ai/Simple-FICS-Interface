@@ -147,7 +147,8 @@
     font-weight: bold;
     background-color: #f5f5f5; /* Light gray background */
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Add shadow for emphasis */
-
+    border: 1px solid gray;
+    border-radius: 4px;
 }
 
 .top-player-clock, .bottom-player-clock {
