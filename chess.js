@@ -11,6 +11,7 @@ const GameRelation = {
     PLAYING_OPPONENT_MOVE: -1,
     PLAYING_MY_MOVE: 1,
     OBSERVING_PLAYED: 0,
+    STARTING_BOARD: -10,
     getDescription: function(value) {
         switch(value) {
             case this.ISOLATED_POSITION: return "Isolated position";
@@ -19,6 +20,7 @@ const GameRelation = {
             case this.PLAYING_OPPONENT_MOVE: return "Playing (opponent's move)";
             case this.PLAYING_MY_MOVE: return "Playing (my move)";
             case this.OBSERVING_PLAYED: return "Observing played game";
+            case this.STARTING_BOARD: return "Starting unconnected board";
             default: return "Unknown relation (" + value + ")";
         }
     }
@@ -58,7 +60,7 @@ let gameState = { // Reset header
     moveNumber: 1,
     lastMove: '',
     lastMovePretty: '',
-    relation: GameRelation.PLAYING_MY_MOVE,
+    relation: GameRelation.STARTING_BOARD,
     doublePawnPushFile: '',
     minutes: 5,
     increment: 0,
@@ -76,6 +78,7 @@ let gameState = { // Reset header
     isPlayerWhite: true,
     isPlayerPlaying: true,
     isFlipped: false,
+    allowUserToMoveBothSides: true,
     moves: [],
     validMoves: [],
     openingDescription: '',
@@ -444,20 +447,11 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
 
             if (pieceData) {
                 // Determine if this piece should be draggable
-                let shouldBeDraggable = false;
                 const playerColor = gameState.isWhitesMove ? 'w' : 'b';
-
-                // Allow dragging in these cases:
-                // 1. When examining a game (relation = 2)
-                // 2. When it's my turn in a game I'm playing (relation = 1)
-                if (gameState.relation === GameRelation.EXAMINING) {
-                    // Allow any piece to be dragged when examining
-                    shouldBeDraggable = true;
-                } else if (gameState.relation === GameRelation.PLAYING_MY_MOVE &&
-                           pieceData.color === playerColor) {
-                    // Allow only my pieces to be dragged when it's my turn in a game
-                    shouldBeDraggable = true;
-                }
+                const shouldBeDraggable = gameState.allowUserToMoveBothSides ||
+                    (!gameState.allowUserToMoveBothSides &&
+                        ((gameState.isPlayerWhite && pieceData.color == 'w') ||
+                         (!gameState.isPlayerWhite && pieceData.color == 'b')))
 
                 if (shouldBeDraggable) {
                     pieceElement.setAttribute('draggable', 'true');
@@ -490,7 +484,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                         dragImage.style.opacity = '1';
 
                         // Add to document but keep it invisible
-                       document.body.appendChild(dragImage);
+                        document.body.appendChild(dragImage);
 
                         // Set the drag image, centered on the cursor
                         const centerOffset = squareSize / 2;
@@ -771,9 +765,11 @@ function updateCurrentGameInfoFromStyle12(style12Message) {
                     // When playing as white, white should be on bottom (unless flipped)
                     // When playing as black, black should be on bottom (unless flipped)
                     gameState.isWhiteOnBottom = gameState.isPlayerWhite ? !gameState.isFlipped : gameState.isFlipped;
+                    gameState.allowUserToMoveBothSides = false;
                 } else {
                     // For observing, white is on bottom (unless flipped)
                     gameState.isWhiteOnBottom = !gameState.isFlipped;
+                    gameState.allowUserToMoveBothSides = true;
                 }
 
                 console.log("Board orientation set:", {
@@ -978,9 +974,6 @@ function handleSquareClickInternal(file, rank) {
 function handleDropInternal(targetSquareAlg) {
     if (!gameState.validMoves.includes(targetSquareAlg) || !gameState.draggedPiece || !gameState.startSquare) return;
 
-    // Only allow moves when it's the player's turn or examining
-    if (gameState.relation !== GameRelation.PLAYING_MY_MOVE &&
-        gameState.relation !== GameRelation.EXAMINING) return; // Not player's turn or not examining
 
     const piece = chess.get(gameState.startSquare); // Get piece from current board state at gameState.startSquare
     const targetRank = parseInt(targetSquareAlg.charAt(1));
@@ -1001,7 +994,13 @@ function handleDropInternal(targetSquareAlg) {
     const moveResult = chess.move(moveObject);
     var moveToMake = null;
     if (moveResult && ws) {
-        ws.send(`${moveStringPart}\n\r`);
+        if (gameState.relation != GameRelation.ISOLATED_POSITION &&
+            gameState.relation != GameRelation.OBSERVING_EXAMINED &&
+            gameState.relation != GameRelation.STARTING_BOARD) {
+            //Note all updates to the position, moves, etc happen with style 12 events.
+            // So don't change anything unil we receive the style 12.
+            ws.send(`${moveStringPart}\n\r`);
+        }
 
         // We'll make the original piece fully transparent but not rely solely on this
         if (gameState.draggedPieceElement) {
@@ -1777,48 +1776,50 @@ function updateMovesListWithNewMoveInternal() {
         lastMove = gameState.moves[gameState.moves.length - 1];
     }
 
-    // A move has already been made and we received the Style 12 for it so isWhitesMove will not be the side that made the move.
-    if (gameState.isWhitesMove) { // Black just moved, so it's White's turn
-        // If the last move in the list has a white move but no black move, add the black move
-        if (lastMove.white.san && !lastMove.black.san) {
-            lastMove.black = {
-                san: gameState.lastMovePretty
-            };
-            console.log("Added black move to existing move:", lastMove);
-        } else {
-            // Otherwise, create a new move with just the black move
-            const newMove = {
-                number: gameState.moveNumber,
-                white: {
-                    san: null
-                },
-                black: {
+    if (lastMove) {
+        // A move has already been made and we received the Style 12 for it so isWhitesMove will not be the side that made the move.
+        if (gameState.isWhitesMove) { // Black just moved, so it's White's turn
+            // If the last move in the list has a white move but no black move, add the black move
+            if (lastMove.white.san && !lastMove.black.san) {
+                lastMove.black = {
                     san: gameState.lastMovePretty
-                }
-            };
-            gameState.moves.push(newMove);
-            console.log("Added new move with black move:", newMove);
-        }
-    } else { // White just moved, so it's Black's turn
-        // If the last move in the list has no white move, add the white move
-        if (!lastMove.white.san) {
-            lastMove.white = {
-                san: gameState.lastMovePretty
-            };
-            console.log("Added white move to existing move:", lastMove);
-        } else {
-            // Otherwise, create a new move with just the white move
-            const newMove = {
-                number: gameState.moveNumber,
-                white: {
+                };
+                console.log("Added black move to existing move:", lastMove);
+            } else {
+                // Otherwise, create a new move with just the black move
+                const newMove = {
+                    number: gameState.moveNumber,
+                    white: {
+                        san: null
+                    },
+                    black: {
+                        san: gameState.lastMovePretty
+                    }
+                };
+                gameState.moves.push(newMove);
+                console.log("Added new move with black move:", newMove);
+            }
+        } else { // White just moved, so it's Black's turn
+            // If the last move in the list has no white move, add the white move
+            if (!lastMove.white.san) {
+                lastMove.white = {
                     san: gameState.lastMovePretty
-                },
-                black: {
-                    san: null
-                }
-            };
-            gameState.moves.push(newMove);
-            console.log("Added new move with white move:", newMove);
+                };
+                console.log("Added white move to existing move:", lastMove);
+            } else {
+                // Otherwise, create a new move with just the white move
+                const newMove = {
+                    number: gameState.moveNumber,
+                    white: {
+                        san: gameState.lastMovePretty
+                    },
+                    black: {
+                        san: null
+                    }
+                };
+                gameState.moves.push(newMove);
+                console.log("Added new move with white move:", newMove);
+            }
         }
     }
 

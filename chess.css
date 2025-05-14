@@ -66,15 +66,26 @@
     font-size: 14px;
     margin-top: 4px;
     padding: 4px 4px;
-    border-radius: 4px;
-    background-color: #f0f0f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    display: inline-block;
     font-weight: bold;
     width: 100%
+}
+
+/* Game type info */
+.game-type-info {
+    text-align: left;
+    font-family: "Noto Sans", Sans-Serif;
+    font-size: 14px;
+    padding: 4px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    font-weight: bold;
+    width: 100%;
 }
 
 .player-info-container {
@@ -298,16 +309,15 @@
 /* Resize handle removed */
 
 .selected {
-    background-color: rgba(173, 216, 230, 0.7) !important; /* Light blue highlight */
+    filter: brightness(80%);
 }
 
 .valid-move {
-    background-color: rgba(144, 238, 144, 0.5) !important; /* Light green highlight */
+    filter: brightness(80%);
 }
 
 .valid-move-hover {
-    background-color: rgba(144, 238, 144, 0.8) !important; /* Brighter green highlight for hover */
-    box-shadow: inset 0 0 10px rgba(0, 128, 0, 0.5) !important; /* Inner glow effect */
+    filter: brightness(80%);
 }
 
 .game-controls {
@@ -357,23 +367,6 @@
     align-items: center;
     justify-content: center;
     position: relative;
-}
-
-/* Game type info */
-.game-type-info {
-    text-align: left;
-    font-family: "Noto Sans", Sans-Serif;
-    font-size: 14px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    background-color: #f0f0f0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: inline-block;
-    width: 100%;
-    font-weight: bold;
 }
 
 .top-name-container {

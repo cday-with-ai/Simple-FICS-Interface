@@ -13,6 +13,7 @@ Road Map:
 - Add premove.
 - Fix bug where tells from channel tabs are not sent.
 - Add timeseal2.
+- Make speed promotion buttons some place.
 
 Won't be implemented:
 - Bughouse/Crazyhouse support.
