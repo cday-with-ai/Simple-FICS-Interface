@@ -554,21 +554,6 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                         document.addEventListener('mousemove', onMouseMove);
                         document.addEventListener('mouseup', onMouseUp);
                     });
-
-                    // Initialize interact.js for draggable pieces (disabled for now)
-                    /*
-                    interact(pieceElement).draggable({
-                        inertia: false,
-                        // Remove the restriction modifier as it might be causing issues
-                        modifiers: [],
-                        autoScroll: true,
-                        // Add a small threshold to prevent accidental drags
-                        manualStart: false,
-                        startAxis: 'xy',
-                        lockAxis: false,
-                        listeners: {}
-                    });
-                    */
                 }
             }
         }
@@ -793,24 +778,44 @@ function updateCurrentGameInfoFromStyle12(style12Message) {
                 gameState.isPlayerWhite = (gameState.relation === GameRelation.PLAYING_MY_MOVE && gameState.isWhitesMove) ||
                     (gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE && !gameState.isWhitesMove);
 
-                // Set player playing state
+                /**
+                 * IMPORTANT!
+                 * gameState.isPlayerPlaying means the user is playing a live game on fics.
+                 * In this case he can only move his pieces. If it is his turn, he is making live moves.
+                 *
+                 * Premove has not yet been implemented but here is what it will do:
+                 * If it is not his turn, he is making a premove which is a move that will be
+                 * immediately played when it is his turn.
+                 */
                 gameState.isPlayerPlaying = gameState.relation === GameRelation.PLAYING_MY_MOVE ||
                                            gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
 
-                // IMPORTANT!
-                // Flipped is not the value from the style12 event, that is always ignored.
-                // Flipped is only changed if the user flips the board on the GUI by pressing the flip button.
+                /**
+                 * IMPORTANT!
+                 * gameState.isFlipped is NOT the value from the style12 event, that is always ignored.
+                 * gameState.isFlipped is only changed if the user flips the board on the GUI by pressing the flip button.
+                 */
 
                 // Store the previous value of isWhiteOnBottom to detect changes
                 const previousIsWhiteOnBottom = gameState.isWhiteOnBottom;
 
+                /**
+                 * When playing the user can only move his pieces. Currently he can only move them when it is his turn but when
+                 * premove is added this will change.
+                 */
                 if (gameState.isPlayerPlaying) {
-                    // When playing as white, white should be on bottom (unless flipped)
-                    // When playing as black, black should be on bottom (unless flipped)
+
                     gameState.isWhiteOnBottom = gameState.isPlayerWhite ? !gameState.isFlipped : gameState.isFlipped;
                     gameState.allowUserToMoveBothSides = false;
                 } else {
-                    // For observing, white is on bottom (unless flipped)
+                    /**
+                     * If user is not playing the user is allowed to move both sides!
+                     * If a user is observing a game for example, he can move pieces just to see the position visually.
+                     * Style12 events will come in and erase the changes, but that is fine.
+                     *
+                     * This will change in GameRelation.EXAMINING mode, but that is not implemented yet. Examine mode will be a
+                     * special case. In GameRelation.EXAMINING mode the moves will stick and be sent to the websocket.
+                     */
                     gameState.isWhiteOnBottom = !gameState.isFlipped;
                     gameState.allowUserToMoveBothSides = true;
                 }
@@ -1064,11 +1069,32 @@ function handleDropInternal(targetSquareAlg) {
     console.log("Move result:", moveResult);
     var moveToMake = null;
     if (moveResult && ws) {
+        /**
+         * When not examining or playing: GameRelation.ISOLATED_POSITION or GameRelation.OBSERVING_PLAYED or GameRelation.OBSERVING_EXAMINED or GameRelation.STARTING_BOARD:
+         * Let the user make moves on the board if not playing or examining. These changes are not permanent and will
+         * be erased when style 12 events arrive. This is fine, it lets the user move pieces around just to see the position. The changes
+         * made in these modes are not live and not sent to fics.
+         *
+         * When playing: GameRelation.PLAYING_MY_MOVE or GameRelation.PLAYING_OPPONENT_MOVE (Premove not implemented yet)
+         * Only let the user make moves for the color he is playing. If it is his turn this is the move that will be sent to fics.
+         * If it is not his turn, this is a premove. A premove is a move that will be saved and sent to fics immediately when it is
+         * the users turn. Just one premove can be saved. If the user makes a move for his color while it is not his turn, that
+         * will become the new premove and replace the old one.
+         *
+         * When examining: GameRelation.EXAMINING (Not implemented yet)
+         * It is similar to playing, but the user can make moves for both sides. No premove is allowed while examining. The user is
+         * actively playing both sides. Examine mode is for analysis of a previous game. It is live and connected to fics.
+         */
         if (gameState.relation != GameRelation.ISOLATED_POSITION &&
+            gameState.relation != GameRelation.OBSERVING_PLAYED &&
             gameState.relation != GameRelation.OBSERVING_EXAMINED &&
             gameState.relation != GameRelation.STARTING_BOARD) {
-            //Note all updates to the position, moves, etc happen with style 12 events.
-            // So don't change anything unil we receive the style 12.
+            /**
+             * IMPORTANT!
+             * Do not change the move list, play sounds, or anything that is not irreversable here.
+             * FICS will send style12 events for changes. When style 12 events are received that is where
+             * the change is made permanent (i.e. sound played, move list updated, etc.)
+             */
             ws.send(`${moveStringPart}\n\r`);
         }
 
