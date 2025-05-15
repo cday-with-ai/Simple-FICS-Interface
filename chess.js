@@ -595,6 +595,35 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
     }
     removeBoardHighlightsInternal();
 
+    if (gameState.relation == GameRelation.OBSERVING_EXAMINED ||
+        gameState.relation == GameRelation.OBSERVING_PLAYED ||
+        gameState.relation == GameRelation.PLAYING_MY_MOVE) {
+        var lastMoveStartEnd = lastMoveToStartEndAlgebraic();
+        if (lastMoveStartEnd) {
+            const startSquare = lastMoveStartEnd[0];
+            const endSquare = lastMoveStartEnd[1];
+            console.log(`Last move start: ${startSquare}, end: ${endSquare})`);
+            const startSquareElement = document.querySelector(`[data-algebraic="${startSquare}"]`);
+            const endSquareElement = document.querySelector(`[data-algebraic="${endSquare}"]`);
+            if (startSquareElement) {
+                startSquareElement.classList.add('last-move-start');
+            }
+            if (endSquareElement) {
+                endSquareElement.classList.add('last-move-end');
+            }
+
+            // Add the fade class after a small delay to ensure the transition works
+            setTimeout(() => {
+                if (startSquareElement) {
+                    startSquareElement.classList.add('last-move-fade');
+                }
+                if (endSquareElement) {
+                    endSquareElement.classList.add('last-move-fade');
+                }
+            }, 50); // Small delay to ensure the browser processes the initial class first
+        }
+    }
+
     // Ensure all pieces have proper opacity
     const allPieces = document.querySelectorAll('.chess-piece');
     allPieces.forEach(piece => {
@@ -732,8 +761,8 @@ function updateCurrentGameInfoFromStyle12(style12Message) {
 //     This string always begins on a new line, and there are always exactly 31 non-
 //     empty fields separated by blanks. The fields are:
 //
-//         * the string "<12>" to identify this line.
-//     * eight fields representing the board position.  The first one is White's
+// * the string "<12>" to identify this line.
+// * eight fields representing the board position.  The first one is White's
 //     8th rank (also Black's 1st rank), then White's 7th rank (also Black's 2nd),
 //     etc, regardless of who's move it is.
 //     * color whose turn it is to move ("B" or "W")
@@ -941,6 +970,7 @@ function updateBoardFromStyle12(style12Message) {
 
                 fen += ` ${castling} ${enPassant} ${gameState.irreversibleCount} ${gameState.moveNumber}`;
 
+
                 if (previousPosition && chess) {
                     try {
                         chess.load(fen); // Load new position first for diff
@@ -979,6 +1009,16 @@ function updateBoardFromStyle12(style12Message) {
             }
         }
     }
+}
+
+function lastMoveToStartEndAlgebraic() {
+    if (!gameState.lastMove || gameState.lastMove === 'none' || gameState.lastMove === '')
+        return null;
+    //example: K/e2-e4;.
+    var moveStr = gameState.lastMove.substring(2).replaceAll('-','');
+    var startAlgebraic = moveStr.substring(0,2);
+    var endAlgebraic = moveStr.substring(2,4);
+    return [startAlgebraic, endAlgebraic];
 }
 
 /**
@@ -1238,9 +1278,11 @@ function animatePieceMoveInternal(fromSquare, toSquare, callback) {
 function removeBoardHighlightsInternal() {
     console.log("removeBoardHighlightsInternal() called.");
     const boardElement = document.getElementById('chessBoard');
+    if (!boardElement) return;
+
     const allSquares = boardElement.querySelectorAll('.chess-square');
     allSquares.forEach(square => {
-        square.classList.remove('selected', 'valid-move', 'valid-move-hover');
+        square.classList.remove('selected', 'valid-move', 'valid-move-hover', 'last-move-start', 'last-move-end', 'last-move-fade');
     });
 }
 

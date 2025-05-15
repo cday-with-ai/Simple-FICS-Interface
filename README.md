@@ -6,7 +6,6 @@ A minimalist FICS interface which focuses for easy game play and chat functional
 Currently, under construction. It is usable to observe games, but you might run into bugs while playing.
 
 Road Map:
-- Fix artifact when dragging a piece.
 - Responsive web design that works on mobile and tablets.
   - Add a layout when width is an issue. Put clocks on top and bottom.
 - Fix game end.
