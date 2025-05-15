@@ -88,7 +88,7 @@ let gameState = { // Reset header
     selectedSquare: null,
     draggedPiece: null,
     draggedPieceElement: null,
-    startSquare: null,
+    startSquareAlgebraic: null,
     status: '',
     result: ''
 };
@@ -249,7 +249,8 @@ function createBoardSquaresInternal(boardElement) {
             squareDiv.dataset.rank = rank;
             squareDiv.dataset.algebraic = `${String.fromCharCode(96 + file)}${rank}`;
 
-            squareDiv.addEventListener('click', () => handleSquareClickInternal(file, rank));
+            squareDiv.addEventListener('click',
+                () => makeMove(gameState.startSquareAlgebraic, `${file}${rank}`,false));
 
             if (file === 8) {
                 const rankLabel = document.createElement('div');
@@ -424,7 +425,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                         // Store the piece and square information
                         gameState.draggedPiece = pieceData;
                         gameState.draggedPieceElement = pieceElement;
-                        gameState.startSquare = squareAlg;
+                        gameState.startSquareAlgebraic = squareAlg;
 
                         // Get valid moves for this piece
                         const verboseMoves = chess.moves({ square: squareAlg, verbose: true });
@@ -486,7 +487,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                             // Add hover class to the square under the cursor if it's a valid move
                             if (squareUnder &&
                                 gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
-                                squareUnder.dataset.algebraic !== gameState.startSquare) {
+                                squareUnder.dataset.algebraic !== gameState.startSquareAlgebraic) {
                                 squareUnder.classList.add('valid-move-hover');
                             }
                         };
@@ -521,12 +522,12 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                             // Process the drop if it's a valid move and not the same square
                             if (squareUnder &&
                                 gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
-                                squareUnder.dataset.algebraic !== gameState.startSquare) {
-                                console.log("Valid move to:", squareUnder.dataset.algebraic, "from:", gameState.startSquare);
-                                handleDropInternal(squareUnder.dataset.algebraic);
+                                squareUnder.dataset.algebraic !== gameState.startSquareAlgebraic) {
+                                console.log("Valid move to:", squareUnder.dataset.algebraic, "from:", gameState.startSquareAlgebraic);
+                                makeMove(gameState.startSquareAlgebraic,squareUnder.dataset.algebraic, true);
                             } else {
                                 // Check if we're trying to drop on the same square we picked up from
-                                if (squareUnder && squareUnder.dataset.algebraic === gameState.startSquare) {
+                                if (squareUnder && squareUnder.dataset.algebraic === gameState.startSquareAlgebraic) {
                                     console.log("Dropped on same square, canceling move");
                                 } else {
                                     console.log("Invalid move or no square found");
@@ -539,7 +540,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                                 // Reset the drag state
                                 gameState.draggedPiece = null;
                                 gameState.draggedPieceElement = null;
-                                gameState.startSquare = null;
+                                gameState.startSquareAlgebraic = null;
                                 gameState.validMoves = [];
                                 updateBoardHighlightsInternal();
                             }
@@ -946,87 +947,19 @@ function updateBoardFromStyle12(style12Message) {
     }
 }
 
-function handleSquareClickInternal(file, rank) {
-    const squareAlg = `${String.fromCharCode(96 + file)}${rank}`;
-
-    // Only allow moves when it's the player's turn
-    if (gameState.relation !== GameRelation.PLAYING_MY_MOVE &&
-        gameState.relation !== GameRelation.EXAMINING) return; // Not player's turn or not examining
-
-    if (gameState.selectedSquare === squareAlg) {
-        gameState.selectedSquare = null;
-        gameState.validMoves = [];
-        updateBoardGraphicsInternal();
-    } else if (gameState.validMoves.includes(squareAlg)) {
-        const piece = chess.get(gameState.selectedSquare);
-        const isPromotion = piece && piece.type === 'p' &&
-            ((piece.color === 'w' && rank === 8) || (piece.color === 'b' && rank === 1));
-        let moveObject;
-        let moveStringPart = `${gameState.selectedSquare}${squareAlg}`;
-
-        if (isPromotion) {
-            const promotionPiece = prompt('Promote pawn to: (q)ueen, (r)ook, (b)ishop, (n)knight', 'q');
-            const promotion = ['q', 'r', 'b', 'n'].includes(promotionPiece) ? promotionPiece : 'q';
-            moveObject = { from: gameState.selectedSquare, to: squareAlg, promotion: promotion };
-            moveStringPart += `=${promotion}`;
-        } else {
-            moveObject = { from: gameState.selectedSquare, to: squareAlg };
-        }
-
-        const moveResult = chess.move(moveObject);
-        if (moveResult && ws) {
-            ws.send(`move ${moveStringPart}\n\r`);
-            // Hide the piece at the original square
-            const fromSquareDiv = document.getElementById(`square-${gameState.selectedSquare.charCodeAt(0) - 96}-${gameState.selectedSquare.charAt(1)}`);
-            if (fromSquareDiv) {
-                const pieceElement = fromSquareDiv.querySelector('.chess-piece');
-                if (pieceElement) {
-                    pieceElement.style.opacity = '0';
-                }
-            }
-
-            // Update ECO opening info
-            updateECOLabelFromLastMove();
-
-            // Update the lastMovePretty property so the move list can be updated
-            gameState.lastMovePretty = moveResult.san;
-
-            // Do not update the move list here, wait for Style12 it will be done there.
-
-            updateBoardGraphicsInternal(moveStringPart, null); // Update with local move
-            restartClockInternal(); // Restart clock for opponent
-        } else if (!moveResult) {
-            console.error("Invalid move by click:", moveObject);
-            chess.undo(); // Revert if local move failed but somehow passed checks
-        }
-        gameState.selectedSquare = null;
-        gameState.validMoves = [];
-    } else {
-        const piece = chess.get(squareAlg);
-        const currentTurn = chess.turn();
-
-        // When examining, allow selecting any piece
-        // When playing, only allow selecting pieces of the current turn color
-        if (piece && (gameState.relation === GameRelation.EXAMINING || piece.color === currentTurn)) {
-            gameState.selectedSquare = squareAlg;
-            gameState.validMoves = chess.moves({ square: squareAlg, verbose: true }).map(m => m.to);
-            updateBoardGraphicsInternal();
-        } else {
-            gameState.selectedSquare = null;
-            gameState.validMoves = [];
-            updateBoardGraphicsInternal();
-        }
+/**
+ * Handles moves for both drag and click click move.
+ * @param startSquareAlgebraic The starting algebraic square, e2 for example.
+ * @param endSquareAlgebraic The ending algebraic square, e4 for example.
+ * @param isDragging True if dragging, false if click click move.
+ */
+function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
+    if (isDragging && !gameState.draggedPiece) {
+        return;
     }
-}
-
-function handleDropInternal(targetSquareAlg) {
-    console.log("handleDropInternal called with targetSquareAlg:", targetSquareAlg,
-                "validMoves:", gameState.validMoves,
-                "draggedPiece:", gameState.draggedPiece,
-                "startSquare:", gameState.startSquare);
 
     // Check if we're trying to move to the same square
-    if (targetSquareAlg === gameState.startSquare) {
+    if (startSquareAlgebraic === endSquareAlgebraic) {
         console.log("Trying to move to the same square, canceling move");
         if (gameState.draggedPieceElement) {
             gameState.draggedPieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
@@ -1035,11 +968,12 @@ function handleDropInternal(targetSquareAlg) {
         return;
     }
 
-    if (!gameState.validMoves.includes(targetSquareAlg) || !gameState.draggedPiece || !gameState.startSquare) {
+    if (!gameState.validMoves.includes(endSquareAlgebraic)) {
         console.log("Invalid drop detected:",
-                    "validMoves.includes(targetSquareAlg):", gameState.validMoves.includes(targetSquareAlg),
-                    "draggedPiece exists:", !!gameState.draggedPiece,
-                    "startSquare exists:", !!gameState.startSquare);
+            "validMoves.includes(endSquareAlgebraic):", gameState.validMoves.includes(endSquareAlgebraic),
+            "gameState.validMoves:", gameState.validMoves,
+            "draggedPiece exists:", !!gameState.draggedPiece,
+            "startSquare exists:", !!gameState.startSquareAlgebraic);
         // Reset the piece visibility if the move is invalid
         if (gameState.draggedPieceElement) {
             gameState.draggedPieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
@@ -1048,20 +982,26 @@ function handleDropInternal(targetSquareAlg) {
         return;
     }
 
-    const piece = chess.get(gameState.startSquare); // Get piece from current board state at gameState.startSquare
-    const targetRank = parseInt(targetSquareAlg.charAt(1));
+    const piece = chess.get(gameState.startSquareAlgebraic); // Get piece from current board state at gameState.startSquare
+    const targetRank = parseInt(endSquareAlgebraic.charAt(1));
     const isPromotion = piece && piece.type === 'p' &&
         ((piece.color === 'w' && targetRank === 8) || (piece.color === 'b' && targetRank === 1));
     let moveObject;
-    let moveStringPart = `${gameState.startSquare}${targetSquareAlg}`;
+    let moveStringPart = `${gameState.startSquareAlgebraic.algebraic}${endSquareAlgebraic}`;
 
     if (isPromotion) {
+        /**
+         * IMPORTANT!
+         *
+         * Not implemented yet but promotions will be handled by using the radio buttons if the player is
+         * playing or examining. The prompt should only be used when the user is observing.
+         */
         const promotionPiece = prompt('Promote pawn to: (q)ueen, (r)ook, (b)ishop, (n)knight', 'q');
         const promotion = ['q', 'r', 'b', 'n'].includes(promotionPiece) ? promotionPiece : 'q';
-        moveObject = { from: gameState.startSquare, to: targetSquareAlg, promotion: promotion };
+        moveObject = { from: startSquareAlgebraic, to: endSquareAlgebraic, promotion: promotion };
         moveStringPart += `=${promotion}`;
     } else {
-        moveObject = { from: gameState.startSquare, to: targetSquareAlg };
+        moveObject = { from: startSquareAlgebraic, to: endSquareAlgebraic };
     }
 
     console.log("Attempting move:", moveObject);
@@ -1070,18 +1010,23 @@ function handleDropInternal(targetSquareAlg) {
     var moveToMake = null;
     if (moveResult && ws) {
         /**
-         * When not examining or playing: GameRelation.ISOLATED_POSITION or GameRelation.OBSERVING_PLAYED or GameRelation.OBSERVING_EXAMINED or GameRelation.STARTING_BOARD:
+         * When not examining or playing: GameRelation.ISOLATED_POSITION or
+         *                                GameRelation.OBSERVING_PLAYED or
+         *                                GameRelation.OBSERVING_EXAMINED or
+         *                                GameRelation.STARTING_BOARD:
          * Let the user make moves on the board if not playing or examining. These changes are not permanent and will
          * be erased when style 12 events arrive. This is fine, it lets the user move pieces around just to see the position. The changes
          * made in these modes are not live and not sent to fics.
          *
-         * When playing: GameRelation.PLAYING_MY_MOVE or GameRelation.PLAYING_OPPONENT_MOVE (Premove not implemented yet)
+         * When playing: GameRelation.PLAYING_MY_MOVE or
+         *               GameRelation.PLAYING_OPPONENT_MOVE
+         * (Premove not implemented yet)
          * Only let the user make moves for the color he is playing. If it is his turn this is the move that will be sent to fics.
          * If it is not his turn, this is a premove. A premove is a move that will be saved and sent to fics immediately when it is
          * the users turn. Just one premove can be saved. If the user makes a move for his color while it is not his turn, that
          * will become the new premove and replace the old one.
          *
-         * When examining: GameRelation.EXAMINING (Not implemented yet)
+         * When examining: GameRelation.EXAMINING (Not implemented yet.)
          * It is similar to playing, but the user can make moves for both sides. No premove is allowed while examining. The user is
          * actively playing both sides. Examine mode is for analysis of a previous game. It is live and connected to fics.
          */
@@ -1099,7 +1044,7 @@ function handleDropInternal(targetSquareAlg) {
         }
 
         // We'll make the original piece fully transparent but not rely solely on this
-        if (gameState.draggedPieceElement) {
+        if (isDragging && gameState.draggedPieceElement) {
             gameState.draggedPieceElement.classList.remove('piece-visible', 'piece-semi-transparent');
             gameState.draggedPieceElement.classList.add('piece-hidden');
         }
@@ -1118,26 +1063,11 @@ function handleDropInternal(targetSquareAlg) {
         chess.undo();
 
         // Restore the original piece visibility if the move failed
-        if (gameState.draggedPieceElement) {
+        if (isDragging && gameState.draggedPieceElement) {
             gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
             gameState.draggedPieceElement.classList.add('piece-visible');
         }
     }
-
-    // Clear drag state variables
-    gameState.draggedPiece = null;
-    gameState.draggedPieceElement = null;
-    gameState.startSquare = null;
-    gameState.selectedSquare = null;
-    gameState.validMoves = [];
-
-    // Remove any drag clone that might still exist
-    if (gameState.dragClone) {
-        gameState.dragClone.remove();
-        gameState.dragClone = null;
-    }
-
-    updateBoardHighlightsInternal(); // Clear highlights
 }
 
 function detectAndAnimateMoveInternal(oldFen, newFen, callback) {
@@ -1301,8 +1231,8 @@ function updateBoardHighlightsInternal() {
         }
     }
 
-    if (gameState.startSquare) {
-        const startSquareDiv = document.querySelector(`[data-algebraic="${gameState.startSquare}"]`);
+    if (gameState.startSquareAlgebraic) {
+        const startSquareDiv = document.querySelector(`[data-algebraic="${gameState.startSquareAlgebraic}"]`);
         if (startSquareDiv) {
             startSquareDiv.classList.add('selected');
         }
@@ -1457,7 +1387,7 @@ export function initChessSystem(websocket, preferencesObject) {
             if (gameState.draggedPiece) {
                 gameState.draggedPiece = null;
                 gameState.draggedPieceElement = null;
-                gameState.startSquare = null;
+                gameState.startSquareAlgebraic = null;
                 gameState.validMoves = [];
                 updateBoardHighlightsInternal();
             }
@@ -1534,7 +1464,7 @@ export function processGameCreationMessage(message) {
     gameState.selectedSquare = null;
     gameState.draggedPiece = null;
     gameState.draggedPieceElement = null;
-    gameState.startSquare = null;
+    gameState.startSquareAlgebraic = null;
     gameState.moves = [];
     gameState.validMoves = [];
 
