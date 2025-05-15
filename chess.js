@@ -1537,14 +1537,14 @@ export function processGameEndMessage(message) {
     const gameEndRegex = /^(\d+) \(([^)]+) vs\. ([^)]+)\) (.*)\}\s*([012\/-]+).*/;
     const match = message.match(gameEndRegex);
 
-    if (!match) {
+    if (!match || match.length != 6) {
         if (prefs && prefs.showStyle12Events) { // Use the debug preference for logging
             console.log("Game end message did not match regex pattern:", message);
         }
         return false;
     }
 
-    const gameNumber = match[1];
+    const gameNumber = parseInt(match[1],10);
     const whitePlayer = match[2];
     const blackPlayer = match[3];
     const reason = match[4];
@@ -1561,7 +1561,7 @@ export function processGameEndMessage(message) {
     }
 
     // Check if this game end message is for the current game
-    if (gameState && gameState.gameNumber && gameState.gameNumber === gameNumber) {
+    if (gameState.gameNumber === gameNumber) {
         // Update the game header info with the status and result
         gameState.status = reason;
         gameState.result = result;
@@ -1766,7 +1766,7 @@ function updateMovesListDisplayInternal() {
     if (gameState.result) {
         const footerDiv = document.createElement('div');
         footerDiv.classList.add('moves-list-footer-info');
-        footerDiv.textContent = gameHeaderInfo.result;
+        footerDiv.textContent = gameState.result;
         movesListDisplayElement.appendChild(footerDiv);
         footerDiv.scrollIntoView({ behavior: 'instant', block: 'nearest' });
     } else if (movesListDisplayElement.parentElement) { // Ensure parent exists for scrollHeight

@@ -1,20 +1,21 @@
 # Simple-FICS-Interface
 Try it <a href="https://cday-with-ai.github.io/Simple-FICS-Interface/" target="_blank">here</a>.
 
-A minimalist FICS interface which focuses for easy game play and chat functionality.
+A minimalist FICS interface which focuses on easy game play and chat functionality. It should eventually work on mobile and tablet devices.
 
-Currently, under construction. It is usable to observe games, but you might run into bugs while playing.
+Currently, under construction. See the Road Map below for the current state.
 
 Road Map:
-- Responsive web design that works on mobile and tablets.
-  - Add a layout when width is an issue. Put clocks on top and bottom.
-- Fix game end.
-- Add premove.
+- Add content on bottom left below board. Should be last move or game end result.
 - Fix bug where tells from channel tabs are not sent.
-- Add timeseal2.
-- Make speed promotion buttons some place.
+- Make speed promotion checkboxes.
 
-Won't be implemented:
+- Add premove.
+- Add timeseal2.
+- More changes for Responsive web design that work on mobile and tablets.
+  - Add a layout when width is an issue. Put clocks on top and bottom.
+
+Not planned at this time:
 - Bughouse/Crazyhouse support.
 - Viewing multiple boards at once.
 
