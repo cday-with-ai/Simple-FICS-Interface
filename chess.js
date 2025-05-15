@@ -85,10 +85,10 @@ let gameState = { // Reset header
     isWhitesMove: true,
     isClockRunning: false,
     requestedMovesForGame: false,
-    selectedSquare: null,
     draggedPiece: null,
     draggedPieceElement: null,
-    startSquareAlgebraic: null,
+    dndStartSquareAlegbraic: null,
+    clickclickStartSquareAlegbraic: null,
     status: '',
     result: ''
 };
@@ -245,32 +245,36 @@ function createBoardSquaresInternal(boardElement) {
             }
 
             squareDiv.id = `square-${file}-${rank}`; // Ensure unique IDs if multiple boards (not current case)
-            squareDiv.dataset.file = file;
-            squareDiv.dataset.rank = rank;
+            squareDiv.dataset.file = `${file}`;
+            squareDiv.dataset.rank = `${file}`;
             squareDiv.dataset.algebraic = `${String.fromCharCode(96 + file)}${rank}`;
 
             // The click click move handler.
             squareDiv.addEventListener('click',
                 () => {
                     console.log(`Click click move handler called. Square: ${squareDiv.dataset.algebraic}`)
+                    if (gameState.dndStartSquareAlegbraic){
+                        console.log(`DND start square set, cancelling click click move.`)
+                        return;
+                    }
                     let treatAsStartMove = false;
-                    if (!gameState.startSquareAlgebraic || gameState.startSquareAlgebraic === squareDiv.dataset.algebraic) {
-                        // Since DND and click handlers are being used simultaneously this can occur.
+                    if (!gameState.clickclickStartSquareAlegbraic) {
+                        // Since DND and click handlers are being used simultaneously, this can occur.
                         // The use can also click on the start square twice which should not unset it.
-                        console.log(`Click click move : start == end. Leaving gameState.startSquareAlgebraic=${gameState.startSquareAlgebraic}`);
+                        console.log(`Click click move : start == end. Leaving gameState.startSquareAlgebraic=${gameState.clickclickStartSquareAlegbraic}`);
                         treatAsStartMove = true;
                     } else { // This is the end square.
                         console.log("Treating click click move as end square.")
-                        console.log(`Trying to make move: ${gameState.startSquareAlgebraic}${squareDiv.dataset.algebraic}`);
-                        treatAsStartMove = !makeMove(gameState.startSquareAlgebraic, squareDiv.dataset.algebraic,false);
+                        console.log(`Trying to make move: ${gameState.clickclickStartSquareAlegbraic}${squareDiv.dataset.algebraic}`);
+                        treatAsStartMove = !makeMove(gameState.clickclickStartSquareAlegbraic, squareDiv.dataset.algebraic,false);
                         removeBoardHighlightsInternal();
                     }
 
                     if (treatAsStartMove) {
                         console.log("Treating click click move as start square.")
-                        gameState.startSquareAlgebraic = squareDiv.dataset.algebraic;
+                        gameState.clickclickStartSquareAlegbraic = squareDiv.dataset.algebraic;
                         squareDiv.classList.add('selected');
-                        const verboseMoves = chess.moves({ square: gameState.startSquareAlgebraic, verbose: true });
+                        const verboseMoves = chess.moves({ square: gameState.clickclickStartSquareAlegbraic, verbose: true });
                         gameState.validMoves = verboseMoves.map(move => move.to);
                         updateBoardHighlightsInternal();
                     }
@@ -450,7 +454,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                         // Store the piece and square information
                         gameState.draggedPiece = pieceData;
                         gameState.draggedPieceElement = pieceElement;
-                        gameState.startSquareAlgebraic = squareAlg;
+                        gameState.dndStartSquareAlegbraic = squareAlg;
 
                         // Get valid moves for this piece
                         const verboseMoves = chess.moves({ square: squareAlg, verbose: true });
@@ -486,6 +490,8 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                         const onMouseMove = (e) => {
                             if (!gameState.dragClone) return;
 
+                            removeBoardHighlightsInternal();
+
                             // Move the clone with the cursor
                             gameState.dragClone.style.left = `${e.clientX}px`;
                             gameState.dragClone.style.top = `${e.clientY}px`;
@@ -512,7 +518,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                             // Add hover class to the square under the cursor if it's a valid move
                             if (squareUnder &&
                                 gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
-                                squareUnder.dataset.algebraic !== gameState.startSquareAlgebraic) {
+                                squareUnder.dataset.algebraic !== gameState.dndStartSquareAlegbraic) {
                                 squareUnder.classList.add('valid-move-hover');
                             }
                         };
@@ -547,31 +553,28 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                             // Process the drop if it's a valid move and not the same square
                             if (squareUnder &&
                                 gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
-                                squareUnder.dataset.algebraic !== gameState.startSquareAlgebraic) {
-                                console.log("Valid move to:", squareUnder.dataset.algebraic, "from:", gameState.startSquareAlgebraic);
-                                if (makeMove(gameState.startSquareAlgebraic,squareUnder.dataset.algebraic, true)) {
-                                    removeBoardHighlightsInternal();
-                                }
+                                squareUnder.dataset.algebraic !== gameState.dndStartSquareAlegbraic) {
+                                console.log("Valid move to:", squareUnder.dataset.algebraic, "from:", gameState.dndStartSquareAlegbraic);
+                                makeMove(gameState.dndStartSquareAlegbraic,squareUnder.dataset.algebraic, true);
                             } else {
                                 // Check if we're trying to drop on the same square we picked up from
-                                if (squareUnder && squareUnder.dataset.algebraic === gameState.startSquareAlgebraic) {
+                                if (squareUnder && squareUnder.dataset.algebraic === gameState.dndStartSquareAlegbraic) {
                                     console.log("Dropped on same square, canceling move");
                                 } else {
                                     console.log("Invalid move or no square found");
                                 }
-
-                                // Important:
-                                // Don't clear startSquareAlgebraic, validMoves, or highlights.
-                                // This might be a 'click click' move and needs to be handeled in the click handler.
-
-                                // Clear all DND artifacts.
-                                pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
-                                pieceElement.classList.add('piece-visible');
-
-                                // Reset the drag state
-                                gameState.draggedPiece = null;
-                                gameState.draggedPieceElement = null;
                             }
+                            // Reset the drag state
+                            gameState.draggedPiece = null;
+                            gameState.draggedPieceElement = null;
+                            gameState.dndStartSquareAlegbraic = null;
+                            gameState.clickclickStartSquareAlegbraic = null;
+                            removeBoardHighlightsInternal();
+
+                            // Clear all DND artifacts.
+                            pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
+                            pieceElement.classList.add('piece-visible');
+
                         };
 
                         // Add the event listeners
@@ -992,16 +995,6 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     }
 
     if (!gameState.validMoves.includes(endSquareAlgebraic)) {
-        console.log("Invalid drop detected:",
-            "validMoves.includes(endSquareAlgebraic):", gameState.validMoves.includes(endSquareAlgebraic),
-            "gameState.validMoves:", gameState.validMoves,
-            "draggedPiece exists:", !!gameState.draggedPiece,
-            "startSquare exists:", !!gameState.startSquareAlgebraic);
-        // Reset the piece visibility if the move is invalid
-        if (gameState.draggedPieceElement) {
-            gameState.draggedPieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
-            gameState.draggedPieceElement.classList.add('piece-visible');
-        }
         return false;
     }
 
@@ -1010,7 +1003,7 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     const isPromotion = piece && piece.type === 'p' &&
         ((piece.color === 'w' && targetRank === 8) || (piece.color === 'b' && targetRank === 1));
     let moveObject;
-    let moveStringPart = `${gameState.startSquareAlgebraic.algebraic}${endSquareAlgebraic}`;
+    let moveStringPart = `${startSquareAlgebraic}${endSquareAlgebraic}`;
 
     if (isPromotion) {
         /**
@@ -1245,16 +1238,10 @@ function removeBoardHighlightsInternal() {
 function updateBoardHighlightsInternal() {
     removeBoardHighlightsInternal();
 
-    // Add highlights to selected square and valid moves
-    if (gameState.selectedSquare) {
-        const selectedSquareDiv = document.querySelector(`[data-algebraic="${gameState.selectedSquare}"]`);
-        if (selectedSquareDiv) {
-            selectedSquareDiv.classList.add('selected');
-        }
-    }
-
-    if (gameState.startSquareAlgebraic) {
-        const startSquareDiv = document.querySelector(`[data-algebraic="${gameState.startSquareAlgebraic}"]`);
+    // Only highlight start square for click click move.
+    // Use DND artifacts for dnd it is not needed and causes conflicts with click click move.
+    if (gameState.clickclickStartSquareAlegbraic) {
+        const startSquareDiv = document.querySelector(`[data-algebraic="${gameState.clickclickStartSquareAlegbraic}"]`);
         if (startSquareDiv) {
             startSquareDiv.classList.add('selected');
         }
@@ -1409,7 +1396,7 @@ export function initChessSystem(websocket, preferencesObject) {
             if (gameState.draggedPiece) {
                 gameState.draggedPiece = null;
                 gameState.draggedPieceElement = null;
-                gameState.startSquareAlgebraic = null;
+                gameState.dndStartSquareAlegbraic = null;
                 gameState.validMoves = [];
                 updateBoardHighlightsInternal();
             }
@@ -1483,10 +1470,11 @@ export function processGameCreationMessage(message) {
     gameState.isFlipped = false;
     gameState.openingDescription = '';
     gameState.requestedMovesForGame = false;
-    gameState.selectedSquare = null;
     gameState.draggedPiece = null;
     gameState.draggedPieceElement = null;
-    gameState.startSquareAlgebraic = null;
+    gameState.dndStartSquareAlegbraic = null;
+    gameState.clickclickStartSquareAlegbraic = null;
+    gameState.dndStartSquareAlegbraic = null;
     gameState.moves = [];
     gameState.validMoves = [];
 
