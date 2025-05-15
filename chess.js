@@ -249,8 +249,33 @@ function createBoardSquaresInternal(boardElement) {
             squareDiv.dataset.rank = rank;
             squareDiv.dataset.algebraic = `${String.fromCharCode(96 + file)}${rank}`;
 
+            // The click click move handler.
             squareDiv.addEventListener('click',
-                () => makeMove(gameState.startSquareAlgebraic, `${file}${rank}`,false));
+                () => {
+                    console.log(`Click click move handler called. Square: ${squareDiv.dataset.algebraic}`)
+                    let treatAsStartMove = false;
+                    if (!gameState.startSquareAlgebraic || gameState.startSquareAlgebraic === squareDiv.dataset.algebraic) {
+                        // Since DND and click handlers are being used simultaneously this can occur.
+                        // The use can also click on the start square twice which should not unset it.
+                        console.log(`Click click move : start == end. Leaving gameState.startSquareAlgebraic=${gameState.startSquareAlgebraic}`);
+                        treatAsStartMove = true;
+                    } else { // This is the end square.
+                        console.log("Treating click click move as end square.")
+                        console.log(`Trying to make move: ${gameState.startSquareAlgebraic}${squareDiv.dataset.algebraic}`);
+                        treatAsStartMove = !makeMove(gameState.startSquareAlgebraic, squareDiv.dataset.algebraic,false);
+                        removeBoardHighlightsInternal();
+                    }
+
+                    if (treatAsStartMove) {
+                        console.log("Treating click click move as start square.")
+                        gameState.startSquareAlgebraic = squareDiv.dataset.algebraic;
+                        squareDiv.classList.add('selected');
+                        const verboseMoves = chess.moves({ square: gameState.startSquareAlgebraic, verbose: true });
+                        gameState.validMoves = verboseMoves.map(move => move.to);
+                        updateBoardHighlightsInternal();
+                    }
+                });
+
 
             if (file === 8) {
                 const rankLabel = document.createElement('div');
@@ -524,7 +549,9 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                                 gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
                                 squareUnder.dataset.algebraic !== gameState.startSquareAlgebraic) {
                                 console.log("Valid move to:", squareUnder.dataset.algebraic, "from:", gameState.startSquareAlgebraic);
-                                makeMove(gameState.startSquareAlgebraic,squareUnder.dataset.algebraic, true);
+                                if (makeMove(gameState.startSquareAlgebraic,squareUnder.dataset.algebraic, true)) {
+                                    removeBoardHighlightsInternal();
+                                }
                             } else {
                                 // Check if we're trying to drop on the same square we picked up from
                                 if (squareUnder && squareUnder.dataset.algebraic === gameState.startSquareAlgebraic) {
@@ -533,22 +560,18 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                                     console.log("Invalid move or no square found");
                                 }
 
-                                // If the drop is invalid, reset the piece
+                                // Important:
+                                // Don't clear startSquareAlgebraic, validMoves, or highlights.
+                                // This might be a 'click click' move and needs to be handeled in the click handler.
+
+                                // Clear all DND artifacts.
                                 pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
                                 pieceElement.classList.add('piece-visible');
 
                                 // Reset the drag state
                                 gameState.draggedPiece = null;
                                 gameState.draggedPieceElement = null;
-                                gameState.startSquareAlgebraic = null;
-                                gameState.validMoves = [];
-                                updateBoardHighlightsInternal();
                             }
-
-                            // Remove hover class from all squares
-                            document.querySelectorAll('.valid-move-hover').forEach(sq => {
-                                sq.classList.remove('valid-move-hover');
-                            });
                         };
 
                         // Add the event listeners
@@ -955,7 +978,7 @@ function updateBoardFromStyle12(style12Message) {
  */
 function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     if (isDragging && !gameState.draggedPiece) {
-        return;
+        return false;
     }
 
     // Check if we're trying to move to the same square
@@ -965,7 +988,7 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
             gameState.draggedPieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
             gameState.draggedPieceElement.classList.add('piece-visible');
         }
-        return;
+        return false;
     }
 
     if (!gameState.validMoves.includes(endSquareAlgebraic)) {
@@ -979,7 +1002,7 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
             gameState.draggedPieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
             gameState.draggedPieceElement.classList.add('piece-visible');
         }
-        return;
+        return false;
     }
 
     const piece = chess.get(gameState.startSquareAlgebraic); // Get piece from current board state at gameState.startSquare
@@ -1058,6 +1081,7 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         // Update the board graphics which will create the piece at the new location
         updateBoardGraphicsInternal(moveStringPart, null);
         restartClockInternal(null);
+        return true;
     } else if (!moveResult) {
         console.error("Invalid move by drop:", moveObject);
         chess.undo();
@@ -1067,6 +1091,7 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
             gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
             gameState.draggedPieceElement.classList.add('piece-visible');
         }
+        return false;
     }
 }
 
@@ -1209,19 +1234,16 @@ function animatePieceMoveInternal(fromSquare, toSquare, callback) {
     });
 }
 
-function updateBoardHighlightsInternal() {
-    const board = document.getElementById('chessBoard');
-    if (!board) return;
-
-    // We don't need to iterate through ranks and files in any particular order
-    // We just need to find all the squares and update their highlights
-    // This way we avoid any issues with mismatched square IDs
-
-    // Clear all highlights first
-    const allSquares = board.querySelectorAll('.chess-square');
+function removeBoardHighlightsInternal() {
+    const boardElement = document.getElementById('chessBoard');
+    const allSquares = boardElement.querySelectorAll('.chess-square');
     allSquares.forEach(square => {
         square.classList.remove('selected', 'valid-move', 'valid-move-hover');
     });
+}
+
+function updateBoardHighlightsInternal() {
+    removeBoardHighlightsInternal();
 
     // Add highlights to selected square and valid moves
     if (gameState.selectedSquare) {
