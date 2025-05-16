@@ -9,7 +9,6 @@ Road Map:
 - Add content on bottom left below board. Should be last move or game end result.
 - Fix bug where tells from channel tabs are not sent.
 - Make speed promotion checkboxes.
-
 - Add premove.
 - Add timeseal2.
 - More changes for Responsive web design that work on mobile and tablets.
