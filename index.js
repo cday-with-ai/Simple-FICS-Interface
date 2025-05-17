@@ -1,12 +1,12 @@
 // Import chess system functions
 import {
-    initChessSystem,
-    processStyle12Message,
-    processMovesList,
-    processGameEndMessage,
-    processGameCreationMessage,
     applyChessRelatedPreferences,
-    createChessBoardSquares // Specifically for createGameTab
+    createChessBoardSquares,
+    initChessSystem,
+    processGameCreationMessage,
+    processGameEndMessage,
+    processMovesList,
+    processStyle12Message
 } from './chess.js';
 
 
@@ -828,7 +828,7 @@ function closeTab(typeAndName) {
 
 function routeMessage(msg) {
     let timesealAckIndex = msg.indexOf("[G]\0");
-    while(timesealAckIndex != -1) {
+    while (timesealAckIndex != -1) {
         ws.baseSend(encodeTimeseal(String.fromCharCode(2, 57)));
         msg = msg.substring(0, timesealAckIndex) + msg.substring(timesealAckIndex + 4);
         timesealAckIndex = msg.indexOf("[G]\0");
@@ -1094,7 +1094,7 @@ function updatePieceSetPreview(pieceSet) {
 }
 
 
-function encodeTimeseal(e)  {
+function encodeTimeseal(e) {
     let t = e.length;
     const n = new Uint8Array(t + 30);
     for (let t = 0; t < e.length; t++)
@@ -1108,7 +1108,7 @@ function encodeTimeseal(e)  {
         n[t + e] = s.charCodeAt(e);
     for (t += s.length,
              n[t] = 25,
-             t++; t % 12 != 0; )
+             t++; t % 12 != 0;)
         n[t] = 49,
             t++;
     for (let e = 0; e < t; e += 12)

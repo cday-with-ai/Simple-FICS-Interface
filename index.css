@@ -613,10 +613,6 @@ body {
     vertical-align: middle;
 }
 
-/* Player divider box styles moved to chess.css */
-
-/* Chess board styles moved to chess.css */
-
 .game-status {
     font-weight: bold;
     margin-top: 5px;
@@ -774,7 +770,6 @@ body {
     background-color: #45a049;
 }
 
-/* Piece Set Preview Styles */
 .piece-set-preview {
     width: 100%;
     border: 1px solid #ccc;
