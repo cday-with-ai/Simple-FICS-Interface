@@ -654,8 +654,8 @@ function updateNonBoardAndMovesUI() {
     const bottomPlayerClockEl = document.getElementById('bottomPlayerClock');
 
     // Check if we have ratings from the current game info or moves list
-    let whiteNameWithRating = gameState.whitePlayer.name + ' ' + (gameState.whiteRating ? `(${gameState.whiteRating})` : '');
-    let blackNameWithRating = gameState.blackPlayer.name  + ' ' + (gameState.blackRating ? `(${gameState.blackRating})` : '');
+    let whiteNameWithRating = gameState.whitePlayer.name + ' ' + (gameState.whitePlayer.rating ? `(${gameState.whitePlayer.rating})` : '');
+    let blackNameWithRating = gameState.blackPlayer.name  + ' ' + (gameState.blackPlayer.rating ? `(${gameState.blackPlayer.rating})` : '');
 
     // Get the current turn from the chess instance
     const currentTurn = chess ? chess.turn() : 'w';
@@ -1467,7 +1467,8 @@ export function processMovesList(rawMovesText) {
 //     fics%
 export function processGameCreationMessage(message) {
     if (!message || !message.trim()) return false;
-
+    //Creating: foo (1668) bobbyrob (1715) rated blitz 3 0
+    //{Game 16 (foo vs. bobbyrob) Creating rated blitz match.}
     // Regular expression to match game creation messages with more flexible rating patterns
     const gameCreationRegex = /^([\w.-]+) \(([\d+]+)\) ([\w.-]+) \(([\d+]+)\) (rated|unrated) (\w+) (\d+) (\d+)/;
     const match = message.match(gameCreationRegex);
@@ -1644,18 +1645,12 @@ function parseAndStoreMovesInternal(rawMovesText) {
 
             const playerMatch = line.match(playerRegex);
             if (playerMatch) {
-                // parsedHeaderInfo.whitePlayer.name = playerMatch[1];
-                // parsedHeaderInfo.whitePlayer.rating = playerMatch[2];
-                // parsedHeaderInfo.blackPlayer.name = playerMatch[3];
-                // parsedHeaderInfo.blackPlayer.rating = playerMatch[4];
-                // parsedHeaderInfo.dateTime = playerMatch[5];
-
                 // This is how the ratings are set for observed games.
-                if (!gameState.whiteRating) {
-                    gameState.whiteRating = playerMatch[2];
+                if (!gameState.whitePlayer.rating) {
+                    gameState.whitePlayer.rating = playerMatch[2];
                 }
-                if (!gameState.blackRating) {
-                    gameState.blackRating = playerMatch[4];
+                if (!gameState.blackPlayer.rating) {
+                    gameState.blackPlayer.rating = playerMatch[4];
                 }
 
                 continue;
