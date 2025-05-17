@@ -1,7 +1,7 @@
 // C:/Users/carso/IdeaProjects/Simple-FICS-Interface/chess.js
 
 // Import ECO lookup functions
-import {lookupFromFEN, lookupFromMoveList, test, initECO} from './eco.js';
+import {initECO, lookupFromMoveList} from './eco.js';
 
 // GameRelation Enum
 const GameRelation = {
@@ -85,6 +85,7 @@ let gameState = { // Reset header
     isPlayerWhite: true,
     isPlayerPlaying: true,
     isFlipped: false,
+    isValidationSupported: true,
     allowUserToMoveBothSides: true,
     moves: [],
     validMoves: [],
@@ -98,6 +99,7 @@ let gameState = { // Reset header
     dndLastDropTime: null,
     clickclickStartSquareAlegbraic: null,
     clickclickLastDropTime: null,
+    premove: null,
     status: '',
     result: ''
 };
@@ -105,6 +107,12 @@ let gameState = { // Reset header
 // --- Style12 Processing ---
 export function processStyle12Message(msg) {
     console.log("Processing Style12 message:", msg.substring(0, 100) + "...");
+
+    // First premove if its set.
+    if (gameState.premove && gameState.premove != null && gameState.premove != '') {
+        ws.send(gameState.premove);
+        gameState.premove = null;
+    }
 
     if (!boardInitialized) {
         console.warn("Chess board not initialized when processing Style12. Attempting setup.");
@@ -242,28 +250,6 @@ function createBoardSquaresInternal(boardElement) {
         }
     }
 
-    boardElement.addEventListener('mousedown', (e) => {
-        // Check if the mousedown is on the resize handle area
-        if (e.target === resizeHandle || (e.offsetX > boardElement.offsetWidth - 20 && e.offsetY > boardElement.offsetHeight - 20)) {
-            const startX = e.clientX;
-            const startWidth = boardElement.offsetWidth;
-
-            const onMouseMove = (moveEvent) => {
-                let newWidth = startWidth + (moveEvent.clientX - startX);
-                newWidth = Math.max(50, Math.min(newWidth, 1500)); // Min/max board size
-                boardElement.style.width = newWidth + 'px';
-                boardElement.style.height = newWidth + 'px'; // Maintain square
-                moveEvent.preventDefault();
-            };
-            const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-            };
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        }
-    });
-
     applyChessRelatedPreferences(); // Apply colors after squares are created
 }
 
@@ -275,7 +261,7 @@ function createSquare(boardElement, rank, file) {
     squareDiv.dataset.file = `${file}`;
     squareDiv.dataset.rank = `${rank}`;
     squareDiv.classList.add('chess-square');
-    squareDiv.classList.add((file + rank) % 2 === 0 ? 'light-square' : 'dark-square');
+    squareDiv.classList.add((file + rank) % 2 === 0 ? 'dark-square' : 'light-square');
     squareDiv.dataset.algebraic = `${algFile}${algRank}`;
     const pieceElement = document.createElement('div');
     pieceElement.classList.add('chess-piece');
@@ -302,40 +288,46 @@ function createSquare(boardElement, rank, file) {
     }
 
     // The click click move handler.
-    squareDiv.addEventListener('click', () => {
-        console.log(`Click click move handler called. Square: ${squareDiv.dataset.algebraic}`)
-        if (gameState.dndStartSquareAlegbraic) {
-            console.log(`DND start square set, cancelling click click move.`)
-            return;
-        }
-        if (gameState.dndLastDropTime && gameState.dndLastDropTime > Date.now() - 200) {
-            console.log(`DND drop time less than now - 200ms. Ignoring click click move.`)
-            return;
-        }
-        removeBoardHighlightsInternal();
-        let treatAsStartMove = false;
-        if (!gameState.clickclickStartSquareAlegbraic) {
-            // Since DND and click handlers are being used simultaneously, this can occur.
-            // The use can also click on the start square twice which should not unset it.
-            console.log(`Click click move : start == end. Leaving gameState.startSquareAlgebraic=${gameState.clickclickStartSquareAlegbraic}`);
-            treatAsStartMove = true;
-        } else { // This is the end square.
-            console.log("Treating click click move as end square.")
-            console.log(`Trying to make move: ${gameState.clickclickStartSquareAlegbraic}${squareDiv.dataset.algebraic}`);
-            treatAsStartMove = !makeMove(gameState.clickclickStartSquareAlegbraic, squareDiv.dataset.algebraic, false);
-            gameState.clickclickLastDropTime = Date.now();
+    squareDiv.addEventListener('click', (e) => {
+        if (e.button === 2) { // 2 represents the right mouse button
+            gameState.premove = null;
+        } else {
+            console.log(`Click click move handler called. Square: ${squareDiv.dataset.algebraic}`)
+            if (gameState.dndStartSquareAlegbraic) {
+                console.log(`DND start square set, cancelling click click move.`)
+                return;
+            }
+            if (gameState.dndLastDropTime && gameState.dndLastDropTime > Date.now() - 200) {
+                console.log(`DND drop time less than now - 200ms. Ignoring click click move.`)
+                return;
+            }
             removeBoardHighlightsInternal();
-        }
+            let treatAsStartMove = false;
+            if (!gameState.clickclickStartSquareAlegbraic) {
+                // Since DND and click handlers are being used simultaneously, this can occur.
+                // The use can also click on the start square twice which should not unset it.
+                console.log(`Click click move : start == end. Leaving gameState.startSquareAlgebraic=${gameState.clickclickStartSquareAlegbraic}`);
+                treatAsStartMove = true;
+            } else { // This is the end square.
+                console.log("Treating click click move as end square.")
+                console.log(`Trying to make move: ${gameState.clickclickStartSquareAlegbraic}${squareDiv.dataset.algebraic}`);
+                treatAsStartMove = !makeMove(gameState.clickclickStartSquareAlegbraic, squareDiv.dataset.algebraic, false);
+                gameState.clickclickLastDropTime = Date.now();
+                removeBoardHighlightsInternal();
+            }
 
-        if (treatAsStartMove) {
-            console.log("Treating click click move as start square.")
-            gameState.clickclickStartSquareAlegbraic = squareDiv.dataset.algebraic;
-            const verboseMoves = chess.moves({square: gameState.clickclickStartSquareAlegbraic, verbose: true});
-            gameState.validMoves = verboseMoves.map(move => move.to);
-            updateBoardHighlightsInternal();
+            if (treatAsStartMove) {
+                console.log("Treating click click move as start square.")
+                gameState.clickclickStartSquareAlegbraic = squareDiv.dataset.algebraic;
+                const verboseMoves = chess.moves({square: gameState.clickclickStartSquareAlegbraic, verbose: true});
+                gameState.validMoves = verboseMoves.map(move => move.to);
+                updateBoardHighlightsInternal();
+            }
         }
     });
 }
+
+
 
 function updateBoardGraphicsInternal(updateNonBoardUI = false) {
     const board = document.getElementById('chessBoard');
@@ -345,6 +337,14 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
 
     board.querySelectorAll('.chess-piece.dragging').forEach(piece => {
         piece.classList.remove('dragging');
+    });
+
+    //Clear premove highlights.
+    board.querySelectorAll(".premove-start").forEach(square => {
+        square.classList.remove('premove-start');
+    });
+    board.querySelectorAll(".premove-end").forEach(square => {
+        square.classList.remove('premove-end');
     });
 
     const squareSize = board.clientWidth / 8;
@@ -800,6 +800,7 @@ function updateCurrentGameInfoFromStyle12(style12Message) {
                 gameState.isActive = true;
                 gameState.isWhitesMove = parts[9] === 'W';
                 gameState.openingDescription = '';
+                gameState.isValidationSupported = gameState.type != 'atomic' && gameState.type != 'suicide' && gameState.type != 'losers';
 
                 const relationValue = parseInt(parts[19], 10);
                 // Store the numeric relation value directly
@@ -901,6 +902,7 @@ function updateBoardFromStyle12(style12Message) {
 
     const lines = style12Message.split('\n');
     const boardLineIndex = lines.findIndex(line => line.trim().startsWith('<12>'));
+    let fen = '';
 
     if (boardLineIndex !== -1) {
         const boardLine = lines[boardLineIndex].trim();
@@ -909,7 +911,6 @@ function updateBoardFromStyle12(style12Message) {
         if (parts.length >= 10) { // <12> + 8 rows + turn
             try {
                 const boardRows = parts.slice(1, 9);
-                let fen = '';
                 for (let i = 0; i < 8; i++) {
                     let row = boardRows[i];
                     let emptyCount = 0;
@@ -1046,10 +1047,33 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     }
 
     console.log("Attempting move:", moveObject);
-    const moveResult = chess.move(moveObject);
-    console.log("Move result:", moveResult);
-    var moveToMake = null;
-    if (moveResult && ws) {
+
+    const isPremove = gameState.isPlayerPlaying &&
+                                gameState.isWhitesMove !== gameState.isPlayerWhite &&
+                                gameState.premove;
+    const isValidating = gameState.isValidationSupported &&
+                                 !isPremove &&
+                                 (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite);
+
+    let moveResult = null;
+
+    if (isValidating) {
+        moveResult = chess.move(moveObject);
+        console.log("Move result:", moveResult);
+    }
+    if (isPremove) {
+        gameState.premove = moveStringPart;
+
+        document.querySelector(`[data-algebraic="${moveObject.startSquare}"]`).classList.add('premove-start');
+        document.querySelector(`[data-algebraic="${moveObject.endSquare}"]`).classList.add('premove-end');
+
+        // Restore the original piece visibility if the move failed
+        if (isDragging && gameState.draggedPieceElement) {
+            gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
+            gameState.draggedPieceElement.classList.add('piece-visible');
+        }
+    } else if (!isValidating || (isValidating && moveResult)) {
+
         /**
          * When not examining or playing: GameRelation.ISOLATED_POSITION or
          *                                GameRelation.OBSERVING_PLAYED or
@@ -1147,26 +1171,32 @@ function detectAndAnimateMoveInternal(oldFen, newFen, callback) {
     if (fromSq && toSq && movedPiece && newChess.get(toSq) &&
         newChess.get(toSq).type === movedPiece.type &&
         newChess.get(toSq).color === movedPiece.color) {
-        // Convert algebraic to file/rank for animation function
-        const fromFile = fromSq.charCodeAt(0) - 96;
-        const fromRank = parseInt(fromSq.charAt(1));
-        const toFile = toSq.charCodeAt(0) - 96;
-        const toRank = parseInt(toSq.charAt(1));
-        animatePieceMoveInternal({file: fromFile, rank: fromRank}, {file: toFile, rank: toRank}, callback);
+        animatePieceMoveInternal(fromSq, toSq, callback);
     } else {
         if (callback) callback(); // No clear move to animate or complex situation
     }
 }
 
-function animatePieceMoveInternal(fromSquare, toSquare, callback) {
+
+
+function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
     const board = document.getElementById('chessBoard');
     if (!board) {
         if (callback) callback();
         return;
     }
 
-    const fromElement = document.getElementById(`square-${fromSquare.file}-${fromSquare.rank}`);
-    const toElement = document.getElementById(`square-${toSquare.file}-${toSquare.rank}`);
+    const fromElement = document.querySelector(`[data-algebraic="${algrebraicFrom}"]`);
+    const fromSquare = {
+        file: parseInt(fromElement.getAttribute('data-file'), 10),
+        rank: parseInt(fromElement.getAttribute('data-rank'), 10)
+    };
+
+    const toElement = document.querySelector(`[data-algebraic="${algebraicTo}"]`);
+    const toSquare = {
+        file: parseInt(toElement.getAttribute('data-file'), 10),
+        rank: parseInt(toElement.getAttribute('data-rank'), 10)
+    };
 
     if (!fromElement || !toElement) {
         if (callback) callback();
@@ -1206,9 +1236,9 @@ function animatePieceMoveInternal(fromSquare, toSquare, callback) {
     animatedPiece.style.position = 'absolute'; // Crucial for animation
 
     // Calculate positions based on board orientation
-    const startX = (fromSquare.file - 1) * squareSize;
+    const startX = (8 - fromSquare.file) * squareSize;
     const startY = !gameState.isWhiteOnBottom ? (fromSquare.rank - 1) * squareSize : (8 - fromSquare.rank) * squareSize;
-    const endX = (toSquare.file - 1) * squareSize;
+    const endX = (8 - toSquare.file) * squareSize;
     const endY = !gameState.isWhiteOnBottom ? (toSquare.rank - 1) * squareSize : (8 - toSquare.rank) * squareSize;
 
     animatedPiece.style.left = startX + 'px';

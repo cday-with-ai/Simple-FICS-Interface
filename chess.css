@@ -348,6 +348,14 @@
 
 /* Resize handle removed */
 
+.premove-start {
+    filter: brightness(80%);
+}
+
+.premove-end {
+    filter: brightness(80%);
+}
+
 .selected {
     filter: brightness(80%);
 }

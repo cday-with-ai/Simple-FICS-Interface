@@ -457,6 +457,7 @@ function connectWebSocket() {
         console.log(`Sent \"${msg.trim()}\"`); // Trim for cleaner log
         if (mainTextArea) { // Check if mainTextArea is available
             mainTextArea.innerHTML += processTextToHTML(`Sent \`${msg.trim()}\`\n`);
+            mainTextArea.scrollTop = mainTextArea.scrollHeight;
         }
         msg = encodeTimeseal(msg.trim());
         return ws.baseSend(msg);
