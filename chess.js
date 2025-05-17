@@ -238,13 +238,13 @@ function createBoardSquaresInternal(boardElement) {
 
     if (gameState.isWhiteOnBottom) {
         for (let rank = 8; rank > 0; rank--) {
-            for (let file = 8; file > 0; file--) {
+            for (let file = 1; file <= 8; file++) {
                 createSquare(boardElement, rank, file);
             }
         }
     } else { // white on top.
         for (let rank = 1; rank <= 8; rank++) {
-            for (let file = 8; file > 0; file--) {
+            for (let file = 1; file <= 8; file++) {
                 createSquare(boardElement, rank, file);
             }
         }
@@ -253,27 +253,37 @@ function createBoardSquaresInternal(boardElement) {
     applyChessRelatedPreferences(); // Apply colors after squares are created
 }
 
+/**
+ * @param file [1-8] for a-h
+ * @returns {string}
+ */
+function fileNumberToAlgebraic(file) {
+    return String.fromCharCode(96 + file);
+}
+
 function createSquare(boardElement, rank, file) {
-    const algRank = rank;
-    const algFile = String.fromCharCode(96 + file);
+    const algRank = '' + rank;
+    const algFile = fileNumberToAlgebraic(file);
     const squareDiv = document.createElement('div');
     squareDiv.id = `square-${file}-${rank}`; // Ensure unique IDs if multiple boards (not current case)
     squareDiv.dataset.file = `${file}`;
     squareDiv.dataset.rank = `${rank}`;
     squareDiv.classList.add('chess-square');
-    squareDiv.classList.add((file + rank) % 2 === 0 ? 'dark-square' : 'light-square');
+    if (gameState.isWhiteOnBottom) {
+        squareDiv.classList.add((file + rank) % 2 === 0 ? 'dark-square' : 'light-square');
+    } else {
+        squareDiv.classList.add((file + rank) % 2 === 0 ? 'light-square' : 'dark-square');
+    }
     squareDiv.dataset.algebraic = `${algFile}${algRank}`;
     const pieceElement = document.createElement('div');
     pieceElement.classList.add('chess-piece');
     squareDiv.appendChild(pieceElement);
     boardElement.appendChild(squareDiv);
 
-    if (file === 1) {
+    if (file === 8) {
         const rankLabel = document.createElement('div');
         rankLabel.classList.add('rank-label');
-
-        // Keep the rank label as is - it's already correct for both orientations
-        rankLabel.textContent = rank;
+        rankLabel.textContent = algRank;
         squareDiv.appendChild(rankLabel);
     }
     // Add file labels to the bottom row based on board orientation
@@ -283,11 +293,11 @@ function createSquare(boardElement, rank, file) {
 
         // Use the same algebraic file as used for the square notation
         let labelFile = file;
-        fileLabel.textContent = String.fromCharCode(96 + labelFile);
+        fileLabel.textContent = algFile;
         squareDiv.appendChild(fileLabel);
     }
 
-    // The click click move handler.
+    // The click-click move handler.
     squareDiv.addEventListener('click', (e) => {
         if (e.button === 2) { // 2 represents the right mouse button
             gameState.premove = null;
@@ -328,7 +338,6 @@ function createSquare(boardElement, rank, file) {
 }
 
 
-
 function updateBoardGraphicsInternal(updateNonBoardUI = false) {
     const board = document.getElementById('chessBoard');
     if (!board || !prefs) {
@@ -351,14 +360,9 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
     const pieceFontSize = Math.max(Math.floor(squareSize * 0.8), 24) + 'px';
     const labelFontSize = Math.max(Math.floor(squareSize * 0.15), 6) + 'px';
 
-    // Determine the rank order based on board orientation
-    const startRank = gameState.isWhiteOnBottom ? 8 : 1;
-    const endRank = gameState.isWhiteOnBottom ? 1 : 8;
-    const rankStep = gameState.isWhiteOnBottom ? -1 : 1;
-
     for (let rank = 1; rank <= 8; rank++) {
         for (let file = 1; file <= 8; file++) {
-            const squareAlg = `${String.fromCharCode(96 + file)}${rank}`;
+            const squareAlg = `${fileNumberToAlgebraic(file)}${rank}`;
             const squareDiv = document.getElementById(`square-${file}-${rank}`);
             if (!squareDiv) continue;
 
@@ -383,7 +387,8 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
             if (fileLabel) {
                 fileLabel.style.fontSize = labelFontSize;
                 // Show file labels on the bottom row based on board orientation
-                fileLabel.style.display = (gameState.isWhiteOnBottom && rank === 1) || (!gameState.isWhiteOnBottom && rank === 8) ? 'block' : 'none';
+                fileLabel.style.display = (gameState.isWhiteOnBottom && rank === 1) ||
+                                          (!gameState.isWhiteOnBottom && rank === 8) ? 'block' : 'none';
                 fileLabel.style.color = squareDiv.classList.contains('light-square') ? prefs.darkSquareColor : prefs.lightSquareColor;
             }
 
@@ -1049,11 +1054,11 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     console.log("Attempting move:", moveObject);
 
     const isPremove = gameState.isPlayerPlaying &&
-                                gameState.isWhitesMove !== gameState.isPlayerWhite &&
-                                gameState.premove;
+        gameState.isWhitesMove !== gameState.isPlayerWhite &&
+        gameState.premove;
     const isValidating = gameState.isValidationSupported &&
-                                 !isPremove &&
-                                 (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite);
+        !isPremove &&
+        (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite);
 
     let moveResult = null;
 
@@ -1178,7 +1183,6 @@ function detectAndAnimateMoveInternal(oldFen, newFen, callback) {
 }
 
 
-
 function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
     const board = document.getElementById('chessBoard');
     if (!board) {
@@ -1236,10 +1240,14 @@ function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
     animatedPiece.style.position = 'absolute'; // Crucial for animation
 
     // Calculate positions based on board orientation
-    const startX = (8 - fromSquare.file) * squareSize;
-    const startY = !gameState.isWhiteOnBottom ? (fromSquare.rank - 1) * squareSize : (8 - fromSquare.rank) * squareSize;
-    const endX = (8 - toSquare.file) * squareSize;
-    const endY = !gameState.isWhiteOnBottom ? (toSquare.rank - 1) * squareSize : (8 - toSquare.rank) * squareSize;
+    const startX = (fromSquare.file -1) * squareSize;
+    const startY = gameState.isWhiteOnBottom ?
+        (8 - fromSquare.rank) * squareSize :
+        (fromSquare.rank - 1) * squareSize;
+    const endX = (toSquare.file -1) * squareSize;
+    const endY = gameState.isWhiteOnBottom ?
+        (8 - toSquare.rank) * squareSize :
+        (toSquare.rank - 1) * squareSize;
 
     animatedPiece.style.left = startX + 'px';
     animatedPiece.style.top = startY + 'px';

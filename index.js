@@ -38,12 +38,15 @@ const mainConsole = document.querySelector('.main-console');
 const chatTabsContainer = document.querySelector('.chat-tabs-container');
 
 const ficsCommandRegex = [/^(history$)|(history [a-zA-Z0-9]+$)/gm,
-    /^(examine$)|(examine [a-zA-Z0-9]+$)/gm, /^(ex$)|(ex [a-zA-Z0-9]+$)/gm,
-    /^(unexamine$)|(unexamine [a-zA-Z0-9]+$)/gm, /^(unex$)|(unex [a-zA-Z0-9]+$)/gm,
-    /^(history$)|(history [a-zA-Z0-9]+$)/gm, /^(hi$)|(hi [a-zA-Z0-9]+$)/gm,
-    /^(match .*$)/gm, /^m .*$/gm,
-    /^(observe$)|(observe [a-zA-Z0-9]+$)/gm, /^(obs$)|(obs [a-zA-Z0-9]+$)/gm,
-    /^(unobserve$)|(unobserve [a-zA-Z0-9]+$)/gm, /^(unobs$)|(unobs [a-zA-Z0-9]+$)/gm,
+    /^(examine$)|(examine [a-zA-Z0-9]+$)||(ex [a-zA-Z0-9]+$)/gm,
+    /^(unexamine$)|(unexamine [a-zA-Z0-9]+$)|(unex$)|(unex [a-zA-Z0-9]+$)/gm,
+    /^(history$)|(hi$)|(history [a-zA-Z0-9]+$)|(hi [a-zA-Z0-9]+$)/gm,
+    /^(match [a-zA-Z0-9]+$)|(m [a-zA-Z0-9]+$)/gm,
+    /^(observe$)|(obs$)|(observe [a-zA-Z0-9]+$)|(obs [a-zA-Z0-9]+$)/gm,
+    /^(unobserve$)|(unobs$)|(unobserve [a-zA-Z0-9]+$)|(unobs [a-zA-Z0-9]+$)/gm,
+    /^([+-]censor [a-zA-Z0-9]+$)/gm,
+    /^(seek [a-zA-Z0-9]+ [a-zA-Z0-9]+ [a-zA-Z0-9]+$)|/gm,
+    /^(play [0-9]+$)|/gm,
     /^(tell [a-zA-Z0-9]+ .*$)|(t [a-zA-Z0-9]+ .*$)/gm,
     /^message .*$/gm];
 
