@@ -236,14 +236,13 @@ function createBoardSquaresInternal(boardElement) {
             const squareDiv = document.createElement('div');
             squareDiv.classList.add('chess-square');
             // In standard chess notation, a1 should be a dark square
-            // This means (rank + file) % 2 should be 1 for dark squares, not 0
-            squareDiv.classList.add((rank + file) % 2 === 1 ? (prefs ? prefs.lightSquareColor : '#e8e0c8') : (prefs ? prefs.darkSquareColor : '#AB8B69'));
-            // Apply actual color via class or direct style if prefs are available
-            squareDiv.style.backgroundColor = (rank + file) % 2 === 1 ? (prefs ? prefs.lightSquareColor : '#e8e0c8') : (prefs ? prefs.darkSquareColor : '#AB8B69');
-            if ((rank + file) % 2 === 1) {
-                squareDiv.classList.add('light-square');
-            } else {
+            // This means (file + rank) % 2 === 0 for dark squares
+            if ((file + rank) % 2 === 0) {
                 squareDiv.classList.add('dark-square');
+                squareDiv.style.backgroundColor = prefs ? prefs.darkSquareColor : '#AB8B69';
+            } else {
+                squareDiv.classList.add('light-square');
+                squareDiv.style.backgroundColor = prefs ? prefs.lightSquareColor : '#e8e0c8';
             }
 
             squareDiv.id = `square-${file}-${rank}`; // Ensure unique IDs if multiple boards (not current case)
