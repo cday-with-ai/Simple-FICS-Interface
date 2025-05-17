@@ -1,5 +1,3 @@
-
-
 // Import chess system functions
 import {
     initChessSystem,
@@ -22,6 +20,9 @@ let currentView = 'both'; // Default view mode
 const messageHistory = {};
 const messageHistoryPosition = {};
 const MAX_HISTORY_LENGTH = 100;
+
+const timesealConnect = "TIMESEAL2|openseal|simpleficsinterface|";
+const timesealKey = "Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
 
 // DOM elements
 const mainTextArea = document.getElementById('mainTextArea');
@@ -76,7 +77,7 @@ let preferences = {
 // Game relation enum - MOVED to chess.js
 
 // Global Event Listeners
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const randomNumber = Math.floor(Math.random() * 1000000000); // Generate a random number
 
     // Process stylesheet links
@@ -171,7 +172,7 @@ function handleArrowKeys(event, inputElement) {
 mainInput.addEventListener('keypress', (event) => {
     if (event.key === "Enter") {
         const message = mainInput.value;
-        if (ws) ws.send(filterInvalid(message) + '\n\r'); // Check ws exists
+        if (ws) ws.send(filterInvalid(message)); // Check ws exists
         addToMessageHistory('mainInput', message);
         mainInput.value = '';
     }
@@ -181,7 +182,7 @@ mainInput.addEventListener('keydown', (event) => {
 });
 
 // Horizontal divider
-topDivider.addEventListener('mousedown', function(e) {
+topDivider.addEventListener('mousedown', function (e) {
     if (e.target === topDivider) {
         e.preventDefault();
         activeResizer = 'horizontal';
@@ -191,7 +192,7 @@ topDivider.addEventListener('mousedown', function(e) {
 });
 
 // Vertical divider
-rightDivider.addEventListener('mousedown', function(e) {
+rightDivider.addEventListener('mousedown', function (e) {
     if (e.target === rightDivider) {
         e.preventDefault();
         activeResizer = 'vertical';
@@ -201,7 +202,7 @@ rightDivider.addEventListener('mousedown', function(e) {
     }
 });
 
-window.onload = function() {
+window.onload = function () {
     // testClockParsing(); // MOVED to chess.js and made internal
     connectWebSocket(); // ws will be initialized here
     loadPreferences();  // preferences will be loaded here
@@ -257,9 +258,15 @@ function setupViewToggle() {
         return;
     }
     updateViewMode(currentView); // Set initial
-    viewChessRadio.addEventListener('change', function() { if (this.checked) updateViewMode('chess'); });
-    viewBothRadio.addEventListener('change', function() { if (this.checked) updateViewMode('both'); });
-    viewChatRadio.addEventListener('change', function() { if (this.checked) updateViewMode('chat'); });
+    viewChessRadio.addEventListener('change', function () {
+        if (this.checked) updateViewMode('chess');
+    });
+    viewBothRadio.addEventListener('change', function () {
+        if (this.checked) updateViewMode('both');
+    });
+    viewChatRadio.addEventListener('change', function () {
+        if (this.checked) updateViewMode('chat');
+    });
 }
 
 // Function to update the view mode
@@ -384,7 +391,9 @@ function loadPreferences() {
         if (preferences.ficsPassword) {
             try {
                 document.getElementById('prefFicsPassword').value = atob(preferences.ficsPassword);
-            } catch (e) { console.error('Error decoding password:', e); }
+            } catch (e) {
+                console.error('Error decoding password:', e);
+            }
         }
         document.getElementById('prefAutoLogin').checked = preferences.autoLogin;
         document.getElementById('prefChannelTellsToTabs').checked = preferences.channelTellsToTabs;
@@ -441,27 +450,24 @@ function applyPreferences() {
 }
 
 
-function overrideWsSend(wsInstance) {
-    const originalSend = wsInstance.send;
-    wsInstance.send = function(msg) {
+function connectWebSocket() {
+    ws = new WebSocket(wsUrl);
+    ws.baseSend = ws.send;
+    ws.send = (msg) => {
         console.log(`Sent \"${msg.trim()}\"`); // Trim for cleaner log
         if (mainTextArea) { // Check if mainTextArea is available
             mainTextArea.innerHTML += processTextToHTML(`Sent \`${msg.trim()}\`\n`);
-            mainTextArea.scrollTop = mainTextArea.scrollHeight;
         }
-        return originalSend.apply(this, arguments);
-    };
-    return wsInstance;
-}
-
-function connectWebSocket() {
-    ws = new WebSocket(wsUrl);
-    ws = overrideWsSend(ws); // Override send for logging
+        msg = encodeTimeseal(msg.trim());
+        return ws.baseSend(msg);
+    }
 
     ws.addEventListener("message", (event) => {
         if (event.data instanceof Blob) {
             const reader = new FileReader();
-            reader.onload = function() { routeMessage(reader.result); };
+            reader.onload = function () {
+                routeMessage(reader.result);
+            };
             reader.readAsText(event.data);
         } else {
             routeMessage(event.data);
@@ -469,6 +475,7 @@ function connectWebSocket() {
     });
 
     ws.onopen = () => {
+        ws.send(timesealConnect)
         routeMessage('Connected\n');
         if (isAutoLoginEnabled()) {
             isLoggingIn = true; // FICS login sequence will be handled in routeMessage
@@ -616,7 +623,7 @@ function createTab(type, name) {
     const tabLabel = document.createElement('span');
     tabLabel.id = 'tab-label-' + id;
     tabLabel.innerHTML = type + " " + name + "&nbsp;";
-    tabLabel.addEventListener('click', function(event) {
+    tabLabel.addEventListener('click', function (event) {
         const clickedId = event.target.id.replace("tab-label-", "");
         const tabToActivate = document.getElementById("tab-" + clickedId);
         if (tabToActivate) {
@@ -636,7 +643,9 @@ function createTab(type, name) {
     const closeBtn = document.createElement('span');
     closeBtn.innerHTML = "x";
     closeBtn.classList.add('close-btn');
-    closeBtn.addEventListener('click', function() { closeTab(id); });
+    closeBtn.addEventListener('click', function () {
+        closeTab(id);
+    });
     tabDiv.append(closeBtn);
 
     const tabContent = document.createElement('div');
@@ -673,12 +682,15 @@ function createTab(type, name) {
             let isFicsCmd = false;
             for (var regex of ficsCommandRegex) {
                 regex.lastIndex = 0;
-                if (regex.test(message)) { isFicsCmd = true; break; }
+                if (regex.test(message)) {
+                    isFicsCmd = true;
+                    break;
+                }
             }
             if (isFicsCmd) {
-                if (ws) ws.send(filterInvalid(message) + '\n\r');
+                if (ws) ws.send(filterInvalid(message));
             } else if (message.trim()) {
-                if (ws) ws.send("tell " + name + " " + filterInvalid(message) + '\n\r');
+                if (ws) ws.send("tell " + name + " " + filterInvalid(message));
             }
             addToMessageHistory(input.id, message);
             input.value = '';
@@ -736,7 +748,7 @@ function createGameTab(opponent) {
     const closeBtn = document.createElement('span');
     closeBtn.innerHTML = "x";
     closeBtn.classList.add('close-btn');
-    closeBtn.addEventListener('click', function() {
+    closeBtn.addEventListener('click', function () {
         // if (id === gameTabId) stopClock(); // stopClock is now internal to chess.js
         closeTab(id); // Needs to handle chess tabs correctly
         // gameTabId = null;
@@ -811,11 +823,17 @@ function closeTab(typeAndName) {
         }
     }
     updateTabsVisibility(); // For main chat tabs
-    // updateChessTabsVisibility(); // If there's a similar function for chess tabs
 }
 
 
 function routeMessage(msg) {
+    let timesealAckIndex = msg.indexOf("[G]\0");
+    while(timesealAckIndex != -1) {
+        ws.baseSend(encodeTimeseal(String.fromCharCode(2, 57)));
+        msg = msg.substring(0, timesealAckIndex) + msg.substring(timesealAckIndex + 4);
+        timesealAckIndex = msg.indexOf("[G]\0");
+    }
+
     msg = msg.replaceAll("\n\r", "\n");
     msg = msg.replaceAll('\n\\', '\n');
     if (msg.includes("\u0007")) {
@@ -827,11 +845,11 @@ function routeMessage(msg) {
 
     if (isLoggingIn && preferences.autoLogin && ws) {
         if (msg.toLowerCase().includes('login: ')) {
-            ws.send(preferences.ficsUsername + '\n\r');
+            ws.send(preferences.ficsUsername);
         } else if (msg.toLowerCase().includes('password: ')) {
             try {
                 const decodedPassword = atob(preferences.ficsPassword);
-                ws.send(decodedPassword + '\n\r');
+                ws.send(decodedPassword);
             } catch (e) {
                 console.error('Error decoding password:', e);
                 mainTextArea.innerHTML += processTextToHTML('Error decoding password: ' + e.message + '\n');
@@ -842,10 +860,10 @@ function routeMessage(msg) {
     }
 
     if (msg.includes('\n**** Starting FICS session as') && ws) {
-        ws.send('set style 12\n\r');
-        ws.send('set prompt\n\r');
-        ws.send('set bell off\n\r');
-        ws.send('set interface Simple FICS Interface\n\r');
+        ws.send('set style 12');
+        ws.send('set prompt');
+        ws.send('set bell off');
+        ws.send('set interface Simple FICS Interface');
     }
 
     // Game start messages (non-Style12, if any) could trigger gameStartAudio from chess.js
@@ -889,23 +907,23 @@ function routeMessage(msg) {
     // or "Creating: GuestHVZN (++++) GriffyJr (1937) unrated blitz 2 12"
     // For observing: Game 27: Geforce (2140) konozrout (2081) rated blitz 5 0
     const containsGameStart = msg.startsWith("Creating: ");
-    var gameStartStr  = null;
+    var gameStartStr = null;
     if (containsGameStart) {
         gameStartStr = msg.substring(10);
     } else {
         const index = msg.indexOf("\nCreating: ");
         if (index != -1) {
-            gameStartStr = msg.substring(index+11);
+            gameStartStr = msg.substring(index + 11);
         } else {
             if (msg.startsWith("Game ")) {
-                const colonIndex = msg.indexOf(":",index + 5);
+                const colonIndex = msg.indexOf(":", index + 5);
                 if (colonIndex != -1) {
                     gameStartStr = msg.substring(colonIndex + 1);
                 }
             } else {
                 const index = msg.indexOf("\nGame ");
                 if (index != -1) {
-                    const colonIndex = msg.indexOf(":",index + 6);
+                    const colonIndex = msg.indexOf(":", index + 6);
                     if (colonIndex != -1) {
                         gameStartStr = msg.substring(colonIndex + 1);
                     }
@@ -921,8 +939,8 @@ function routeMessage(msg) {
     // Style12 handling
     const style12Start = msg.startsWith("<12>") ? 0 : msg.lastIndexOf("\n<12>");
     if (style12Start >= 0) {
-        const end = msg.indexOf("\n", style12Start + (msg.startsWith("<12>") ? 0 : 1) ); // Adjust for leading newline
-        const style12Block = end >=0 ? msg.substring(style12Start + (msg.startsWith("<12>") ? 0 : 1), end) : msg.substring(style12Start + (msg.startsWith("<12>") ? 0 : 1));
+        const end = msg.indexOf("\n", style12Start + (msg.startsWith("<12>") ? 0 : 1)); // Adjust for leading newline
+        const style12Block = end >= 0 ? msg.substring(style12Start + (msg.startsWith("<12>") ? 0 : 1), end) : msg.substring(style12Start + (msg.startsWith("<12>") ? 0 : 1));
 
         if (typeof processStyle12Message === 'function') {
             processStyle12Message(style12Block); // Send only the <12> line
@@ -932,8 +950,8 @@ function routeMessage(msg) {
 
         if (!preferences.showStyle12Events) {
             // Remove the Style12 line from the message to be printed in the console
-            let beforeStyle12 = msg.substring(0, style12Start + (msg.startsWith("<12>") ? 0 : 1) );
-            let afterStyle12 = end >=0 ? msg.substring(end +1) : ""; // +1 to skip the newline after <12>
+            let beforeStyle12 = msg.substring(0, style12Start + (msg.startsWith("<12>") ? 0 : 1));
+            let afterStyle12 = end >= 0 ? msg.substring(end + 1) : ""; // +1 to skip the newline after <12>
             msg = beforeStyle12 + afterStyle12;
             if (msg.trim() === "" || msg.trim() === "fics%") isMainConsoleMessage = false; // Don't print if only prompt or empty after stripping
         }
@@ -960,7 +978,7 @@ function routeMessage(msg) {
     if (!gameEndStart) {
         const index = msg.indexOf("\n{Game ");
         if (index != -1) {
-            gameEndString = msg.substring(index+7);
+            gameEndString = msg.substring(index + 7);
         }
     } else {
         gameEndString = msg.substring(6);
@@ -992,7 +1010,7 @@ function setupPreferencesMenu() {
     const prefCategories = document.querySelectorAll('.pref-category');
     const prefContents = document.querySelectorAll('.pref-content');
 
-    hamburgerMenu.addEventListener('click', function(event) {
+    hamburgerMenu.addEventListener('click', function (event) {
         preferencesPanel.classList.toggle('show');
         if (preferencesPanel.classList.contains('show')) {
             updatePieceSetPreview(prefPieceSetEl.value); // Update preview on open
@@ -1007,19 +1025,19 @@ function setupPreferencesMenu() {
         event.stopPropagation();
     });
 
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', function (event) {
         if (!preferencesPanel.contains(event.target) && !hamburgerMenu.contains(event.target) && event.target !== hamburgerMenu) {
             preferencesPanel.classList.remove('show');
         }
     });
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape' && preferencesPanel.classList.contains('show')) {
             preferencesPanel.classList.remove('show');
         }
     });
 
     prefCategories.forEach(category => {
-        category.addEventListener('click', function() {
+        category.addEventListener('click', function () {
             prefCategories.forEach(cat => cat.classList.remove('active'));
             this.classList.add('active');
             prefContents.forEach(content => content.classList.remove('active'));
@@ -1029,11 +1047,17 @@ function setupPreferencesMenu() {
         });
     });
 
-    prefLightSquareEl.addEventListener('input', function() { lightSquarePreviewEl.style.backgroundColor = this.value; });
-    prefDarkSquareEl.addEventListener('input', function() { darkSquarePreviewEl.style.backgroundColor = this.value; });
-    prefPieceSetEl.addEventListener('change', function() { updatePieceSetPreview(this.value); });
+    prefLightSquareEl.addEventListener('input', function () {
+        lightSquarePreviewEl.style.backgroundColor = this.value;
+    });
+    prefDarkSquareEl.addEventListener('input', function () {
+        darkSquarePreviewEl.style.backgroundColor = this.value;
+    });
+    prefPieceSetEl.addEventListener('change', function () {
+        updatePieceSetPreview(this.value);
+    });
 
-    saveButton.addEventListener('click', function() {
+    saveButton.addEventListener('click', function () {
         savePreferences(); // This now handles updating `preferences` object
         // applyPreferences(); // savePreferences calls applyPreferences
         preferencesPanel.classList.remove('show');
@@ -1043,12 +1067,12 @@ function setupPreferencesMenu() {
 // Function to update the piece set preview grid (UI for preferences panel)
 function updatePieceSetPreview(pieceSet) {
     const pieceTypes = [
-        { id: 'preview-bR', piece: 'bR' }, { id: 'preview-bN', piece: 'bN' },
-        { id: 'preview-bB', piece: 'bB' }, { id: 'preview-bQ', piece: 'bQ' },
-        { id: 'preview-bK', piece: 'bK' }, { id: 'preview-bP', piece: 'bP' },
-        { id: 'preview-wP', piece: 'wP' }, { id: 'preview-wR', piece: 'wR' },
-        { id: 'preview-wN', piece: 'wN' }, { id: 'preview-wB', piece: 'wB' },
-        { id: 'preview-wQ', piece: 'wQ' }, { id: 'preview-wK', piece: 'wK' }
+        {id: 'preview-bR', piece: 'bR'}, {id: 'preview-bN', piece: 'bN'},
+        {id: 'preview-bB', piece: 'bB'}, {id: 'preview-bQ', piece: 'bQ'},
+        {id: 'preview-bK', piece: 'bK'}, {id: 'preview-bP', piece: 'bP'},
+        {id: 'preview-wP', piece: 'wP'}, {id: 'preview-wR', piece: 'wR'},
+        {id: 'preview-wN', piece: 'wN'}, {id: 'preview-wB', piece: 'wB'},
+        {id: 'preview-wQ', piece: 'wQ'}, {id: 'preview-wK', piece: 'wK'}
     ];
     pieceTypes.forEach(item => {
         const elements = document.querySelectorAll(`#${item.id}, .${item.id}`); // Pawns might use class for multiple
@@ -1059,16 +1083,51 @@ function updatePieceSetPreview(pieceSet) {
         });
     });
     // Special handling for multiple pawns if IDs are unique like bP, bP2, etc.
-    ['bP2','bP3','bP4','bP5'].forEach(pawnId => {
+    ['bP2', 'bP3', 'bP4', 'bP5'].forEach(pawnId => {
         const el = document.getElementById(`preview-${pawnId}`);
         if (el) el.src = `pieces/${pieceSet}/bP.svg`;
     });
-    ['wP2','wP3','wP4','wP5'].forEach(pawnId => {
+    ['wP2', 'wP3', 'wP4', 'wP5'].forEach(pawnId => {
         const el = document.getElementById(`preview-${pawnId}`);
         if (el) el.src = `pieces/${pieceSet}/wP.svg`;
     });
 }
 
-// createDefaultChessTab - MOVED to chess.js as it's about board state
-// testClockParsing - MOVED to chess.js and made internal
-// initializeChessBoard - MOVED to chess.js (now setupMainChessBoardDisplay, called by initChessSystem)
+
+function encodeTimeseal(e)  {
+    let t = e.length;
+    const n = new Uint8Array(t + 30);
+    for (let t = 0; t < e.length; t++)
+        n[t] = e.charCodeAt(t);
+    n[t] = 24,
+        t++;
+    const o = (new Date).getTime()
+        , A = Math.floor(o / 1e3)
+        , s = (A % 1e4 * 1e3 + (o - 1e3 * A)).toString();
+    for (let e = 0; e < s.length; e++)
+        n[t + e] = s.charCodeAt(e);
+    for (t += s.length,
+             n[t] = 25,
+             t++; t % 12 != 0; )
+        n[t] = 49,
+            t++;
+    for (let e = 0; e < t; e += 12)
+        n[e] ^= n[e + 11],
+            n[e + 11] ^= n[e],
+            n[e] ^= n[e + 11],
+            n[e + 2] ^= n[e + 9],
+            n[e + 9] ^= n[e + 2],
+            n[e + 2] ^= n[e + 9],
+            n[e + 4] ^= n[e + 7],
+            n[e + 7] ^= n[e + 4],
+            n[e + 4] ^= n[e + 7];
+    for (let e = 0; e < t; e++) {
+        const t = timesealKey.charCodeAt(e % 50);
+        n[e] = ((128 | n[e]) ^ t) - 32
+    }
+    return n[t] = 128,
+        t++,
+        n[t] = 10,
+        t++,
+        n.slice(0, t)
+}

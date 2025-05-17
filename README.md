@@ -6,11 +6,10 @@ A minimalist FICS interface which focuses on easy game play and chat functionali
 Currently, under construction. See the Road Map below for the current state.
 
 Road Map:
-- Add content on bottom left below board. Should be last move or game end result.
+- Fix auto scrolling.
 - Fix bug where tells from channel tabs are not sent.
 - Make speed promotion checkboxes.
 - Add premove.
-- Add timeseal2.
 - More changes for Responsive web design that work on mobile and tablets.
   - Add a layout when width is an issue. Put clocks on top and bottom.
 

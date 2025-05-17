@@ -10,6 +10,14 @@
     font-style: normal;
 }
 
+/* Use system fonts as fallbacks */
+@font-face {
+    font-family: 'Material Icons';
+    src: url('fonts/MaterialIcons-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
 /* Chess board layout classes */
 .board-main-container {
     display: flex;
@@ -54,38 +62,73 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     width: 100%;
     position: relative;
-    margin-bottom: 4px;
+}
+
+/* Bottom labels container */
+.bottom-labels-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
 }
 
 .eco-opening-label {
+    color: gray;
     text-align: right;
-    font-family: "Noto Sans", Sans-Serif;
-    font-size: 14px;
-    margin-top: 4px;
-    padding: 4px 4px;
+    font-family: Arial, Sans-Serif;
+    font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     display: inline-block;
     font-weight: bold;
-    width: 100%
+    width: 75%;
+}
+
+.last-move-label {
+    color: gray;
+    text-align: left;
+    font-family: Arial, Sans-Serif;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    font-weight: bold;
+    width: 25%;
+}
+
+/* Game number */
+.game-number {
+    color: gray;
+    text-align: left;
+    font-family: Arial, Sans-Serif;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+    font-weight: bold;
+    width: 25%;
 }
 
 /* Game type info */
 .game-type-info {
-    text-align: left;
-    font-family: "Noto Sans", Sans-Serif;
-    font-size: 14px;
-    padding: 4px 4px;
+    color: gray;
+    text-align: right;
+    font-family: Arial, Sans-Serif;
+    font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     display: inline-block;
     font-weight: bold;
-    width: 100%;
+    width: 75%;
 }
 
 .player-info-container {
@@ -288,7 +331,7 @@
     left: auto !important; /* Force right alignment */
     font-size: 6px; /* Smaller font size */
     font-weight: bold;
-    font-family: "Noto Sans", Sans-Serif;
+    font-family: Arial, Sans-Serif;
     opacity: 1.0;
     pointer-events: none;
     z-index: 5;
@@ -303,7 +346,7 @@
     right: auto !important; /* Ensure right is not set */
     font-size: 6px; /* Smaller font size */
     font-weight: bold;
-    font-family: "Noto Sans", Sans-Serif;
+    font-family: Arial, Sans-Serif;
     opacity: 1.0;
     pointer-events: none;
     z-index: 5;
@@ -517,7 +560,7 @@
     cursor: pointer;
     flex-grow: 1;
     font-size: 1.15em;
-    font-family: 'Noto Sans', sans-serif; /* Ensure good Unicode support */
+    font-family: Arial, sans-serif; /* Ensure good Unicode support */
 }
 
 .move-san:hover {
