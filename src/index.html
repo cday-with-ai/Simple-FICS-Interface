@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Cache control meta tags -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Simple FICS Interface</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="css/chat.css?v=1" rel="stylesheet"> <!--load with cache busting versions. Increment the number in each release. -->
+    <link href="css/chess.css?v=1" rel="stylesheet"> <!--load with cache busting versions. Increment the number in each release. -->
+</head>
+<body>
+<!-- Hamburger Menu -->
+<div class="top-controls">
+    <div class="view-toggle-container left">
+        <div class="hamburger-menu" id="hamburgerMenu">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+                <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
+            </svg>
+        </div>
+        <span class="view-toggle-label" style="font-size: 20px">Simple FICS Interface</span>
+    </div>
+    <div class="view-toggle-container right">
+        <span class="view-toggle-label">Mode:</span>
+        <div class="view-toggle">
+            <input type="radio" id="view-both" name="view-mode" value="both" checked>
+            <label for="view-both" title="Chess and Chat">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <!-- Left side: Chess board (smaller) -->
+                    <rect x="2" y="4" width="10" height="16" fill="#34495e" stroke="#ecf0f1" stroke-width="0.5"/>
+                    <!-- Board squares (simplified) -->
+                    <rect x="2" y="4" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="7" y="4" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="4.5" y="8" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="9.5" y="8" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="2" y="12" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="7" y="12" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="4.5" y="16" width="2.5" height="4" fill="#ecf0f1"/>
+                    <rect x="9.5" y="16" width="2.5" height="4" fill="#ecf0f1"/>
+
+                    <!-- Divider -->
+                    <rect x="13" y="4" width="1" height="16" fill="#ecf0f1"/>
+
+                    <!-- Right side: Chat -->
+                    <rect x="15" y="4" width="7" height="16" rx="1" ry="1" fill="#34495e" stroke="#ecf0f1"
+                          stroke-width="0.5"/>
+                    <!-- Chat lines -->
+                    <line x1="16" y1="8" x2="21" y2="8" stroke="#ecf0f1" stroke-width="0.7"/>
+                    <line x1="16" y1="11" x2="21" y2="11" stroke="#ecf0f1" stroke-width="0.7"/>
+                    <line x1="16" y1="14" x2="21" y2="14" stroke="#ecf0f1" stroke-width="0.7"/>
+                    <line x1="16" y1="17" x2="19" y2="17" stroke="#ecf0f1" stroke-width="0.7"/>
+                </svg>
+            </label>
+
+            <input type="radio" id="view-chess" name="view-mode" value="chess">
+            <label for="view-chess" title="Chess Only">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <!-- Chess board icon -->
+                    <rect x="2" y="2" width="20" height="20" fill="#34495e" stroke="#ecf0f1" stroke-width="0.5"/>
+                    <!-- Board squares -->
+                    <rect x="2" y="2" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="12" y="2" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="7" y="7" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="17" y="7" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="2" y="12" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="12" y="12" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="7" y="17" width="5" height="5" fill="#ecf0f1"/>
+                    <rect x="17" y="17" width="5" height="5" fill="#ecf0f1"/>
+                </svg>
+            </label>
+
+            <input type="radio" id="view-chat" name="view-mode" value="chat">
+            <label for="view-chat" title="Chat Only">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4A2,2 0 0,0 20,2M6,9H18V11H6M14,14H6V12H14M18,8H6V6H18"/>
+                </svg>
+            </label>
+        </div>
+    </div>
+</div>
+
+<h2 id="title"></h2>
+<div class="main-container">
+    <!-- Top section with chess tabs and right side content -->
+    <div class="top-section">
+        <!-- Chess board (left side) -->
+        <div class="chess-board-area">
+            <!-- Board will be created here dynamically -->
+        </div>
+
+        <!-- Horizontal resizable divider -->
+        <div class="divider horizontal-divider" id="topDivider"></div>
+
+        <!-- Right side content (main console and chat tabs) -->
+        <div class="right-content">
+            <!-- Main console (top right) -->
+            <div class="main-console">
+                <div class="grid-container">
+                    <div class="grid-row"
+                         style="flex: 1; padding: 0 3px 0 0; display: flex; flex-direction: column; height: calc(100% - 70px); max-height: calc(100% - 70px);">
+                        <div id="mainTextArea" class="ics-text-area"
+                             style="flex: 1; min-height: 100px; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;"></div>
+                    </div>
+                    <div class="grid-row"
+                         style="padding: 0 6px 10px 10px; margin-top: 6px; height: 50px; min-height: 50px; position: absolute; bottom: 0; left: -10px; right: 0;">
+                        <input id="mainInput" class="ics-input"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vertical resizable divider -->
+            <div class="divider vertical-divider" id="rightDivider" style="display: none;margin-left: 3px"></div>
+
+            <!-- Chat tabs (bottom right) -->
+            <div class="chat-tabs-container">
+                <div id="tabset" class="tabset">
+                    <div id="tabs" class="tabs"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Preferences Panel -->
+<div class="preferences-panel" id="preferencesPanel">
+    <h3>Preferences</h3>
+
+    <!-- Category Tabs (Left Side) -->
+    <div class="pref-categories">
+        <div class="pref-category" data-category="fics">FICS</div>
+        <div class="pref-category active" data-category="chessboard">Chess Board</div>
+        <div class="pref-category" data-category="tabs">Tabs</div>
+    </div>
+
+    <!-- Content Container (Right Side) -->
+    <div class="pref-content-container">
+        <!-- FICS Preferences -->
+        <div class="pref-content" id="pref-fics">
+            <div class="preference-group">
+                <label for="prefFicsUsername">FICS Username:</label>
+                <input type="text" id="prefFicsUsername" placeholder="Enter your FICS username">
+            </div>
+
+            <div class="preference-group">
+                <label for="prefFicsPassword">FICS Password:</label>
+                <input type="password" id="prefFicsPassword" placeholder="Enter your FICS password">
+                <div class="password-info" style="font-size: 12px; margin-top: 5px; color: #666;">
+                    <i>Your password is stored locally and used only for FICS authentication.</i>
+                </div>
+            </div>
+
+            <div class="preference-group">
+                <label for="prefAutoLogin">Auto Login:</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="checkbox" id="prefAutoLogin" style="width: auto; margin-right: 5px;">
+                    <span>Automatically login when connecting to FICS</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chess Board Preferences -->
+        <div class="pref-content active" id="pref-chessboard">
+            <div class="preference-group">
+                <label for="prefPieceSet">Chess Piece Set:</label>
+                <select id="prefPieceSet">
+                    <option value="alpha">Alpha</option>
+                    <option value="anarcandy">Anarcandy</option>
+                    <option value="california">California</option>
+                    <option value="cardinal">Cardinal</option>
+                    <option value="cburnett">Cburnett</option>
+                    <option value="celtic">Celtic</option>
+                    <option value="chess7">Chess7</option>
+                    <option value="chessnut">Chessnut</option>
+                    <option value="companion">Companion</option>
+                    <option value="disguised">Disguised</option>
+                    <option value="dubrovny">Dubrovny</option>
+                    <option value="fantasy">Fantasy</option>
+                    <option value="fresca">Fresca</option>
+                    <option value="gioco">Gioco</option>
+                    <option value="governor">Governor</option>
+                    <option value="horsey">Horsey</option>
+                    <option value="icpieces">Icpieces</option>
+                    <option value="kiwen-suwi">Kiwen-Suwi</option>
+                    <option value="kosal">Kosal</option>
+                    <option value="leipzig">Leipzig</option>
+                    <option value="letter">Letter</option>
+                    <option value="libra">Libra</option>
+                    <option value="maestro">Maestro</option>
+                    <option value="merida">Merida</option>
+                    <option value="mpchess">Mpchess</option>
+                    <option value="pirouetti">Pirouetti</option>
+                    <option value="pixel">Pixel</option>
+                    <option value="reillycraig">Reillycraig</option>
+                    <option value="riohacha">Riohacha</option>
+                    <option value="shapes">Shapes</option>
+                    <option value="spatial">Spatial</option>
+                    <option value="staunty">Staunty</option>
+                    <option value="tatiana">Tatiana</option>
+                </select>
+            </div>
+
+            <div class="preference-group">
+                <label>Piece Set Preview:</label>
+                <div id="pieceSetPreview" class="piece-set-preview">
+                    <!-- 5x4 grid for piece preview -->
+                    <div class="preview-row">
+                        <div class="preview-cell"><img id="preview-bR" src="" alt="bR"></div>
+                        <div class="preview-cell"><img id="preview-bN" src="" alt="bN"></div>
+                        <div class="preview-cell"><img id="preview-bB" src="" alt="bB"></div>
+                        <div class="preview-cell"><img id="preview-bQ" src="" alt="bQ"></div>
+                        <div class="preview-cell"><img id="preview-bK" src="" alt="bK"></div>
+                    </div>
+                    <div class="preview-row">
+                        <div class="preview-cell"><img id="preview-bP" src="" alt="bP"></div>
+                        <div class="preview-cell"><img id="preview-bP2" src="" alt="bP"></div>
+                        <div class="preview-cell"><img id="preview-bP3" src="" alt="bP"></div>
+                        <div class="preview-cell"><img id="preview-bP4" src="" alt="bP"></div>
+                        <div class="preview-cell"><img id="preview-bP5" src="" alt="bP"></div>
+                    </div>
+                    <div class="preview-row">
+                        <div class="preview-cell"><img id="preview-wP" src="" alt="wP"></div>
+                        <div class="preview-cell"><img id="preview-wP2" src="" alt="wP"></div>
+                        <div class="preview-cell"><img id="preview-wP3" src="" alt="wP"></div>
+                        <div class="preview-cell"><img id="preview-wP4" src="" alt="wP"></div>
+                        <div class="preview-cell"><img id="preview-wP5" src="" alt="wP"></div>
+                    </div>
+                    <div class="preview-row">
+                        <div class="preview-cell"><img id="preview-wR" src="" alt="wR"></div>
+                        <div class="preview-cell"><img id="preview-wN" src="" alt="wN"></div>
+                        <div class="preview-cell"><img id="preview-wB" src="" alt="wB"></div>
+                        <div class="preview-cell"><img id="preview-wQ" src="" alt="wQ"></div>
+                        <div class="preview-cell"><img id="preview-wK" src="" alt="wK"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preference-group">
+                <label for="prefLightSquare">Light Square Color:</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="color" id="prefLightSquare" value="#e8e0c8" style="width: 60px;">
+                    <div class="color-preview" id="lightSquarePreview" style="background-color: #e8e0c8;"></div>
+                </div>
+            </div>
+
+            <div class="preference-group">
+                <label for="prefDarkSquare">Dark Square Color:</label>
+                <div style="display: flex; align-items: center;">
+                    <input type="color" id="prefDarkSquare" value="#AB8B69" style="width: 60px;">
+                    <div class="color-preview" id="darkSquarePreview" style="background-color: #AB8B69;"></div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- Tabs Preferences -->
+        <div class="pref-content" id="pref-tabs">
+            <div class="preference-group">
+                <label>Message Routing:</label>
+
+                <div style="margin-top: 10px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <input type="checkbox" id="prefChannelTellsToTabs" style="width: auto; margin-right: 10px;">
+                        <label for="prefChannelTellsToTabs" style="font-weight: normal;">Send all channel tells to
+                            channel tabs</label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <input type="checkbox" id="prefDirectTellsToTabs" style="width: auto; margin-right: 10px;">
+                        <label for="prefDirectTellsToTabs" style="font-weight: normal;">Send all direct tells to direct
+                            tell tab</label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <input type="checkbox" id="prefGameTellsToTabs" style="width: auto; margin-right: 10px;">
+                        <label for="prefGameTellsToTabs" style="font-weight: normal;">Send all game tells to game tab</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preference-group">
+                <label>Tab Behavior:</label>
+
+                <div style="margin-top: 10px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <input type="checkbox" id="prefAutoSwitchToNewTabs" style="width: auto; margin-right: 10px;">
+                        <label for="prefAutoSwitchToNewTabs" style="font-weight: normal;">Automatically switch to new
+                            tabs when created</label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <input type="checkbox" id="prefFlashTabsOnActivity" style="width: auto; margin-right: 10px;">
+                        <label for="prefFlashTabsOnActivity" style="font-weight: normal;">Flash tabs on new
+                            activity</label>
+                    </div>
+
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <input type="checkbox" id="prefShowStyle12Events" style="width: auto; margin-right: 10px;">
+                        <label for="prefShowStyle12Events" style="font-weight: normal;">Show Style12 events in console
+                            (for debugging)</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button (Bottom Right) -->
+        <div class="save-button-container">
+            <button id="savePreferences">Save Preferences</button>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.min.js"></script>
+<script src="scripts/chess.js?v=1" type="module"></script> <!--load with cache busting versions. Increment the number in each release. -->
+<script src="scripts/fics.js?v=1" type="module"></script> <!--FICS-related functionality -->
+<script src="scripts/chat.js?v=1" type="module"></script> <!--Chat-related functionality -->
+<script src="scripts/index.js?v=1" type="module"></script> <!--Main initialization script -->
+
+</body>
+</html>

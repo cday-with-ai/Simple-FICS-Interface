@@ -15,25 +15,23 @@ Functionality (Working functionality):
 - many available sets.
 - css based so easy to change anything if you pull the source.
 - Timeseal2.
-- Drag and drop and Click click move.
+- Drag and drop and 'click-click' move.
+- Premove
 - Move validation.
 - Preferences/Username/Pwd saved in local storage.
 - ECO/Opening description lookup based on moves made.
 - Fast and efficient, written in ES6.
 
-
 Road Map (Planned functionality that is broken or not implemented yet):
-- Fix bug where tells from channel tabs are not sent at certain times.
+- end playing instead of start.
+- Fix animation update where after the piece reaches the final square it is cleared and then redrawn. Looks like a jump.
+- Fix bug where tells from channel tabs are not sent at certain times. (Maybe fixed)
+- Add stay logged in preference.
 - Make speed promotion checkboxes.
 - Expand preferences a bit (not too much).
-- Add premove.
 - More changes for Responsive web design that work on mobile and tablets.
   - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
 
 Not planned at this time: (If you want it, let me know I might add it.)
 - Bughouse/Crazyhouse support.
 - Viewing multiple boards at once.
-
-
-
-

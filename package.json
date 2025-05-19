@@ -1,0 +1,21 @@
+{
+  "name": "simple-fics-interface",
+  "version": "1.0.0",
+  "description": "A minimalist FICS interface which focuses on easy game play and chat functionality",
+  "main": "src/scripts/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose"
+  },
+  "keywords": [
+    "chess",
+    "fics",
+    "interface"
+  ],
+  "author": "cday-with-ai",
+  "license": "ISC",
+  "dependencies": {
+    "jest": "^29.7.0",
+    "yarn": "^1.22.22"
+  }
+}

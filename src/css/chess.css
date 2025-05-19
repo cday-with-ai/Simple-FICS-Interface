@@ -5,7 +5,7 @@
 /* Font definitions */
 @font-face {
     font-family: 'Digital';
-    src: url('fonts/digitalFont.woff2') format('woff2');
+    src: url('../fonts/digitalFont.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
 }
@@ -283,7 +283,7 @@
 }
 
 .piece-semi-transparent {
-    opacity: 0.3 !important;
+    opacity: 0.1 !important;
     transition: opacity 0.1s ease;
 }
 
@@ -369,12 +369,12 @@
 }
 
 .last-move-start, .last-move-end {
-    filter: brightness(70%);
+    /*filter: brightness(70%);*/
 }
 
 .last-move-start.last-move-fade, .last-move-end.last-move-fade {
-    filter: brightness(100%);
-    transition: filter 2s ease;
+    /*filter: brightness(100%);*/
+    /*transition: filter 2s ease;*/
 }
 
 .game-controls {

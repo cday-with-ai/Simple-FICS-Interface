@@ -2,6 +2,19 @@
 
 // Import ECO lookup functions
 import {initECO, lookupFromMoveList} from './eco.js';
+import {
+    fileNumberToAlgebraic,
+    getPieceAtSquare,
+    parseVerboseMove,
+    style12ToFen,
+    toAlgebraicSquare,
+    toRankFile,
+    convertToUnicodeChessPieces,
+    startEndToAlgebraic,
+    ficsMoveToStartEndArray
+} from './utils.js';
+import {playSound} from './index.js';
+
 
 // GameRelation Enum
 const GameRelation = {
@@ -34,14 +47,6 @@ const GameRelation = {
     }
 };
 
-
-// --- Global Variables for Chess System ---
-const sounds = {
-    move: new Audio('sounds/Move.ogg'),
-    capture: new Audio('sounds/Capture.ogg'),
-    // gameStart: new Audio('sounds/GameStart.wav'),
-    gameEnd: new Audio('sounds/GameEnd.wav')
-};
 let chess; // The main chess game instance
 try {
     chess = new Chess();
@@ -99,7 +104,8 @@ let gameState = { // Reset header
     dndLastDropTime: null,
     clickclickStartSquareAlegbraic: null,
     clickclickLastDropTime: null,
-    premove: null,
+    premove: null, // null if not set.
+    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', //Just piece positions, no other info.
     status: '',
     result: ''
 };
@@ -109,63 +115,304 @@ export function processStyle12Message(msg) {
     console.log("Processing Style12 message:", msg.substring(0, 100) + "...");
 
     // First premove if its set.
-    if (gameState.premove && gameState.premove != null && gameState.premove != '') {
+    if (gameState.premove) {
+        console.log("Sending premove: " + gameState.premove);
         ws.send(gameState.premove);
         gameState.premove = null;
     }
 
     if (!boardInitialized) {
-        console.warn("Chess board not initialized when processing Style12. Attempting setup.");
         setupMainChessBoardDisplay();
-        if (!document.getElementById('chessBoard')) {
-            console.error("Failed to set up chess board for Style12 message.");
-            return;
-        }
     }
 
-    // First update the game info, which will set isWhiteOnBottom and recreate the board if needed
-    updateCurrentGameInfoFromStyle12(msg);
-
-    // Then update the board with the new position
-    updateBoardFromStyle12(msg);
-
+    // Update game info and board position using the merged function
+    updateFromStyle12(msg);
     // Update the move list
     updateMovesListWithNewMoveInternal();
-
-    // Finally update the UI
+    // Finally, update the UI
     updateNonBoardAndMovesUI();
 
-    // Debug logging
-    console.log("After Style12 processing:", {
-        relation: gameState.relation,
-        gameNumber: gameState.gameNumber,
-        isObserving: gameState.relation === 0,
-        requestedMovesForGame: gameState.requestedMovesForGame,
-        fen: chess ? chess.fen() : 'No chess instance'
-    });
-
     // If we're observing a played game, request the moves list
-    if (gameState.relation === 0 && gameState.gameNumber > 0) { // 0 is GameRelation.OBSERVING_PLAYED
-        console.log("Observing game, checking if we need to request moves list");
-        // Only send the moves command if we don't already have the moves list and haven't requested it yet
-        if (!gameState.requestedMovesForGame) {
-            const movesCommand = `moves ${gameState.gameNumber}`;
-            console.log("Sending moves command:", movesCommand);
-            ws.send(movesCommand);
-            gameState.requestedMovesForGame = true;
+    if (!gameState.requestedMovesForGame &&
+        gameState.relation === GameRelation.OBSERVING_PLAYED &&
+        gameState.gameNumber > 0) {
+        const movesCommand = `moves ${gameState.gameNumber}`;
+        console.log("Sending moves command:", movesCommand);
+        ws.send(movesCommand);
+        gameState.requestedMovesForGame = true;
+    }
+}
+
+export function processUnobserveMessage(gameNumber) {
+    if (gameState.gameNumber === gameNumber) {
+        stopClockInternal();
+        playSound('end');
+    }
+}
+
+
+/**
+ *
+ * @param rawMovesText
+ */
+export function processMovesList(rawMovesText) {
+    if (!boardInitialized && !document.getElementById('chessBoard')) {
+        console.warn("Chess board/UI not initialized when processing moves list. Attempting setup.");
+        setupMainChessBoardDisplay(); // Ensure UI is ready
+    }
+    // Update player info UI to show ratings if the game number matches
+    parseAndStoreMovesInternal(rawMovesText);
+    updateMovesListDisplayInternal();
+    highlightLastMoveInMovelist();
+    updateNonBoardAndMovesUI();
+}
+
+/**
+ * GuestGTKW (++++) walpurti (2084) unrated blitz 5 0
+ * {Game 14 (GuestGTKW vs. walpurti) Creating unrated blitz match.}
+ *  Game 14: A disconnection will be considered a forfeit.
+ * fics%
+ * @param message
+ * @returns {boolean}
+ */
+export function processGameCreationMessage(message) {
+    if (!message || !message.trim()) return false;
+    //Creating: foo (1668) bobbyrob (1715) rated blitz 3 0
+    //{Game 16 (foo vs. bobbyrob) Creating rated blitz match.}
+    // Regular expression to match game creation messages with more flexible rating patterns
+    const gameCreationRegex = /^([\w.-]+) \(([\d+-]+)\) ([\w.-]+) \(([\d+-]+)\) (rated|unrated) (\w+) (\d+) (\d+)/;
+    const match = message.match(gameCreationRegex);
+
+    if (!match) {
+        if (prefs && prefs.showStyle12Events) {
+            console.log("Game creation message did not match regex pattern:", message);
+        }
+        return false;
+    } else {
+        console.log(`Processing game creation ${message}`);
+    }
+
+    //Parse second line for game number.
+    var gameNumber = null;
+    const startIndex = message.indexOf("\n{Game ");
+    if (startIndex != -1) {
+        gameNumber = message.substring(startIndex + 7);
+        const spaceIndex = gameNumber.indexOf(" ");
+        gameNumber = gameNumber.substring(0, spaceIndex);
+    }
+
+    gameState.gameNumber = gameNumber;
+    gameState.whitePlayer = {name: match[1], rating: match[2]};
+    gameState.blackPlayer = {name: match[3], rating: match[4]};
+    gameState.type = match[6];
+    gameState.isRated = match[5] === 'rated';
+    gameState.moveNumber = 1;
+    gameState.lastMove = '';
+    gameState.lastMovePretty = '';
+    gameState.doublePawnPushFile = -1;
+    gameState.minutes = parseInt(match[7], 10);
+    gameState.increment = parseInt(match[8], 10);
+    gameState.whiteTimeSecs = gameState.minutes * 60;
+    gameState.blackTimeSecs = gameState.minutes * 60;
+    gameState.whiteCastleShort = true;
+    gameState.whiteCastleLong = true;
+    gameState.blackCastleShort = true;
+    gameState.blackCastleLong = true;
+    gameState.irreversibleCount = 0;
+    gameState.status = '';
+    gameState.result = '';
+    gameState.isActive = true;
+    gameState.isFlipped = false;
+    gameState.openingDescription = '';
+    gameState.requestedMovesForGame = false;
+    gameState.draggedPiece = null;
+    gameState.draggedPieceElement = null;
+    gameState.dndStartSquareAlegbraic = null;
+    gameState.clickclickStartSquareAlegbraic = null;
+    gameState.dndStartSquareAlegbraic = null;
+    gameState.moves = [];
+    gameState.validMoves = [];
+
+    // Set isWhiteOnBottom to true by default for new games
+    // This will be updated correctly when the first Style12 message arrives
+    gameState.isWhiteOnBottom = true;
+
+    return true;
+}
+
+/**
+ * Process game end messages like "12 (genieman vs. Pawnlightly) genieman resigns} 0-1"
+ * @param message
+ * @returns {boolean}
+ */
+export function processGameEndMessage(message) {
+    if (!message || !message.trim()) return false;
+
+    // Regular expression to match game end messages
+    // This regex is very flexible to handle all types of player names and game end reasons
+    const gameEndRegex = /^(\d+) \(([^)]+) vs\. ([^)]+)\) (.*)\}\s*([012\/-]+).*/;
+    const match = message.match(gameEndRegex);
+
+    if (!match || match.length != 6) {
+        if (prefs && prefs.showStyle12Events) { // Use the debug preference for logging
+            console.log("Game end message did not match regex pattern:", message);
+        }
+        return false;
+    }
+
+    const gameNumber = parseInt(match[1], 10);
+    const whitePlayer = match[2];
+    const blackPlayer = match[3];
+    const reason = match[4];
+    const result = match[5];
+
+    if (prefs && prefs.showStyle12Events) { // Use the debug preference for logging
+        console.log("Parsed game end message:", {
+            gameNumber,
+            whitePlayer,
+            blackPlayer,
+            reason,
+            result
+        });
+    }
+
+    // Check if this game end message is for the current game
+    if (gameState.gameNumber === gameNumber) {
+        // Update the game header info with the status and result
+        gameState.status = reason;
+        gameState.result = result;
+        gameState.isActive = false;
+
+        // Update the moves list display to show the game result
+        updateMovesListDisplayInternal();
+
+        // Stop the clock if it's running
+        stopClockInternal();
+
+        gameState.isPlayerPlaying = false;
+
+        return true;
+    }
+
+    return false;
+}
+
+function parseAndStoreMovesInternal(rawMovesText) {
+    // Unrated blitz match, initial time: 5 minutes, increment: 2 seconds.
+    //     Move  GuestJVNB          GuestYKYQ
+    // ----  ----------------   ----------------
+    // 1.  d4      (0:00)     d5      (0:00)
+    // 2.  Nf3     (0:02)     Nf6     (0:03)
+    // 3.  e3      (0:02)     a6      (0:02)
+    // 4.  Bd3     (0:02)     Bg4     (0:11)
+    // 5.  Nbd2    (0:03)     e6      (0:02)
+    // 6.  b3      (0:03)     Nbd7    (0:02)
+    // 7.  a3      (0:03)     Bd6     (0:02)
+    // 8.  Bb2     (0:03)     O-O     (0:03)
+    // 9.  O-O     (0:05)     h6      (0:02)
+    // 10.  Qe1     (0:10)     c6      (0:03)
+    // 11.  Ne5     (0:05)     Bxe5    (0:15)
+    // 12.  dxe5    (0:03)     Ne8     (0:03)
+    // 13.  f4      (0:11)     Nc5     (0:04)
+    // 14.  Qg3     (0:26)     Nxd3    (0:06)
+    // 15.  cxd3    (0:03)     Be2     (0:03)
+    // 16.  Rf2     (0:11)     Bxd3    (0:02)
+    // 17.  Nf3     (0:21)     Kh7     (0:38)
+    // 18.  Nh4     (0:05)     Be4     (0:16)
+    // 19.  f5      (0:06)     Qg5     (0:19)
+    // 20.  fxe6    (0:29)     Qxg3    (0:03)
+    // 21.  hxg3    (0:02)
+    // {Still in progress} *
+    // fics%
+
+    // Check if we should update the current game's player ratings
+    let isForLoadedGame = false;
+
+    const lines = rawMovesText.split('\n');
+    let parsingHeader = true;
+    let moveDataStarted = false; // To identify when actual move lines begin
+
+    // Regex patterns for parsing
+    const playerRegex = /^([\w.-]+)\s\((\d+)\)\s+vs\.\s+([\w.-]+)\s\((\d+)\)\s+---\s+(.*)$/;
+    const gameTypeRegex = /^(.*) (.*) match,\s+initial time:\s+(.*),\s+increment:\s+(.*)\.$/;
+    const moveLineRegex = /^\s*(\d+)\.\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\)(?:\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\))?/;
+    const statusRegex = /^{\s*(.*?)\s*}(?:\s*([0-1/2*-]+))?$/;
+
+
+    for (const line of lines) {
+        if (line.trim() === "") continue;
+
+        if (parsingHeader) {
+            if (line.indexOf("Movelist for game") == 0) {
+                const match = line.match(/Movelist for game (\d+):/);
+                if (match) {
+                    const gameNumber = parseInt(match[1], 10);
+                    // Check if this moves list is for the current game
+                    if (gameNumber === gameState.gameNumber) {
+                        isForLoadedGame = true;
+                        gameState.moves = [];
+                    }
+                } else {
+                    return;
+                }
+            }
+
+            const playerMatch = line.match(playerRegex);
+            if (playerMatch) {
+                // This is how the ratings are set for observed games.
+                if (!gameState.whitePlayer.rating) {
+                    gameState.whitePlayer.rating = playerMatch[2];
+                }
+                if (!gameState.blackPlayer.rating) {
+                    gameState.blackPlayer.rating = playerMatch[4];
+                }
+
+                continue;
+            }
+
+            const gameType = line.match(gameTypeRegex);
+            if (playerMatch) {
+                gameState.increment = gameType[4] === 'rated';
+                gameState.minutes = gameType[3] === 'rated';
+                gameState.isRated = gameType[1] === 'rated';
+                gameState.type = gameType[2];
+                continue;
+            }
+
+            // Transition from header to move list data
+            if (line.startsWith("----  ----------------")) {
+                parsingHeader = false;
+                moveDataStarted = true;
+                continue;
+            }
+        } else if (moveDataStarted) {
+            const moveMatch = line.match(moveLineRegex);
+            if (moveMatch) {
+                const moveEntry = {
+                    number: parseInt(moveMatch[1], 10),
+                    white: {san: moveMatch[2], time: moveMatch[3]},
+                    black: moveMatch[4] ? {san: moveMatch[4], time: moveMatch[5]} : null
+                };
+                gameState.moves.push(moveEntry);
+                continue;
+            }
+            // Lines after status (like fics% prompt) will be ignored by these specific parsers
         }
     }
+
+    if (prefs && prefs.showStyle12Events) { // Re-use this pref for general debug logging
+        console.log("Parsed Game Header (Moves List):", gameState);
+        console.log("Parsed Moves (Moves List):", gameState.moves);
+    }
+
+    // Update ECO opening info after parsing the move list checking every move.
+    updateECOLabelFromMoveList();
 }
 
 // --- Preference Application ---
 export function applyChessRelatedPreferences() {
     if (!prefs) {
         return;
-    }
-    if (!document.getElementById('chessBoard') && !boardInitialized) {
-        console.warn("applyChessRelatedPreferences called before board DOM is ready.");
-        // If the board isn't even in the DOM yet, defer or ensure setupMainChessBoardDisplay has run.
-        // For now, we'll rely on updateBoardGraphics to handle missing elements gracefully if called early.
     }
 
     // Update square colors directly
@@ -203,30 +450,7 @@ export function applyChessRelatedPreferences() {
 }
 
 // --- Public method to be called by createGameTab in index.js ---
-export function createChessBoardSquares(boardElement) {
-    createBoardSquaresInternal(boardElement);
-}
-
-function playSound(sound) {
-    const playableSound = sounds[sound];
-
-    if (!playableSound.paused) {
-        // The previous sound is playing. We could reset the current sound with
-        // playableSound.currentTime = 0
-        // ,but we probably don't want to cut off that sound, so let's make a copy of the
-        // sound and dereference the previous one
-        sounds[sound] = new Audio(playableSound.src);
-    }
-    sounds[sound].play();
-}
-
-
-// --- Internal Functions (not directly exported, but used by exported ones) ---
-function createBoardSquaresInternal(boardElement) {
-    if (!boardElement) {
-        console.error("Board element not provided to createBoardSquaresInternal");
-        return;
-    }
+export function createBoardSquares(boardElement) {
     boardElement.innerHTML = ''; // Clear existing squares if any
 
     boardElement.style.display = 'grid';
@@ -237,15 +461,25 @@ function createBoardSquaresInternal(boardElement) {
     boardElement.style.aspectRatio = '1 / 1';
 
     if (gameState.isWhiteOnBottom) {
+        //create top rank first left to right.
+        // h8 g8 f8 e8 d8 c8 b8 a8
+        // h7 g7 f7 ...
+        // ...
+        // h1 g1 f1 ...
         for (let rank = 8; rank > 0; rank--) {
             for (let file = 1; file <= 8; file++) {
-                createSquare(boardElement, rank, file);
+                createSquare(boardElement, toAlgebraicSquare(rank, file));
             }
         }
     } else { // white on top.
+        //create top rank first left to right.
+        // h1 g1 f1 e1 d1 c1 b1 a1
+        // h2 g2 f2 ...
+        // ...
+        // h8 g8 f8 ...
         for (let rank = 1; rank <= 8; rank++) {
-            for (let file = 1; file <= 8; file++) {
-                createSquare(boardElement, rank, file);
+            for (let file = 8; file > 0; file--) {
+                createSquare(boardElement, toAlgebraicSquare(rank, file));
             }
         }
     }
@@ -254,18 +488,23 @@ function createBoardSquaresInternal(boardElement) {
 }
 
 /**
- * @param file [1-8] for a-h
- * @returns {string}
+ * Creates a square on the board.
+ * Order of calls should be left to right, top to bottom.
+ * @param boardElement The board element.
+ * @param algebraicSquare The algebraic square, e.g. e4.
  */
-function fileNumberToAlgebraic(file) {
-    return String.fromCharCode(96 + file);
-}
+function createSquare(boardElement, algebraicSquare) {
+    const rankFile = toRankFile(algebraicSquare);
+    const rank = rankFile.rank;
+    const file = rankFile.file;
+    const algRank = algebraicSquare.charAt(1);
+    const algFile = algebraicSquare.charAt(0);
 
-function createSquare(boardElement, rank, file) {
-    const algRank = '' + rank;
-    const algFile = fileNumberToAlgebraic(file);
+    console.log(`Creating square ${algebraicSquare} with rank ${rank} and file ${file}`);
+
+    //Create square and piece and an empty piece and add it to the board.
     const squareDiv = document.createElement('div');
-    squareDiv.id = `square-${file}-${rank}`; // Ensure unique IDs if multiple boards (not current case)
+    squareDiv.id = `square-${file}-${rank}`; // TODO: Ensure unique IDs if multiple boards (not current case)
     squareDiv.dataset.file = `${file}`;
     squareDiv.dataset.rank = `${rank}`;
     squareDiv.classList.add('chess-square');
@@ -280,14 +519,22 @@ function createSquare(boardElement, rank, file) {
     squareDiv.appendChild(pieceElement);
     boardElement.appendChild(squareDiv);
 
-    if (file === 8) {
+    // Add rank and file labels.
+    if (file === 1 && !gameState.isWhiteOnBottom) {
+        const rankLabel = document.createElement('div');
+        rankLabel.classList.add('rank-label');
+        rankLabel.textContent = algRank;
+        squareDiv.appendChild(rankLabel);
+    } else if (file == 8 && gameState.isWhiteOnBottom) {
         const rankLabel = document.createElement('div');
         rankLabel.classList.add('rank-label');
         rankLabel.textContent = algRank;
         squareDiv.appendChild(rankLabel);
     }
+
     // Add file labels to the bottom row based on board orientation
-    if ((gameState.isWhiteOnBottom && rank === 1) || (!gameState.isWhiteOnBottom && rank === 8)) {
+    if ((gameState.isWhiteOnBottom && rank === 1) ||
+        (!gameState.isWhiteOnBottom && rank === 8)) {
         const fileLabel = document.createElement('div');
         fileLabel.classList.add('file-label');
 
@@ -299,16 +546,18 @@ function createSquare(boardElement, rank, file) {
 
     // The click-click move handler.
     squareDiv.addEventListener('click', (e) => {
-        if (e.button === 2) { // 2 represents the right mouse button
+        if (e.button === 2) { // 2 is right mouse button
+            console.log("Right click, clearing premove.");
             gameState.premove = null;
-        } else {
+            updateBoardBottomLabels();
+        } else { // All other buttons similar to left click.
             console.log(`Click click move handler called. Square: ${squareDiv.dataset.algebraic}`)
             if (gameState.dndStartSquareAlegbraic) {
-                console.log(`DND start square set, cancelling click click move.`)
+                //DND start square set, cancelling click-click move.
                 return;
             }
             if (gameState.dndLastDropTime && gameState.dndLastDropTime > Date.now() - 200) {
-                console.log(`DND drop time less than now - 200ms. Ignoring click click move.`)
+                //DND drop time less than now - 200ms. Ignoring click-click move.
                 return;
             }
             removeBoardHighlightsInternal();
@@ -316,18 +565,14 @@ function createSquare(boardElement, rank, file) {
             if (!gameState.clickclickStartSquareAlegbraic) {
                 // Since DND and click handlers are being used simultaneously, this can occur.
                 // The use can also click on the start square twice which should not unset it.
-                console.log(`Click click move : start == end. Leaving gameState.startSquareAlgebraic=${gameState.clickclickStartSquareAlegbraic}`);
                 treatAsStartMove = true;
             } else { // This is the end square.
-                console.log("Treating click click move as end square.")
-                console.log(`Trying to make move: ${gameState.clickclickStartSquareAlegbraic}${squareDiv.dataset.algebraic}`);
                 treatAsStartMove = !makeMove(gameState.clickclickStartSquareAlegbraic, squareDiv.dataset.algebraic, false);
                 gameState.clickclickLastDropTime = Date.now();
                 removeBoardHighlightsInternal();
             }
 
             if (treatAsStartMove) {
-                console.log("Treating click click move as start square.")
                 gameState.clickclickStartSquareAlegbraic = squareDiv.dataset.algebraic;
                 const verboseMoves = chess.moves({square: gameState.clickclickStartSquareAlegbraic, verbose: true});
                 gameState.validMoves = verboseMoves.map(move => move.to);
@@ -368,12 +613,15 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
 
             squareDiv.style.fontSize = pieceFontSize; // For text pieces if ever used
 
-            const pieceData = chess.get(squareAlg);
-            let pieceSymbol = '';
-            if (pieceData) {
-                const pieceColor = pieceData.color === 'w' ? 'w' : 'b';
-                const pieceType = pieceData.type.toUpperCase();
-                pieceSymbol = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" />`;
+            const piece = getPieceAtSquare(gameState.fen, squareAlg);
+            const pieceColor = piece === piece.toUpperCase() ? 'w' : 'b'; //Upper is white lower black in FEN.
+            const pieceType = piece.toUpperCase();
+            let pieceImage = '';
+
+            console.log(`updateBoardGraphicsInternal squareAlg: ${squareAlg} piece: ${piece} `);
+
+            if (piece != '') {
+                pieceImage = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" />`;
             }
 
             let rankLabel = squareDiv.querySelector('.rank-label');
@@ -388,12 +636,12 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                 fileLabel.style.fontSize = labelFontSize;
                 // Show file labels on the bottom row based on board orientation
                 fileLabel.style.display = (gameState.isWhiteOnBottom && rank === 1) ||
-                                          (!gameState.isWhiteOnBottom && rank === 8) ? 'block' : 'none';
+                (!gameState.isWhiteOnBottom && rank === 8) ? 'block' : 'none';
                 fileLabel.style.color = squareDiv.classList.contains('light-square') ? prefs.darkSquareColor : prefs.lightSquareColor;
             }
 
             let pieceElement = squareDiv.querySelector('.chess-piece');
-            if (!pieceElement) { // Should not happen if createBoardSquaresInternal ran
+            if (!pieceElement) { // Should not happen if createBoardSquares ran
                 pieceElement = document.createElement('div');
                 pieceElement.classList.add('chess-piece');
                 squareDiv.appendChild(pieceElement);
@@ -407,16 +655,14 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
             pieceElement = newPieceElement;
 
 
-            pieceElement.innerHTML = pieceSymbol;
+            pieceElement.innerHTML = pieceImage;
             pieceElement.style.fontSize = pieceFontSize; // Ensure img scales if CSS relies on font size
 
-            if (pieceData) {
-                // Determine if this piece should be draggable
-                const playerColor = gameState.isWhitesMove ? 'w' : 'b';
+            if (piece !== '') {
                 const shouldBeDraggable = gameState.allowUserToMoveBothSides ||
                     (!gameState.allowUserToMoveBothSides &&
-                        ((gameState.isPlayerWhite && pieceData.color == 'w') ||
-                            (!gameState.isPlayerWhite && pieceData.color == 'b')))
+                        ((gameState.isPlayerWhite && pieceColor === 'w') ||
+                            (!gameState.isPlayerWhite && pieceColor === 'b')))
 
                 if (shouldBeDraggable) {
                     // Add a custom mousedown handler to initialize the drag
@@ -425,17 +671,13 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                         e.preventDefault();
 
                         // Store the piece and square information
-                        gameState.draggedPiece = pieceData;
+                        gameState.draggedPiece = piece;
                         gameState.draggedPieceElement = pieceElement;
                         gameState.dndStartSquareAlegbraic = squareAlg;
 
                         // Get valid moves for this piece
                         const verboseMoves = chess.moves({square: squareAlg, verbose: true});
                         gameState.validMoves = verboseMoves.map(move => move.to);
-
-                        console.log("Mouse down on piece:", pieceData,
-                            "Start square:", squareAlg,
-                            "Valid moves:", gameState.validMoves);
 
                         // Update board highlights to show valid moves
                         updateBoardHighlightsInternal();
@@ -521,11 +763,9 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                                 }
                             }
 
-                            console.log("Mouse up on square:", squareUnder ? squareUnder.dataset.algebraic : 'none');
-
                             // Process the drop if it's a valid move and not the same square
                             if (squareUnder &&
-                                gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
+                                //gameState.validMoves.includes(squareUnder.dataset.algebraic) &&
                                 squareUnder.dataset.algebraic !== gameState.dndStartSquareAlegbraic) {
                                 console.log("Valid move to:", squareUnder.dataset.algebraic, "from:", gameState.dndStartSquareAlegbraic);
                                 makeMove(gameState.dndStartSquareAlegbraic, squareUnder.dataset.algebraic, true);
@@ -624,9 +864,6 @@ function updateNonBoardAndMovesUI() {
     let whiteNameWithRating = gameState.whitePlayer.name + ' ' + (gameState.whitePlayer.rating ? `(${gameState.whitePlayer.rating})` : '');
     let blackNameWithRating = gameState.blackPlayer.name + ' ' + (gameState.blackPlayer.rating ? `(${gameState.blackPlayer.rating})` : '');
 
-    // Get the current turn from the chess instance
-    const currentTurn = chess ? chess.turn() : 'w';
-
     // Update game number (left-aligned)
     const gameNumberEl = document.getElementById('gameNumber');
     if (gameNumberEl) {
@@ -695,201 +932,16 @@ function updateNonBoardAndMovesUI() {
 }
 
 function style12DoublePawnPushToFile(style12Value) {
-    switch (style12Value) {
-        case -1:
-            return '';
-        case 0:
-            return 'a';
-        case 1:
-            return 'b';
-        case 2:
-            return 'c';
-        case 3:
-            return 'd';
-        case 4:
-            return 'e';
-        case 5:
-            return 'f';
-        case 6:
-            return 'g';
-        case 7:
-            return 'h';
+    if (style12Value === -1) {
+        return '';
+    } else if (style12Value >= 0 && style12Value <= 7) {
+        return fileNumberToAlgebraic(style12Value + 1); // +1 because fileNumberToAlgebraic expects 1-8 for a-h
     }
+    return '';
 }
 
-function updateCurrentGameInfoFromStyle12(style12Message) {
-    // This function updates gameState from Style12 messages
-//     style12
-//
-//     Style 12 is a type of machine parseable output that many of the FICS
-//     interfaces use.  The output is documented here for those who wish to write new
-//     interfaces.  Style 12 is also fully compatible with ICC (The Internet Chess
-//     Club).
-//
-//     The data is all on one line (displayed here as two lines, so it will show on
-//     your screen).  Here is an example:  [Note: the beginning and ending quotation
-//     marks are *not* part of the data string; they are needed in this help file
-//     because some interfaces cannot display the string when in a text file.]
-//
-//     "<12> rnbqkb-r pppppppp -----n-- -------- ----P--- -------- PPPPKPPP RNBQ-BNR
-//     B -1 0 0 1 1 0 7 Newton Einstein 1 2 12 39 39 119 122 2 K/e1-e2 (0:06) Ke2 0"
-//
-//     This string always begins on a new line, and there are always exactly 31 non-
-//     empty fields separated by blanks. The fields are:
-//
-// * the string "<12>" to identify this line.
-// * eight fields representing the board position.  The first one is White's
-//     8th rank (also Black's 1st rank), then White's 7th rank (also Black's 2nd),
-//     etc, regardless of who's move it is.
-//     * color whose turn it is to move ("B" or "W")
-// * -1 if the previous move was NOT a double pawn push, otherwise the chess
-//     board file  (numbered 0--7 for a--h) in which the double push was made
-//     * can White still castle short? (0=no, 1=yes)
-//         * can White still castle long?
-// * can Black still castle short?
-// * can Black still castle long?
-// * the number of moves made since the last irreversible move.  (0 if last move
-//     was irreversible.  If the value is >= 100, the game can be declared a draw
-//     due to the 50 move rule.)
-// * The game number
-//     * White's name
-//     * Black's name
-//     * my relation to this game:
-//         -3 isolated position, such as for "ref 3" or the "sposition" command
-//     -2 I am observing game being examined
-//     2 I am the examiner of this game
-//     -1 I am playing, it is my opponent's move
-//     1 I am playing and it is my move
-//     0 I am observing a game being played
-//     * initial time (in seconds) of the match
-//     * increment In seconds) of the match
-//     * White material strength
-//     * Black material strength
-//     * White's remaining time
-//     * Black's remaining time
-//     * the number of the move about to be made (standard chess numbering -- White's
-//     and Black's first moves are both 1, etc.)
-//     * verbose coordinate notation for the previous move ("none" if there were
-//     none) [note this used to be broken for examined games]
-// * time taken to make previous move "(min:sec)".
-//     * pretty notation for the previous move ("none" if there is none)
-// * flip field for board orientation: 1 = Black at bottom, 0 = White at bottom.
 
-
-    const lines = style12Message.split('\n');
-    const boardLineIndex = lines.findIndex(line => line.trim().startsWith('<12>'));
-
-    if (boardLineIndex !== -1) {
-        const boardLine = lines[boardLineIndex].trim();
-        const parts = boardLine.split(' ');
-        if (prefs && prefs.showStyle12Events) console.log('Style 12 parts:', parts);
-
-        if (parts.length >= 31) {
-            try {
-                gameState.gameNumber = parseInt(parts[16], 10);
-                gameState.whitePlayer.name = parts[17];
-                gameState.blackPlayer.name = parts[18];
-                gameState.moveNumber = parseInt(parts[26], 10);
-                gameState.lastMove = parts[27] === 'none' ? '' : parts[27];
-                gameState.lastMovePretty = parts[29] === 'none' ? '' : parts[29];
-                gameState.doublePawnPushFile = style12DoublePawnPushToFile(parseInt(parts[10], 10));
-                gameState.minutes = parseInt(parts[20], 10);
-                gameState.increment = parseInt(parts[21], 10);
-                gameState.whiteTimeSecs = parseFloat(parts[24]);
-                gameState.blackTimeSecs = parseFloat(parts[25]);
-                gameState.whiteCastleShort = parseInt(parts[11], 10) === 1;
-                gameState.whiteCastleLong = parseInt(parts[12], 10) === 1;
-                gameState.blackCastleShort = parseInt(parts[13], 10) === 1;
-                gameState.blackCastleLong = parseInt(parts[14], 10) === 1;
-                gameState.irreversibleCount = parseInt(parts[15], 10);
-                gameState.isActive = true;
-                gameState.isWhitesMove = parts[9] === 'W';
-                gameState.openingDescription = '';
-                gameState.isValidationSupported = gameState.type != 'atomic' && gameState.type != 'suicide' && gameState.type != 'losers';
-
-                const relationValue = parseInt(parts[19], 10);
-                // Store the numeric relation value directly
-                gameState.relation = relationValue;
-
-                // For debugging
-                if (prefs && prefs.showStyle12Events) {
-                    console.log(`Relation value: ${relationValue}, description: ${GameRelation.getDescription(relationValue)}`);
-                }
-
-                gameState.isPlayerWhite = (gameState.relation === GameRelation.PLAYING_MY_MOVE && gameState.isWhitesMove) ||
-                    (gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE && !gameState.isWhitesMove);
-
-                /**
-                 * IMPORTANT!
-                 * gameState.isPlayerPlaying means the user is playing a live game on fics.
-                 * In this case he can only move his pieces. If it is his turn, he is making live moves.
-                 *
-                 * Premove has not yet been implemented but here is what it will do:
-                 * If it is not his turn, he is making a premove which is a move that will be
-                 * immediately played when it is his turn.
-                 */
-                gameState.isPlayerPlaying = gameState.relation === GameRelation.PLAYING_MY_MOVE ||
-                    gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
-
-                /**
-                 * IMPORTANT!
-                 * gameState.isFlipped is NOT the value from the style12 event, that is always ignored.
-                 * gameState.isFlipped is only changed if the user flips the board on the GUI by pressing the flip button.
-                 */
-
-                    // Store the previous value of isWhiteOnBottom to detect changes
-                const previousIsWhiteOnBottom = gameState.isWhiteOnBottom;
-
-                /**
-                 * When playing the user can only move his pieces. Currently he can only move them when it is his turn but when
-                 * premove is added this will change.
-                 */
-                if (gameState.isPlayerPlaying) {
-
-                    gameState.isWhiteOnBottom = gameState.isPlayerWhite ? !gameState.isFlipped : gameState.isFlipped;
-                    gameState.allowUserToMoveBothSides = false;
-                } else {
-                    /**
-                     * If user is not playing the user is allowed to move both sides!
-                     * If a user is observing a game for example, he can move pieces just to see the position visually.
-                     * Style12 events will come in and erase the changes, but that is fine.
-                     *
-                     * This will change in GameRelation.EXAMINING mode, but that is not implemented yet. Examine mode will be a
-                     * special case. In GameRelation.EXAMINING mode the moves will stick and be sent to the websocket.
-                     */
-                    gameState.isWhiteOnBottom = !gameState.isFlipped;
-                    gameState.allowUserToMoveBothSides = true;
-                }
-
-                console.log("Board orientation set:", {
-                    isPlayerPlaying: gameState.isPlayerPlaying,
-                    isPlayerWhite: gameState.isPlayerWhite,
-                    isFlipped: gameState.isFlipped,
-                    isWhiteOnBottom: gameState.isWhiteOnBottom,
-                    previousIsWhiteOnBottom: previousIsWhiteOnBottom
-                });
-
-                // If isWhiteOnBottom has changed, recreate the board
-                if (previousIsWhiteOnBottom !== gameState.isWhiteOnBottom) {
-                    console.log("Board orientation changed, recreating board");
-                    const boardElement = document.getElementById('chessBoard');
-                    if (boardElement) {
-                        createBoardSquaresInternal(boardElement);
-                    }
-                }
-
-                stopClockInternal(); // Stop existing timer
-                startClockInternal();  // Restart with new times and turn
-            } catch (e) {
-                console.error('Error parsing Style 12 message parts:', e, parts);
-            }
-        } else {
-            console.error('Style 12 message has fewer than 31 parts:', parts.length);
-        }
-    }
-}
-
-function updateBoardFromStyle12(style12Message) {
+function updateFromStyle12(style12Message) {
     if (!chess) {
         try {
             chess = new Chess();
@@ -899,109 +951,163 @@ function updateBoardFromStyle12(style12Message) {
         }
     }
 
-    try {
-        previousPosition = chess.fen();
-    } catch (e) {
-        previousPosition = null;
-    }
+    previousPosition = gameState.fen;
 
     const lines = style12Message.split('\n');
     const boardLineIndex = lines.findIndex(line => line.trim().startsWith('<12>'));
-    let fen = '';
 
-    if (boardLineIndex !== -1) {
-        const boardLine = lines[boardLineIndex].trim();
-        const parts = boardLine.split(' ');
+    if (boardLineIndex === -1) {
+        console.error('No <12> tag found in Style12 message');
+        return;
+    }
 
-        if (parts.length >= 10) { // <12> + 8 rows + turn
-            try {
-                const boardRows = parts.slice(1, 9);
-                for (let i = 0; i < 8; i++) {
-                    let row = boardRows[i];
-                    let emptyCount = 0;
-                    let fenRow = '';
-                    for (let j = 0; j < row.length; j++) {
-                        const char = row.charAt(j);
-                        if (char === '-') {
-                            emptyCount++;
-                        } else {
-                            if (emptyCount > 0) {
-                                fenRow += emptyCount;
-                                emptyCount = 0;
-                            }
-                            fenRow += char;
-                        }
-                    }
-                    if (emptyCount > 0) {
-                        fenRow += emptyCount;
-                    }
-                    fen += fenRow + (i < 7 ? '/' : '');
-                }
-                fen += ' ' + (parts[9] === 'W' ? 'w' : 'b');
-                // Simplified FEN tail; Style12 provides full castling/enpassant info
-                let castling = "";
-                if (gameState.whiteCastleShort) castling += "K";
-                if (gameState.whiteCastleLong) castling += "Q";
-                if (gameState.blackCastleShort) castling += "k";
-                if (gameState.blackCastleLong) castling += "q";
-                if (castling === "") castling = "-";
+    const boardLine = lines[boardLineIndex].trim();
+    const parts = boardLine.split(' ');
+    if (prefs && prefs.showStyle12Events) console.log('Style 12 parts:', parts);
 
-                let enPassant = "-";
-                if (gameState.doublePawnPushFile !== '') {
-                    enPassant = gameState.doublePawnPushFile + (parts[9] === 'W' ? '6' : '3');
-                }
+    if (parts.length < 31) {
+        console.error('Style 12 message has fewer than 31 parts:', parts.length);
+        return;
+    }
 
-                fen += ` ${castling} ${enPassant} ${gameState.irreversibleCount} ${gameState.moveNumber}`;
+    const gameNumber = parseInt(parts[16], 10);
+    if (gameNumber !== gameState.gameNumber) {
+        playSound('start');
+    }
 
+    try {
+        // 1. Update game state information from Style12 parts
+        gameState.gameNumber = gameNumber;
+        gameState.whitePlayer.name = parts[17];
+        gameState.blackPlayer.name = parts[18];
+        gameState.moveNumber = parseInt(parts[26], 10);
+        gameState.lastMove = parts[27] === 'none' ? '' : parts[27];
+        gameState.lastMovePretty = parts[29] === 'none' ? '' : parts[29];
+        gameState.doublePawnPushFile = style12DoublePawnPushToFile(parseInt(parts[10], 10));
+        gameState.minutes = parseInt(parts[20], 10);
+        gameState.increment = parseInt(parts[21], 10);
+        gameState.whiteTimeSecs = parseFloat(parts[24]);
+        gameState.blackTimeSecs = parseFloat(parts[25]);
+        gameState.whiteCastleShort = parseInt(parts[11], 10) === 1;
+        gameState.whiteCastleLong = parseInt(parts[12], 10) === 1;
+        gameState.blackCastleShort = parseInt(parts[13], 10) === 1;
+        gameState.blackCastleLong = parseInt(parts[14], 10) === 1;
+        gameState.irreversibleCount = parseInt(parts[15], 10);
+        gameState.isActive = true;
+        gameState.isWhitesMove = parts[9] === 'W';
+        gameState.openingDescription = '';
+        gameState.isValidationSupported = gameState.type != 'atomic' && gameState.type != 'suicide' && gameState.type != 'losers';
 
-                if (previousPosition && chess) {
-                    try {
-                        chess.load(fen); // Load new position first for diff
-                    } catch (e) {
-                        console.error("Error loading FEN:", e);
-                    }
+        const relationValue = parseInt(parts[19], 10);
+        // Store the numeric relation value directly
+        gameState.relation = relationValue;
 
-                    // Update ECO opening info
-                    updateBoardBottomLabels();
-                    detectAndAnimateMoveInternal(previousPosition, chess.fen(), () => {
-                        if (gameState.lastMovePretty.includes('x')) {
-                            playSound('capture');
-                        } else { // any move
-                            playSound('move');
-                        }
-                        updateBoardGraphicsInternal();
-                    });
-                } else if (chess) {
-                    try {
-                        chess.load(fen);
-                    } catch (e) {
-                        console.error("Error loading FEN:", e);
-                    }
+        // For debugging
+        if (prefs && prefs.showStyle12Events) {
+            console.log(`Relation value: ${relationValue}, description: ${GameRelation.getDescription(relationValue)}`);
+        }
 
-                    // Update ECO opening info
-                    updateBoardBottomLabels();
+        gameState.isPlayerWhite = (gameState.relation === GameRelation.PLAYING_MY_MOVE && gameState.isWhitesMove) ||
+            (gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE && !gameState.isWhitesMove);
 
-                    // Make sure the board is updated with the correct orientation
-                    console.log("Updating board graphics with isWhiteOnBottom =", gameState.isWhiteOnBottom);
-                    updateBoardGraphicsInternal();
-                }
-            } catch (e) {
-                console.error("Failed to load FEN from Style12:", e, fen);
-                if (chess) chess.reset(); // Fallback
-                updateBoardGraphicsInternal(true);
+        /**
+         * IMPORTANT!
+         * gameState.isPlayerPlaying means the user is playing a live game on fics.
+         * In this case he can only move his pieces. If it is his turn, he is making live moves.
+         *
+         * Premove has not yet been implemented but here is what it will do:
+         * If it is not his turn, he is making a premove which is a move that will be
+         * immediately played when it is his turn.
+         */
+        gameState.isPlayerPlaying = gameState.relation === GameRelation.PLAYING_MY_MOVE ||
+            gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
+
+        /**
+         * IMPORTANT!
+         * gameState.isFlipped is NOT the value from the style12 event, that is always ignored.
+         * gameState.isFlipped is only changed if the user flips the board on the GUI by pressing the flip button.
+         */
+
+            // Store the previous value of isWhiteOnBottom to detect changes
+        const previousIsWhiteOnBottom = gameState.isWhiteOnBottom;
+
+        /**
+         * When playing the user can only move his pieces. Currently he can only move them when it is his turn but when
+         * premove is added this will change.
+         */
+        if (gameState.isPlayerPlaying) {
+            gameState.isWhiteOnBottom = gameState.isPlayerWhite ? !gameState.isFlipped : gameState.isFlipped;
+            gameState.allowUserToMoveBothSides = false;
+        } else {
+            /**
+             * If user is not playing the user is allowed to move both sides!
+             * If a user is observing a game for example, he can move pieces just to see the position visually.
+             * Style12 events will come in and erase the changes, but that is fine.
+             *
+             * This will change in GameRelation.EXAMINING mode, but that is not implemented yet. Examine mode will be a
+             * special case. In GameRelation.EXAMINING mode the moves will stick and be sent to the websocket.
+             */
+            gameState.isWhiteOnBottom = !gameState.isFlipped;
+            gameState.allowUserToMoveBothSides = true;
+        }
+
+        // If isWhiteOnBottom has changed, recreate the board
+        if (previousIsWhiteOnBottom !== gameState.isWhiteOnBottom) {
+            const boardElement = document.getElementById('chessBoard');
+            if (boardElement) {
+                createBoardSquares(boardElement);
             }
         }
+
+        // 2. Convert Style12 to FEN and update the board
+        const fen = style12ToFen(style12Message);
+        gameState.fen = fen; // Store the FEN in gameState
+
+        if (gameState.isValidationSupported) {
+            try {
+                chess.load(fen); // Load new position first for diff
+            } catch (e) {
+                console.error("Error loading FEN:", e);
+            }
+        }
+
+        // Update ECO opening info
+        updateBoardBottomLabels();
+        const startEnd = lastMoveToStartEndAlgebraic();
+        if (startEnd && startEnd.length == 2) {
+            animatePieceMoveInternal(startEnd[0], startEnd[1], () => {
+                if (gameState.lastMovePretty.includes('x')) {
+                    playSound('capture');
+                } else { // any move
+                    playSound('move');
+                }
+                updateBoardGraphicsInternal();
+            });
+        } else {
+            updateBoardGraphicsInternal();
+        }
+
+        stopClockInternal(); // Stop existing timer
+        startClockInternal();  // Restart with new times and turn
+    } catch (e) {
+        console.error("Failed to process Style12 message:", e);
+        if (chess) chess.reset(); // Fallback
+        updateBoardGraphicsInternal(true);
     }
 }
 
 function lastMoveToStartEndAlgebraic() {
     if (!gameState.lastMove || gameState.lastMove === 'none' || gameState.lastMove === '')
         return null;
-    //example: K/e2-e4;.
-    var moveStr = gameState.lastMove.substring(2).replaceAll('-', '');
-    var startAlgebraic = moveStr.substring(0, 2);
-    var endAlgebraic = moveStr.substring(2, 4);
-    return [startAlgebraic, endAlgebraic];
+
+    try {
+        // Use the parseVerboseMove function from utils.js
+        // Example input: K/e1-e2
+        return parseVerboseMove(gameState.lastMove);
+    } catch (e) {
+        console.error('Error parsing move notation:', e);
+        return null;
+    }
 }
 
 /**
@@ -1025,14 +1131,15 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         return false;
     }
 
-    if (!gameState.validMoves.includes(endSquareAlgebraic)) {
-        return false;
-    }
+    // if (!gameState.validMoves.includes(endSquareAlgebraic)) {
+    //     return false;
+    // }
 
-    const piece = chess.get(gameState.startSquareAlgebraic); // Get piece from current board state at gameState.startSquare
+    const movingPiece = getPieceAtSquare(gameState.fen, startSquareAlgebraic);
     const targetRank = parseInt(endSquareAlgebraic.charAt(1));
-    const isPromotion = piece && piece.type === 'p' &&
-        ((piece.color === 'w' && targetRank === 8) || (piece.color === 'b' && targetRank === 1));
+    const isPromotion = movingPiece != '' &&
+        (movingPiece === 'P' && targetRank === 8) ||
+        (movingPiece === 'p' && targetRank === 1);
     let moveObject;
     let moveStringPart = `${startSquareAlgebraic}${endSquareAlgebraic}`;
 
@@ -1051,26 +1158,27 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic};
     }
 
-    console.log("Attempting move:", moveObject);
-
     const isPremove = gameState.isPlayerPlaying &&
-        gameState.isWhitesMove !== gameState.isPlayerWhite &&
-        gameState.premove;
-    const isValidating = gameState.isValidationSupported &&
-        !isPremove &&
-        (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite);
+        gameState.isWhitesMove !== gameState.isPlayerWhite;
+    const isValidating = gameState.isValidationSupported && !isPremove &&
+        (!gameState.isPlayerPlaying ||
+            (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite));
+
+    console.log("isPremove: " + isPremove + " isValidating: " + isValidating);
 
     let moveResult = null;
 
-    if (isValidating) {
+    if (!isPremove && isValidating) {
         moveResult = chess.move(moveObject);
-        console.log("Move result:", moveResult);
+        gameState.fen = chess.fen();
     }
     if (isPremove) {
         gameState.premove = moveStringPart;
+        console.log("Making premove: " + gameState.premove);
+        updateBoardBottomLabels();
 
-        document.querySelector(`[data-algebraic="${moveObject.startSquare}"]`).classList.add('premove-start');
-        document.querySelector(`[data-algebraic="${moveObject.endSquare}"]`).classList.add('premove-end');
+        document.querySelector(`[data-algebraic="${startSquareAlgebraic}"]`).classList.add('premove-start');
+        document.querySelector(`[data-algebraic="${endSquareAlgebraic}"]`).classList.add('premove-end');
 
         // Restore the original piece visibility if the move failed
         if (isDragging && gameState.draggedPieceElement) {
@@ -1142,123 +1250,56 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     }
 }
 
-function detectAndAnimateMoveInternal(oldFen, newFen, callback) {
-    const oldChess = new Chess(oldFen);
-    const newChess = new Chess(newFen);
-    let fromSq = null, toSq = null;
-
-    // Simple diff: find changed squares
-    // This is a basic way; a more robust way involves checking move legality from old pos to new.
-    let movedPiece = null;
-
-    // Check if chess.SQUARES exists
-    if (!chess || !chess.SQUARES) {
-        if (callback) callback();
-        return;
-    }
-
-    for (const s of chess.SQUARES) {
-        const pOld = oldChess.get(s);
-        const pNew = newChess.get(s);
-        if (pOld && !pNew) { // Piece was here, now empty
-            fromSq = s;
-            movedPiece = pOld;
-        } else if (!pOld && pNew) { // Piece not here, now is
-            toSq = s;
-        } else if (pOld && pNew && (pOld.type !== pNew.type || pOld.color !== pNew.color)) { // Piece changed
-            // This could be a promotion or complex capture. For simple animation, treat as move.
-            fromSq = s; // Assume it moved from here
-            toSq = s;   // And to here (will look like it just changed)
-            movedPiece = pOld;
-        }
-    }
-    // If a piece moved from fromSq to toSq
-    if (fromSq && toSq && movedPiece && newChess.get(toSq) &&
-        newChess.get(toSq).type === movedPiece.type &&
-        newChess.get(toSq).color === movedPiece.color) {
-        animatePieceMoveInternal(fromSq, toSq, callback);
-    } else {
-        if (callback) callback(); // No clear move to animate or complex situation
-    }
-}
-
-
 function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
     const board = document.getElementById('chessBoard');
-    if (!board) {
-        if (callback) callback();
-        return;
-    }
-
     const fromElement = document.querySelector(`[data-algebraic="${algrebraicFrom}"]`);
     const fromSquare = {
         file: parseInt(fromElement.getAttribute('data-file'), 10),
         rank: parseInt(fromElement.getAttribute('data-rank'), 10)
     };
-
     const toElement = document.querySelector(`[data-algebraic="${algebraicTo}"]`);
     const toSquare = {
         file: parseInt(toElement.getAttribute('data-file'), 10),
         rank: parseInt(toElement.getAttribute('data-rank'), 10)
     };
 
-    if (!fromElement || !toElement) {
-        if (callback) callback();
-        return;
-    }
-
     const pieceElementToAnimate = fromElement.querySelector('.chess-piece');
-
-    if (!pieceElementToAnimate || !pieceElementToAnimate.innerHTML.trim()) {
-        if (callback) callback();
-        return;
-    }
-
     const pieceContent = pieceElementToAnimate.innerHTML;
     pieceElementToAnimate.innerHTML = ''; // Hide original temporarily
 
+    const squareSize = board.clientWidth / 8;
     const animatedPiece = document.createElement('div');
     animatedPiece.classList.add('chess-piece', 'animated-piece'); // Ensure .animated-piece is styled for fixed pos
     animatedPiece.innerHTML = pieceContent;
-
-    // Make sure the animated piece is visible and properly positioned
     animatedPiece.style.zIndex = '1000';
     animatedPiece.style.pointerEvents = 'none';
     animatedPiece.style.position = 'absolute';
-
-    const squareSize = board.clientWidth / 8;
     animatedPiece.style.width = squareSize + 'px';
     animatedPiece.style.height = squareSize + 'px';
     animatedPiece.style.fontSize = pieceElementToAnimate.style.fontSize; // Copy font size
-    // Ensure display flex for centering if img is inside
     animatedPiece.style.display = 'flex';
     animatedPiece.style.justifyContent = 'center';
     animatedPiece.style.alignItems = 'center';
-
 
     board.appendChild(animatedPiece); // Append to board for correct relative positioning
     animatedPiece.style.position = 'absolute'; // Crucial for animation
 
     // Calculate positions based on board orientation
-    const startX = (fromSquare.file -1) * squareSize;
-    const startY = gameState.isWhiteOnBottom ?
-        (8 - fromSquare.rank) * squareSize :
-        (fromSquare.rank - 1) * squareSize;
-    const endX = (toSquare.file -1) * squareSize;
-    const endY = gameState.isWhiteOnBottom ?
-        (8 - toSquare.rank) * squareSize :
-        (toSquare.rank - 1) * squareSize;
+    const startPosition = getSquareTopLeftAdjustment(fromSquare.rank, fromSquare.file, squareSize);
+    const endPosition = getSquareTopLeftAdjustment(toSquare.rank, toSquare.file, squareSize);
 
-    animatedPiece.style.left = startX + 'px';
-    animatedPiece.style.top = startY + 'px';
+    console.log(`Animating piece from: ${algrebraicFrom} ${JSON.stringify(startPosition)} to: ${algebraicTo} ${JSON.stringify(endPosition)}`);
+
+    animatedPiece.style.left = startPosition.left + 'px';
+    animatedPiece.style.top = startPosition.top + 'px';
 
     requestAnimationFrame(() => {
         animatedPiece.getBoundingClientRect(); // Force reflow
 
         // Use the original animation duration (0.1s)
-        animatedPiece.style.transition = 'left 0.1s ease-out, top 0.1s ease-out';
-        animatedPiece.style.left = endX + 'px';
-        animatedPiece.style.top = endY + 'px';
+        animatedPiece.style.transition = 'left 0.2s ease-out, top 0.2s ease-out';
+        animatedPiece.style.left = endPosition.left + 'px';
+        animatedPiece.style.top = endPosition.top + 'px';
 
         animatedPiece.addEventListener('transitionend', function onEnd(e) {
             console.log("Transition ended for property:", e.propertyName);
@@ -1288,6 +1329,30 @@ function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
             }
         }, {once: true}); // Ensure it only fires once per animation start
     });
+}
+
+/**
+ * Used for animating piece moves.
+ * @param rank The rank of the square.
+ * @param file The file of the square.
+ * @param squareSize The size of a square in pixels.
+ * @returns {{left: number, top: number}} The top left adjustment for the square.
+ **/
+function getSquareTopLeftAdjustment(rank, file, squareSize) {
+    //Animating piece from: d6 {"left":286.875,"top":191.25} to: f8 {"left":478.125,"top":0} (white on bottom)
+
+    if (gameState.isWhiteOnBottom) {
+        return {
+            left: (file - 1) * squareSize,
+            top: (8 - rank) * squareSize
+        };
+
+    } else {
+        return {
+            left: (8 - file) * squareSize,
+            top: (rank - 1) * squareSize
+        };
+    }
 }
 
 function removeBoardHighlightsInternal() {
@@ -1432,7 +1497,6 @@ export function initChessSystem(websocket, preferencesObject) {
     boardInitialized = true;
 
     applyChessRelatedPreferences(); // Apply initial preferences
-    // testClockParsingInternal(); // You might want to keep or remove this
 
     // Add a global mouseup event listener to ensure pieces are visible and clean up any drag operations
     document.addEventListener('mouseup', () => {
@@ -1460,255 +1524,6 @@ export function initChessSystem(websocket, preferencesObject) {
             }
         }, 100);
     });
-}
-
-// --- Moves List Processing ---
-export function processMovesList(rawMovesText) {
-    if (!boardInitialized && !document.getElementById('chessBoard')) {
-        console.warn("Chess board/UI not initialized when processing moves list. Attempting setup.");
-        setupMainChessBoardDisplay(); // Ensure UI is ready
-    }
-    // Update player info UI to show ratings if the game number matches
-    parseAndStoreMovesInternal(rawMovesText);
-    updateMovesListDisplayInternal();
-    highlightLastMoveInMovelist();
-    updateNonBoardAndMovesUI();
-}
-
-// GuestGTKW (++++) walpurti (2084) unrated blitz 5 0
-// {Game 14 (GuestGTKW vs. walpurti) Creating unrated blitz match.}
-//
-//
-// Game 14: A disconnection will be considered a forfeit.
-//     fics%
-export function processGameCreationMessage(message) {
-    if (!message || !message.trim()) return false;
-    //Creating: foo (1668) bobbyrob (1715) rated blitz 3 0
-    //{Game 16 (foo vs. bobbyrob) Creating rated blitz match.}
-    // Regular expression to match game creation messages with more flexible rating patterns
-    const gameCreationRegex = /^([\w.-]+) \(([\d+]+)\) ([\w.-]+) \(([\d+]+)\) (rated|unrated) (\w+) (\d+) (\d+)/;
-    const match = message.match(gameCreationRegex);
-
-    if (!match) {
-        if (prefs && prefs.showStyle12Events) {
-            console.log("Game creation message did not match regex pattern:", message);
-        }
-        return false;
-    }
-
-    //Parse second line for game number.
-    var gameNumber = null;
-    const startIndex = message.indexOf("\n{Game ");
-    if (startIndex != -1) {
-        gameNumber = message.substring(startIndex + 7);
-        const spaceIndex = gameNumber.indexOf(" ");
-        gameNumber = gameNumber.substring(0, spaceIndex);
-    }
-
-    gameState.gameNumber = gameNumber;
-    gameState.whitePlayer = {name: match[1], rating: match[2]};
-    gameState.blackPlayer = {name: match[3], rating: match[4]};
-    gameState.type = match[6];
-    gameState.isRated = match[5] === 'rated';
-    gameState.moveNumber = 1;
-    gameState.lastMove = '';
-    gameState.lastMovePretty = '';
-    gameState.doublePawnPushFile = -1;
-    gameState.minutes = parseInt(match[7], 10);
-    gameState.increment = parseInt(match[8], 10);
-    gameState.whiteTimeSecs = gameState.minutes * 60;
-    gameState.blackTimeSecs = gameState.minutes * 60;
-    gameState.whiteCastleShort = true;
-    gameState.whiteCastleLong = true;
-    gameState.blackCastleShort = true;
-    gameState.blackCastleLong = true;
-    gameState.irreversibleCount = 0;
-    gameState.status = '';
-    gameState.result = '';
-    gameState.isActive = true;
-    gameState.isFlipped = false;
-    gameState.openingDescription = '';
-    gameState.requestedMovesForGame = false;
-    gameState.draggedPiece = null;
-    gameState.draggedPieceElement = null;
-    gameState.dndStartSquareAlegbraic = null;
-    gameState.clickclickStartSquareAlegbraic = null;
-    gameState.dndStartSquareAlegbraic = null;
-    gameState.moves = [];
-    gameState.validMoves = [];
-
-    // Set isWhiteOnBottom to true by default for new games
-    // This will be updated correctly when the first Style12 message arrives
-    gameState.isWhiteOnBottom = true;
-
-    return true;
-}
-
-// Process game end messages like "12 (genieman vs. Pawnlightly) genieman resigns} 0-1"
-export function processGameEndMessage(message) {
-    if (!message || !message.trim()) return false;
-
-    // Regular expression to match game end messages
-    // This regex is very flexible to handle all types of player names and game end reasons
-    const gameEndRegex = /^(\d+) \(([^)]+) vs\. ([^)]+)\) (.*)\}\s*([012\/-]+).*/;
-    const match = message.match(gameEndRegex);
-
-    if (!match || match.length != 6) {
-        if (prefs && prefs.showStyle12Events) { // Use the debug preference for logging
-            console.log("Game end message did not match regex pattern:", message);
-        }
-        return false;
-    }
-
-    const gameNumber = parseInt(match[1], 10);
-    const whitePlayer = match[2];
-    const blackPlayer = match[3];
-    const reason = match[4];
-    const result = match[5];
-
-    if (prefs && prefs.showStyle12Events) { // Use the debug preference for logging
-        console.log("Parsed game end message:", {
-            gameNumber,
-            whitePlayer,
-            blackPlayer,
-            reason,
-            result
-        });
-    }
-
-    // Check if this game end message is for the current game
-    if (gameState.gameNumber === gameNumber) {
-        // Update the game header info with the status and result
-        gameState.status = reason;
-        gameState.result = result;
-        gameState.isActive = false;
-
-        // Update the moves list display to show the game result
-        updateMovesListDisplayInternal();
-
-        // Stop the clock if it's running
-        stopClockInternal();
-
-
-        // Play game end sound
-        playSound('gameEnd');
-
-        return true;
-    }
-
-    return false;
-}
-
-function parseAndStoreMovesInternal(rawMovesText) {
-    // Unrated blitz match, initial time: 5 minutes, increment: 2 seconds.
-    //     Move  GuestJVNB          GuestYKYQ
-    // ----  ----------------   ----------------
-    // 1.  d4      (0:00)     d5      (0:00)
-    // 2.  Nf3     (0:02)     Nf6     (0:03)
-    // 3.  e3      (0:02)     a6      (0:02)
-    // 4.  Bd3     (0:02)     Bg4     (0:11)
-    // 5.  Nbd2    (0:03)     e6      (0:02)
-    // 6.  b3      (0:03)     Nbd7    (0:02)
-    // 7.  a3      (0:03)     Bd6     (0:02)
-    // 8.  Bb2     (0:03)     O-O     (0:03)
-    // 9.  O-O     (0:05)     h6      (0:02)
-    // 10.  Qe1     (0:10)     c6      (0:03)
-    // 11.  Ne5     (0:05)     Bxe5    (0:15)
-    // 12.  dxe5    (0:03)     Ne8     (0:03)
-    // 13.  f4      (0:11)     Nc5     (0:04)
-    // 14.  Qg3     (0:26)     Nxd3    (0:06)
-    // 15.  cxd3    (0:03)     Be2     (0:03)
-    // 16.  Rf2     (0:11)     Bxd3    (0:02)
-    // 17.  Nf3     (0:21)     Kh7     (0:38)
-    // 18.  Nh4     (0:05)     Be4     (0:16)
-    // 19.  f5      (0:06)     Qg5     (0:19)
-    // 20.  fxe6    (0:29)     Qxg3    (0:03)
-    // 21.  hxg3    (0:02)
-    // {Still in progress} *
-    // fics%
-
-    // Check if we should update the current game's player ratings
-    let isForLoadedGame = false;
-
-    const lines = rawMovesText.split('\n');
-    let parsingHeader = true;
-    let moveDataStarted = false; // To identify when actual move lines begin
-
-    // Regex patterns for parsing
-    const playerRegex = /^([\w.-]+)\s\((\d+)\)\s+vs\.\s+([\w.-]+)\s\((\d+)\)\s+---\s+(.*)$/;
-    const gameTypeRegex = /^(.*) (.*) match,\s+initial time:\s+(.*),\s+increment:\s+(.*)\.$/;
-    const moveLineRegex = /^\s*(\d+)\.\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\)(?:\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\))?/;
-    const statusRegex = /^{\s*(.*?)\s*}(?:\s*([0-1/2*-]+))?$/;
-
-
-    for (const line of lines) {
-        if (line.trim() === "") continue;
-
-        if (parsingHeader) {
-            if (line.indexOf("Movelist for game") == 0) {
-                const match = line.match(/Movelist for game (\d+):/);
-                if (match) {
-                    const gameNumber = parseInt(match[1], 10);
-                    // Check if this moves list is for the current game
-                    if (gameNumber === gameState.gameNumber) {
-                        isForLoadedGame = true;
-                        gameState.moves = [];
-                    }
-                } else {
-                    return;
-                }
-            }
-
-            const playerMatch = line.match(playerRegex);
-            if (playerMatch) {
-                // This is how the ratings are set for observed games.
-                if (!gameState.whitePlayer.rating) {
-                    gameState.whitePlayer.rating = playerMatch[2];
-                }
-                if (!gameState.blackPlayer.rating) {
-                    gameState.blackPlayer.rating = playerMatch[4];
-                }
-
-                continue;
-            }
-
-            const gameType = line.match(gameTypeRegex);
-            if (playerMatch) {
-                gameState.increment = gameType[4] === 'rated';
-                gameState.minutes = gameType[3] === 'rated';
-                gameState.isRated = gameType[1] === 'rated';
-                gameState.type = gameType[2];
-                continue;
-            }
-
-            // Transition from header to move list data
-            if (line.startsWith("----  ----------------")) {
-                parsingHeader = false;
-                moveDataStarted = true;
-                continue;
-            }
-        } else if (moveDataStarted) {
-            const moveMatch = line.match(moveLineRegex);
-            if (moveMatch) {
-                const moveEntry = {
-                    number: parseInt(moveMatch[1], 10),
-                    white: {san: moveMatch[2], time: moveMatch[3]},
-                    black: moveMatch[4] ? {san: moveMatch[4], time: moveMatch[5]} : null
-                };
-                gameState.moves.push(moveEntry);
-                continue;
-            }
-            // Lines after status (like fics% prompt) will be ignored by these specific parsers
-        }
-    }
-
-    if (prefs && prefs.showStyle12Events) { // Re-use this pref for general debug logging
-        console.log("Parsed Game Header (Moves List):", gameState);
-        console.log("Parsed Moves (Moves List):", gameState.moves);
-    }
-
-    // Update ECO opening info after parsing the move list checking every move.
-    updateECOLabelFromMoveList();
 }
 
 function updateMovesListDisplayInternal() {
@@ -1881,7 +1696,8 @@ function updateMovesListWithNewMoveInternal() {
         // A move has already been made and we received the Style 12 for it so isWhitesMove will not be the side that made the move.
         if (gameState.isWhitesMove) { // Black just moved, so it's White's turn
             // If the last move in the list has a white move but no black move, add the black move
-            if (lastMove.white.san && !lastMove.black.san) {
+            console.log(`last move: ${JSON.stringify(lastMove)}`);
+            if (lastMove.white.san && !lastMove.black || !lastMove.black.san) {
                 lastMove.black = {
                     san: gameState.lastMovePretty
                 };
@@ -1902,7 +1718,7 @@ function updateMovesListWithNewMoveInternal() {
             }
         } else { // White just moved, so it's Black's turn
             // If the last move in the list has no white move, add the white move
-            if (!lastMove.white.san) {
+            if (!lastMove.white || !lastMove.white.san) {
                 lastMove.white = {
                     san: gameState.lastMovePretty
                 };
@@ -1934,38 +1750,7 @@ function updateMovesListWithNewMoveInternal() {
 
 // Board header function removed
 
-// Function to convert standard algebraic notation to Unicode chess symbols
-function convertToUnicodeChessPieces(moveText) {
-    if (!moveText) return moveText;
 
-    // Define the mapping from algebraic notation to Unicode symbols
-    const pieceMap = {
-        'K': '♔', // White King
-        'Q': '♕', // White Queen
-        'R': '♖', // White Rook
-        'B': '♗', // White Bishop
-        'N': '♘', // White Knight
-        'P': '♙', // White Pawn (rarely used in notation but included for completeness)
-        'k': '♚', // Black King
-        'q': '♛', // Black Queen
-        'r': '♜', // Black Rook
-        'b': '♝', // Black Bishop
-        'n': '♞', // Black Knight
-        'p': '♟'  // Black Pawn (rarely used in notation but included for completeness)
-    };
-
-    // Replace piece letters with Unicode symbols
-    // We need to be careful to only replace standalone piece letters, not parts of other notation
-    // For example, 'Nf3' should become '♘f3', but 'O-O-O' should remain unchanged
-
-    // Handle special case for castling notation
-    if (moveText === 'O-O') return 'O-O'; // Kingside castling
-    if (moveText === 'O-O-O') return 'O-O-O'; // Queenside castling
-
-    return moveText.replace(/([KQRBN])([a-h1-8x+#=]|$)/g, (match, piece, rest) => {
-        return pieceMap[piece] + rest;
-    });
-}
 
 function unselectMovesInMovelist() {
     // Remove highlight from all moves
@@ -2343,7 +2128,11 @@ function updateBoardBottomLabels() {
 
     // Update the last move label
     const lastMoveLabelElement = document.getElementById('lastMoveLabel');
-    if (lastMoveLabelElement && gameState.lastMovePretty) {
+    let lastMoveLabelText = '';
+    if (gameState.premove) {
+        const startEnd = ficsMoveToStartEndArray(gameState.premove);
+        lastMoveLabelText = 'Premove: ' + convertToUnicodeChessPieces(startEndToAlgebraic(startEnd[0], startEnd[1], gameState.fen));
+    } else if (gameState.lastMovePretty) {
         // Format the last move with the move number
         let formattedMove = '';
         if (gameState.isWhitesMove) {
@@ -2353,8 +2142,8 @@ function updateBoardBottomLabels() {
             // White just moved
             formattedMove = `Last move: ${gameState.moveNumber}.${gameState.lastMovePretty}`;
         }
-        lastMoveLabelElement.innerText = formattedMove;
     }
+    lastMoveLabelElement.innerText = lastMoveLabelText;
 }
 
 function setupMainChessBoardDisplay() {
@@ -2461,7 +2250,7 @@ function setupMainChessBoardDisplay() {
         // Recreate the board with the new orientation
         const boardElement = document.getElementById('chessBoard');
         if (boardElement) {
-            createBoardSquaresInternal(boardElement);
+            createBoardSquares(boardElement);
         }
 
         updateBoardGraphicsInternal(null, null);
@@ -2561,7 +2350,7 @@ function setupMainChessBoardDisplay() {
     boardArea.appendChild(boardMainContainer); // And finally to the DOM
 
     // Create chess board squares
-    createBoardSquaresInternal(board);
+    createBoardSquares(board);
 
     // --- Add the Moves List Container ---
     // The 'playerInfoContainer' variable here refers to the one created above.
@@ -2644,5 +2433,3 @@ function setupMainChessBoardDisplay() {
     }
     updateBoardGraphicsInternal(); // Initial draw
 }
-
-// ... (rest of your chess.js: createBoardSquaresInternal, updateBoardGraphicsInternal, etc.)
