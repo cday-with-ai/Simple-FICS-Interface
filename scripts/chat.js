@@ -1,4 +1,4 @@
-import { addToMessageHistory, handleArrowKeys, processTextToHTML, getFicsCommandRegex, getWebSocket } from './fics.js';
+import { addToMessageHistory, handleArrowKeys, processTextToHTML, getWebSocket } from './fics.js';
 
 // DOM elements
 const mainTextArea = document.getElementById('mainTextArea');
@@ -10,6 +10,20 @@ const chessBoardArea = document.querySelector('.chess-board-area');
 const rightContent = document.querySelector('.right-content');
 const mainConsole = document.querySelector('.main-console');
 const chatTabsContainer = document.querySelector('.chat-tabs-container');
+
+// FICS command regex patterns for validation
+const ficsCommandRegex = [
+    /(^match .*$)|(^m .*$)/i,
+    /(^observe [a-zA-Z0-9]+$)|(^obs [a-zA-Z0-9]+$)/i,
+    /(^unobserve$)|(^unobs$)|(^unobserve [a-zA-Z0-9]+$)|(^unobs [a-zA-Z0-9]+$)/i,
+    /(^[+-]censor [a-zA-Z0-9]+$)/i,
+    /(^seek [a-zA-Z0-9]+ [a-zA-Z0-9]+ [a-zA-Z0-9]+$)/i,
+    /(^play [0-9]+$)/i,
+    /(^tell [a-zA-Z0-9]+ .*$)|(^t [a-zA-Z0-9]+ .*$)/i,
+    /(^kibitz [a-zA-Z0-9]+ .*$)|(^kib [a-zA-Z0-9]+ .*$)/i,
+    /(^whisper [a-zA-Z0-9]+ .*$)|(^whisper [a-zA-Z0-9]+$)/i,
+    /(^message .*$)|(^messages$)/i
+];
 
 // UI state variables
 let activeResizer = null;
@@ -320,10 +334,10 @@ export function createTab(type, name) {
         if (event.key === "Enter") {
             const message = input.value;
             const ws = getWebSocket();
-            const ficsCommandRegex = getFicsCommandRegex();
 
             let isFicsCmd = false;
             for (var regex of ficsCommandRegex) {
+                console.log(regex, message);
                 if (regex.test(message)) {
                     isFicsCmd = true;
                     break;
@@ -454,4 +468,8 @@ export function createGameTab(opponent) {
     });
 
     return id;
+}
+
+export function getFicsCommandRegex() {
+    return ficsCommandRegex;
 }

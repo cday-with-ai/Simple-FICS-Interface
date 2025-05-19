@@ -5,7 +5,9 @@
   "main": "scripts/index.js",
   "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose"
+    "test": "karma start --single-run",
+    "test:watch": "karma start",
+    "test:debug": "karma start --browsers=Chrome --no-single-run --debug"
   },
   "keywords": [
     "chess",
@@ -15,7 +17,21 @@
   "author": "cday-with-ai",
   "license": "ISC",
   "dependencies": {
-    "jest": "^29.7.0",
     "yarn": "^1.22.22"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.27.1",
+    "@babel/preset-env": "^7.27.2",
+    "babel-loader": "^9.2.1",
+    "jasmine-core": "^5.7.1",
+    "karma": "^6.4.4",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-firefox-launcher": "^2.1.3",
+    "karma-jasmine": "^5.1.0",
+    "karma-jasmine-html-reporter": "^2.1.0",
+    "karma-spec-reporter": "^0.0.36",
+    "karma-webpack": "^5.0.1",
+    "webpack": "^5.99.8",
+    "webpack-cli": "^5.1.4"
   }
 }

@@ -2,7 +2,7 @@ import {style12ToFen, toAlgebraicSquare, toRankFile, fileNumberToAlgebraic, getP
 
 describe('style12ToFen', () => {
   // Test with the example from the documentation
-  test('converts Style12 to FEN - example 1', () => {
+  it('converts Style12 to FEN - example 1', () => {
     const style12Example = `<12> rnbqkb-r pppppppp -----n-- -------- ----P--- -------- PPPPKPPP RNBQ-BNR B -1 0 0 1 1 0 7 Newton Einstein 1 2 12 39 39 119 122 2 K/e1-e2 (0:06) Ke2 0`;
     const expectedFen = "rnbqkb1r/pppppppp/5n2/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 0 2";
 
@@ -11,7 +11,7 @@ describe('style12ToFen', () => {
   });
 
   // Test with a different example
-  test('converts Style12 to FEN - example 2', () => {
+  it('converts Style12 to FEN - example 2', () => {
     const style12Example2 = `<12> rnbqkbnr pp1ppppp -------- --p----- ----P--- -------- PPPP1PPP RNBQKBNR W 2 1 1 1 1 0 7 Player1 Player2 0 5 0 39 39 300 300 1 p/b2-c3 (0:05) c3 0`;
     const expectedFen2 = "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 1";
 
@@ -20,7 +20,7 @@ describe('style12ToFen', () => {
   });
 
   // Test with multiline input
-  test('handles multiline Style12 input', () => {
+  it('handles multiline Style12 input', () => {
     const multilineStyle12 = `Some other text
 <12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W 1 1 1 1 1 0 7 White Black 0 5 0 39 39 300 300 1 none (0:00) none 0
 More text after`;
@@ -35,7 +35,7 @@ More text after`;
   });
 
   // Test with different castling rights
-  test('handles different castling rights', () => {
+  it('handles different castling rights', () => {
     // No castling rights
     const noCastling = `<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W 0 0 0 0 0 0 7 White Black 0 5 0 39 39 300 300 1 none (0:00) none 0`;
     expect(style12ToFen(noCastling)).toContain(" w - ");
@@ -62,7 +62,7 @@ More text after`;
   });
 
   // Test with en passant square
-  test('handles en passant square correctly', () => {
+  it('handles en passant square correctly', () => {
     // White pawn double push on e file
     const whitePawnDoublePush = `<12> rnbqkbnr pppp1ppp -------- ----p--- ----P--- -------- PPPP1PPP RNBQKBNR B 4 1 1 1 1 0 7 White Black 0 5 0 39 39 300 300 1 P/e2-e4 (0:00) e4 0`;
     expect(style12ToFen(whitePawnDoublePush)).toContain(" b KQkq e3 ");
@@ -73,17 +73,27 @@ More text after`;
   });
 
   // Test error handling
-  test('throws error for invalid Style12 message', () => {
+  it('throws error for invalid Style12 message', () => {
     // No <12> tag
-    expect(() => style12ToFen('Invalid message')).toThrow('Invalid Style12 message: <12> tag not found');
+    try {
+      style12ToFen('Invalid message');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toMatch(/Invalid Style12 message: <12> tag not found/);
+    }
 
     // Not enough parts
-    expect(() => style12ToFen('<12> not enough parts')).toThrow('Invalid Style12 message: expected 31 parts');
+    try {
+      style12ToFen('<12> not enough parts');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toMatch(/Invalid Style12 message: expected 31 parts/);
+    }
   });
 });
 
 describe('toAlgebraicSquare', () => {
-  test('converts rank and file to algebraic notation', () => {
+  it('converts rank and file to algebraic notation', () => {
     // Test all corners of the board
     expect(toAlgebraicSquare(1, 1)).toBe('a1'); // bottom left
     expect(toAlgebraicSquare(8, 1)).toBe('a8'); // top left
@@ -98,7 +108,7 @@ describe('toAlgebraicSquare', () => {
 });
 
 describe('toRankFile', () => {
-  test('converts algebraic notation to rank and file', () => {
+  it('converts algebraic notation to rank and file', () => {
     // Test all corners of the board
     expect(toRankFile('a1')).toEqual({ file: 1, rank: 1 }); // bottom left
     expect(toRankFile('a8')).toEqual({ file: 1, rank: 8 }); // top left
@@ -113,7 +123,7 @@ describe('toRankFile', () => {
 });
 
 describe('fileNumberToAlgebraic', () => {
-  test('converts file number to algebraic file letter', () => {
+  it('converts file number to algebraic file letter', () => {
     // Test all files
     expect(fileNumberToAlgebraic(1)).toBe('a');
     expect(fileNumberToAlgebraic(2)).toBe('b');
@@ -128,60 +138,110 @@ describe('fileNumberToAlgebraic', () => {
 
 describe('parseVerboseMove', () => {
   // Test with valid moves
-  test('parses king move correctly', () => {
+  it('parses king move correctly', () => {
     const result = parseVerboseMove('K/e1-e2');
     expect(result).toEqual(['e1', 'e2']);
   });
 
-  test('parses pawn move correctly', () => {
+  it('parses pawn move correctly', () => {
     const result = parseVerboseMove('P/e2-e4');
     expect(result).toEqual(['e2', 'e4']);
   });
 
-  test('parses knight move correctly', () => {
+  it('parses knight move correctly', () => {
     const result = parseVerboseMove('N/g1-f3');
     expect(result).toEqual(['g1', 'f3']);
   });
 
-  test('parses bishop move correctly', () => {
+  it('parses bishop move correctly', () => {
     const result = parseVerboseMove('B/f1-c4');
     expect(result).toEqual(['f1', 'c4']);
   });
 
-  test('parses rook move correctly', () => {
+  it('parses rook move correctly', () => {
     const result = parseVerboseMove('R/a1-a8');
     expect(result).toEqual(['a1', 'a8']);
   });
 
-  test('parses queen move correctly', () => {
+  it('parses queen move correctly', () => {
     const result = parseVerboseMove('Q/d1-d8');
     expect(result).toEqual(['d1', 'd8']);
   });
 
   // Test with 'none' special case
-  test('handles "none" special case', () => {
+  it('handles "none" special case', () => {
     const result = parseVerboseMove('none');
     expect(result).toEqual([]);
   });
 
   // Test error handling
-  test('throws error for invalid move notation', () => {
+  it('throws error for invalid move notation', () => {
     // Empty string
-    expect(() => parseVerboseMove('')).toThrow('Invalid move notation');
+    try {
+      parseVerboseMove('');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
 
     // Null or undefined
-    expect(() => parseVerboseMove(null)).toThrow('Invalid move notation');
-    expect(() => parseVerboseMove(undefined)).toThrow('Invalid move notation');
+    try {
+      parseVerboseMove(null);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
+
+    try {
+      parseVerboseMove(undefined);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
 
     // Invalid format
-    expect(() => parseVerboseMove('Ke1-e2')).toThrow('Invalid move notation');
-    expect(() => parseVerboseMove('K/e1e2')).toThrow('Invalid move notation');
-    expect(() => parseVerboseMove('K-e1-e2')).toThrow('Invalid move notation');
-    expect(() => parseVerboseMove('X/e1-e2')).toThrow('Invalid move notation'); // Invalid piece
+    try {
+      parseVerboseMove('Ke1-e2');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
+
+    try {
+      parseVerboseMove('K/e1e2');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
+
+    try {
+      parseVerboseMove('K-e1-e2');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
+
+    try {
+      parseVerboseMove('X/e1-e2'); // Invalid piece
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
 
     // Invalid squares
-    expect(() => parseVerboseMove('K/e9-e2')).toThrow('Invalid move notation');
-    expect(() => parseVerboseMove('K/e1-i2')).toThrow('Invalid move notation');
+    try {
+      parseVerboseMove('K/e9-e2');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
+
+    try {
+      parseVerboseMove('K/e1-i2');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid move notation');
+    }
   });
 });
 
@@ -193,7 +253,7 @@ describe('getPieceAtSquare', () => {
   const middleGameFen = 'r1bqkbnr/pp1ppppp/2n5/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 3';
 
   // Test with standard starting position
-  test('gets pieces from starting position', () => {
+  it('gets pieces from starting position', () => {
     // White pieces
     expect(getPieceAtSquare(startingPositionFen, 'a1')).toBe('R');
     expect(getPieceAtSquare(startingPositionFen, 'b1')).toBe('N');
@@ -236,7 +296,7 @@ describe('getPieceAtSquare', () => {
   });
 
   // Test with middle game position
-  test('gets pieces from middle game position', () => {
+  it('gets pieces from middle game position', () => {
     // Test specific pieces
     expect(getPieceAtSquare(middleGameFen, 'c6')).toBe('n'); // Black knight
     expect(getPieceAtSquare(middleGameFen, 'c5')).toBe('p'); // Black pawn
@@ -251,29 +311,104 @@ describe('getPieceAtSquare', () => {
   });
 
   // Test error handling
-  test('handles invalid inputs', () => {
+  it('handles invalid inputs', () => {
     // Invalid FEN
-    expect(() => getPieceAtSquare('', 'e4')).toThrow('Invalid FEN');
-    expect(() => getPieceAtSquare(null, 'e4')).toThrow('Invalid FEN');
-    expect(() => getPieceAtSquare(undefined, 'e4')).toThrow('Invalid FEN');
-    expect(() => getPieceAtSquare('invalid/fen', 'e4')).toThrow('Invalid FEN');
+    try {
+      getPieceAtSquare('', 'e4');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid FEN');
+    }
+
+    try {
+      getPieceAtSquare(null, 'e4');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid FEN');
+    }
+
+    try {
+      getPieceAtSquare(undefined, 'e4');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid FEN');
+    }
+
+    try {
+      getPieceAtSquare('invalid/fen', 'e4');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid FEN');
+    }
 
     // Invalid square
-    expect(() => getPieceAtSquare(startingPositionFen, '')).toThrow('Invalid square');
-    expect(() => getPieceAtSquare(startingPositionFen, null)).toThrow('Invalid square');
-    expect(() => getPieceAtSquare(startingPositionFen, undefined)).toThrow('Invalid square');
-    expect(() => getPieceAtSquare(startingPositionFen, 'e')).toThrow('Invalid square');
-    expect(() => getPieceAtSquare(startingPositionFen, 'e44')).toThrow('Invalid square');
-    expect(() => getPieceAtSquare(startingPositionFen, '4e')).toThrow('Invalid square');
+    try {
+      getPieceAtSquare(startingPositionFen, '');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
+
+    try {
+      getPieceAtSquare(startingPositionFen, null);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
+
+    try {
+      getPieceAtSquare(startingPositionFen, undefined);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
+
+    try {
+      getPieceAtSquare(startingPositionFen, 'e');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
+
+    try {
+      getPieceAtSquare(startingPositionFen, 'e44');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
+
+    try {
+      getPieceAtSquare(startingPositionFen, '4e');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
 
     // Out of bounds square
-    expect(() => getPieceAtSquare(startingPositionFen, 'i4')).toThrow('Invalid square');
-    expect(() => getPieceAtSquare(startingPositionFen, 'e9')).toThrow('Invalid square');
-    expect(() => getPieceAtSquare(startingPositionFen, 'e0')).toThrow('Invalid square');
+    try {
+      getPieceAtSquare(startingPositionFen, 'i4');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
+
+    try {
+      getPieceAtSquare(startingPositionFen, 'e9');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
+
+    try {
+      getPieceAtSquare(startingPositionFen, 'e0');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid square');
+    }
   });
 
   // Test with a complex position
-  test('handles complex positions', () => {
+  it('handles complex positions', () => {
     const complexFen = 'r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1';
 
     // Test specific pieces
@@ -315,7 +450,7 @@ describe('startEndToAlgebraic', () => {
   const ambiguousPositionFen = 'r1bqk1nr/ppp2ppp/2n5/2bpp3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R w KQkq - 0 6';
 
   // Test basic pawn moves
-  test('converts basic pawn moves correctly', () => {
+  it('converts basic pawn moves correctly', () => {
     // Pawn move
     expect(startEndToAlgebraic('e2', 'e4', startingPositionFen)).toBe('e4');
     expect(startEndToAlgebraic('d2', 'd4', startingPositionFen)).toBe('d4');
@@ -323,7 +458,7 @@ describe('startEndToAlgebraic', () => {
   });
 
   // Test piece moves
-  test('converts piece moves correctly', () => {
+  it('converts piece moves correctly', () => {
     // Knight move
     expect(startEndToAlgebraic('g1', 'f3', startingPositionFen)).toBe('Nf3');
 
@@ -343,7 +478,7 @@ describe('startEndToAlgebraic', () => {
   });
 
   // Test captures
-  test('handles captures correctly', () => {
+  it('handles captures correctly', () => {
     // Pawn capture
     const fenWithPawnCapture = 'rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2';
     expect(startEndToAlgebraic('e4', 'd5', fenWithPawnCapture)).toBe('exd5');
@@ -358,7 +493,7 @@ describe('startEndToAlgebraic', () => {
   });
 
   // Test castling
-  test('handles castling correctly', () => {
+  it('handles castling correctly', () => {
     // White kingside castling
     const fenForWhiteCastling = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQK2R w KQkq - 0 1';
     expect(startEndToAlgebraic('e1', 'g1', fenForWhiteCastling)).toBe('O-O');
@@ -377,7 +512,7 @@ describe('startEndToAlgebraic', () => {
   });
 
   // Test pawn promotions
-  test('handles pawn promotions correctly', () => {
+  it('handles pawn promotions correctly', () => {
     // White pawn promotion
     const fenForWhitePromotion = 'rnbqkbnr/ppppppPp/8/8/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1';
     expect(startEndToAlgebraic('g7', 'g8', fenForWhitePromotion)).toBe('g8=Q');
@@ -388,7 +523,7 @@ describe('startEndToAlgebraic', () => {
   });
 
   // Test disambiguation (when multiple pieces of the same type can move to the same square)
-  test('handles disambiguation correctly', () => {
+  it('handles disambiguation correctly', () => {
     // Two knights can move to the same square - disambiguate by file
     const fenWithTwoKnights = 'r1bqkbnr/pppp1ppp/2n5/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 0 4';
     expect(startEndToAlgebraic('c3', 'd5', fenWithTwoKnights)).toBe('Ncd5');
@@ -405,28 +540,108 @@ describe('startEndToAlgebraic', () => {
   });
 
   // Test error handling
-  test('handles invalid inputs', () => {
+  it('handles invalid inputs', () => {
     // Invalid start square
-    expect(() => startEndToAlgebraic('', 'e4', startingPositionFen)).toThrow('Invalid start square');
-    expect(() => startEndToAlgebraic(null, 'e4', startingPositionFen)).toThrow('Invalid start square');
-    expect(() => startEndToAlgebraic(undefined, 'e4', startingPositionFen)).toThrow('Invalid start square');
-    expect(() => startEndToAlgebraic('e', 'e4', startingPositionFen)).toThrow('Invalid start square');
-    expect(() => startEndToAlgebraic('e22', 'e4', startingPositionFen)).toThrow('Invalid start square');
+    try {
+      startEndToAlgebraic('', 'e4', startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid start square');
+    }
+
+    try {
+      startEndToAlgebraic(null, 'e4', startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid start square');
+    }
+
+    try {
+      startEndToAlgebraic(undefined, 'e4', startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid start square');
+    }
+
+    try {
+      startEndToAlgebraic('e', 'e4', startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid start square');
+    }
+
+    try {
+      startEndToAlgebraic('e22', 'e4', startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid start square');
+    }
 
     // Invalid end square
-    expect(() => startEndToAlgebraic('e2', '', startingPositionFen)).toThrow('Invalid end square');
-    expect(() => startEndToAlgebraic('e2', null, startingPositionFen)).toThrow('Invalid end square');
-    expect(() => startEndToAlgebraic('e2', undefined, startingPositionFen)).toThrow('Invalid end square');
-    expect(() => startEndToAlgebraic('e2', 'e', startingPositionFen)).toThrow('Invalid end square');
-    expect(() => startEndToAlgebraic('e2', 'e44', startingPositionFen)).toThrow('Invalid end square');
+    try {
+      startEndToAlgebraic('e2', '', startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid end square');
+    }
+
+    try {
+      startEndToAlgebraic('e2', null, startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid end square');
+    }
+
+    try {
+      startEndToAlgebraic('e2', undefined, startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid end square');
+    }
+
+    try {
+      startEndToAlgebraic('e2', 'e', startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid end square');
+    }
+
+    try {
+      startEndToAlgebraic('e2', 'e44', startingPositionFen);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid end square');
+    }
 
     // Invalid FEN
-    expect(() => startEndToAlgebraic('e2', 'e4', '')).toThrow('Invalid FEN');
-    expect(() => startEndToAlgebraic('e2', 'e4', null)).toThrow('Invalid FEN');
-    expect(() => startEndToAlgebraic('e2', 'e4', undefined)).toThrow('Invalid FEN');
+    try {
+      startEndToAlgebraic('e2', 'e4', '');
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid FEN');
+    }
+
+    try {
+      startEndToAlgebraic('e2', 'e4', null);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid FEN');
+    }
+
+    try {
+      startEndToAlgebraic('e2', 'e4', undefined);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('Invalid FEN');
+    }
 
     // No piece at start square
     const fenWithEmptyE2 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1';
-    expect(() => startEndToAlgebraic('e2', 'e4', fenWithEmptyE2)).toThrow('No piece found at square e2');
+    try {
+      startEndToAlgebraic('e2', 'e4', fenWithEmptyE2);
+      fail('Expected function to throw an error');
+    } catch (error) {
+      expect(error.message).toContain('No piece found at square e2');
+    }
   });
 });

@@ -500,7 +500,7 @@ function createSquare(boardElement, algebraicSquare) {
     const algRank = algebraicSquare.charAt(1);
     const algFile = algebraicSquare.charAt(0);
 
-    console.log(`Creating square ${algebraicSquare} with rank ${rank} and file ${file}`);
+    //console.log(`Creating square ${algebraicSquare} with rank ${rank} and file ${file}`);
 
     //Create square and piece and an empty piece and add it to the board.
     const squareDiv = document.createElement('div');
@@ -618,7 +618,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
             const pieceType = piece.toUpperCase();
             let pieceImage = '';
 
-            console.log(`updateBoardGraphicsInternal squareAlg: ${squareAlg} piece: ${piece} `);
+            //console.log(`updateBoardGraphicsInternal squareAlg: ${squareAlg} piece: ${piece} `);
 
             if (piece != '') {
                 pieceImage = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" />`;

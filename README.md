@@ -23,9 +23,8 @@ Functionality (Working functionality):
 - Fast and efficient, written in ES6.
 
 Road Map (Planned functionality that is broken or not implemented yet):
-- end playing instead of start.
+- end playing instead of start when a game begins.
 - Fix animation update where after the piece reaches the final square it is cleared and then redrawn. Looks like a jump.
-- Fix bug where tells from channel tabs are not sent at certain times. (Maybe fixed)
 - Add stay logged in preference.
 - Make speed promotion checkboxes.
 - Expand preferences a bit (not too much).
