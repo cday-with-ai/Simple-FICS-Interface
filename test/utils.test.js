@@ -1,4 +1,4 @@
-import {style12ToFen, toAlgebraicSquare, toRankFile, fileNumberToAlgebraic, getPieceAtSquare, parseVerboseMove, startEndToAlgebraic } from '../src/scripts/utils.js';
+import {style12ToFen, toAlgebraicSquare, toRankFile, fileNumberToAlgebraic, getPieceAtSquare, parseVerboseMove, startEndToAlgebraic } from '../scripts/utils.js';
 
 describe('style12ToFen', () => {
   // Test with the example from the documentation

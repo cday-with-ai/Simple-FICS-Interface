@@ -2,7 +2,7 @@
   "name": "simple-fics-interface",
   "version": "1.0.0",
   "description": "A minimalist FICS interface which focuses on easy game play and chat functionality",
-  "main": "src/scripts/index.js",
+  "main": "scripts/index.js",
   "type": "module",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose"
