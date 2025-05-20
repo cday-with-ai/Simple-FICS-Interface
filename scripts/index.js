@@ -2,8 +2,7 @@
 import { initFics } from './fics.js';
 import { initChat } from './chat.js';
 
-// --- Global Variables for Chess System ---
-const sounds = {
+const sounds = new Map(Object.entries({
     abort: new Audio('sounds/abort.wav'),
     alert: new Audio('sounds/alert.wav'),
     capture: new Audio('sounds/capture.ogg'),
@@ -13,9 +12,9 @@ const sounds = {
     end: new Audio('sounds/end.wav'),
     illegal: new Audio('sounds/illegal.wav'),
     move: new Audio('sounds/move.ogg')
-};
+}));
 Object.keys(sounds).forEach(sound => {
-    sounds[sound].load();
+    sounds.get(sound).load();
 });
 
 // Cache busting for stylesheets and scripts
@@ -70,15 +69,14 @@ window.onload = function () {
  * @param sound The sound to play e.g. 'move', 'capture', 'start', etc.
  */
 export function playSound(sound) {
-    const playableSound = sounds[sound];
+    const playableSound = sounds.get(sound);
 
     if (!playableSound.paused) {
         // The previous sound is playing. We could reset the current sound with
-        // playableSound.currentTime = 0
-        // ,but we probably don't want to cut off that sound, so let's make a copy of the
-        // sound and dereference the previous one
-        sounds[sound] = new Audio(playableSound.src);
-        sounds[sound].load();
+        // playableSound.currentTime = 0 ,but we probably don't want to cut off that sound,
+        // so let's make a copy of the sound and dereference the previous one
+        sounds.set(sound, new Audio(playableSound.src));
+        sounds.get(sound).load();
     }
-    sounds[sound].play();
+    sounds.get(sound).play();
 }
