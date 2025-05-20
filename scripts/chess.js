@@ -168,6 +168,7 @@ export function processMovesList(rawMovesText) {
 }
 
 /**
+ * Sent when the user is playing a game that has started.
  * GuestGTKW (++++) walpurti (2084) unrated blitz 5 0
  * {Game 14 (GuestGTKW vs. walpurti) Creating unrated blitz match.}
  *  Game 14: A disconnection will be considered a forfeit.

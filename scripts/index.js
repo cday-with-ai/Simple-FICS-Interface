@@ -2,9 +2,6 @@
 import { initFics } from './fics.js';
 import { initChat } from './chat.js';
 
-
-// Audio elements
-const bellAudio = new Audio('sounds/alert.wav');
 // --- Global Variables for Chess System ---
 const sounds = {
     abort: new Audio('sounds/abort.wav'),
