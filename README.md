@@ -23,13 +23,14 @@ Functionality (Working functionality):
 - Fast and efficient, written in ES6.
 
 Road Map (Planned functionality that is broken or not implemented yet):
-- end playing instead of start when a game begins.
-- Fix animation update where after the piece reaches the final square it is cleared and then redrawn. Looks like a jump.
+- Fix bug where when you flip and then observe a game the board orientation is off. labels for black pieces appear in the wrong place.+
+  - Abide by fics flip flag on style 12. Currently not abiding.
 - Add stay logged in preference.
 - Make speed promotion checkboxes.
-- Expand preferences a bit (not too much).
 - More changes for Responsive web design that work on mobile and tablets.
   - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
+- Expand preferences a bit (not too much).
+
 
 Not planned at this time: (If you want it, let me know I might add it.)
 - Bughouse/Crazyhouse support.

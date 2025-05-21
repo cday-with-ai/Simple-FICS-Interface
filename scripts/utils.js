@@ -179,7 +179,7 @@ export function toRankFile(algebraicSquare) {
 
 /**
  * @param file [1-8] for a-h
- * @returns {string}
+ * @returns {string} a-h
  */
 export function fileNumberToAlgebraic(file) {
     return String.fromCharCode(96 + file);
@@ -298,7 +298,7 @@ export function getPieceAtSquare(fen, square) {
 
 /**
  * Converts an algebraic move a3, rxe4, o-o, o-o-o, pxe6ep, a8=Q, etc. algbraic with Unicode chess pieces.
- * @param algebraic a3, rxe4, o-o, o-o-o, pxe6ep, a8=Q, etc.
+ * @param moveText a3, rxe4, o-o, o-o-o, pxe6ep, a8=Q, etc.
  * @returns {*|string} Algrabic with the pieces substituted with the unicode piece. e.g. ♔e4.
  */
 export function convertToUnicodeChessPieces(moveText) {

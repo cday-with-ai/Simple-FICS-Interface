@@ -14,6 +14,7 @@ import {
     ficsMoveToStartEndArray
 } from './utils.js';
 import {playSound} from './index.js';
+import {getObservedPlayer,getFollowedPlayer} from "./fics.js"
 
 
 // GameRelation Enum
@@ -25,29 +26,9 @@ const GameRelation = {
     PLAYING_MY_MOVE: 1,
     OBSERVING_PLAYED: 0,
     STARTING_BOARD: -10,
-    getDescription: function (value) {
-        switch (value) {
-            case this.ISOLATED_POSITION:
-                return "Isolated position";
-            case this.OBSERVING_EXAMINED:
-                return "Observing examined game";
-            case this.EXAMINING:
-                return "Examining game";
-            case this.PLAYING_OPPONENT_MOVE:
-                return "Playing (opponent's move)";
-            case this.PLAYING_MY_MOVE:
-                return "Playing (my move)";
-            case this.OBSERVING_PLAYED:
-                return "Observing played game";
-            case this.STARTING_BOARD:
-                return "Starting unconnected board";
-            default:
-                return "Unknown relation (" + value + ")";
-        }
-    }
 };
 
-let chess; // The main chess game instance
+let chess; // The main chess game instance currently just used for highlighting legal moves when moving a piece.
 try {
     chess = new Chess();
     console.log("Chess instance initialized successfully");
@@ -110,9 +91,12 @@ let gameState = { // Reset header
     result: ''
 };
 
-// --- Style12 Processing ---
-export function processStyle12Message(msg) {
-    console.log("Processing Style12 message:", msg.substring(0, 100) + "...");
+/**
+ * Handles FICS style12 messages.
+ * @param msg The style 12 message.
+ */
+export function onStyle12(msg) {
+    console.log("Processing Style12 message:", msg);
 
     // First premove if its set.
     if (gameState.premove) {
@@ -125,12 +109,9 @@ export function processStyle12Message(msg) {
         setupMainChessBoardDisplay();
     }
 
-    // Update game info and board position using the merged function
-    updateFromStyle12(msg);
-    // Update the move list
-    updateMovesListWithNewMoveInternal();
-    // Finally, update the UI
-    updateNonBoardAndMovesUI();
+    updateBoardFromStyle12(msg);
+    updateMoveListWithLastMove();
+    updatePlayerInfoAndClockUI();
 
     // If we're observing a played game, request the moves list
     if (!gameState.requestedMovesForGame &&
@@ -143,29 +124,6 @@ export function processStyle12Message(msg) {
     }
 }
 
-export function processUnobserveMessage(gameNumber) {
-    if (gameState.gameNumber === gameNumber) {
-        stopClockInternal();
-        playSound('end');
-    }
-}
-
-
-/**
- *
- * @param rawMovesText
- */
-export function processMovesList(rawMovesText) {
-    if (!boardInitialized && !document.getElementById('chessBoard')) {
-        console.warn("Chess board/UI not initialized when processing moves list. Attempting setup.");
-        setupMainChessBoardDisplay(); // Ensure UI is ready
-    }
-    // Update player info UI to show ratings if the game number matches
-    parseAndStoreMovesInternal(rawMovesText);
-    updateMovesListDisplayInternal();
-    highlightLastMoveInMovelist();
-    updateNonBoardAndMovesUI();
-}
 
 /**
  * Sent when the user is playing a game that has started.
@@ -173,10 +131,10 @@ export function processMovesList(rawMovesText) {
  * {Game 14 (GuestGTKW vs. walpurti) Creating unrated blitz match.}
  *  Game 14: A disconnection will be considered a forfeit.
  * fics%
- * @param message
- * @returns {boolean}
+ * @param message The message to process
+ * @returns {boolean} True if the message was processed, false otherwise.
  */
-export function processGameCreationMessage(message) {
+export function onGameStart(message) {
     if (!message || !message.trim()) return false;
     //Creating: foo (1668) bobbyrob (1715) rated blitz 3 0
     //{Game 16 (foo vs. bobbyrob) Creating rated blitz match.}
@@ -194,9 +152,9 @@ export function processGameCreationMessage(message) {
     }
 
     //Parse second line for game number.
-    var gameNumber = null;
+    let gameNumber = null;
     const startIndex = message.indexOf("\n{Game ");
-    if (startIndex != -1) {
+    if (startIndex !== -1) {
         gameNumber = message.substring(startIndex + 7);
         const spaceIndex = gameNumber.indexOf(" ");
         gameNumber = gameNumber.substring(0, spaceIndex);
@@ -233,6 +191,7 @@ export function processGameCreationMessage(message) {
     gameState.dndStartSquareAlegbraic = null;
     gameState.moves = [];
     gameState.validMoves = [];
+    gameState.style12WhiteOnBottom = true;
 
     // Set isWhiteOnBottom to true by default for new games
     // This will be updated correctly when the first Style12 message arrives
@@ -242,19 +201,47 @@ export function processGameCreationMessage(message) {
 }
 
 /**
- * Process game end messages like "12 (genieman vs. Pawnlightly) genieman resigns} 0-1"
- * @param message
- * @returns {boolean}
+ * Handles FICS unobserve messages.
+ * @param gameNumber The game number.
  */
-export function processGameEndMessage(message) {
+export function onUnobserve(gameNumber) {
+    if (gameState.gameNumber === gameNumber) {
+        stopClock();
+        playSound('end');
+        //obsPlayer cleared in fics.js
+    }
+}
+
+/**
+ * Handles FICS moves messages.
+ * @param rawMovesText The raw moves text.
+ */
+export function onGameMoves(rawMovesText) {
+    if (!boardInitialized && !document.getElementById('chessBoard')) {
+        console.warn("Chess board/UI not initialized when processing moves list. Attempting setup.");
+        setupMainChessBoardDisplay(); // Ensure UI is ready
+    }
+    // Update player info UI to show ratings if the game number matches
+    parseAndStoreMovesInternal(rawMovesText);
+    refreshMoveListDisplay();
+    highlightLastMoveInMovelist();
+    updatePlayerInfoAndClockUI();
+}
+
+/**
+ * Process game end messages like "12 (genieman vs. Pawnlightly) genieman resigns} 0-1"
+ * @param message The game end message.
+ * @returns {boolean} True if the message was processed, false otherwise.
+ */
+export function onGameEnd(message) {
     if (!message || !message.trim()) return false;
 
     // Regular expression to match game end messages
     // This regex is very flexible to handle all types of player names and game end reasons
-    const gameEndRegex = /^(\d+) \(([^)]+) vs\. ([^)]+)\) (.*)\}\s*([012\/-]+).*/;
+    const gameEndRegex = /^(\d+) \(([^)]+) vs\. ([^)]+)\) (.*)}\s*([012\/-]+).*/;
     const match = message.match(gameEndRegex);
 
-    if (!match || match.length != 6) {
+    if (!match || match.length !== 6) {
         if (prefs && prefs.showStyle12Events) { // Use the debug preference for logging
             console.log("Game end message did not match regex pattern:", message);
         }
@@ -285,10 +272,10 @@ export function processGameEndMessage(message) {
         gameState.isActive = false;
 
         // Update the moves list display to show the game result
-        updateMovesListDisplayInternal();
+        refreshMoveListDisplay();
 
         // Stop the clock if it's running
-        stopClockInternal();
+        stopClock();
 
         gameState.isPlayerPlaying = false;
 
@@ -298,162 +285,120 @@ export function processGameEndMessage(message) {
     return false;
 }
 
-function parseAndStoreMovesInternal(rawMovesText) {
-    // Unrated blitz match, initial time: 5 minutes, increment: 2 seconds.
-    //     Move  GuestJVNB          GuestYKYQ
-    // ----  ----------------   ----------------
-    // 1.  d4      (0:00)     d5      (0:00)
-    // 2.  Nf3     (0:02)     Nf6     (0:03)
-    // 3.  e3      (0:02)     a6      (0:02)
-    // 4.  Bd3     (0:02)     Bg4     (0:11)
-    // 5.  Nbd2    (0:03)     e6      (0:02)
-    // 6.  b3      (0:03)     Nbd7    (0:02)
-    // 7.  a3      (0:03)     Bd6     (0:02)
-    // 8.  Bb2     (0:03)     O-O     (0:03)
-    // 9.  O-O     (0:05)     h6      (0:02)
-    // 10.  Qe1     (0:10)     c6      (0:03)
-    // 11.  Ne5     (0:05)     Bxe5    (0:15)
-    // 12.  dxe5    (0:03)     Ne8     (0:03)
-    // 13.  f4      (0:11)     Nc5     (0:04)
-    // 14.  Qg3     (0:26)     Nxd3    (0:06)
-    // 15.  cxd3    (0:03)     Be2     (0:03)
-    // 16.  Rf2     (0:11)     Bxd3    (0:02)
-    // 17.  Nf3     (0:21)     Kh7     (0:38)
-    // 18.  Nh4     (0:05)     Be4     (0:16)
-    // 19.  f5      (0:06)     Qg5     (0:19)
-    // 20.  fxe6    (0:29)     Qxg3    (0:03)
-    // 21.  hxg3    (0:02)
-    // {Still in progress} *
-    // fics%
-
-    // Check if we should update the current game's player ratings
-    let isForLoadedGame = false;
-
-    const lines = rawMovesText.split('\n');
-    let parsingHeader = true;
-    let moveDataStarted = false; // To identify when actual move lines begin
-
-    // Regex patterns for parsing
-    const playerRegex = /^([\w.-]+)\s\((\d+)\)\s+vs\.\s+([\w.-]+)\s\((\d+)\)\s+---\s+(.*)$/;
-    const gameTypeRegex = /^(.*) (.*) match,\s+initial time:\s+(.*),\s+increment:\s+(.*)\.$/;
-    const moveLineRegex = /^\s*(\d+)\.\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\)(?:\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\))?/;
-    const statusRegex = /^{\s*(.*?)\s*}(?:\s*([0-1/2*-]+))?$/;
-
-
-    for (const line of lines) {
-        if (line.trim() === "") continue;
-
-        if (parsingHeader) {
-            if (line.indexOf("Movelist for game") == 0) {
-                const match = line.match(/Movelist for game (\d+):/);
-                if (match) {
-                    const gameNumber = parseInt(match[1], 10);
-                    // Check if this moves list is for the current game
-                    if (gameNumber === gameState.gameNumber) {
-                        isForLoadedGame = true;
-                        gameState.moves = [];
-                    }
-                } else {
-                    return;
-                }
-            }
-
-            const playerMatch = line.match(playerRegex);
-            if (playerMatch) {
-                // This is how the ratings are set for observed games.
-                if (!gameState.whitePlayer.rating) {
-                    gameState.whitePlayer.rating = playerMatch[2];
-                }
-                if (!gameState.blackPlayer.rating) {
-                    gameState.blackPlayer.rating = playerMatch[4];
-                }
-
-                continue;
-            }
-
-            const gameType = line.match(gameTypeRegex);
-            if (playerMatch) {
-                gameState.increment = gameType[4] === 'rated';
-                gameState.minutes = gameType[3] === 'rated';
-                gameState.isRated = gameType[1] === 'rated';
-                gameState.type = gameType[2];
-                continue;
-            }
-
-            // Transition from header to move list data
-            if (line.startsWith("----  ----------------")) {
-                parsingHeader = false;
-                moveDataStarted = true;
-                continue;
-            }
-        } else if (moveDataStarted) {
-            const moveMatch = line.match(moveLineRegex);
-            if (moveMatch) {
-                const moveEntry = {
-                    number: parseInt(moveMatch[1], 10),
-                    white: {san: moveMatch[2], time: moveMatch[3]},
-                    black: moveMatch[4] ? {san: moveMatch[4], time: moveMatch[5]} : null
-                };
-                gameState.moves.push(moveEntry);
-                continue;
-            }
-            // Lines after status (like fics% prompt) will be ignored by these specific parsers
+/**
+ * Updates gameState from a FICS Style12 message. Does not update the UI.
+ * @param style12Message The FICS style 12 message.
+ */
+function updateBoardFromStyle12(style12Message) {
+    if (!chess) {
+        try {
+            chess = new Chess();
+        } catch (e) {
+            console.error("Failed to create new chess instance:", e);
+            return;
         }
     }
 
-    if (prefs && prefs.showStyle12Events) { // Re-use this pref for general debug logging
-        console.log("Parsed Game Header (Moves List):", gameState);
-        console.log("Parsed Moves (Moves List):", gameState.moves);
-    }
+    previousPosition = gameState.fen;
 
-    // Update ECO opening info after parsing the move list checking every move.
-    updateECOLabelFromMoveList();
-}
+    const lines = style12Message.split('\n');
+    const boardLineIndex = lines.findIndex(line => line.trim().startsWith('<12>'));
 
-// --- Preference Application ---
-export function applyChessRelatedPreferences() {
-    if (!prefs) {
+    if (boardLineIndex === -1) {
+        console.error('No <12> tag found in Style12 message');
         return;
     }
 
-    // Update square colors directly
-    const lightSquares = document.querySelectorAll('.light-square');
-    const darkSquares = document.querySelectorAll('.dark-square');
+    const boardLine = lines[boardLineIndex].trim();
+    const parts = boardLine.split(' ');
+    if (prefs && prefs.showStyle12Events) console.log('Style 12 parts:', parts);
 
-    lightSquares.forEach(square => {
-        square.style.backgroundColor = prefs.lightSquareColor;
-    });
-    darkSquares.forEach(square => {
-        square.style.backgroundColor = prefs.darkSquareColor;
-    });
+    if (parts.length < 31) {
+        console.error('Style 12 message has fewer than 31 parts:', parts.length);
+        return;
+    }
 
-    // Update rank and file label colors
-    const rankLabels = document.querySelectorAll('.rank-label');
-    const fileLabels = document.querySelectorAll('.file-label');
+    const gameNumber = parseInt(parts[16], 10);
+    if (gameNumber !== gameState.gameNumber) {
+        playSound('start');
+    }
 
-    rankLabels.forEach(label => {
-        const square = label.parentElement;
-        if (square) { // Ensure parent exists
-            label.style.color = square.classList.contains('light-square') ? prefs.darkSquareColor : prefs.lightSquareColor;
+    try {
+        // 1. Update game state information from Style12 parts
+        gameState.gameNumber = gameNumber;
+        gameState.whitePlayer.name = parts[17];
+        gameState.blackPlayer.name = parts[18];
+        gameState.moveNumber = parseInt(parts[26], 10);
+        gameState.lastMove = parts[27] === 'none' ? '' : parts[27];
+        gameState.lastMovePretty = parts[29] === 'none' ? '' : parts[29];
+        gameState.minutes = parseInt(parts[20], 10);
+        gameState.increment = parseInt(parts[21], 10);
+        gameState.whiteTimeSecs = parseFloat(parts[24]);
+        gameState.blackTimeSecs = parseFloat(parts[25]);
+        gameState.isActive = true;
+        gameState.openingDescription = '';
+        // TODO: Refactor one day to support validation for everything.
+        gameState.isValidationSupported = gameState.type !== 'atomic' && gameState.type !== 'suicide' && gameState.type !== 'losers';
+        gameState.style12WhiteOnBottom = parseInt(parts[30], 10) === 0;
+        gameState.relation = parseInt(parts[19], 10);  // Store the numeric relation value directly
+
+        const previousIsWhiteOnBottom = gameState.isWhiteOnBottom; // Store the previous value of isWhiteOnBottom to detect changes
+        setPlayerOrientationGameState();
+        if (previousIsWhiteOnBottom !== gameState.isWhiteOnBottom) { // If isWhiteOnBottom has changed, recreate the board. The squares change.
+            const boardElement = document.getElementById('chessBoard');
+            if (boardElement) {
+                createBoardSquares(boardElement);
+            }
         }
-    });
-    fileLabels.forEach(label => {
-        const square = label.parentElement;
-        if (square) { // Ensure parent exists
-            label.style.color = square.classList.contains('light-square') ? prefs.darkSquareColor : prefs.lightSquareColor;
-        }
-    });
+        gameState.fen = style12ToFen(style12Message); // Store the FEN in gameState. The FEN is used to update the board.
+        // TODO: Refactored these vars one day to grab from FEN to make the code more reusable.
+        gameState.whiteCastleShort = parseInt(parts[11], 10) === 1;
+        gameState.whiteCastleLong = parseInt(parts[12], 10) === 1;
+        gameState.blackCastleShort = parseInt(parts[13], 10) === 1;
+        gameState.blackCastleLong = parseInt(parts[14], 10) === 1;
+        gameState.doublePawnPushFile = style12DoublePawnPushToFile(parseInt(parts[10], 10));
+        gameState.irreversibleCount = parseInt(parts[15], 10);
+        gameState.isWhitesMove = parts[9] === 'W';
 
-    // Redraw board with current piece set if the board exists
-    if (document.getElementById('chessBoard')) {
-        updateBoardGraphicsInternal();
+        if (gameState.isValidationSupported) {
+            try {
+                chess.load(gameState.fen); // Load new position first for diff
+            } catch (e) {
+                console.error("Error loading FEN:", e);
+            }
+        }
+
+        // Update ECO opening info
+        updateBoardBottomLabels();
+        const startEnd = lastMoveToStartEndAlgebraic();
+        if (startEnd && startEnd.length === 2) {
+            animatePieceMoveInternal(startEnd[0], startEnd[1], () => {
+                if (gameState.lastMovePretty.includes('x')) {
+                    playSound('capture');
+                } else { // any move
+                    playSound('move');
+                }
+                updateBoardGraphicsAndSquareListeners();
+            });
+        } else {
+            updateBoardGraphicsAndSquareListeners();
+        }
+
+        stopClock(); // Stop existing timer
+        startClock();  // Restart with new times and turn
+    } catch (e) {
+        console.error("Failed to process Style12 message:", e);
+        if (chess) chess.reset(); // Fallback
+        updateBoardGraphicsAndSquareListeners(true);
     }
 }
 
-// --- Public method to be called by createGameTab in index.js ---
+/**
+ * Creates the chess board squares.
+ * @param boardElement The board element to create squares on.
+ */
 export function createBoardSquares(boardElement) {
     boardElement.innerHTML = ''; // Clear existing squares if any
-
     boardElement.style.display = 'grid';
     boardElement.style.gridTemplateColumns = 'repeat(8, 1fr)';
     boardElement.style.gridTemplateRows = 'repeat(8, 1fr)';
@@ -526,7 +471,7 @@ function createSquare(boardElement, algebraicSquare) {
         rankLabel.classList.add('rank-label');
         rankLabel.textContent = algRank;
         squareDiv.appendChild(rankLabel);
-    } else if (file == 8 && gameState.isWhiteOnBottom) {
+    } else if (file === 8 && gameState.isWhiteOnBottom) {
         const rankLabel = document.createElement('div');
         rankLabel.classList.add('rank-label');
         rankLabel.textContent = algRank;
@@ -561,8 +506,8 @@ function createSquare(boardElement, algebraicSquare) {
                 //DND drop time less than now - 200ms. Ignoring click-click move.
                 return;
             }
-            removeBoardHighlightsInternal();
-            let treatAsStartMove = false;
+            removeAllBoardSquareIndicationStyles();
+            let treatAsStartMove;
             if (!gameState.clickclickStartSquareAlegbraic) {
                 // Since DND and click handlers are being used simultaneously, this can occur.
                 // The use can also click on the start square twice which should not unset it.
@@ -570,21 +515,24 @@ function createSquare(boardElement, algebraicSquare) {
             } else { // This is the end square.
                 treatAsStartMove = !makeMove(gameState.clickclickStartSquareAlegbraic, squareDiv.dataset.algebraic, false);
                 gameState.clickclickLastDropTime = Date.now();
-                removeBoardHighlightsInternal();
+                removeAllBoardSquareIndicationStyles();
             }
 
             if (treatAsStartMove) {
                 gameState.clickclickStartSquareAlegbraic = squareDiv.dataset.algebraic;
                 const verboseMoves = chess.moves({square: gameState.clickclickStartSquareAlegbraic, verbose: true});
                 gameState.validMoves = verboseMoves.map(move => move.to);
-                updateBoardHighlightsInternal();
+                refreshValidMoveStyleOnSquares();
             }
         }
     });
 }
 
-
-function updateBoardGraphicsInternal(updateNonBoardUI = false) {
+/**
+ * Updates the board graphics and square listeners.
+ * @param updateNonBoardUI If true, updates the non-board UI elements like clocks and move list.
+ */
+function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
     const board = document.getElementById('chessBoard');
     if (!board || !prefs) {
         return;
@@ -621,7 +569,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
 
             //console.log(`updateBoardGraphicsInternal squareAlg: ${squareAlg} piece: ${piece} `);
 
-            if (piece != '') {
+            if (piece !== '') {
                 pieceImage = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" />`;
             }
 
@@ -681,7 +629,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                         gameState.validMoves = verboseMoves.map(move => move.to);
 
                         // Update board highlights to show valid moves
-                        updateBoardHighlightsInternal();
+                        refreshValidMoveStyleOnSquares();
 
                         // Create a clone for dragging
                         const clone = pieceElement.cloneNode(true);
@@ -706,7 +654,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                         const onMouseMove = (e) => {
                             if (!gameState.dragClone) return;
 
-                            removeBoardHighlightsInternal();
+                            removeAllBoardSquareIndicationStyles();
 
                             // Move the clone with the cursor
                             gameState.dragClone.style.left = `${e.clientX}px`;
@@ -784,7 +732,7 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
                             gameState.draggedPieceElement = null;
                             gameState.dndStartSquareAlegbraic = null;
                             gameState.clickclickStartSquareAlegbraic = null;
-                            removeBoardHighlightsInternal();
+                            removeAllBoardSquareIndicationStyles();
 
                             // Clear all DND artifacts.
                             pieceElement.classList.remove('piece-semi-transparent', 'piece-hidden');
@@ -800,16 +748,15 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
             }
         }
     }
-    removeBoardHighlightsInternal();
+    removeAllBoardSquareIndicationStyles();
 
-    if (gameState.relation == GameRelation.OBSERVING_EXAMINED ||
-        gameState.relation == GameRelation.OBSERVING_PLAYED ||
-        gameState.relation == GameRelation.PLAYING_MY_MOVE) {
-        var lastMoveStartEnd = lastMoveToStartEndAlgebraic();
+    if (gameState.relation === GameRelation.OBSERVING_EXAMINED ||
+        gameState.relation === GameRelation.OBSERVING_PLAYED ||
+        gameState.relation === GameRelation.PLAYING_MY_MOVE) {
+        const lastMoveStartEnd = lastMoveToStartEndAlgebraic();
         if (lastMoveStartEnd) {
             const startSquare = lastMoveStartEnd[0];
             const endSquare = lastMoveStartEnd[1];
-            console.log(`Last move start: ${startSquare}, end: ${endSquare})`);
             const startSquareElement = document.querySelector(`[data-algebraic="${startSquare}"]`);
             const endSquareElement = document.querySelector(`[data-algebraic="${endSquare}"]`);
             if (startSquareElement) {
@@ -845,17 +792,20 @@ function updateBoardGraphicsInternal(updateNonBoardUI = false) {
             statusDiv.innerText = 'Game Over';
             if (chess.in_checkmate()) statusDiv.innerText += ': Checkmate';
             else if (chess.in_draw()) statusDiv.innerText += ': Draw';
-            stopClockInternal();
+            stopClock();
         } else {
             statusDiv.innerText = chess.turn() === 'w' ? 'White to move' : 'Black to move';
         }
     }
     if (updateNonBoardUI) { // Allow null to be passed if only redrawing
-        updateNonBoardAndMovesUI();
+        updatePlayerInfoAndClockUI();
     }
 }
 
-function updateNonBoardAndMovesUI() {
+/**
+ * Updates the non-board UI elements such as player names, clocks, and game status.
+ */
+function updatePlayerInfoAndClockUI() {
     const topPlayerNameEl = document.getElementById('topPlayerName');
     const topPlayerClockEl = document.getElementById('topPlayerClock');
     const bottomPlayerNameEl = document.getElementById('bottomPlayerName');
@@ -932,6 +882,11 @@ function updateNonBoardAndMovesUI() {
     }
 }
 
+/**
+ * Converts the style12 double pawn push value to a file.
+ * @param style12Value The style 12 double pawn push value.
+ * @returns {string} The file, e.g. 'a', 'b', etc.
+ */
 function style12DoublePawnPushToFile(style12Value) {
     if (style12Value === -1) {
         return '';
@@ -941,162 +896,70 @@ function style12DoublePawnPushToFile(style12Value) {
     return '';
 }
 
+/**
+ * Sets gamePlayer.PlayerWhite, gameState.isPlayerPlaying, and gameState.isWhitesMove based on the current game state.
+ */
+function setPlayerOrientationGameState() {
+    gameState.isPlayerWhite = (gameState.relation === GameRelation.PLAYING_MY_MOVE && gameState.isWhitesMove) ||
+        (gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE && !gameState.isWhitesMove);
 
-function updateFromStyle12(style12Message) {
-    if (!chess) {
-        try {
-            chess = new Chess();
-        } catch (e) {
-            console.error("Failed to create new chess instance:", e);
-            return;
+    /**
+     * IMPORTANT!
+     * gameState.isPlayerPlaying means the user is playing a live game on fics.
+     * In this case he can only move his pieces. If it is his turn, he is making live moves.
+     *
+     * Premove has not yet been implemented but here is what it will do:
+     * If it is not his turn, he is making a premove which is a move that will be
+     * immediately played when it is his turn.
+     */
+    gameState.isPlayerPlaying = gameState.relation === GameRelation.PLAYING_MY_MOVE ||
+        gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
+
+    /**
+     * When playing, the user can only move his pieces. Currently, he can only move them when it is his turn, but when
+     * premove is added, this will change.
+     */
+    if (gameState.isPlayerPlaying) {
+        //gameState.isFlipped is the orientation from the board menu in the UI. It has nothing to do with the style12 event.
+        //The menu also does not send the style 12 event.
+        gameState.isWhiteOnBottom = gameState.isFlipped ? !gameState.isPlayerWhite : gameState.isFlipped;
+        gameState.allowUserToMoveBothSides = false;
+    } else {
+        const followed = getFollowedPlayer();
+        const observed = getObservedPlayer();
+        let tempIsWhiteOnBottom = gameState.style12WhiteOnBottom;
+
+        if (followed.name) {
+            let whiteName = gameState.whitePlayer.name.toUpperCase();
+            let blackName = gameState.blackPlayer.name.toUpperCase();
+            let followedName = followed.name.toUpperCase();
+            tempIsWhiteOnBottom = whiteName.startsWith(followedName) ? true :
+                blackName.startsWith(followedName) ? false : tempIsWhiteOnBottom;
+        } else if (observed.name) {
+            let whiteName = gameState.whitePlayer.name.toUpperCase();
+            let blackName = gameState.blackPlayer.name.toUpperCase();
+            let obsName = observed.name.toUpperCase();
+            tempIsWhiteOnBottom = whiteName.startsWith(obsName) ? true :
+                blackName.startsWith(obsName) ? false : tempIsWhiteOnBottom;
         }
-    }
-
-    previousPosition = gameState.fen;
-
-    const lines = style12Message.split('\n');
-    const boardLineIndex = lines.findIndex(line => line.trim().startsWith('<12>'));
-
-    if (boardLineIndex === -1) {
-        console.error('No <12> tag found in Style12 message');
-        return;
-    }
-
-    const boardLine = lines[boardLineIndex].trim();
-    const parts = boardLine.split(' ');
-    if (prefs && prefs.showStyle12Events) console.log('Style 12 parts:', parts);
-
-    if (parts.length < 31) {
-        console.error('Style 12 message has fewer than 31 parts:', parts.length);
-        return;
-    }
-
-    const gameNumber = parseInt(parts[16], 10);
-    if (gameNumber !== gameState.gameNumber) {
-        playSound('start');
-    }
-
-    try {
-        // 1. Update game state information from Style12 parts
-        gameState.gameNumber = gameNumber;
-        gameState.whitePlayer.name = parts[17];
-        gameState.blackPlayer.name = parts[18];
-        gameState.moveNumber = parseInt(parts[26], 10);
-        gameState.lastMove = parts[27] === 'none' ? '' : parts[27];
-        gameState.lastMovePretty = parts[29] === 'none' ? '' : parts[29];
-        gameState.doublePawnPushFile = style12DoublePawnPushToFile(parseInt(parts[10], 10));
-        gameState.minutes = parseInt(parts[20], 10);
-        gameState.increment = parseInt(parts[21], 10);
-        gameState.whiteTimeSecs = parseFloat(parts[24]);
-        gameState.blackTimeSecs = parseFloat(parts[25]);
-        gameState.whiteCastleShort = parseInt(parts[11], 10) === 1;
-        gameState.whiteCastleLong = parseInt(parts[12], 10) === 1;
-        gameState.blackCastleShort = parseInt(parts[13], 10) === 1;
-        gameState.blackCastleLong = parseInt(parts[14], 10) === 1;
-        gameState.irreversibleCount = parseInt(parts[15], 10);
-        gameState.isActive = true;
-        gameState.isWhitesMove = parts[9] === 'W';
-        gameState.openingDescription = '';
-        gameState.isValidationSupported = gameState.type != 'atomic' && gameState.type != 'suicide' && gameState.type != 'losers';
-
-        const relationValue = parseInt(parts[19], 10);
-        // Store the numeric relation value directly
-        gameState.relation = relationValue;
-
-        // For debugging
-        if (prefs && prefs.showStyle12Events) {
-            console.log(`Relation value: ${relationValue}, description: ${GameRelation.getDescription(relationValue)}`);
-        }
-
-        gameState.isPlayerWhite = (gameState.relation === GameRelation.PLAYING_MY_MOVE && gameState.isWhitesMove) ||
-            (gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE && !gameState.isWhitesMove);
 
         /**
-         * IMPORTANT!
-         * gameState.isPlayerPlaying means the user is playing a live game on fics.
-         * In this case he can only move his pieces. If it is his turn, he is making live moves.
+         * If user is not playing the user is allowed to move both sides!
+         * If a user is observing a game, for example, they can move pieces just to see the position visually.
+         * Style12 events will come in and erase the changes, but that is fine.
          *
-         * Premove has not yet been implemented but here is what it will do:
-         * If it is not his turn, he is making a premove which is a move that will be
-         * immediately played when it is his turn.
+         * This will change in 'GameRelation.EXAMINING' mode, but that is not implemented yet. Examine mode will be a
+         * special case. In 'GameRelation.EXAMINING' mode, the moves will stick and be sent to the websocket.
          */
-        gameState.isPlayerPlaying = gameState.relation === GameRelation.PLAYING_MY_MOVE ||
-            gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
-
-        /**
-         * IMPORTANT!
-         * gameState.isFlipped is NOT the value from the style12 event, that is always ignored.
-         * gameState.isFlipped is only changed if the user flips the board on the GUI by pressing the flip button.
-         */
-
-            // Store the previous value of isWhiteOnBottom to detect changes
-        const previousIsWhiteOnBottom = gameState.isWhiteOnBottom;
-
-        /**
-         * When playing the user can only move his pieces. Currently he can only move them when it is his turn but when
-         * premove is added this will change.
-         */
-        if (gameState.isPlayerPlaying) {
-            gameState.isWhiteOnBottom = gameState.isPlayerWhite ? !gameState.isFlipped : gameState.isFlipped;
-            gameState.allowUserToMoveBothSides = false;
-        } else {
-            /**
-             * If user is not playing the user is allowed to move both sides!
-             * If a user is observing a game for example, he can move pieces just to see the position visually.
-             * Style12 events will come in and erase the changes, but that is fine.
-             *
-             * This will change in GameRelation.EXAMINING mode, but that is not implemented yet. Examine mode will be a
-             * special case. In GameRelation.EXAMINING mode the moves will stick and be sent to the websocket.
-             */
-            gameState.isWhiteOnBottom = !gameState.isFlipped;
-            gameState.allowUserToMoveBothSides = true;
-        }
-
-        // If isWhiteOnBottom has changed, recreate the board
-        if (previousIsWhiteOnBottom !== gameState.isWhiteOnBottom) {
-            const boardElement = document.getElementById('chessBoard');
-            if (boardElement) {
-                createBoardSquares(boardElement);
-            }
-        }
-
-        // 2. Convert Style12 to FEN and update the board
-        const fen = style12ToFen(style12Message);
-        gameState.fen = fen; // Store the FEN in gameState
-
-        if (gameState.isValidationSupported) {
-            try {
-                chess.load(fen); // Load new position first for diff
-            } catch (e) {
-                console.error("Error loading FEN:", e);
-            }
-        }
-
-        // Update ECO opening info
-        updateBoardBottomLabels();
-        const startEnd = lastMoveToStartEndAlgebraic();
-        if (startEnd && startEnd.length == 2) {
-            animatePieceMoveInternal(startEnd[0], startEnd[1], () => {
-                if (gameState.lastMovePretty.includes('x')) {
-                    playSound('capture');
-                } else { // any move
-                    playSound('move');
-                }
-                updateBoardGraphicsInternal();
-            });
-        } else {
-            updateBoardGraphicsInternal();
-        }
-
-        stopClockInternal(); // Stop existing timer
-        startClockInternal();  // Restart with new times and turn
-    } catch (e) {
-        console.error("Failed to process Style12 message:", e);
-        if (chess) chess.reset(); // Fallback
-        updateBoardGraphicsInternal(true);
+        gameState.isWhiteOnBottom = gameState.isFlipped ? !tempIsWhiteOnBottom : tempIsWhiteOnBottom;
+        gameState.allowUserToMoveBothSides = true;
     }
 }
 
+/**
+ * Converts the last move from the gameState to start and end algebraic notation.
+ * @returns {string[]|null}
+ */
 function lastMoveToStartEndAlgebraic() {
     if (!gameState.lastMove || gameState.lastMove === 'none' || gameState.lastMove === '')
         return null;
@@ -1112,10 +975,10 @@ function lastMoveToStartEndAlgebraic() {
 }
 
 /**
- * Handles moves for both drag and click click move.
- * @param startSquareAlgebraic The starting algebraic square, e2 for example.
- * @param endSquareAlgebraic The ending algebraic square, e4 for example.
- * @param isDragging True if dragging, false if click click move.
+ * Handles moves for both drag and click-click move.
+ * @param startSquareAlgebraic The starting algebraic square, 'e2', for example.
+ * @param endSquareAlgebraic The ending algebraic square, 'e4', for example.
+ * @param isDragging True if dragging, false if click-click move.
  */
 function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     if (isDragging && !gameState.draggedPiece) {
@@ -1138,7 +1001,7 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
 
     const movingPiece = getPieceAtSquare(gameState.fen, startSquareAlgebraic);
     const targetRank = parseInt(endSquareAlgebraic.charAt(1));
-    const isPromotion = movingPiece != '' &&
+    const isPromotion = movingPiece !== '' &&
         (movingPiece === 'P' && targetRank === 8) ||
         (movingPiece === 'p' && targetRank === 1);
     let moveObject;
@@ -1199,7 +1062,7 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
          *
          * When playing: GameRelation.PLAYING_MY_MOVE or
          *               GameRelation.PLAYING_OPPONENT_MOVE
-         * (Premove not implemented yet)
+         * (Pre-move not implemented yet)
          * Only let the user make moves for the color he is playing. If it is his turn this is the move that will be sent to fics.
          * If it is not his turn, this is a premove. A premove is a move that will be saved and sent to fics immediately when it is
          * the users turn. Just one premove can be saved. If the user makes a move for his color while it is not his turn, that
@@ -1209,10 +1072,10 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
          * It is similar to playing, but the user can make moves for both sides. No premove is allowed while examining. The user is
          * actively playing both sides. Examine mode is for analysis of a previous game. It is live and connected to fics.
          */
-        if (gameState.relation != GameRelation.ISOLATED_POSITION &&
-            gameState.relation != GameRelation.OBSERVING_PLAYED &&
-            gameState.relation != GameRelation.OBSERVING_EXAMINED &&
-            gameState.relation != GameRelation.STARTING_BOARD) {
+        if (gameState.relation !== GameRelation.ISOLATED_POSITION &&
+            gameState.relation !== GameRelation.OBSERVING_PLAYED &&
+            gameState.relation !== GameRelation.OBSERVING_EXAMINED &&
+            gameState.relation !== GameRelation.STARTING_BOARD) {
             /**
              * IMPORTANT!
              * Do not change the move list, play sounds, or anything that is not irreversable here.
@@ -1235,12 +1098,14 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         gameState.lastMovePretty = moveResult.san;
 
         // Update the board graphics which will create the piece at the new location
-        updateBoardGraphicsInternal(moveStringPart, null);
-        restartClockInternal(null);
+        updateBoardGraphicsAndSquareListeners(moveStringPart, null);
+        restartClockInternal();
         return true;
     } else if (!moveResult) {
         console.error("Invalid move by drop:", moveObject);
-        chess.undo();
+        if (!isPremove && isValidating) {
+            chess.undo();
+        }
 
         // Restore the original piece visibility if the move failed
         if (isDragging && gameState.draggedPieceElement) {
@@ -1251,6 +1116,12 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     }
 }
 
+/**
+ * Animates a piece move.
+ * @param algrebraicFrom The algebraic from.
+ * @param algebraicTo The algebraic to.
+ * @param callback Callback to call when complete.
+ */
 function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
     const board = document.getElementById('chessBoard');
     const fromElement = document.querySelector(`[data-algebraic="${algrebraicFrom}"]`);
@@ -1356,7 +1227,7 @@ function getSquareTopLeftAdjustment(rank, file, squareSize) {
     }
 }
 
-function removeBoardHighlightsInternal() {
+function removeAllBoardSquareIndicationStyles() {
     console.log("removeBoardHighlightsInternal() called.");
     const boardElement = document.getElementById('chessBoard');
     if (!boardElement) return;
@@ -1367,9 +1238,9 @@ function removeBoardHighlightsInternal() {
     });
 }
 
-function updateBoardHighlightsInternal() {
+function refreshValidMoveStyleOnSquares() {
     console.log("removeBoardHighlightsInternal() called.");
-    removeBoardHighlightsInternal();
+    removeAllBoardSquareIndicationStyles();
 
     // Add highlights to valid moves
     gameState.validMoves.forEach(move => {
@@ -1381,17 +1252,10 @@ function updateBoardHighlightsInternal() {
 
 }
 
-function updatePieceSizesInternal(squareSize) {
-    const board = document.getElementById('chessBoard');
-    if (!board) return;
-    const pieceElements = board.querySelectorAll('.chess-piece');
-    const fontSize = Math.max(Math.floor(squareSize * 0.8), 24) + 'px';
-    pieceElements.forEach(piece => {
-        piece.style.fontSize = fontSize;
-    });
-}
-
-function startClockInternal() {
+/**
+ * Starts the clock if its not already running based on gameState.
+ */
+function startClock() {
     if (gameState.isClockRunning) {
         return;
     }
@@ -1399,7 +1263,7 @@ function startClockInternal() {
     // Update the clock displays initially
     gameState.whiteClockDisplay = formatClockTimeInternal(gameState.whiteTimeSecs);
     gameState.blackClockDisplay = formatClockTimeInternal(gameState.blackTimeSecs);
-    updateNonBoardAndMovesUI();
+    updatePlayerInfoAndClockUI();
 
     // Start the clock for all active games (playing, examining, or observing)
     if (gameState.isPlayerPlaying || gameState.relation === 2 || gameState.relation === 0) {
@@ -1420,14 +1284,14 @@ function startClockInternal() {
                     gameState.whiteClockDisplay = formatClockTimeInternal(gameState.whiteTimeSecs);
                 } else {
                     gameState.blackTimeSecs = Math.max(0, gameState.blackTimeSecs - 1);
-                    gameState.blackClockDisplay = formatClockTimeInternal(gameState.blackTimeSecs);
+                    gameState.blackClockDisplay =formatClockTimeInternal (gameState.blackTimeSecs);
                 }
 
                 // Update the UI
-                updateNonBoardAndMovesUI();
+                updatePlayerInfoAndClockUI();
 
                 if ((gameState.isWhitesMove && gameState.whiteTimeSecs <= 0) || (!gameState.isWhitesMove && gameState.blackTimeSecs <= 0)) {
-                    stopClockInternal();
+                    stopClock();
                     // Potentially emit a game over event or handle flag fall
                     return;
                 }
@@ -1441,7 +1305,10 @@ function startClockInternal() {
     }
 }
 
-function stopClockInternal() {
+/**
+ * Stops the clock if its running.
+ */
+function stopClock() {
     if (!gameState.isClockRunning) {
         return;
     }
@@ -1459,13 +1326,20 @@ function stopClockInternal() {
     });
 }
 
-
+/**
+ * Restarts the clock with the current time based on gameState.
+ */
 function restartClockInternal() {
-    stopClockInternal();
-    updateNonBoardAndMovesUI(); // Update display
-    startClockInternal(); // Start with current state
+    stopClock();
+    updatePlayerInfoAndClockUI(); // Update display
+    startClock(); // Start with current state
 }
 
+/**
+ * Formats the clock time.
+ * @param totalSeconds The total seconds.
+ * @returns {string} The formatted time.
+ */
 function formatClockTimeInternal(totalSeconds) {
     if (isNaN(totalSeconds) || totalSeconds < 0) {
         return '00:00';
@@ -1475,7 +1349,11 @@ function formatClockTimeInternal(totalSeconds) {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-// --- Initialization ---
+/**
+ * Initializes the chess system.
+ * @param websocket THe websocket.
+ * @param preferencesObject The preferences.
+ */
 export function initChessSystem(websocket, preferencesObject) {
     console.log("Initializing chess system");
     ws = websocket;
@@ -1521,20 +1399,23 @@ export function initChessSystem(websocket, preferencesObject) {
                 gameState.draggedPieceElement = null;
                 gameState.dndStartSquareAlegbraic = null;
                 gameState.validMoves = [];
-                removeBoardHighlightsInternal();
+                removeAllBoardSquareIndicationStyles();
             }
         }, 100);
     });
 }
 
-function updateMovesListDisplayInternal() {
+/**
+ * Refreshes the move list display with gameState.moves.
+ */
+function refreshMoveListDisplay() {
     if (!movesListContainer) {
         console.warn("Moves list container not found. It might not have been created yet.");
         return;
     }
 
     // Initialize the empty move list structure first
-    initializeEmptyMoveListInternal();
+    clearMoveList();
 
     // Make sure movesListDisplayElement is defined after initialization
     if (!movesListDisplayElement) {
@@ -1563,7 +1444,7 @@ function updateMovesListDisplayInternal() {
                 const whiteSanSpan = document.createElement('span');
                 whiteSanSpan.classList.add('move-san');
                 whiteSanSpan.textContent = convertToUnicodeChessPieces(move.white.san);
-                whiteSanSpan.onclick = () => handleMoveNavigationClickInternal(move.number, 'w');
+                whiteSanSpan.onclick = () => jumpToMove(move.number, 'w');
                 whiteSanSpan.style.cursor = 'pointer';
                 whiteCell.appendChild(whiteSanSpan);
             } else {
@@ -1576,7 +1457,7 @@ function updateMovesListDisplayInternal() {
                 const blackSanSpan = document.createElement('span');
                 blackSanSpan.classList.add('move-san');
                 blackSanSpan.textContent = convertToUnicodeChessPieces(move.black.san);
-                blackSanSpan.onclick = () => handleMoveNavigationClickInternal(move.number, 'b');
+                blackSanSpan.onclick = () => jumpToMove(move.number, 'b');
                 blackSanSpan.style.cursor = 'pointer';
                 blackCell.appendChild(blackSanSpan);
             } else {
@@ -1600,66 +1481,10 @@ function updateMovesListDisplayInternal() {
     }
 }
 
-// Function to handle clicking on a move in the moves list
-function handleMoveNavigationClickInternal(moveNumber, color) {
-    console.log(`Navigate to move: ${moveNumber}${color === 'w' ? '.' : '...'}`);
-
-    // Create a new chess instance to replay the game
-    const tempChess = new Chess();
-
-    // Replay all moves up to the selected move
-    let reachedTargetMove = false;
-
-    for (let i = 0; i < gameState.moves.length; i++) {
-        const move = gameState.moves[i];
-
-        // Play white's move if it exists
-        if (move.white && move.white.san) {
-            try {
-                tempChess.move(move.white.san);
-            } catch (e) {
-                console.error(`Error playing white move ${move.white.san}:`, e);
-                break;
-            }
-        }
-
-        // Check if we've reached the target move
-        if (move.number === moveNumber && color === 'w') {
-            reachedTargetMove = true;
-            break;
-        }
-
-        // Play black's move if it exists
-        if (move.black && move.black.san) {
-            try {
-                tempChess.move(move.black.san);
-            } catch (e) {
-                console.error(`Error playing black move ${move.black.san}:`, e);
-                break;
-            }
-        }
-
-        // Check if we've reached the target move
-        if (move.number === moveNumber && color === 'b') {
-            reachedTargetMove = true;
-            break;
-        }
-    }
-
-    if (reachedTargetMove) {
-        // Update the board with the position at the selected move
-        chess.load(tempChess.fen());
-        updateBoardGraphicsInternal(null, null);
-
-        // Highlight the selected move in the moves list
-        highlightSelectedMoveInternal(moveNumber, color);
-    } else {
-        console.warn(`Could not navigate to move ${moveNumber}${color === 'w' ? '' : '...'}`);
-    }
-}
-
-// Function to update the moves list with a new move from Style12
-function updateMovesListWithNewMoveInternal() {
+/**
+ * Updates the moves list with the last move in the game state.
+ */
+function updateMoveListWithLastMove() {
     if (!movesListDisplayElement || gameState.lastMovePretty === '') return;
 
     // Make sure the moves list container is visible
@@ -1679,7 +1504,7 @@ function updateMovesListWithNewMoveInternal() {
         }];
 
         // Update the display
-        updateMovesListDisplayInternal();
+        refreshMoveListDisplay();
         highlightLastMoveInMovelist();
 
         // Update ECO opening info when move list changes
@@ -1742,18 +1567,17 @@ function updateMovesListWithNewMoveInternal() {
     }
 
     // Update the display
-    updateMovesListDisplayInternal();
+    refreshMoveListDisplay();
     highlightLastMoveInMovelist();
 
     // Update ECO opening info when move list changes
     updateBoardBottomLabels();
 }
 
-// Board header function removed
-
-
-
-function unselectMovesInMovelist() {
+/**
+ * Unselects all moves in the move list.
+ */
+function unselectMoveInMoveList() {
     // Remove highlight from all moves
     const allMoves = movesListDisplayElement.querySelectorAll('.move-san');
     allMoves.forEach(move => {
@@ -1761,8 +1585,11 @@ function unselectMovesInMovelist() {
     });
 }
 
+/**
+ * Highlights the last move in the move list.
+ */
 function highlightLastMoveInMovelist() {
-    unselectMovesInMovelist();
+    unselectMoveInMoveList();
     // Highlight the last move
     const moves = movesListDisplayElement.querySelectorAll('.move-san');
     if (moves && moves.length > 0) {
@@ -1772,15 +1599,80 @@ function highlightLastMoveInMovelist() {
     }
 }
 
-// Navigation functions for the moves list
-function goToFirstMoveInternal() {
+/**
+ * Handles clicking on a move in the moves list.
+ * @param moveNumber The move number to jump to.
+ * @param color The color.
+ */
+function jumpToMove(moveNumber, color) {
+    console.log(`Navigate to move: ${moveNumber}${color === 'w' ? '.' : '...'}`);
+
+    // Create a new chess instance to replay the game
+    const tempChess = new Chess();
+
+    // Replay all moves up to the selected move
+    let reachedTargetMove = false;
+
+    for (let i = 0; i < gameState.moves.length; i++) {
+        const move = gameState.moves[i];
+
+        // Play white's move if it exists
+        if (move.white && move.white.san) {
+            try {
+                tempChess.move(move.white.san);
+            } catch (e) {
+                console.error(`Error playing white move ${move.white.san}:`, e);
+                break;
+            }
+        }
+
+        // Check if we've reached the target move
+        if (move.number === moveNumber && color === 'w') {
+            reachedTargetMove = true;
+            break;
+        }
+
+        // Play black's move if it exists
+        if (move.black && move.black.san) {
+            try {
+                tempChess.move(move.black.san);
+            } catch (e) {
+                console.error(`Error playing black move ${move.black.san}:`, e);
+                break;
+            }
+        }
+
+        // Check if we've reached the target move
+        if (move.number === moveNumber && color === 'b') {
+            reachedTargetMove = true;
+            break;
+        }
+    }
+
+    if (reachedTargetMove) {
+        // Update the board with the position at the selected move
+        chess.load(tempChess.fen());
+        updateBoardGraphicsAndSquareListeners(null, null);
+
+        // Highlight the selected move in the moves list
+        highlightSelectedMoveInternal(moveNumber, color);
+    } else {
+        console.warn(`Could not navigate to move ${moveNumber}${color === 'w' ? '' : '...'}`);
+    }
+}
+
+
+/**
+ * Jumps to the first move in the move list.
+ */
+function jumpToFirstMove() {
     if (gameState.moves.length === 0) return;
 
     // Reset the chess board to the starting position
     chess.reset();
     // Update ECO opening info
     updateBoardBottomLabels();
-    updateBoardGraphicsInternal(null, null);
+    updateBoardGraphicsAndSquareListeners(null, null);
 
     // Highlight the first move (if any)
     if (gameState.moves[0] && gameState.moves[0].white) {
@@ -1788,7 +1680,10 @@ function goToFirstMoveInternal() {
     }
 }
 
-function goToLastMoveInternal() {
+/**
+ * Jumps to the last move in the move list.
+ */
+function jumpToLastMove() {
     if (gameState.moves.length === 0) return;
 
     // Find the last move
@@ -1820,20 +1715,23 @@ function goToLastMoveInternal() {
     chess.load(tempChess.fen());
     // Update ECO opening info
     updateBoardBottomLabels();
-    updateBoardGraphicsInternal(null, null);
+    updateBoardGraphicsAndSquareListeners(null, null);
 
     // Highlight the last move
     highlightSelectedMoveInternal(lastMove.number, color);
 }
 
-function goToPreviousMoveInternal() {
+/**
+ * Jumps to the previous move in the move list.
+ */
+function jumpToPreviousMove() {
     if (gameState.moves.length === 0) return;
 
     // Find the currently selected move
     const selectedMove = movesListDisplayElement.querySelector('.selected-move');
     if (!selectedMove) {
         // If no move is selected, go to the last move
-        goToLastMoveInternal();
+        jumpToLastMove();
         return;
     }
 
@@ -1849,7 +1747,7 @@ function goToPreviousMoveInternal() {
 
     // Determine the previous move
     let prevMoveNumber = moveNumber;
-    let prevMoveColor = 'w';
+    let prevMoveColor; // w or b.
 
     if (isWhiteMove) {
         // If white move is selected, go to black move of previous number
@@ -1893,20 +1791,23 @@ function goToPreviousMoveInternal() {
     chess.load(tempChess.fen());
     // Update ECO opening info
     updateBoardBottomLabels();
-    updateBoardGraphicsInternal(null, null);
+    updateBoardGraphicsAndSquareListeners(null, null);
 
     // Highlight the previous move
     highlightSelectedMoveInternal(prevMoveNumber, prevMoveColor);
 }
 
-function goToNextMoveInternal() {
+/**
+ * Jumps to the next move in the move list.
+ */
+function jumpToNextMove() {
     if (gameState.moves.length === 0) return;
 
     // Find the currently selected move
     const selectedMove = movesListDisplayElement.querySelector('.selected-move');
     if (!selectedMove) {
         // If no move is selected, go to the first move
-        goToFirstMoveInternal();
+        jumpToFirstMove();
         return;
     }
 
@@ -1922,7 +1823,7 @@ function goToNextMoveInternal() {
 
     // Determine the next move
     let nextMoveNumber = moveNumber;
-    let nextMoveColor = 'b';
+    let nextMoveColor;//w or b
 
     if (isWhiteMove) {
         // If white move is selected, go to black move of same number
@@ -1967,14 +1868,16 @@ function goToNextMoveInternal() {
     chess.load(tempChess.fen());
     // Update ECO opening info
     updateBoardBottomLabels();
-    updateBoardGraphicsInternal(null, null);
+    updateBoardGraphicsAndSquareListeners(null, null);
 
     // Highlight the next move
     highlightSelectedMoveInternal(nextMoveNumber, nextMoveColor);
 }
 
-// Function to initialize an empty move list with navigation buttons
-function initializeEmptyMoveListInternal() {
+/**
+ * Function to initialize an empty move list with navigation buttons
+ */
+function clearMoveList() {
     // Clear current game moves if we have a current game
     if (!gameState || !gameState.moves || gameState.moves.length === 0) {
         gameState.moves = [{
@@ -1998,7 +1901,7 @@ function initializeEmptyMoveListInternal() {
     firstMoveBtn.classList.add('moves-nav-btn');
     firstMoveBtn.innerHTML = '⏮'; // Unicode double left arrow
     firstMoveBtn.title = 'Go to first move';
-    firstMoveBtn.onclick = goToFirstMoveInternal;
+    firstMoveBtn.onclick = jumpToFirstMove;
     navContainer.appendChild(firstMoveBtn);
 
     // Previous move button
@@ -2006,7 +1909,7 @@ function initializeEmptyMoveListInternal() {
     prevMoveBtn.classList.add('moves-nav-btn');
     prevMoveBtn.innerHTML = '◀'; // Unicode left arrow
     prevMoveBtn.title = 'Go to previous move';
-    prevMoveBtn.onclick = goToPreviousMoveInternal;
+    prevMoveBtn.onclick = jumpToPreviousMove;
     navContainer.appendChild(prevMoveBtn);
 
     // Next move button
@@ -2014,7 +1917,7 @@ function initializeEmptyMoveListInternal() {
     nextMoveBtn.classList.add('moves-nav-btn');
     nextMoveBtn.innerHTML = '▶'; // Unicode right arrow
     nextMoveBtn.title = 'Go to next move';
-    nextMoveBtn.onclick = goToNextMoveInternal;
+    nextMoveBtn.onclick = jumpToNextMove;
     navContainer.appendChild(nextMoveBtn);
 
     // Last move button
@@ -2022,7 +1925,7 @@ function initializeEmptyMoveListInternal() {
     lastMoveBtn.classList.add('moves-nav-btn');
     lastMoveBtn.innerHTML = '⏭'; // Unicode double right arrow
     lastMoveBtn.title = 'Go to last move';
-    lastMoveBtn.onclick = goToLastMoveInternal;
+    lastMoveBtn.onclick = jumpToLastMove;
     navContainer.appendChild(lastMoveBtn);
 
     // Create the scrollable moves display area
@@ -2035,11 +1938,15 @@ function initializeEmptyMoveListInternal() {
     movesListContainer.appendChild(movesListDisplayElement);
 }
 
-// Function to highlight the selected move in the moves list
+/**
+ * Highlights the selected move in the moves list.
+ * @param moveNumber Move number to highlight.
+ * @param color b or w.
+ */
 function highlightSelectedMoveInternal(moveNumber, color) {
     if (!movesListDisplayElement) return;
 
-    unselectMovesInMovelist();
+    unselectMoveInMoveList();
 
     // Find and highlight the selected move
     const rows = movesListDisplayElement.querySelectorAll('tr');
@@ -2064,7 +1971,9 @@ function highlightSelectedMoveInternal(moveNumber, color) {
     }
 }
 
-// --- Internal Functions (not directly exported, but used by exported ones) ---
+/**
+ * Update the ECO opening label from the move list.
+ */
 function updateECOLabelFromMoveList() {
 
     let moveListStr = '';
@@ -2089,7 +1998,9 @@ function updateECOLabelFromMoveList() {
     }
 }
 
-// Function to update the ECO opening label and last move label
+/**
+ * Updates the labels below the board. Currently, ecoOpeningLabel and lastMoveLabel.
+ */
 function updateBoardBottomLabels() {
     // Generate a move list string from the gameState.moves array
     let moveListStr = '';
@@ -2135,14 +2046,9 @@ function updateBoardBottomLabels() {
         lastMoveLabelText = 'Premove: ' + convertToUnicodeChessPieces(startEndToAlgebraic(startEnd[0], startEnd[1], gameState.fen));
     } else if (gameState.lastMovePretty) {
         // Format the last move with the move number
-        let formattedMove = '';
-        if (gameState.isWhitesMove) {
-            // Black just moved
-            formattedMove = `Last move: ${gameState.moveNumber - 1}...${gameState.lastMovePretty}`;
-        } else {
-            // White just moved
-            formattedMove = `Last move: ${gameState.moveNumber}.${gameState.lastMovePretty}`;
-        }
+        lastMoveLabelText = gameState.isWhitesMove ?
+            `Last move: ${gameState.moveNumber} ${convertToUnicodeChessPieces(gameState.lastMovePretty)}` :
+            `Last move: ${gameState.moveNumber - 1}...${convertToUnicodeChessPieces(gameState.lastMovePretty)}`;
     }
     lastMoveLabelElement.innerText = lastMoveLabelText;
 }
@@ -2230,32 +2136,7 @@ function setupMainChessBoardDisplay() {
     flipBtn.title = 'Flip Board';
     flipBtn.innerHTML = '<i class="material-icons">swap_vert</i>';
     flipBtn.onclick = () => {
-        gameState.isFlipped = !gameState.isFlipped;
-
-        // IMPORTANT!
-        // Flipped is only changed when the user flips the board on the GUI by pressing this button.
-        if (gameState.isPlayerPlaying) {
-            // When playing as white, white should be on bottom (unless flipped)
-            // When playing as black, black should be on bottom (unless flipped)
-            gameState.isWhiteOnBottom = gameState.isPlayerWhite ? !gameState.isFlipped : gameState.isFlipped;
-        } else {
-            // For observing, white is on bottom (unless flipped)
-            gameState.isWhiteOnBottom = !gameState.isFlipped;
-        }
-
-        console.log("Board flipped:", {
-            isFlipped: gameState.isFlipped,
-            isWhiteOnBottom: gameState.isWhiteOnBottom
-        });
-
-        // Recreate the board with the new orientation
-        const boardElement = document.getElementById('chessBoard');
-        if (boardElement) {
-            createBoardSquares(boardElement);
-        }
-
-        updateBoardGraphicsInternal(null, null);
-        updateNonBoardAndMovesUI(null);
+        flipBoard();
         boardMenu.classList.remove('show');
     };
     boardMenu.appendChild(flipBtn);
@@ -2366,7 +2247,7 @@ function setupMainChessBoardDisplay() {
         playerDivider.appendChild(movesListContainer); // Add moves list to the player divider between names
 
         // Initialize an empty move list with navigation buttons
-        updateMovesListDisplayInternal();
+        refreshMoveListDisplay();
     } else {
         // This else block should ideally not be reached if createElement was successful.
         // The original error occurred because a query for '.player-info-container' failed.
@@ -2395,7 +2276,7 @@ function setupMainChessBoardDisplay() {
         if (playerInfoContainer) playerInfoContainer.style.height = maxSize + 'px';
         if (boardOnlyContainer) boardOnlyContainer.style.width = maxSize + 'px';
 
-        updateBoardGraphicsInternal(); // Redraw board graphics which includes piece sizes
+        updateBoardGraphicsAndSquareListeners(); // Redraw board graphics which includes piece sizes
     });
 
     if (boardArea) mainBoardResizeObserver.observe(boardArea);
@@ -2405,8 +2286,8 @@ function setupMainChessBoardDisplay() {
         if (boardArea) mainBoardResizeObserver.observe(boardArea);
     });
 
-    gameState.whiteClockDisplay = formatClockTimeInternal(gameState.whiteTimeSecs);
-    gameState.blackClockDisplay = formatClockTimeInternal(gameState.blackTimeSecs);
+    gameState.whiteClockDisplay = (gameState.whiteTimeSecs);
+    gameState.blackClockDisplay = (gameState.blackTimeSecs);
 
     console.log("Resetting chess board in setupMainChessBoardDisplay");
     try {
@@ -2432,5 +2313,176 @@ function setupMainChessBoardDisplay() {
     if (lastMoveLabelElement) {
         lastMoveLabelElement.innerText = '';
     }
-    updateBoardGraphicsInternal(); // Initial draw
+    updateBoardGraphicsAndSquareListeners(); // Initial draw
+}
+
+function flipBoard() {
+    gameState.isFlipped = !gameState.isFlipped;
+
+    // IMPORTANT!
+    // Flipped is only changed when the user flips the board on the GUI by pressing this button.
+    if (gameState.isPlayerPlaying) {
+        // When playing as white, white should be on bottom (unless flipped)
+        // When playing as black, black should be on bottom (unless flipped)
+        gameState.isWhiteOnBottom = gameState.isPlayerWhite ? !gameState.isFlipped : gameState.isFlipped;
+    } else {
+        // For observing, white is on bottom (unless flipped)
+        gameState.isWhiteOnBottom = !gameState.isFlipped;
+    }
+
+    console.log("Board flipped:", {
+        isFlipped: gameState.isFlipped,
+        isWhiteOnBottom: gameState.isWhiteOnBottom
+    });
+
+    // Recreate the board with the new orientation
+    const boardElement = document.getElementById('chessBoard');
+    createBoardSquares(boardElement);
+
+    updateBoardGraphicsAndSquareListeners(true);
+}
+
+function parseAndStoreMovesInternal(rawMovesText) {
+    // Unrated blitz match, initial time: 5 minutes, increment: 2 seconds.
+    //     Move  GuestJVNB          GuestYKYQ
+    // ----  ----------------   ----------------
+    // 1.  d4      (0:00)     d5      (0:00)
+    // 2.  Nf3     (0:02)     Nf6     (0:03)
+    // 3.  e3      (0:02)     a6      (0:02)
+    // 4.  Bd3     (0:02)     Bg4     (0:11)
+    // 5.  Nbd2    (0:03)     e6      (0:02)
+    // 6.  b3      (0:03)     Nbd7    (0:02)
+    // 7.  a3      (0:03)     Bd6     (0:02)
+    // 8.  Bb2     (0:03)     O-O     (0:03)
+    // 9.  O-O     (0:05)     h6      (0:02)
+    // 10.  Qe1     (0:10)     c6      (0:03)
+    // 11.  Ne5     (0:05)     Bxe5    (0:15)
+    // 12.  dxe5    (0:03)     Ne8     (0:03)
+    // 13.  f4      (0:11)     Nc5     (0:04)
+    // 14.  Qg3     (0:26)     Nxd3    (0:06)
+    // 15.  cxd3    (0:03)     Be2     (0:03)
+    // 16.  Rf2     (0:11)     Bxd3    (0:02)
+    // 17.  Nf3     (0:21)     Kh7     (0:38)
+    // 18.  Nh4     (0:05)     Be4     (0:16)
+    // 19.  f5      (0:06)     Qg5     (0:19)
+    // 20.  fxe6    (0:29)     Qxg3    (0:03)
+    // 21.  hxg3    (0:02)
+    // {Still in progress} *
+    // fics%
+
+    // Check if we should update the current game's player ratings
+    let isForLoadedGame = false;
+
+    const lines = rawMovesText.split('\n');
+    let parsingHeader = true;
+    let moveDataStarted = false; // To identify when actual move lines begin
+
+    // Regex patterns for parsing
+    const playerRegex = /^([\w.-]+)\s\((\d+)\)\s+vs\.\s+([\w.-]+)\s\((\d+)\)\s+---\s+(.*)$/;
+    const gameTypeRegex = /^(.*) (.*) match,\s+initial time:\s+(.*),\s+increment:\s+(.*)\.$/;
+    const moveLineRegex = /^\s*(\d+)\.\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\)(?:\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\))?/;
+    //const statusRegex = /^{\s*(.*?)\s*}(?:\s*([0-1/2*-]+))?$/;
+
+
+    for (const line of lines) {
+        if (line.trim() === "")
+
+        if (parsingHeader) {
+            if (line.indexOf("Movelist for game") === 0) {
+                const match = line.match(/Movelist for game (\d+):/);
+                if (match) {
+                    const gameNumber = parseInt(match[1], 10);
+                    // Check if this moves list is for the current game
+                    if (gameNumber === gameState.gameNumber) {
+                        isForLoadedGame = true;
+                        gameState.moves = [];
+                    }
+                } else {
+                    return;
+                }
+            }
+
+            const playerMatch = line.match(playerRegex);
+            if (playerMatch) {
+                // This is how the ratings are set for observed games.
+                if (!gameState.whitePlayer.rating) {
+                    gameState.whitePlayer.rating = playerMatch[2];
+                }
+                if (!gameState.blackPlayer.rating) {
+                    gameState.blackPlayer.rating = playerMatch[4];
+                }
+            }
+
+            const gameType = line.match(gameTypeRegex);
+            if (playerMatch) {
+                gameState.increment = gameType[4] === 'rated';
+                gameState.minutes = gameType[3] === 'rated';
+                gameState.isRated = gameType[1] === 'rated';
+                gameState.type = gameType[2];
+            }
+
+            // Transition from header to move list data
+            if (line.startsWith("----  ----------------")) {
+                parsingHeader = false;
+                moveDataStarted = true;
+            }
+        } else if (moveDataStarted) {
+            const moveMatch = line.match(moveLineRegex);
+            if (moveMatch) {
+                const moveEntry = {
+                    number: parseInt(moveMatch[1], 10),
+                    white: {san: moveMatch[2], time: moveMatch[3]},
+                    black: moveMatch[4] ? {san: moveMatch[4], time: moveMatch[5]} : null
+                };
+                gameState.moves.push(moveEntry);
+            }
+            // Lines after status (like fics% prompt) will be ignored by these specific parsers
+        }
+    }
+
+    if (prefs && prefs.showStyle12Events) { // Re-use this pref for general debug logging
+        console.log("Parsed Game Header (Moves List):", gameState);
+        console.log("Parsed Moves (Moves List):", gameState.moves);
+    }
+    updateECOLabelFromMoveList();
+}
+
+// --- Preference Application ---
+export function applyChessRelatedPreferences() {
+    if (!prefs) {
+        return;
+    }
+
+    // Update square colors directly
+    const lightSquares = document.querySelectorAll('.light-square');
+    const darkSquares = document.querySelectorAll('.dark-square');
+
+    lightSquares.forEach(square => {
+        square.style.backgroundColor = prefs.lightSquareColor;
+    });
+    darkSquares.forEach(square => {
+        square.style.backgroundColor = prefs.darkSquareColor;
+    });
+
+    // Update rank and file label colors
+    const rankLabels = document.querySelectorAll('.rank-label');
+    const fileLabels = document.querySelectorAll('.file-label');
+
+    rankLabels.forEach(label => {
+        const square = label.parentElement;
+        if (square) { // Ensure parent exists
+            label.style.color = square.classList.contains('light-square') ? prefs.darkSquareColor : prefs.lightSquareColor;
+        }
+    });
+    fileLabels.forEach(label => {
+        const square = label.parentElement;
+        if (square) { // Ensure parent exists
+            label.style.color = square.classList.contains('light-square') ? prefs.darkSquareColor : prefs.lightSquareColor;
+        }
+    });
+
+    // Redraw board with current piece set if the board exists
+    if (document.getElementById('chessBoard')) {
+        updateBoardGraphicsAndSquareListeners();
+    }
 }

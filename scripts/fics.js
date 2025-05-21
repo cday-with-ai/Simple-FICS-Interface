@@ -1,12 +1,11 @@
-// Import chess system functions
 import {
     applyChessRelatedPreferences,
     initChessSystem,
-    processGameCreationMessage,
-    processGameEndMessage,
-    processMovesList,
-    processStyle12Message,
-    processUnobserveMessage
+    onGameStart,
+    onGameEnd,
+    onGameMoves,
+    onStyle12,
+    onUnobserve
 } from './chess.js';
 
 import {createTab, routeMessageToTab} from './chat.js';
@@ -27,6 +26,17 @@ const timesealKey = "Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
 const mainTextArea = document.getElementById('mainTextArea');
 const mainInput = document.getElementById('mainInput');
 const statusDiv = document.getElementById('status');
+const followPlayer = {
+    name: null, timestamp: null
+};
+const obsPlayer = {
+    name: null, timestamp: null
+};
+
+// Message history for input fields
+const messageHistory = {};
+const messageHistoryPosition = {};
+const MAX_HISTORY_LENGTH = 100;
 
 // Preferences
 let preferences = {
@@ -52,91 +62,19 @@ export function initFics() {
     setupMainInput();
 }
 
-// Setup main input event listeners
-function setupMainInput() {
-    if (!mainInput) return;
-
-    mainInput.addEventListener('keypress', (event) => {
-        if (event.key === "Enter") {
-            const message = mainInput.value;
-            if (ws) ws.send(filterInvalid(message));
-            addToMessageHistory('mainInput', message);
-            mainInput.value = '';
-        }
-    });
-
-    mainInput.addEventListener('keydown', (event) => {
-        handleArrowKeys(event, mainInput);
-    });
-}
-
-// Message history for input fields
-const messageHistory = {};
-const messageHistoryPosition = {};
-const MAX_HISTORY_LENGTH = 100;
-
-// Function to add a message to history
-export function addToMessageHistory(inputId, message) {
-    if (!message.trim()) return;
-    if (!messageHistory[inputId]) {
-        messageHistory[inputId] = [];
-    }
-    if (messageHistory[inputId].length > 0 &&
-        messageHistory[inputId][messageHistory[inputId].length - 1] === message) {
-        return;
-    }
-    messageHistory[inputId].push(message);
-    if (messageHistory[inputId].length > MAX_HISTORY_LENGTH) {
-        messageHistory[inputId].shift();
-    }
-    messageHistoryPosition[inputId] = messageHistory[inputId].length;
-}
-
-// Function to handle arrow key navigation
-export function handleArrowKeys(event, inputElement) {
-    const inputId = inputElement.id;
-    if (!messageHistory[inputId]) messageHistory[inputId] = [];
-    if (messageHistoryPosition[inputId] === undefined) {
-        messageHistoryPosition[inputId] = messageHistory[inputId].length;
-    }
-
-    if (event.key === "ArrowUp") {
-        event.preventDefault();
-        if (messageHistoryPosition[inputId] === messageHistory[inputId].length) {
-            inputElement._currentInput = inputElement.value;
-        }
-        if (messageHistoryPosition[inputId] > 0) {
-            messageHistoryPosition[inputId]--;
-            inputElement.value = messageHistory[inputId][messageHistoryPosition[inputId]];
-        }
-    } else if (event.key === "ArrowDown") {
-        event.preventDefault();
-        if (messageHistoryPosition[inputId] < messageHistory[inputId].length) {
-            messageHistoryPosition[inputId]++;
-            if (messageHistoryPosition[inputId] === messageHistory[inputId].length) {
-                inputElement.value = inputElement._currentInput || '';
-            } else {
-                inputElement.value = messageHistory[inputId][messageHistoryPosition[inputId]];
-            }
-        }
-    }
-}
-
 function connectWebSocket() {
     ws = new WebSocket(wsUrl);
     ws.baseSend = ws.send;
     ws.send = (msg) => {
-        console.log(`Sent \"${msg.trim()}\"`);
-        if (mainTextArea) {
-            mainTextArea.innerHTML += processTextToHTML(`Sent \`${msg.trim()}\`\n`);
-            mainTextArea.scrollTop = mainTextArea.scrollHeight;
-        }
+        msg = msg.trim();
+        handleSentObserve(msg);
+        handleSentFollow(msg);
         msg = encodeTimeseal(msg.trim());
         return ws.baseSend(msg);
     }
 
     ws.addEventListener("message", (event) => {
-        if (event.data instanceof Blob) {
+        if (event.data instanceof Blob) { // Shouldn't happen, but it might be possible in exotic browsers.
             const reader = new FileReader();
             reader.onload = function () {
                 routeMessage(reader.result);
@@ -179,60 +117,100 @@ function connectWebSocket() {
     };
 }
 
-function isAutoLoginEnabled() {
-    return preferences.autoLogin === true && preferences.ficsUsername && preferences.ficsPassword;
-}
+/**
+ * Main function to route messages from FICS to the appropriate handlers
+ * @param {string} msg - The raw message from FICS
+ */
+function routeMessage(msg) {
+    // Handle timeseal acknowledgements
+    msg = handleTimesealAcknowledgement(msg);
+    msg = cleanupMessage(msg);
 
-function filterInvalid(msg) {
-    var result = '';
-    var filtered = "";
-    for (var i = 0; i < msg.length; i++) {
-        if (msg.charCodeAt(i) >= 32 && msg.charCodeAt(i) <= 126) result += msg.charAt(i);
-        else filtered += msg.charAt(i);
+    handleLoginProcess(msg);
+    handleFicsSessionStart(msg);
+
+    let isMainConsoleMessage = handleChannelTell(msg);
+    handleGameCreation(msg);
+
+    const style12Result = handleStyle12Message(msg);
+    isMainConsoleMessage = style12Result.isMainConsoleMessage;
+    msg = style12Result.msg;
+
+    handleGameEnd(msg);
+    handleIllegalMove(msg);
+    handleDraw(msg);
+    handleMovesList(msg);
+    handleUnobserve(msg);
+
+    const isFicsPrompt = msg.trim() === 'fics%';
+    if (isMainConsoleMessage) {
+        updateMainConsole(msg, isMainConsoleMessage, isFicsPrompt);
     }
-    if (filtered !== '') routeMessage('\nFiltered output: ' + filtered);
-    return result;
 }
 
-function wrapInClassExceptPrompt(text, className) {
-    var promptIndex = text.lastIndexOf('\nfics% ');
-    if (promptIndex > 0) {
-        return `<span class="${className}">${text.substring(0, promptIndex)}</span>${text.substring(promptIndex)}`;
-    } else {
-        return `<span class="${className}">${text}</span>`;
-    }
-}
-
-export function processTextToHTML(text) {
-    if (!text) return '';
-    text = sanitizeHTML(text);
-    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-    if (text.match(/Sent `(.+)`$/gm) != null) return wrapInClassExceptPrompt(text, 'sent-message');
-
-    var channelMatch = text.match(/^([a-zA-Z0-9()*]+)\(([0-9]+)\):(.*)/gm);
-    if (channelMatch != null) {
-        const channelEnd = text.indexOf("):");
-        if (channelEnd > 0) {
-            var channelStart = text.lastIndexOf("(", channelEnd);
-            if (channelStart >= 0 && channelStart < channelEnd) {
-                const channelNum = text.substring(channelStart + 1, channelEnd);
-                if (/^\d+$/.test(channelNum)) {
-                    return wrapInClassExceptPrompt(text, 'channel-' + channelNum);
-                }
-            }
+/**
+ * Handle messages sent by the user
+ * @param msg The trimmed message to handle
+ */
+function handleSentObserve(msg) {
+    let obsIndex = msg.indexOf("obs ");
+    if (obsIndex !== 0 ) {
+         obsIndex = msg.indexOf("observe ");
+        if (obsIndex !== 0) {
+             obsIndex = msg.indexOf("o ");
         }
     }
-    if (text.match(/^([a-zA-Z0-9()*]+) tells you:(.*)/gm) != null) return wrapInClassExceptPrompt(text, 'direct-tell');
-    if (text.match(/^([a-zA-Z0-9()*]+) shouts:(.*)/gm) != null) return wrapInClassExceptPrompt(text, 'shout-message');
-    if (text.match(/^([a-zA-Z0-9()*]+) c-shouts:(.*)/gm) != null) return wrapInClassExceptPrompt(text, 'cshout-message');
-    if (text.match(/^\*\*\*\* (.*)/gm) != null) return wrapInClassExceptPrompt(text, 'system-message');
-    return text;
+
+    if (obsIndex === 0) {
+        const spaceIndex = msg.indexOf(" ");
+        const player = msg.substring(spaceIndex + 1);
+        if (player.match(/^[a-zA-Z]+$/)) {
+            console.log(`Observing ${player}, orientation will match this player on the next game only.`);
+            obsPlayer.name = player;
+            obsPlayer.timestamp = Date.now();
+            obsPlayer.gameNumber = null;
+        } else {
+            obsPlayer.name = null;
+            obsPlayer.timestamp = null;
+            obsPlayer.gameNumber = null;
+        }
+    }
+
+    const unobsIndex = msg.indexOf("unobs");
+    if (unobsIndex === 0 ) {
+        console.log('Unobserving, clearing stored obs player info.');
+        obsPlayer.name = null;
+        obsPlayer.timestamp = null;
+        obsPlayer.gameNumber = null;
+    }
 }
 
-function sanitizeHTML(text) {
-    const temp = document.createElement('div');
-    temp.textContent = text;
-    return temp.innerHTML;
+/**
+ * Handle sent follow messages
+ * @param msg The trimmed message to handle.
+ */
+function handleSentFollow(msg) {
+    let followIndex = msg.indexOf("follow ");
+    if (followIndex !== 0 ) {
+        followIndex = msg.indexOf("fol ");
+    }
+
+    if (followIndex === 0) {
+        const spaceIndex = msg.indexOf(" ");
+        const player = msg.substring(spaceIndex + 1);
+        if (player.match(/^[a-zA-Z]+$/)) {
+            console.log(`Following ${player}, orientation will be for this player only until they are unfollowed.`);
+            followPlayer.name = player;
+            followPlayer.timestamp = Date.now();
+        }
+    }
+
+    const unfollowIndex = msg.indexOf("unfollow");
+    if (unfollowIndex === 0 ) {
+        console.log('Unfollowing, clearing stored obs player info.');
+        followPlayer.name = null;
+        followPlayer.timestamp = null;
+    }
 }
 
 /**
@@ -242,7 +220,7 @@ function sanitizeHTML(text) {
  */
 function handleTimesealAcknowledgement(msg) {
     let timesealAckIndex = msg.indexOf("[G]\0");
-    while (timesealAckIndex != -1) {
+    while (timesealAckIndex !== -1) {
         ws.baseSend(encodeTimeseal(String.fromCharCode(2, 57)));
         msg = msg.substring(0, timesealAckIndex) + msg.substring(timesealAckIndex + 4);
         timesealAckIndex = msg.indexOf("[G]\0");
@@ -362,19 +340,19 @@ function handleGameCreation(msg) {
         gameStartStr = msg.substring(10);
     } else {
         const index = msg.indexOf("\nCreating: ");
-        if (index != -1) {
+        if (index !== -1) {
             gameStartStr = msg.substring(index + 11);
         } else {
             if (msg.startsWith("Game ")) {
                 const colonIndex = msg.indexOf(":", 5);
-                if (colonIndex != -1) {
+                if (colonIndex !== -1) {
                     gameStartStr = msg.substring(colonIndex + 1);
                 }
             } else {
                 const index = msg.indexOf("\nGame ");
-                if (index != -1) {
+                if (index !== -1) {
                     const colonIndex = msg.indexOf(":", index + 6);
-                    if (colonIndex != -1) {
+                    if (colonIndex !== -1) {
                         gameStartStr = msg.substring(colonIndex + 1);
                     }
                 }
@@ -384,7 +362,7 @@ function handleGameCreation(msg) {
 
     if (gameStartStr != null) {
         playSound('start');
-        processGameCreationMessage(gameStartStr.trim());
+        onGameStart(gameStartStr.trim());
         return true;
     }
 
@@ -399,7 +377,7 @@ function handleGameCreation(msg) {
 function handleIllegalMove(msg) {
     //Illegal move (b6a5).
     const index = msg.indexOf("Illegal move (");
-    if (index != -1 && index == 0 || msg.charAt(index - 1) == '\n') {
+    if (index !== -1 && index === 0 || msg.charAt(index - 1) === '\n') {
         playSound('illegal');
         return true;
     }
@@ -421,7 +399,7 @@ function handleStyle12Message(msg) {
             msg.substring(style12Start + (msg.startsWith("<12>") ? 0 : 1), end) :
             msg.substring(style12Start + (msg.startsWith("<12>") ? 0 : 1));
 
-        processStyle12Message(style12Block);
+        onStyle12(style12Block);
 
         if (!preferences.showStyle12Events) {
             // Remove the Style12 line from the message to be printed in the console
@@ -446,9 +424,9 @@ function handleStyle12Message(msg) {
  */
 function handleMovesList(msg) {
     const moveslistIndex = msg.indexOf('Movelist for game');
-    if (moveslistIndex != -1 && (moveslistIndex == 0 || msg.charAt(moveslistIndex - 1) == '\n')) {
-        if (typeof processMovesList === 'function') {
-            processMovesList(msg);
+    if (moveslistIndex !== -1 && (moveslistIndex === 0 || msg.charAt(moveslistIndex - 1) === '\n')) {
+        if (typeof onGameMoves === 'function') {
+            onGameMoves(msg);
         } else {
             console.error("processMovesList not available from chess.js");
         }
@@ -477,7 +455,7 @@ function handleGameEnd(msg) {
 
     if (gameEndString != null) {
         playSound('end');
-        processGameEndMessage(gameEndString);
+        onGameEnd(gameEndString);
         return true;
     }
 
@@ -487,7 +465,7 @@ function handleGameEnd(msg) {
 function handleDraw(msg) {
     //GuestBGBB offers you a draw.
     const drawIndex = regexIndexOf(msg, /[a-zA-Z0-9]+ offers you a draw[.]/);
-    if (drawIndex != -1 && (drawIndex == 0 || msg.charAt(drawIndex - 1) == '\n')) {
+    if (drawIndex !== -1 && (drawIndex === 0 || msg.charAt(drawIndex - 1) === '\n')) {
         playSound('draw');
         return true;
     }
@@ -503,15 +481,19 @@ function handleDraw(msg) {
 function handleUnobserve(msg) {
     //Removing game 38 from observation list.
     var unobserveIndex = msg.indexOf("Removing game ");
-    while (unobserveIndex != -1 && (unobserveIndex == 0 || msg.charAt(unobserveIndex - 1) == '\n')) {
+    while (unobserveIndex !== -1 && (unobserveIndex === 0 || msg.charAt(unobserveIndex - 1) === '\n')) {
         var nextSpaceIndex = msg.indexOf(" ", unobserveIndex + 14);
         const gameNum = parseInt(msg.substring(unobserveIndex + 14, nextSpaceIndex),10);
         if (gameNum) {
-            processUnobserveMessage(gameNum);
+            obsPlayer.gameNumber = null;
+            obsPlayer.timestamp = null;
+            obsPlayer.name = null;
+            onUnobserve(gameNum);
+
         }
         unobserveIndex = msg.indexOf("Removing game ", nextSpaceIndex);
     }
-    if (unobserveIndex != -1) {
+    if (unobserveIndex !== -1) {
         return true;
     }
     return false;
@@ -534,101 +516,61 @@ function updateMainConsole(msg, isFicsPrompt) {
     }
 }
 
-/**
- * Main function to route messages from FICS to the appropriate handlers
- * @param {string} msg - The raw message from FICS
- */
-function routeMessage(msg) {
-    // Handle timeseal acknowledgements
-    msg = handleTimesealAcknowledgement(msg);
-    msg = cleanupMessage(msg);
 
-    handleLoginProcess(msg);
-    handleFicsSessionStart(msg);
+function isAutoLoginEnabled() {
+    return preferences.autoLogin === true && preferences.ficsUsername && preferences.ficsPassword;
+}
 
-    let isMainConsoleMessage = handleChannelTell(msg);
-    handleGameCreation(msg);
+function filterInvalid(msg) {
+    var result = '';
+    var filtered = "";
+    for (var i = 0; i < msg.length; i++) {
+        if (msg.charCodeAt(i) >= 32 && msg.charCodeAt(i) <= 126) result += msg.charAt(i);
+        else filtered += msg.charAt(i);
+    }
+    if (filtered !== '') routeMessage('\nFiltered output: ' + filtered);
+    return result;
+}
 
-    const style12Result = handleStyle12Message(msg);
-    isMainConsoleMessage = style12Result.isMainConsoleMessage;
-    msg = style12Result.msg;
-
-    handleGameEnd(msg);
-    handleIllegalMove(msg);
-    handleDraw(msg);
-    handleMovesList(msg);
-    handleUnobserve(msg);
-
-    const isFicsPrompt = msg.trim() === 'fics%';
-    if (isMainConsoleMessage) {
-        updateMainConsole(msg, isMainConsoleMessage, isFicsPrompt);
+function wrapInClassExceptPrompt(text, className) {
+    var promptIndex = text.lastIndexOf('\nfics% ');
+    if (promptIndex > 0) {
+        return `<span class="${className}">${text.substring(0, promptIndex)}</span>${text.substring(promptIndex)}`;
+    } else {
+        return `<span class="${className}">${text}</span>`;
     }
 }
 
-// Hamburger menu functionality
-function setupPreferencesMenu() {
-    const hamburgerMenu = document.getElementById('hamburgerMenu');
-    const preferencesPanel = document.getElementById('preferencesPanel');
-    const saveButton = document.getElementById('savePreferences');
-    const prefPieceSetEl = document.getElementById('prefPieceSet');
-    const prefLightSquareEl = document.getElementById('prefLightSquare');
-    const prefDarkSquareEl = document.getElementById('prefDarkSquare');
-    const lightSquarePreviewEl = document.getElementById('lightSquarePreview');
-    const darkSquarePreviewEl = document.getElementById('darkSquarePreview');
-    const prefCategories = document.querySelectorAll('.pref-category');
-    const prefContents = document.querySelectorAll('.pref-content');
+export function processTextToHTML(text) {
+    if (!text) return '';
+    text = sanitizeHTML(text);
+    text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    if (text.match(/Sent `(.+)`$/gm) != null) return wrapInClassExceptPrompt(text, 'sent-message');
 
-    hamburgerMenu.addEventListener('click', function (event) {
-        preferencesPanel.classList.toggle('show');
-        if (preferencesPanel.classList.contains('show')) {
-            updatePieceSetPreview(prefPieceSetEl.value);
-            // Default to FICS tab or last active, for now FICS
-            prefCategories.forEach(cat => cat.classList.remove('active'));
-            const ficsCategory = document.querySelector('.pref-category[data-category="fics"]');
-            if (ficsCategory) ficsCategory.classList.add('active');
-            prefContents.forEach(content => content.classList.remove('active'));
-            const ficsContent = document.getElementById('pref-fics');
-            if (ficsContent) ficsContent.classList.add('active');
+    const channelMatch = text.match(/^([a-zA-Z0-9()*]+)\(([0-9]+)\):(.*)/gm);
+    if (channelMatch != null) {
+        const channelEnd = text.indexOf("):");
+        if (channelEnd > 0) {
+            var channelStart = text.lastIndexOf("(", channelEnd);
+            if (channelStart >= 0 && channelStart < channelEnd) {
+                const channelNum = text.substring(channelStart + 1, channelEnd);
+                if (/^\d+$/.test(channelNum)) {
+                    return wrapInClassExceptPrompt(text, 'channel-' + channelNum);
+                }
+            }
         }
-        event.stopPropagation();
-    });
+    }
+    if (text.match(/^([a-zA-Z0-9()*]+) tells you:(.*)/gm) != null) return wrapInClassExceptPrompt(text, 'direct-tell');
+    if (text.match(/^([a-zA-Z0-9()*]+) shouts:(.*)/gm) != null) return wrapInClassExceptPrompt(text, 'shout-message');
+    if (text.match(/^([a-zA-Z0-9()*]+) c-shouts:(.*)/gm) != null) return wrapInClassExceptPrompt(text, 'cshout-message');
+    if (text.match(/^\*\*\*\* (.*)/gm) != null) return wrapInClassExceptPrompt(text, 'system-message');
+    return text;
+}
 
-    document.addEventListener('click', function (event) {
-        if (!preferencesPanel.contains(event.target) && !hamburgerMenu.contains(event.target) && event.target !== hamburgerMenu) {
-            preferencesPanel.classList.remove('show');
-        }
-    });
-    document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' && preferencesPanel.classList.contains('show')) {
-            preferencesPanel.classList.remove('show');
-        }
-    });
-
-    prefCategories.forEach(category => {
-        category.addEventListener('click', function () {
-            prefCategories.forEach(cat => cat.classList.remove('active'));
-            this.classList.add('active');
-            prefContents.forEach(content => content.classList.remove('active'));
-            const categoryName = this.getAttribute('data-category');
-            const activeContent = document.getElementById(`pref-${categoryName}`);
-            if (activeContent) activeContent.classList.add('active');
-        });
-    });
-
-    prefLightSquareEl.addEventListener('input', function () {
-        lightSquarePreviewEl.style.backgroundColor = this.value;
-    });
-    prefDarkSquareEl.addEventListener('input', function () {
-        darkSquarePreviewEl.style.backgroundColor = this.value;
-    });
-    prefPieceSetEl.addEventListener('change', function () {
-        updatePieceSetPreview(this.value);
-    });
-
-    saveButton.addEventListener('click', function () {
-        savePreferences();
-        preferencesPanel.classList.remove('show');
-    });
+function sanitizeHTML(text) {
+    const temp = document.createElement('div');
+    temp.textContent = text;
+    return temp.innerHTML;
 }
 
 // Load preferences from local storage
@@ -773,7 +715,143 @@ export function getWebSocket() {
     return ws;
 }
 
-// Export preferences for other modules to use
-export function getPreferences() {
-    return preferences;
+// Function to add a message to history
+export function addToMessageHistory(inputId, message) {
+    if (!message.trim()) return;
+    if (!messageHistory[inputId]) {
+        messageHistory[inputId] = [];
+    }
+    if (messageHistory[inputId].length > 0 &&
+        messageHistory[inputId][messageHistory[inputId].length - 1] === message) {
+        return;
+    }
+    messageHistory[inputId].push(message);
+    if (messageHistory[inputId].length > MAX_HISTORY_LENGTH) {
+        messageHistory[inputId].shift();
+    }
+    messageHistoryPosition[inputId] = messageHistory[inputId].length;
 }
+
+// Function to handle arrow key navigation
+export function handleArrowKeys(event, inputElement) {
+    const inputId = inputElement.id;
+    if (!messageHistory[inputId]) messageHistory[inputId] = [];
+    if (messageHistoryPosition[inputId] === undefined) {
+        messageHistoryPosition[inputId] = messageHistory[inputId].length;
+    }
+
+    if (event.key === "ArrowUp") {
+        event.preventDefault();
+        if (messageHistoryPosition[inputId] === messageHistory[inputId].length) {
+            inputElement._currentInput = inputElement.value;
+        }
+        if (messageHistoryPosition[inputId] > 0) {
+            messageHistoryPosition[inputId]--;
+            inputElement.value = messageHistory[inputId][messageHistoryPosition[inputId]];
+        }
+    } else if (event.key === "ArrowDown") {
+        event.preventDefault();
+        if (messageHistoryPosition[inputId] < messageHistory[inputId].length) {
+            messageHistoryPosition[inputId]++;
+            if (messageHistoryPosition[inputId] === messageHistory[inputId].length) {
+                inputElement.value = inputElement._currentInput || '';
+            } else {
+                inputElement.value = messageHistory[inputId][messageHistoryPosition[inputId]];
+            }
+        }
+    }
+}
+
+
+// Hamburger menu functionality
+function setupPreferencesMenu() {
+    const hamburgerMenu = document.getElementById('hamburgerMenu');
+    const preferencesPanel = document.getElementById('preferencesPanel');
+    const saveButton = document.getElementById('savePreferences');
+    const prefPieceSetEl = document.getElementById('prefPieceSet');
+    const prefLightSquareEl = document.getElementById('prefLightSquare');
+    const prefDarkSquareEl = document.getElementById('prefDarkSquare');
+    const lightSquarePreviewEl = document.getElementById('lightSquarePreview');
+    const darkSquarePreviewEl = document.getElementById('darkSquarePreview');
+    const prefCategories = document.querySelectorAll('.pref-category');
+    const prefContents = document.querySelectorAll('.pref-content');
+
+    hamburgerMenu.addEventListener('click', function (event) {
+        preferencesPanel.classList.toggle('show');
+        if (preferencesPanel.classList.contains('show')) {
+            updatePieceSetPreview(prefPieceSetEl.value);
+            // Default to FICS tab or last active, for now FICS
+            prefCategories.forEach(cat => cat.classList.remove('active'));
+            const ficsCategory = document.querySelector('.pref-category[data-category="fics"]');
+            if (ficsCategory) ficsCategory.classList.add('active');
+            prefContents.forEach(content => content.classList.remove('active'));
+            const ficsContent = document.getElementById('pref-fics');
+            if (ficsContent) ficsContent.classList.add('active');
+        }
+        event.stopPropagation();
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!preferencesPanel.contains(event.target) && !hamburgerMenu.contains(event.target) && event.target !== hamburgerMenu) {
+            preferencesPanel.classList.remove('show');
+        }
+    });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && preferencesPanel.classList.contains('show')) {
+            preferencesPanel.classList.remove('show');
+        }
+    });
+
+    prefCategories.forEach(category => {
+        category.addEventListener('click', function () {
+            prefCategories.forEach(cat => cat.classList.remove('active'));
+            this.classList.add('active');
+            prefContents.forEach(content => content.classList.remove('active'));
+            const categoryName = this.getAttribute('data-category');
+            const activeContent = document.getElementById(`pref-${categoryName}`);
+            if (activeContent) activeContent.classList.add('active');
+        });
+    });
+
+    prefLightSquareEl.addEventListener('input', function () {
+        lightSquarePreviewEl.style.backgroundColor = this.value;
+    });
+    prefDarkSquareEl.addEventListener('input', function () {
+        darkSquarePreviewEl.style.backgroundColor = this.value;
+    });
+    prefPieceSetEl.addEventListener('change', function () {
+        updatePieceSetPreview(this.value);
+    });
+
+    saveButton.addEventListener('click', function () {
+        savePreferences();
+        preferencesPanel.classList.remove('show');
+    });
+}
+
+export function getObservedPlayer() {
+    return obsPlayer;
+}
+
+export function getFollowedPlayer() {
+    return followPlayer;
+}
+
+// Setup main input event listeners
+function setupMainInput() {
+    if (!mainInput) return;
+
+    mainInput.addEventListener('keypress', (event) => {
+        if (event.key === "Enter") {
+            const message = mainInput.value;
+            if (ws) ws.send(filterInvalid(message));
+            addToMessageHistory('mainInput', message);
+            mainInput.value = '';
+        }
+    });
+
+    mainInput.addEventListener('keydown', (event) => {
+        handleArrowKeys(event, mainInput);
+    });
+}
+
