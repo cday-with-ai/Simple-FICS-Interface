@@ -23,6 +23,7 @@ Functionality (Working functionality):
 - Fast and efficient, written in ES6.
 
 Road Map (Planned functionality that is broken or not implemented yet):
+- When the board is flipped it is not adjusting for the next game.
 - Add stay logged in preference.
 - Make speed promotion checkboxes.
 - More changes for Responsive web design that work on mobile and tablets.

@@ -546,6 +546,32 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
         square.classList.remove('premove-end');
     });
 
+    // Show/hide promotion options container based on whether player is playing
+    const promotionContainer = document.getElementById('promotionOptionsContainer');
+    if (promotionContainer) {
+        // Set the piece images based on the current piece set
+        if (gameState.isPlayerPlaying) {
+            // Always show the container when player is playing
+            promotionContainer.style.display = 'flex';
+            promotionContainer.classList.add('visible');
+
+            const pieceColor = gameState.isPlayerWhite ? 'w' : 'b';
+            const promotionLabels = promotionContainer.querySelectorAll('.promotion-options-row .promotion-option label');
+            const pieceTypes = ['q', 'r', 'b', 'n'];
+
+            promotionLabels.forEach((label, index) => {
+                if (index < pieceTypes.length) {
+                    const pieceType = pieceTypes[index].toUpperCase();
+                    label.innerHTML = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" style="width: 20px; height: 20px;" />`;
+                }
+            });
+        } else {
+            // Hide the container when player is not playing
+            promotionContainer.style.display = 'none';
+            promotionContainer.classList.remove('visible');
+        }
+    }
+
     const squareSize = board.clientWidth / 8;
     const pieceFontSize = Math.max(Math.floor(squareSize * 0.8), 24) + 'px';
     const labelFontSize = Math.max(Math.floor(squareSize * 0.15), 6) + 'px';
@@ -1004,16 +1030,25 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     let moveStringPart = `${startSquareAlgebraic}${endSquareAlgebraic}`;
 
     if (isPromotion) {
-        /**
-         * IMPORTANT!
-         *
-         * Not implemented yet but promotions will be handled by using the radio buttons if the player is
-         * playing or examining. The prompt should only be used when the user is observing.
-         */
-        const promotionPiece = prompt('Promote pawn to: (q)ueen, (r)ook, (b)ishop, (n)knight', 'q');
-        const promotion = ['q', 'r', 'b', 'n'].includes(promotionPiece) ? promotionPiece : 'q';
-        moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic, promotion: promotion};
-        moveStringPart += `=${promotion}`;
+        if (gameState.isPlayerPlaying) {
+            // Get the selected promotion piece from the already visible container
+            const promotionContainer = document.getElementById('promotionOptionsContainer');
+            if (promotionContainer) {
+                const selectedOption = promotionContainer.querySelector('input[name="promotion-piece"]:checked');
+                const promotion = selectedOption ? selectedOption.value : 'q'; // Default to queen
+                moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic, promotion: promotion};
+                moveStringPart += `=${promotion}`;
+            } else {
+                // Fallback if container not found
+                return showPromotionOptions(startSquareAlgebraic, endSquareAlgebraic, isDragging);
+            }
+        } else {
+            // Use prompt for observers
+            const promotionPiece = prompt('Promote pawn to: (q)ueen, (r)ook, (b)ishop, (n)knight', 'q');
+            const promotion = ['q', 'r', 'b', 'n'].includes(promotionPiece) ? promotionPiece : 'q';
+            moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic, promotion: promotion};
+            moveStringPart += `=${promotion}`;
+        }
     } else {
         moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic};
     }
@@ -1329,6 +1364,169 @@ function restartClockInternal() {
     stopClock();
     updatePlayerInfoAndClockUI(); // Update display
     startClock(); // Start with current state
+}
+
+/**
+ * Shows the promotion options UI and handles the selection.
+ * @param startSquareAlgebraic The starting square in algebraic notation.
+ * @param endSquareAlgebraic The ending square in algebraic notation.
+ * @param isDragging Whether the move is being made via drag and drop.
+ * @returns {boolean} Always returns false to prevent further processing.
+ */
+function showPromotionOptions(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
+    console.log("Showing promotion options for move:", startSquareAlgebraic, "to", endSquareAlgebraic);
+
+    const promotionContainer = document.getElementById('promotionOptionsContainer');
+    if (!promotionContainer) {
+        console.error("Promotion container not found");
+        return false;
+    }
+
+    // Update the piece images based on the player's color
+    const pieceColor = gameState.isPlayerWhite ? 'w' : 'b';
+    const labelElements = promotionContainer.querySelectorAll('.promotion-options-row .promotion-option label');
+    const pieceTypes = ['q', 'r', 'b', 'n'];
+
+    labelElements.forEach((label, index) => {
+        if (index < pieceTypes.length) {
+            const pieceType = pieceTypes[index].toUpperCase();
+            label.innerHTML = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" style="width: 30px; height: 30px;" />`;
+        }
+    });
+
+    // The promotion container is already positioned below the bottom clock
+    // We just need to make sure it's visible
+    promotionContainer.style.display = 'flex';
+    promotionContainer.classList.add('visible');
+
+    console.log("Promotion container displayed:", promotionContainer.style.display);
+
+    // Store the original piece visibility if dragging
+    if (isDragging && gameState.draggedPieceElement) {
+        gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
+        gameState.draggedPieceElement.classList.add('piece-visible');
+    }
+
+    // Handle promotion selection
+    const handlePromotionSelection = (e) => {
+        console.log("Promotion option selected:", e.currentTarget);
+
+        // Get the selected promotion piece
+        let promotion = 'q'; // Default to queen
+
+        // Find which option was clicked
+        const optionDiv = e.currentTarget;
+        const radio = optionDiv.querySelector('input[type="radio"]');
+        if (radio) {
+            radio.checked = true;
+            promotion = radio.value;
+        } else {
+            // If we couldn't find the radio button, use the default
+            const selectedOption = promotionContainer.querySelector('input[name="promotion-piece"]:checked');
+            promotion = selectedOption ? selectedOption.value : 'q';
+        }
+
+        console.log("Selected promotion piece:", promotion);
+
+        // Hide the container
+        promotionContainer.classList.remove('visible');
+        promotionContainer.style.display = 'none';
+
+        // Remove event listeners
+        document.removeEventListener('click', handleOutsideClick);
+
+        // Remove the click event listeners from options
+        const allOptions = promotionContainer.querySelectorAll('.promotion-option');
+        allOptions.forEach(option => {
+            option.removeEventListener('click', handlePromotionSelection);
+        });
+
+        // Complete the move with the selected promotion piece
+        const moveStringPart = `${startSquareAlgebraic}${endSquareAlgebraic}=${promotion}`;
+        const moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic, promotion: promotion};
+
+        const isPremove = gameState.isPlayerPlaying && gameState.isWhitesMove !== gameState.isPlayerWhite;
+        const isValidating = gameState.isValidationSupported && !isPremove &&
+            (!gameState.isPlayerPlaying || (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite));
+
+        let moveResult = null;
+
+        if (!isPremove && isValidating) {
+            moveResult = chess.move(moveObject);
+            gameState.fen = chess.fen();
+        }
+
+        if (isPremove) {
+            gameState.premove = moveStringPart;
+            console.log("Making premove with promotion: " + gameState.premove);
+            updateBoardBottomLabels();
+
+            document.querySelector(`[data-algebraic="${startSquareAlgebraic}"]`).classList.add('premove-start');
+            document.querySelector(`[data-algebraic="${endSquareAlgebraic}"]`).classList.add('premove-end');
+        } else if (!isValidating || (isValidating && moveResult)) {
+            if (gameState.relation !== GameRelation.ISOLATED_POSITION &&
+                gameState.relation !== GameRelation.OBSERVING_PLAYED &&
+                gameState.relation !== GameRelation.OBSERVING_EXAMINED &&
+                gameState.relation !== GameRelation.STARTING_BOARD) {
+                ws.send(`${moveStringPart}`);
+            }
+
+            // Update ECO opening info
+            updateBoardBottomLabels();
+
+            // Update the lastMovePretty property so the move list can be updated
+            if (moveResult) {
+                gameState.lastMovePretty = moveResult.san;
+            }
+
+            // Update the board graphics which will create the piece at the new location
+            updateBoardGraphicsAndSquareListeners(moveStringPart, null);
+            restartClockInternal();
+        } else if (!moveResult) {
+            console.error("Invalid promotion move:", moveObject);
+            if (!isPremove && isValidating) {
+                chess.undo();
+            }
+        }
+    };
+
+    // Handle clicks outside the promotion container
+    const handleOutsideClick = (e) => {
+        console.log("Outside click detected");
+        if (!promotionContainer.contains(e.target)) {
+            console.log("Click was outside promotion container, hiding it");
+            promotionContainer.classList.remove('visible');
+            promotionContainer.style.display = 'none';
+            document.removeEventListener('click', handleOutsideClick);
+
+            // Remove the click event listeners from options
+            const allOptions = promotionContainer.querySelectorAll('.promotion-option');
+            allOptions.forEach(option => {
+                option.removeEventListener('click', handlePromotionSelection);
+            });
+        }
+    };
+
+    // Clear any existing event listeners by replacing elements with clones
+    const optionElements = promotionContainer.querySelectorAll('.promotion-options-row .promotion-option');
+    optionElements.forEach(option => {
+        option.replaceWith(option.cloneNode(true));
+    });
+
+    // Add event listeners for promotion selection to the fresh elements
+    const freshOptions = promotionContainer.querySelectorAll('.promotion-options-row .promotion-option');
+    freshOptions.forEach(option => {
+        option.addEventListener('click', handlePromotionSelection);
+    });
+
+    // Add event listener for clicks outside the container (after a short delay)
+    // Remove any existing listener first
+    document.removeEventListener('click', handleOutsideClick);
+    setTimeout(() => {
+        document.addEventListener('click', handleOutsideClick);
+    }, 200);
+
+    return false; // Return false to prevent further processing
 }
 
 /**
@@ -2216,10 +2414,58 @@ function setupMainChessBoardDisplay() {
     playerDivider.appendChild(topPlayerNameContainer);
     playerDivider.appendChild(bottomPlayerNameContainer);
 
+    // Create promotion options container
+    const promotionOptionsContainer = document.createElement('div');
+    promotionOptionsContainer.id = 'promotionOptionsContainer';
+    promotionOptionsContainer.classList.add('promotion-options-container');
+
+    // Add a title to the container
+    const promotionTitle = document.createElement('div');
+    promotionTitle.classList.add('promotion-title');
+    promotionTitle.textContent = 'Auto Promotion:';
+    promotionOptionsContainer.appendChild(promotionTitle);
+
+    // Create a row for the promotion options
+    const promotionOptionsRow = document.createElement('div');
+    promotionOptionsRow.classList.add('promotion-options-row');
+    promotionOptionsContainer.appendChild(promotionOptionsRow);
+
+    // Create options for Queen, Rook, Bishop, Knight
+    const pieceTypes = [
+        { value: 'q', name: 'Queen' },
+        { value: 'r', name: 'Rook' },
+        { value: 'b', name: 'Bishop' },
+        { value: 'n', name: 'Knight' }
+    ];
+
+    pieceTypes.forEach(piece => {
+        const optionDiv = document.createElement('div');
+        optionDiv.classList.add('promotion-option');
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = 'promotion-piece';
+        radio.value = piece.value;
+        radio.id = `promotion-${piece.value}`;
+        if (piece.value === 'q') radio.checked = true; // Queen is default
+
+        const label = document.createElement('label');
+        label.htmlFor = `promotion-${piece.value}`;
+        label.title = piece.name;
+
+        // We'll set the actual piece image in updateBoardGraphicsAndSquareListeners
+        // based on the current piece set and player color
+
+        optionDiv.appendChild(radio);
+        optionDiv.appendChild(label);
+        promotionOptionsRow.appendChild(optionDiv); // Add to row instead of directly to container
+    });
+
     // Populate playerInfoContainer
     playerInfoContainer.appendChild(topPlayerClock);
     playerInfoContainer.appendChild(playerDivider);
     playerInfoContainer.appendChild(bottomPlayerClock);
+    playerInfoContainer.appendChild(promotionOptionsContainer); // Add promotion container below bottom clock
 
     // Assemble the main board structure
     boardContainer.appendChild(boardOnlyContainer);

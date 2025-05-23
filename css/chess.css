@@ -437,6 +437,70 @@
     width: 400px;
 }
 
+/* Promotion options container */
+.promotion-options-container {
+    position: relative;
+    display: none;
+    background-color: rgba(255, 255, 255, 0.95);
+    margin-top: 25px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    padding: 4px;
+    z-index: 9999; /* Increased z-index to ensure it's above everything */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    width: auto;
+    min-width: 140px;
+    align-self: center;
+}
+
+.promotion-options-container.visible {
+    display: flex !important; /* Force display with !important */
+    flex-direction: column;
+    align-items: flex-start; /* Left align instead of center */
+    justify-content: flex-start; /* Left align instead of center */
+}
+
+.promotion-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 10px;
+    color: #333;
+    text-align: left;
+    width: 100%;
+    padding-left: 5px; /* Add a little padding for better alignment */
+}
+
+.promotion-options-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start; /* Left align instead of center */
+    width: 100%;
+}
+
+.promotion-option {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.promotion-option:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.promotion-option input[type="radio"] {
+    width: 10px;
+    height: 10px;
+}
+
+.promotion-option label {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    cursor: pointer;
+}
+
 /* Last move display removed */
 
 /* Player divider box */
