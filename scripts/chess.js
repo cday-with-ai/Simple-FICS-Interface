@@ -562,7 +562,7 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
             promotionLabels.forEach((label, index) => {
                 if (index < pieceTypes.length) {
                     const pieceType = pieceTypes[index].toUpperCase();
-                    label.innerHTML = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" style="width: 20px; height: 20px;" />`;
+                    label.innerHTML = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" style="width: 22px; height: 22px;" />`;
                 }
             });
         } else {

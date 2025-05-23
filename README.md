@@ -28,7 +28,7 @@ ALPHA:
   - Expand preferences a bit (not too much).
 - Regression testing.
   - When the board is flipped, it is not adjusting for the next game.
-  - Fix move list not populating all the time.
+  - Fix the move list not populating bugs.
   - Test all functionality.
 BETA:
 - Use AI to create a move validation API.
