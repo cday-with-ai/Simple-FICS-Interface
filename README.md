@@ -24,6 +24,10 @@ Functionality (Working functionality):
 
 Road Map (Current phase PRE-ALPHA):
 ALPHA:
+- Change UI for perspectives, examine, observe, playing, playing end.
+  - Add auto draw, resign buttons for playing.
+  - Add analysis mode when playing end or observing.
+- Add stockfish 17 web-assembly. Add an analysis mode when playing end or observing.
 - Preferences:
   - Expand preferences a bit (not too much).
 - Regression testing.
