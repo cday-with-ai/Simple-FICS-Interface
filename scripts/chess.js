@@ -1390,7 +1390,7 @@ function showPromotionOptions(startSquareAlgebraic, endSquareAlgebraic, isDraggi
     labelElements.forEach((label, index) => {
         if (index < pieceTypes.length) {
             const pieceType = pieceTypes[index].toUpperCase();
-            label.innerHTML = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" style="width: 30px; height: 30px;" />`;
+            label.innerHTML = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" style="width: 20px; height: 20px;" />`;
         }
     });
 
@@ -2408,12 +2408,6 @@ function setupMainChessBoardDisplay() {
     topPlayerNameContainer.appendChild(boardMenuButton);
     bottomPlayerNameContainer.appendChild(bottomPlayerNameWrapper);
 
-    // Board menu and player divider setup
-    playerDivider.appendChild(boardMenu);
-    playerDivider.style.position = 'relative';
-    playerDivider.appendChild(topPlayerNameContainer);
-    playerDivider.appendChild(bottomPlayerNameContainer);
-
     // Create promotion options container
     const promotionOptionsContainer = document.createElement('div');
     promotionOptionsContainer.id = 'promotionOptionsContainer';
@@ -2461,11 +2455,17 @@ function setupMainChessBoardDisplay() {
         promotionOptionsRow.appendChild(optionDiv); // Add to row instead of directly to container
     });
 
+    // Board menu and player divider setup
+    playerDivider.appendChild(boardMenu);
+    playerDivider.style.position = 'relative';
+    playerDivider.appendChild(topPlayerNameContainer);
+    playerDivider.appendChild(promotionOptionsContainer); // Add promotion container above bottom player name
+    playerDivider.appendChild(bottomPlayerNameContainer);
+
     // Populate playerInfoContainer
     playerInfoContainer.appendChild(topPlayerClock);
     playerInfoContainer.appendChild(playerDivider);
     playerInfoContainer.appendChild(bottomPlayerClock);
-    playerInfoContainer.appendChild(promotionOptionsContainer); // Add promotion container below bottom clock
 
     // Assemble the main board structure
     boardContainer.appendChild(boardOnlyContainer);
@@ -2501,7 +2501,7 @@ function setupMainChessBoardDisplay() {
         const chessBoardArea = document.querySelector('.chess-board-area');
         if (!chessBoardArea || !board) return;
 
-        const availableWidth = chessBoardArea.clientWidth - 275; // Adjusted for potential player info width
+        const availableWidth = chessBoardArea.clientWidth - 302; // Adjusted for potential player info width
         const availableHeight = chessBoardArea.clientHeight - 40; // Adjusted for potential margins/padding
         const maxWidth = Math.max(100, availableWidth);
         const maxSize = Math.min(maxWidth, availableHeight, 1500);

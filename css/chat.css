@@ -186,7 +186,7 @@ body {
     cursor: col-resize;
     position: absolute;
     top: 50%;
-    left: 49%;
+    left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
     display: flex;
@@ -200,7 +200,7 @@ body {
 .horizontal-divider::before {
     position: absolute;
     top: 47%;
-    left: 6%;
+    left: 5%;
     content: "⋮⋮";
     font-size: 20px;
     color: #666;

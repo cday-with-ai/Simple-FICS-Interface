@@ -22,12 +22,15 @@ Functionality (Working functionality):
 - ECO/Opening description lookup based on moves made.
 - Fast and efficient, written in ES6.
 
-Road Map (Planned functionality that is broken or not implemented yet):
+Road Map (Current phase PRE-ALPHA):
+ALPHA:
 - Preferences:
   - Expand preferences a bit (not too much).
 - Regression testing.
   - When the board is flipped, it is not adjusting for the next game.
+  - Fix move list not populating all the time.
   - Test all functionality.
+BETA:
 - Use AI to create a move validation API.
   - Automaticly keep track of moves and times per move.
   - Handle premove validation.
@@ -35,10 +38,11 @@ Road Map (Planned functionality that is broken or not implemented yet):
   - Handle crazyhouse, suicide, losers, chess960, atomic.
   - Handle pieces in hand, for crazyhouse.
 - Add crazyhouse support.
+1.0: (For phone/tablet support. Added after everything is in place)
 - More changes for Responsive web design that work on mobile and tablets. (Last after features are added.)
   - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
 
 
-Not planned at this time: (If you want it, let me know I might add it.)
+Not planned at this time. Let me know if you would like it added:
 - Bughouse support.
 - Viewing multiple boards at once.

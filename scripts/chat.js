@@ -143,12 +143,12 @@ function updateViewMode(mode) {
         case 'both':
             if (chessBoardAreaEl) {
                 chessBoardAreaEl.style.display = 'flex';
-                chessBoardAreaEl.style.flexBasis = '50%';
+                chessBoardAreaEl.style.flexBasis = '58%';
             }
             if (rightContentEl) rightContentEl.style.display = 'flex';
             if (topDividerEl) {
                 topDividerEl.style.display = 'block';
-                topDividerEl.style.left = '49%';
+                topDividerEl.style.left = '57.5%';
             }
             if (rightDividerEl) {
                 rightDividerEl.style.display = tabElements.length > 0 ? 'block' : 'none';
@@ -168,7 +168,7 @@ function updateViewMode(mode) {
                 rightDividerEl.style.display = tabElements.length > 0 ? 'block' : 'none';
                 rightDividerEl.style.top = '75%';
             }
-            if (mainConsoleEl) mainConsoleEl.style.flexBasis = '75%';
+            if (mainConsoleEl) mainConsoleEl.style.flexBasis = '70%';
             requestAnimationFrame(scrollConsolesToBottom);
             break;
     }
@@ -187,7 +187,7 @@ function resizeDividers(e) {
         let percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
         percentage = Math.max(30, Math.min(70, percentage));
         chessBoardAreaEl.style.flexBasis = `${percentage}%`;
-        topDivider.style.left = `${percentage - 1}%`;
+        topDivider.style.left = `${percentage -.5}%`;
     } else if (activeResizer === 'vertical') {
         if (!rightContentEl || !mainConsoleEl || !chatTabsContainerEl || !rightDivider) return;
         const containerRect = rightContentEl.getBoundingClientRect();
