@@ -17,6 +17,7 @@
   "author": "cday-with-ai",
   "license": "ISC",
   "dependencies": {
+    "chess.js": "^1.2.0",
     "yarn": "^1.22.22"
   },
   "devDependencies": {

@@ -23,8 +23,6 @@ Functionality (Working functionality):
 - Fast and efficient, written in ES6.
 
 Road Map (Planned functionality that is broken or not implemented yet):
-- Fix bug where when you flip and then observe a game the board orientation is off. labels for black pieces appear in the wrong place.+
-  - Abide by fics flip flag on style 12. Currently not abiding.
 - Add stay logged in preference.
 - Make speed promotion checkboxes.
 - More changes for Responsive web design that work on mobile and tablets.

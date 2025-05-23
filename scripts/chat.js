@@ -17,7 +17,7 @@ const ficsCommandRegex = [
     /(^observe [a-zA-Z0-9]+$)|(^obs [a-zA-Z0-9]+$)/i,
     /(^unobserve$)|(^unobs$)|(^unobserve [a-zA-Z0-9]+$)|(^unobs [a-zA-Z0-9]+$)/i,
     /(^[+-]censor [a-zA-Z0-9]+$)/i,
-    /(^seek [a-zA-Z0-9]+ [a-zA-Z0-9]+ [a-zA-Z0-9]+$)/i,
+    /(^seek [a-zA-Z0-9]+ .*$)/i,
     /(^play [0-9]+$)/i,
     /(^tell [a-zA-Z0-9]+ .*$)|(^t [a-zA-Z0-9]+ .*$)/i,
     /(^kibitz [a-zA-Z0-9]+ .*$)|(^kib [a-zA-Z0-9]+ .*$)/i,
@@ -192,7 +192,7 @@ function resizeDividers(e) {
         if (!rightContentEl || !mainConsoleEl || !chatTabsContainerEl || !rightDivider) return;
         const containerRect = rightContentEl.getBoundingClientRect();
         let percentage = ((e.clientY - containerRect.top) / containerRect.height) * 100;
-        percentage = Math.max(30, Math.min(70, percentage));
+        percentage = Math.max(35, Math.min(65, percentage));
         mainConsoleEl.style.flexBasis = `${percentage}%`;
         chatTabsContainerEl.style.flexBasis = `${100 - percentage}%`;
         rightDivider.style.top = `${percentage}%`;
