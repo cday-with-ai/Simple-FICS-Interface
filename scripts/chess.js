@@ -454,11 +454,7 @@ function createSquare(boardElement, algebraicSquare) {
     squareDiv.dataset.file = `${file}`;
     squareDiv.dataset.rank = `${rank}`;
     squareDiv.classList.add('chess-square');
-    if (gameState.isWhiteOnBottom) {
-        squareDiv.classList.add((file + rank) % 2 === 0 ? 'dark-square' : 'light-square');
-    } else {
-        squareDiv.classList.add((file + rank) % 2 === 0 ? 'light-square' : 'dark-square');
-    }
+    squareDiv.classList.add((file + rank) % 2 === 0 ? 'dark-square' : 'light-square');
     squareDiv.dataset.algebraic = `${algFile}${algRank}`;
     const pieceElement = document.createElement('div');
     pieceElement.classList.add('chess-piece');
