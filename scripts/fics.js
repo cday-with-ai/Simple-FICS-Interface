@@ -19,6 +19,11 @@ const wsUrl = 'wss://www.freechess.org:5001';
 let ws = null;
 let isLoggingIn = false;
 
+// Keep-alive timer variables
+let keepAliveTimer = null;
+let lastCommandTime = 0;
+const KEEP_ALIVE_INTERVAL = 55 * 60 * 1000; // 55 minutes in milliseconds
+
 const timesealConnect = "TIMESEAL2|openseal|simpleficsinterface|";
 const timesealKey = "Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
 
@@ -46,6 +51,7 @@ let preferences = {
     ficsUsername: '',
     ficsPassword: '',
     autoLogin: false,
+    stayLoggedIn: false, // Keep connection alive by sending periodic commands
     channelTellsToTabs: true,
     directTellsToTabs: false,
     gameTellsToTabs: false,
@@ -69,6 +75,10 @@ function connectWebSocket() {
         msg = msg.trim();
         handleSentObserve(msg);
         handleSentFollow(msg);
+
+        // Update the last command time for keep-alive tracking
+        lastCommandTime = Date.now();
+
         msg = encodeTimeseal(msg.trim());
         return ws.baseSend(msg);
     }
@@ -97,6 +107,11 @@ function connectWebSocket() {
         } else {
             console.error("initChessSystem is not available from chess.js");
         }
+
+        // Start keep-alive timer if enabled
+        if (preferences.stayLoggedIn) {
+            startKeepAliveTimer();
+        }
     };
 
     ws.onerror = (error) => {
@@ -107,6 +122,10 @@ function connectWebSocket() {
     ws.onclose = () => {
         routeMessage('Disconnected\n');
         if (statusDiv) statusDiv.textContent = 'Disconnected';
+
+        // Stop the keep-alive timer when disconnected
+        stopKeepAliveTimer();
+
         ws = null;
         const reconnectTime = Date.now() + 5000;
         const checkTimeAndReconnect = () => {
@@ -595,6 +614,7 @@ function loadPreferences() {
             }
         }
         document.getElementById('prefAutoLogin').checked = preferences.autoLogin;
+        document.getElementById('prefStayLoggedIn').checked = preferences.stayLoggedIn;
         document.getElementById('prefChannelTellsToTabs').checked = preferences.channelTellsToTabs;
         document.getElementById('prefDirectTellsToTabs').checked = preferences.directTellsToTabs;
         document.getElementById('prefGameTellsToTabs').checked = preferences.gameTellsToTabs;
@@ -620,6 +640,7 @@ function savePreferences() {
     const rawPassword = document.getElementById('prefFicsPassword').value;
     preferences.ficsPassword = rawPassword ? btoa(rawPassword) : '';
     preferences.autoLogin = document.getElementById('prefAutoLogin').checked;
+    preferences.stayLoggedIn = document.getElementById('prefStayLoggedIn').checked;
     preferences.channelTellsToTabs = document.getElementById('prefChannelTellsToTabs').checked;
     preferences.directTellsToTabs = document.getElementById('prefDirectTellsToTabs').checked;
     preferences.gameTellsToTabs = document.getElementById('prefGameTellsToTabs').checked;
@@ -639,6 +660,50 @@ function applyPreferences() {
         applyChessRelatedPreferences();
     } else {
         console.warn("applyChessRelatedPreferences not available from chess.js");
+    }
+
+    // Apply stay logged in preference
+    if (preferences.stayLoggedIn) {
+        startKeepAliveTimer();
+    } else {
+        stopKeepAliveTimer();
+    }
+}
+
+/**
+ * Starts the keep-alive timer to send periodic commands to FICS
+ */
+function startKeepAliveTimer() {
+    // Clear any existing timer first
+    stopKeepAliveTimer();
+
+    // Set the last command time to now
+    lastCommandTime = Date.now();
+
+    // Start a new timer
+    keepAliveTimer = setInterval(() => {
+        const currentTime = Date.now();
+        const timeSinceLastCommand = currentTime - lastCommandTime;
+
+        // If it's been more than the keep-alive interval since the last command, send a date command
+        if (timeSinceLastCommand >= KEEP_ALIVE_INTERVAL && ws) {
+            console.log("Sending keep-alive command to FICS");
+            ws.send("date");
+            lastCommandTime = currentTime;
+        }
+    }, 60000); // Check every minute
+
+    console.log("Keep-alive timer started");
+}
+
+/**
+ * Stops the keep-alive timer
+ */
+function stopKeepAliveTimer() {
+    if (keepAliveTimer) {
+        clearInterval(keepAliveTimer);
+        keepAliveTimer = null;
+        console.log("Keep-alive timer stopped");
     }
 }
 

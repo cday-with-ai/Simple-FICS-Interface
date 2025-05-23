@@ -23,14 +23,22 @@ Functionality (Working functionality):
 - Fast and efficient, written in ES6.
 
 Road Map (Planned functionality that is broken or not implemented yet):
-- When the board is flipped it is not adjusting for the next game.
-- Add stay logged in preference.
-- Make speed promotion checkboxes.
-- More changes for Responsive web design that work on mobile and tablets.
+- Preferences:
+  - Expand preferences a bit (not too much).
+- Regression testing.
+  - When the board is flipped, it is not adjusting for the next game.
+  - Test all functionality.
+- Use AI to create a move validation API.
+  - Automaticly keep track of moves and times per move.
+  - Handle premove validation.
+  - Handle move validation.
+  - Handle crazyhouse, suicide, losers, chess960, atomic.
+  - Handle pieces in hand, for crazyhouse.
+- Add crazyhouse support.
+- More changes for Responsive web design that work on mobile and tablets. (Last after features are added.)
   - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
-- Expand preferences a bit (not too much).
 
 
 Not planned at this time: (If you want it, let me know I might add it.)
-- Bughouse/Crazyhouse support.
+- Bughouse support.
 - Viewing multiple boards at once.

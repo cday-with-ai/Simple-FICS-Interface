@@ -441,7 +441,6 @@
 .promotion-options-container {
     position: relative;
     display: none;
-    background-color: rgba(255, 255, 255, 0.95);
     margin-top: 25px;
     border: 2px solid #ccc;
     border-radius: 8px;
