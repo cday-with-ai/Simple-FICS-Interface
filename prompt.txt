@@ -1,0 +1,17 @@
+I want to create a new ChessBoard.js class.
+- This should replace the need for chess.js.
+- It should support losers (FICS rules), suicide (FICS rules), atomic, crazyhouse, and chess960.
+- It should be able to be setup from a FEN or starting position.
+- The next move should be able to be provided via SAN. The move is validated and played if valid.
+- It should support move validation by supplying all legal moves in the current position.
+- It should support premove validation via start end algebraic squares.
+- It should keep track of moves in a move list and store a FEN for each move.
+- It should have a way to determine checkmate, statlemate, insufficient material, and threefold repetition.
+- It should have comprehensive unit tests.
+- The unit tests should pass.
+- Focus should be on code readability and ease of use.
+- JSDoc should be used for all methods with readable documentation.
+
+
+A game is not over on this.isThreefoldRepetition() ||
+                                     this.halfmoveClock >= 100.
