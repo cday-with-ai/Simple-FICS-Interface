@@ -213,105 +213,6 @@ export class ChessBoard {
     }
 
     /**
-     * Creates an empty 8x8 board
-     * @returns {Array<Array<Object|null>>} Empty board array
-     * @private
-     */
-    _createEmptyBoard() {
-        const board = [];
-        for (let rank = 0; rank < 8; rank++) {
-            board[rank] = [];
-            for (let file = 0; file < 8; file++) {
-                board[rank][file] = null;
-            }
-        }
-        return board;
-    }
-
-    /**
-     * Sets up the starting position for the current variant
-     * @private
-     */
-    _setupStartingPosition() {
-        if (this.variant === Variant.CHESS960) {
-            this._setupChess960Position();
-        } else {
-            this._setupStandardPosition();
-        }
-    }
-
-    /**
-     * Sets up standard chess starting position
-     * @private
-     */
-    _setupStandardPosition() {
-        const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-        this.loadFen(startFen);
-    }
-
-    /**
-     * Sets up Chess960 (Fischer Random) starting position
-     * @private
-     */
-    _setupChess960Position() {
-        // Generate random Chess960 position
-        const backRank = this._generateChess960BackRank();
-        this.chess960StartPosition = backRank;
-
-        // Clear the board first
-        this.board = this._createEmptyBoard();
-
-        // Set up pieces
-        for (let file = 0; file < 8; file++) {
-            // White pieces
-            this.board[0][file] = { type: backRank[file], color: Color.WHITE };
-            this.board[1][file] = { type: PieceType.PAWN, color: Color.WHITE };
-
-            // Black pieces
-            this.board[7][file] = { type: backRank[file], color: Color.BLACK };
-            this.board[6][file] = { type: PieceType.PAWN, color: Color.BLACK };
-        }
-
-        // Update castling rights based on king and rook positions
-        this._updateChess960CastlingRights();
-    }
-
-    /**
-     * Generates a valid Chess960 back rank arrangement
-     * @returns {string[]} Array of piece types for the back rank
-     * @private
-     */
-    _generateChess960BackRank() {
-        // For now, return a valid standard arrangement to avoid null errors
-        // A full Chess960 implementation would generate random valid positions
-        return ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
-    }
-
-    /**
-     * Updates castling rights for Chess960 based on piece positions
-     * @private
-     */
-    _updateChess960CastlingRights() {
-        // Find king and rook positions
-        const kingFile = this.chess960StartPosition.indexOf('k');
-        const rookFiles = [];
-
-        for (let i = 0; i < 8; i++) {
-            if (this.chess960StartPosition[i] === 'r') {
-                rookFiles.push(i);
-            }
-        }
-
-        // Set castling rights based on positions
-        this.castlingRights = {
-            K: rookFiles.some(f => f > kingFile),
-            Q: rookFiles.some(f => f < kingFile),
-            k: rookFiles.some(f => f > kingFile),
-            q: rookFiles.some(f => f < kingFile)
-        };
-    }
-
-    /**
      * Loads a position from FEN notation
      * @param {string} fen - FEN string representing the position
      * @returns {boolean} True if FEN was loaded successfully
@@ -447,29 +348,6 @@ export class ChessBoard {
     }
 
     /**
-     * Converts algebraic notation to board coordinates
-     * @param {string} square - Square in algebraic notation (e.g., 'e4')
-     * @returns {Object} Object with rank and file properties
-     * @private
-     */
-    _algebraicToCoords(square) {
-        const file = square.charCodeAt(0) - 97; // 'a' = 0, 'b' = 1, etc.
-        const rank = parseInt(square[1]) - 1;   // '1' = 0, '2' = 1, etc.
-        return { rank, file };
-    }
-
-    /**
-     * Converts board coordinates to algebraic notation
-     * @param {number} rank - Rank (0-7)
-     * @param {number} file - File (0-7)
-     * @returns {string} Square in algebraic notation
-     * @private
-     */
-    _coordsToAlgebraic(rank, file) {
-        return String.fromCharCode(97 + file) + (rank + 1);
-    }
-
-    /**
      * Generates all legal moves for the current position
      * @param {string|null} square - Optional square to get moves for specific piece
      * @returns {Move[]} Array of legal Move objects
@@ -500,6 +378,651 @@ export class ChessBoard {
 
         // Filter out illegal moves (moves that leave king in check)
         return moves.filter(move => this._isLegalMove(move.san));
+    }
+
+    /**
+     * Makes a move from Standard Algebraic Notation (SAN)
+     * @param {string} san - Move in SAN notation (e.g., 'e4', 'Nf3', 'O-O')
+     * @returns {boolean} True if the move was made successfully
+     */
+    makeMove(san) {
+        try {
+            // Basic validation - reject obviously invalid input
+            if (!san || typeof san !== 'string' || san.trim() === '') {
+                return false;
+            }
+
+            const move = this._parseFlexibleSan(san.trim());
+            if (!move) {
+                return false;
+            }
+
+            // Special validation for castling moves
+            if (move.castling) {
+                if (!this._isCastlingLegal(move.castling === 'kingside')) {
+                    return false;
+                }
+            }
+
+            // Validate that the move is actually legal
+            if (!this._isMoveLegal(move)) {
+                return false;
+            }
+
+            return this._executeMove(move);
+        } catch (error) {
+            console.error('Error making move:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Makes a move using long algebraic notation (e.g., 'e2e4', 'g1f3')
+     * @param {string} startAlgebraic - Starting square in algebraic notation (e.g., 'e2')
+     * @param {string} endAlgebraic - Ending square in algebraic notation (e.g., 'e4')
+     * @param {string|null} promotionPiece - Promotion piece ('q', 'r', 'b', 'n') or null
+     * @returns {boolean} True if the move was made successfully
+     */
+    makeLongAlgebraicMove(startAlgebraic, endAlgebraic, promotionPiece = null) {
+        try {
+            // Basic validation
+            if (!startAlgebraic || !endAlgebraic ||
+                typeof startAlgebraic !== 'string' || typeof endAlgebraic !== 'string') {
+                return false;
+            }
+
+            // Validate square format
+            const squareRegex = /^[a-h][1-8]$/;
+            if (!squareRegex.test(startAlgebraic) || !squareRegex.test(endAlgebraic)) {
+                return false;
+            }
+
+            // Check if piece exists at start square
+            const piece = this.getPiece(startAlgebraic);
+            if (!piece) {
+                return false;
+            }
+
+            // Check if piece belongs to active player
+            if (piece.color !== this.activeColor) {
+                return false;
+            }
+
+            // Convert to coordinates
+            const fromCoords = this._algebraicToCoords(startAlgebraic);
+            const toCoords = this._algebraicToCoords(endAlgebraic);
+
+            // Check for castling moves
+            if (piece.type === PieceType.KING && Math.abs(toCoords.file - fromCoords.file) === 2) {
+                // This is a castling move
+                const isKingside = toCoords.file > fromCoords.file;
+                const san = isKingside ? 'O-O' : 'O-O-O';
+                return this.makeMove(san);
+            }
+
+            // Generate SAN notation for the move
+            const san = this._longAlgebraicToSan(startAlgebraic, endAlgebraic, promotionPiece);
+            if (!san) {
+                return false;
+            }
+
+            return this.makeMove(san);
+        } catch (error) {
+            console.error('Error making long algebraic move:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Makes a piece drop move for Crazyhouse variant
+     * @param {string} piece - Piece type to drop ('p', 'n', 'b', 'r', 'q')
+     * @param {string} algebraic - Target square in algebraic notation (e.g., 'e4')
+     * @returns {boolean} True if the drop was made successfully
+     */
+    makeDropMove(piece, algebraic) {
+        try {
+            // Basic validation
+            if (!piece || !algebraic || typeof piece !== 'string' || typeof algebraic !== 'string') {
+                return false;
+            }
+
+            // Validate piece type
+            const validPieces = ['p', 'n', 'b', 'r', 'q'];
+            if (!validPieces.includes(piece.toLowerCase())) {
+                return false;
+            }
+
+            // Validate square format
+            const squareRegex = /^[a-h][1-8]$/;
+            if (!squareRegex.test(algebraic)) {
+                return false;
+            }
+
+            // Only allow drops in Crazyhouse variant
+            if (this.variant !== Variant.CRAZYHOUSE) {
+                return false;
+            }
+
+            // Check if player has the piece available to drop
+            if (!this._hasCapturedPiece(piece.toLowerCase(), this.activeColor)) {
+                return false;
+            }
+
+            // Check if target square is empty
+            const targetPiece = this.getPiece(algebraic);
+            if (targetPiece) {
+                return false;
+            }
+
+            // Special validation for pawn drops
+            if (piece.toLowerCase() === 'p') {
+                const { rank } = this._algebraicToCoords(algebraic);
+                // Pawns cannot be dropped on first or last rank
+                if (rank === 0 || rank === 7) {
+                    return false;
+                }
+            }
+
+            // Generate drop notation and make the move
+            const dropSan = `${piece.toUpperCase()}@${algebraic}`;
+            return this.makeMove(dropSan);
+        } catch (error) {
+            console.error('Error making drop move:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Undoes the last move and reverts to the previous board state
+     * @returns {boolean} True if a move was successfully undone, false if no moves to undo
+     */
+    back() {
+        // Check if there are any moves to undo
+        if (this.moveHistory.length === 0) {
+            return false;
+        }
+
+        try {
+            // Remove the last move from history
+            const lastMove = this.moveHistory.pop();
+
+            // Remove the current position from position history
+            if (this.positionHistory.length > 1) {
+                this.positionHistory.pop();
+            }
+
+            // If there are no more moves, reset to starting position
+            if (this.moveHistory.length === 0) {
+                this._resetToStartingPosition();
+            } else {
+                // Rebuild the board state by replaying all remaining moves from the start
+                this._rebuildBoardFromMoveHistory();
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error undoing move:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Checks if the game is over
+     * @returns {boolean} True if the game is over
+     */
+    isGameOver() {
+        return this.isCheckmate() || this.isStalemate() ||
+               this.isInsufficientMaterial();
+    }
+
+    /**
+     * Checks if the current position is checkmate
+     * @returns {boolean} True if checkmate
+     */
+    isCheckmate() {
+        if (!this._isInCheck(this.activeColor)) {
+            return false;
+        }
+
+        return this.getLegalMoves().length === 0;
+    }
+
+    /**
+     * Checks if the current position is stalemate
+     * @returns {boolean} True if stalemate
+     */
+    isStalemate() {
+        if (this._isInCheck(this.activeColor)) {
+            return false;
+        }
+
+        return this.getLegalMoves().length === 0;
+    }
+
+    /**
+     * Checks if the position has insufficient material for checkmate
+     * @returns {boolean} True if insufficient material
+     */
+    isInsufficientMaterial() {
+        const pieces = { w: [], b: [] };
+
+        // Count pieces for each side
+        for (let rank = 0; rank < 8; rank++) {
+            for (let file = 0; file < 8; file++) {
+                const piece = this.board[rank][file];
+                if (piece) {
+                    pieces[piece.color].push(piece.type);
+                }
+            }
+        }
+
+        // Check various insufficient material scenarios
+        for (const color of [Color.WHITE, Color.BLACK]) {
+            const colorPieces = pieces[color];
+
+            // King vs King
+            if (colorPieces.length === 1 && colorPieces[0] === PieceType.KING) {
+                const otherColor = color === Color.WHITE ? Color.BLACK : Color.WHITE;
+                const otherPieces = pieces[otherColor];
+                if (otherPieces.length === 1 && otherPieces[0] === PieceType.KING) {
+                    return true;
+                }
+                // King vs King + Bishop or Knight
+                if (otherPieces.length === 2 && otherPieces.includes(PieceType.KING) &&
+                    (otherPieces.includes(PieceType.BISHOP) || otherPieces.includes(PieceType.KNIGHT))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if the position is threefold repetition
+     * @returns {boolean} True if threefold repetition
+     */
+    isThreefoldRepetition() {
+        const currentFen = this.getFen().split(' ').slice(0, 4).join(' '); // Position only, ignore clocks
+        let count = 0;
+
+        for (const fen of this.positionHistory) {
+            const positionFen = fen.split(' ').slice(0, 4).join(' ');
+            if (positionFen === currentFen) {
+                count++;
+                if (count >= 3) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if the fifty-move rule applies
+     * @returns {boolean} True if fifty-move rule applies
+     */
+    isFiftyMoveRule() {
+        return this.halfmoveClock >= 100; // 50 moves = 100 half-moves
+    }
+
+    /**
+     * Checks if a draw can be claimed
+     * @returns {boolean} True if a draw can be claimed
+     */
+    canClaimDraw() {
+        return this.isThreefoldRepetition() || this.isFiftyMoveRule() || this.isInsufficientMaterial();
+    }
+
+    /**
+     * Gets the move history
+     * @returns {Array} Array of move objects
+     */
+    getMoveHistory() {
+        return [...this.moveHistory];
+    }
+
+    /**
+     * Gets the last move made
+     * @returns {Object|null} Last move object or null if no moves made
+     */
+    getLastMove() {
+        return this.moveHistory.length > 0 ? this.moveHistory[this.moveHistory.length - 1] : null;
+    }
+
+    /**
+     * Gets the current game result
+     * @returns {string} Game result from GameResult enum
+     */
+    getGameResult() {
+        if (this.isCheckmate()) {
+            return GameResult.CHECKMATE;
+        }
+        if (this.isStalemate()) {
+            return GameResult.STALEMATE;
+        }
+        if (this.isInsufficientMaterial()) {
+            return GameResult.INSUFFICIENT_MATERIAL;
+        }
+        return GameResult.ONGOING;
+    }
+
+    /**
+     * Gets the claimable draw result if any
+     * @returns {string|null} Draw result that can be claimed, or null if none
+     */
+    getClaimableDrawResult() {
+        if (this.isThreefoldRepetition()) {
+            return GameResult.THREEFOLD_REPETITION;
+        }
+        if (this.isFiftyMoveRule()) {
+            return GameResult.FIFTY_MOVE_RULE;
+        }
+        return null;
+    }
+
+    /**
+     * Gets the current variant being played
+     * @returns {string} Chess variant
+     */
+    getVariant() {
+        return this.variant;
+    }
+
+    /**
+     * Gets the active color (whose turn it is)
+     * @returns {string} Active color ('w' or 'b')
+     */
+    getActiveColor() {
+        return this.activeColor;
+    }
+
+    /**
+     * Gets the captured pieces for a specific color
+     * @param {string} color - Color to get captured pieces for
+     * @returns {string[]} Array of captured piece types
+     */
+    getCapturedPieces(color) {
+        return [...this.capturedPieces[color]];
+    }
+
+    /**
+     * Updates the move history with a list of moves in SAN notation.
+     * This is useful when loading a position from FEN and then receiving
+     * the move history for that game (e.g., when joining a FICS game in progress).
+     *
+     * @param {string[]} moves - Array of moves in SAN notation (e.g., ['e4', 'e5', 'Nf3'])
+     * @param {boolean} replace - If true, replaces existing move history. If false, appends to it. Default: false
+     * @returns {boolean} True if move history was updated successfully
+     * @example
+     * // Load a mid-game position
+     * board.loadFen('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2');
+     *
+     * // Add the moves that led to this position
+     * board.updateMoveHistory(['e4', 'e5']);
+     *
+     * // Now the move history reflects the actual game
+     * console.log(board.getMoveHistory()); // [{ san: 'e4', ... }, { san: 'e5', ... }]
+     */
+    updateMoveHistory(moves, replace = false) {
+        try {
+            // Validate input
+            if (!Array.isArray(moves)) {
+                console.error('updateMoveHistory: moves must be an array');
+                return false;
+            }
+
+            // If replacing, clear existing history
+            if (replace) {
+                this.moveHistory = [];
+                this.positionHistory = [this.getFen()];
+            }
+
+            // Add each move to the history
+            for (const moveStr of moves) {
+                if (typeof moveStr !== 'string' || moveStr.trim() === '') {
+                    console.warn(`updateMoveHistory: skipping invalid move: ${moveStr}`);
+                    continue;
+                }
+
+                // Create a move object with the SAN notation
+                // We don't have all the detailed information since we're just updating history
+                // but we include what we can determine
+                const move = this._createMoveObjectFromSan(moveStr.trim());
+                if (move) {
+                    this.moveHistory.push(move);
+                }
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error updating move history:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Validates a premove by checking if it could be a legal move after any opponent move.
+     *
+     * A premove is a move made when it's not the player's turn. It's valid if the move
+     * could be legal in at least one position that could result from any opponent move.
+     *
+     * This is more permissive than checking legality in the current position because:
+     * - The opponent might move a piece that's currently blocking the premove
+     * - The opponent might move a piece that's currently defending against the premove
+     * - The board state will change before the premove is executed
+     *
+     * Examples of valid premoves:
+     * - A knight move that's currently blocked but could become legal
+     * - A pawn capture that's not currently possible but could be after opponent moves
+     * - A piece move to a square currently occupied by an opponent piece that might move
+     *
+     * Examples of invalid premoves:
+     * - Moving a piece that doesn't exist
+     * - Moving a piece of the wrong color (premoves are for the inactive color)
+     * - Moves that violate basic piece movement patterns (e.g., rook moving diagonally)
+     * - Moves that would never be legal regardless of opponent moves
+     *
+     * @param {string} from - Starting square in algebraic notation (e.g., 'e2')
+     * @param {string} to - Ending square in algebraic notation (e.g., 'e4')
+     * @returns {boolean} True if the premove could be valid after any opponent move
+     * @example
+     * // White to move, black can make premoves
+     * board.isValidPremove('e7', 'e5'); // true - black pawn can move
+     * board.isValidPremove('g8', 'f6'); // true - black knight can move
+     * board.isValidPremove('e2', 'e4'); // false - white's turn, can't premove
+     */
+    isValidPremove(from, to) {
+        // Basic validation - piece must exist and belong to the player making the premove
+        const piece = this.getPiece(from);
+        if (!piece) {
+            return false;
+        }
+
+        // The piece must belong to the player who will move AFTER the opponent
+        // (i.e., the opposite of the current active color)
+        const premoveColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;
+        if (piece.color !== premoveColor) {
+            return false;
+        }
+
+        // Basic move validation - check if the piece can theoretically move to the target square
+        const fromCoords = this._algebraicToCoords(from);
+        const toCoords = this._algebraicToCoords(to);
+
+        if (!this._isPremovePatternValid(fromCoords.rank, fromCoords.file, toCoords.rank, toCoords.file, piece.type)) {
+            return false;
+        }
+
+        // Save current state
+        const originalFen = this.getFen();
+        const originalMoveHistory = [...this.moveHistory];
+        const originalPositionHistory = [...this.positionHistory];
+
+        try {
+            // Get all possible opponent moves
+            const opponentMoves = this.getLegalMoves();
+
+            // If opponent has no legal moves, premove is invalid
+            if (opponentMoves.length === 0) {
+                return false;
+            }
+
+            // Test if the premove could be valid after any opponent move
+            for (const opponentMove of opponentMoves) {
+                // Make the opponent move
+                if (this.makeMove(opponentMove.san)) {
+                    // Check if our premove would be legal now
+                    const ourLegalMoves = this.getLegalMoves(from);
+                    const isPremoveLegal = ourLegalMoves.some(move => move.to === to);
+
+                    // Restore position
+                    this.loadFen(originalFen);
+                    this.moveHistory = originalMoveHistory;
+                    this.positionHistory = originalPositionHistory;
+
+                    if (isPremoveLegal) {
+                        return true; // Premove is valid after this opponent move
+                    }
+                } else {
+                    // Restore position if move failed
+                    this.loadFen(originalFen);
+                    this.moveHistory = originalMoveHistory;
+                    this.positionHistory = originalPositionHistory;
+                }
+            }
+
+            return false; // Premove is not valid after any opponent move
+        } catch (error) {
+            // Restore position on error
+            this.loadFen(originalFen);
+            this.moveHistory = originalMoveHistory;
+            this.positionHistory = originalPositionHistory;
+            return false;
+        }
+    }
+
+    /**
+     * Creates an empty 8x8 board
+     * @returns {Array<Array<Object|null>>} Empty board array
+     * @private
+     */
+    _createEmptyBoard() {
+        const board = [];
+        for (let rank = 0; rank < 8; rank++) {
+            board[rank] = [];
+            for (let file = 0; file < 8; file++) {
+                board[rank][file] = null;
+            }
+        }
+        return board;
+    }
+
+    /**
+     * Sets up the starting position for the current variant
+     * @private
+     */
+    _setupStartingPosition() {
+        if (this.variant === Variant.CHESS960) {
+            this._setupChess960Position();
+        } else {
+            this._setupStandardPosition();
+        }
+    }
+
+    /**
+     * Sets up standard chess starting position
+     * @private
+     */
+    _setupStandardPosition() {
+        const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        this.loadFen(startFen);
+    }
+
+    /**
+     * Sets up Chess960 (Fischer Random) starting position
+     * @private
+     */
+    _setupChess960Position() {
+        // Generate random Chess960 position
+        const backRank = this._generateChess960BackRank();
+        this.chess960StartPosition = backRank;
+
+        // Clear the board first
+        this.board = this._createEmptyBoard();
+
+        // Set up pieces
+        for (let file = 0; file < 8; file++) {
+            // White pieces
+            this.board[0][file] = { type: backRank[file], color: Color.WHITE };
+            this.board[1][file] = { type: PieceType.PAWN, color: Color.WHITE };
+
+            // Black pieces
+            this.board[7][file] = { type: backRank[file], color: Color.BLACK };
+            this.board[6][file] = { type: PieceType.PAWN, color: Color.BLACK };
+        }
+
+        // Update castling rights based on king and rook positions
+        this._updateChess960CastlingRights();
+    }
+
+    /**
+     * Generates a valid Chess960 back rank arrangement
+     * @returns {string[]} Array of piece types for the back rank
+     * @private
+     */
+    _generateChess960BackRank() {
+        // For now, return a valid standard arrangement to avoid null errors
+        // A full Chess960 implementation would generate random valid positions
+        return ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'];
+    }
+
+    /**
+     * Updates castling rights for Chess960 based on piece positions
+     * @private
+     */
+    _updateChess960CastlingRights() {
+        // Find king and rook positions
+        const kingFile = this.chess960StartPosition.indexOf('k');
+        const rookFiles = [];
+
+        for (let i = 0; i < 8; i++) {
+            if (this.chess960StartPosition[i] === 'r') {
+                rookFiles.push(i);
+            }
+        }
+
+        // Set castling rights based on positions
+        this.castlingRights = {
+            K: rookFiles.some(f => f > kingFile),
+            Q: rookFiles.some(f => f < kingFile),
+            k: rookFiles.some(f => f > kingFile),
+            q: rookFiles.some(f => f < kingFile)
+        };
+    }
+
+    /**
+     * Converts algebraic notation to board coordinates
+     * @param {string} square - Square in algebraic notation (e.g., 'e4')
+     * @returns {Object} Object with rank and file properties
+     * @private
+     */
+    _algebraicToCoords(square) {
+        const file = square.charCodeAt(0) - 97; // 'a' = 0, 'b' = 1, etc.
+        const rank = parseInt(square[1]) - 1;   // '1' = 0, '2' = 1, etc.
+        return { rank, file };
+    }
+
+    /**
+     * Converts board coordinates to algebraic notation
+     * @param {number} rank - Rank (0-7)
+     * @param {number} file - File (0-7)
+     * @returns {string} Square in algebraic notation
+     * @private
+     */
+    _coordsToAlgebraic(rank, file) {
+        return String.fromCharCode(97 + file) + (rank + 1);
     }
 
     /**
@@ -1268,42 +1791,6 @@ export class ChessBoard {
             return this._canCastleKingside(this.activeColor);
         } else {
             return this._canCastleQueenside(this.activeColor);
-        }
-    }
-
-    /**
-     * Makes a move from Standard Algebraic Notation (SAN)
-     * @param {string} san - Move in SAN notation (e.g., 'e4', 'Nf3', 'O-O')
-     * @returns {boolean} True if the move was made successfully
-     */
-    makeMove(san) {
-        try {
-            // Basic validation - reject obviously invalid input
-            if (!san || typeof san !== 'string' || san.trim() === '') {
-                return false;
-            }
-
-            const move = this._parseFlexibleSan(san.trim());
-            if (!move) {
-                return false;
-            }
-
-            // Special validation for castling moves
-            if (move.castling) {
-                if (!this._isCastlingLegal(move.castling === 'kingside')) {
-                    return false;
-                }
-            }
-
-            // Validate that the move is actually legal
-            if (!this._isMoveLegal(move)) {
-                return false;
-            }
-
-            return this._executeMove(move);
-        } catch (error) {
-            console.error('Error making move:', error);
-            return false;
         }
     }
 
@@ -2502,106 +2989,7 @@ export class ChessBoard {
         return false;
     }
 
-    /**
-     * Validates a premove by checking if it could be a legal move after any opponent move.
-     *
-     * A premove is a move made when it's not the player's turn. It's valid if the move
-     * could be legal in at least one position that could result from any opponent move.
-     *
-     * This is more permissive than checking legality in the current position because:
-     * - The opponent might move a piece that's currently blocking the premove
-     * - The opponent might move a piece that's currently defending against the premove
-     * - The board state will change before the premove is executed
-     *
-     * Examples of valid premoves:
-     * - A knight move that's currently blocked but could become legal
-     * - A pawn capture that's not currently possible but could be after opponent moves
-     * - A piece move to a square currently occupied by an opponent piece that might move
-     *
-     * Examples of invalid premoves:
-     * - Moving a piece that doesn't exist
-     * - Moving a piece of the wrong color (premoves are for the inactive color)
-     * - Moves that violate basic piece movement patterns (e.g., rook moving diagonally)
-     * - Moves that would never be legal regardless of opponent moves
-     *
-     * @param {string} from - Starting square in algebraic notation (e.g., 'e2')
-     * @param {string} to - Ending square in algebraic notation (e.g., 'e4')
-     * @returns {boolean} True if the premove could be valid after any opponent move
-     * @example
-     * // White to move, black can make premoves
-     * board.isValidPremove('e7', 'e5'); // true - black pawn can move
-     * board.isValidPremove('g8', 'f6'); // true - black knight can move
-     * board.isValidPremove('e2', 'e4'); // false - white's turn, can't premove
-     */
-    isValidPremove(from, to) {
-        // Basic validation - piece must exist and belong to the player making the premove
-        const piece = this.getPiece(from);
-        if (!piece) {
-            return false;
-        }
 
-        // The piece must belong to the player who will move AFTER the opponent
-        // (i.e., the opposite of the current active color)
-        const premoveColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;
-        if (piece.color !== premoveColor) {
-            return false;
-        }
-
-        // Basic move validation - check if the piece can theoretically move to the target square
-        const fromCoords = this._algebraicToCoords(from);
-        const toCoords = this._algebraicToCoords(to);
-
-        if (!this._isPremovePatternValid(fromCoords.rank, fromCoords.file, toCoords.rank, toCoords.file, piece.type)) {
-            return false;
-        }
-
-        // Save current state
-        const originalFen = this.getFen();
-        const originalMoveHistory = [...this.moveHistory];
-        const originalPositionHistory = [...this.positionHistory];
-
-        try {
-            // Get all possible opponent moves
-            const opponentMoves = this.getLegalMoves();
-
-            // If opponent has no legal moves, premove is invalid
-            if (opponentMoves.length === 0) {
-                return false;
-            }
-
-            // Test if the premove could be valid after any opponent move
-            for (const opponentMove of opponentMoves) {
-                // Make the opponent move
-                if (this.makeMove(opponentMove.san)) {
-                    // Check if our premove would be legal now
-                    const ourLegalMoves = this.getLegalMoves(from);
-                    const isPremoveLegal = ourLegalMoves.some(move => move.to === to);
-
-                    // Restore position
-                    this.loadFen(originalFen);
-                    this.moveHistory = originalMoveHistory;
-                    this.positionHistory = originalPositionHistory;
-
-                    if (isPremoveLegal) {
-                        return true; // Premove is valid after this opponent move
-                    }
-                } else {
-                    // Restore position if move failed
-                    this.loadFen(originalFen);
-                    this.moveHistory = originalMoveHistory;
-                    this.positionHistory = originalPositionHistory;
-                }
-            }
-
-            return false; // Premove is not valid after any opponent move
-        } catch (error) {
-            // Restore position on error
-            this.loadFen(originalFen);
-            this.moveHistory = originalMoveHistory;
-            this.positionHistory = originalPositionHistory;
-            return false;
-        }
-    }
 
     /**
      * Checks if a premove follows valid piece movement patterns
@@ -2656,180 +3044,334 @@ export class ChessBoard {
     }
 
     /**
-     * Checks if the game is over
-     * @returns {boolean} True if the game is over
+     * Converts long algebraic notation to SAN notation
+     * @param {string} startAlgebraic - Starting square (e.g., 'e2')
+     * @param {string} endAlgebraic - Ending square (e.g., 'e4')
+     * @param {string|null} promotionPiece - Promotion piece or null
+     * @returns {string|null} SAN notation or null if invalid
+     * @private
      */
-    isGameOver() {
-        return this.isCheckmate() || this.isStalemate() ||
-               this.isInsufficientMaterial();
-    }
+    _longAlgebraicToSan(startAlgebraic, endAlgebraic, promotionPiece = null) {
+        try {
+            const piece = this.getPiece(startAlgebraic);
+            if (!piece) {
+                return null;
+            }
 
-    /**
-     * Checks if the current position is checkmate
-     * @returns {boolean} True if checkmate
-     */
-    isCheckmate() {
-        if (!this._isInCheck(this.activeColor)) {
-            return false;
+            const fromCoords = this._algebraicToCoords(startAlgebraic);
+            const toCoords = this._algebraicToCoords(endAlgebraic);
+            const targetPiece = this.getPiece(endAlgebraic);
+            const isCapture = targetPiece !== null;
+
+            // Handle en passant
+            let isEnPassant = false;
+            if (piece.type === PieceType.PAWN && !targetPiece &&
+                Math.abs(toCoords.file - fromCoords.file) === 1 &&
+                this.enPassantSquare === endAlgebraic) {
+                isEnPassant = true;
+            }
+
+            let san = '';
+
+            // Add piece symbol (except for pawns)
+            if (piece.type !== PieceType.PAWN) {
+                san += piece.type.toUpperCase();
+
+                // Add disambiguation if needed
+                const disambiguation = this._getDisambiguation(piece.type, startAlgebraic, endAlgebraic);
+                san += disambiguation;
+            } else if (isCapture || isEnPassant) {
+                // For pawn captures, add the file
+                san += startAlgebraic[0];
+            }
+
+            // Add capture symbol
+            if (isCapture || isEnPassant) {
+                san += 'x';
+            }
+
+            // Add destination square
+            san += endAlgebraic;
+
+            // Add promotion
+            if (promotionPiece) {
+                san += '=' + promotionPiece.toUpperCase();
+            }
+
+            // Check for check/checkmate after the move
+            const originalFen = this.getFen();
+            const originalMoveHistory = [...this.moveHistory];
+            const originalPositionHistory = [...this.positionHistory];
+
+            try {
+                // Temporarily make the move to check for check/checkmate
+                const moveObj = this._parseSan(san);
+                if (moveObj && this._executeMove(moveObj)) {
+                    const opponentColor = this.activeColor; // Now it's opponent's turn
+                    if (this._isInCheck(opponentColor)) {
+                        if (this.getLegalMoves().length === 0) {
+                            san += '#'; // Checkmate
+                        } else {
+                            san += '+'; // Check
+                        }
+                    }
+                }
+            } finally {
+                // Restore position
+                this.loadFen(originalFen);
+                this.moveHistory = originalMoveHistory;
+                this.positionHistory = originalPositionHistory;
+            }
+
+            return san;
+        } catch (error) {
+            return null;
         }
-
-        return this.getLegalMoves().length === 0;
     }
 
     /**
-     * Checks if the current position is stalemate
-     * @returns {boolean} True if stalemate
+     * Gets disambiguation string for a piece move
+     * @param {string} pieceType - Type of piece
+     * @param {string} startAlgebraic - Starting square
+     * @param {string} endAlgebraic - Ending square
+     * @returns {string} Disambiguation string
+     * @private
      */
-    isStalemate() {
-        if (this._isInCheck(this.activeColor)) {
-            return false;
-        }
+    _getDisambiguation(pieceType, startAlgebraic, endAlgebraic) {
+        // Find all pieces of the same type that can move to the same square
+        const candidates = [];
 
-        return this.getLegalMoves().length === 0;
-    }
-
-    /**
-     * Checks if there is insufficient material to checkmate
-     * @returns {boolean} True if insufficient material
-     */
-    isInsufficientMaterial() {
-        const pieces = { w: [], b: [] };
-
-        // Count pieces for each side
         for (let rank = 0; rank < 8; rank++) {
             for (let file = 0; file < 8; file++) {
-                const piece = this.board[rank][file];
-                if (piece) {
-                    pieces[piece.color].push(piece.type);
+                const square = this._coordsToAlgebraic(rank, file);
+                const piece = this.getPiece(square);
+
+                if (piece && piece.type === pieceType && piece.color === this.activeColor && square !== startAlgebraic) {
+                    // Check if this piece can also move to the target square
+                    const moves = this._generatePieceMoves(square, piece);
+                    if (moves.includes(this._moveToSan(rank, file, this._algebraicToCoords(endAlgebraic).rank, this._algebraicToCoords(endAlgebraic).file))) {
+                        candidates.push(square);
+                    }
                 }
             }
         }
 
-        // Remove kings from count
-        pieces.w = pieces.w.filter(p => p !== PieceType.KING);
-        pieces.b = pieces.b.filter(p => p !== PieceType.KING);
-
-        // King vs King
-        if (pieces.w.length === 0 && pieces.b.length === 0) {
-            return true;
+        if (candidates.length === 0) {
+            return ''; // No disambiguation needed
         }
 
-        // King and Bishop vs King or King and Knight vs King
-        if ((pieces.w.length === 1 && pieces.b.length === 0) ||
-            (pieces.w.length === 0 && pieces.b.length === 1)) {
-            const singlePiece = pieces.w.length === 1 ? pieces.w[0] : pieces.b[0];
-            return singlePiece === PieceType.BISHOP || singlePiece === PieceType.KNIGHT;
+        const startFile = startAlgebraic[0];
+        const startRank = startAlgebraic[1];
+
+        // Check if file disambiguation is sufficient
+        const sameFile = candidates.filter(square => square[0] === startFile);
+        if (sameFile.length === 0) {
+            return startFile;
         }
 
-        // King and Bishop vs King and Bishop (same color squares)
-        if (pieces.w.length === 1 && pieces.b.length === 1 &&
-            pieces.w[0] === PieceType.BISHOP && pieces.b[0] === PieceType.BISHOP) {
-            // This would require checking if bishops are on same color squares
-            // Simplified implementation returns false for now
-            return false;
+        // Check if rank disambiguation is sufficient
+        const sameRank = candidates.filter(square => square[1] === startRank);
+        if (sameRank.length === 0) {
+            return startRank;
         }
 
-        return false;
+        // Need full square disambiguation
+        return startAlgebraic;
     }
 
     /**
-     * Checks if the current position has occurred three times
-     * @returns {boolean} True if threefold repetition
+     * Creates a move object from SAN notation for move history purposes
+     * This is a simplified version that doesn't validate the move, just parses the notation
+     * @param {string} san - Move in SAN notation
+     * @returns {Object|null} Move object or null if parsing fails
+     * @private
      */
-    isThreefoldRepetition() {
-        const currentFen = this.getFen().split(' ').slice(0, 4).join(' '); // Only position, not move counters
-        let count = 0;
+    _createMoveObjectFromSan(san) {
+        try {
+            // Basic move object structure
+            const move = {
+                san: san,
+                piece: null,
+                from: null,
+                to: null,
+                captured: null,
+                promotion: null,
+                check: false,
+                checkmate: false,
+                castling: null,
+                enPassant: false,
+                drop: false
+            };
 
-        for (const fen of this.positionHistory) {
-            const positionFen = fen.split(' ').slice(0, 4).join(' ');
-            if (positionFen === currentFen) {
-                count++;
-                if (count >= 3) {
-                    return true;
+            // Remove check/checkmate indicators
+            let cleanSan = san.replace(/[+#]$/, '');
+            move.check = san.includes('+');
+            move.checkmate = san.includes('#');
+
+            // Handle castling
+            if (cleanSan === 'O-O' || cleanSan === 'o-o') {
+                move.castling = 'kingside';
+                move.piece = { type: PieceType.KING, color: null }; // Color unknown from SAN alone
+                return move;
+            }
+            if (cleanSan === 'O-O-O' || cleanSan === 'o-o-o') {
+                move.castling = 'queenside';
+                move.piece = { type: PieceType.KING, color: null };
+                return move;
+            }
+
+            // Handle drops (Crazyhouse)
+            if (cleanSan.includes('@')) {
+                const dropMatch = cleanSan.match(/^([PNBRQK])@([a-h][1-8])$/);
+                if (dropMatch) {
+                    move.drop = true;
+                    move.piece = { type: dropMatch[1].toLowerCase(), color: null };
+                    move.to = dropMatch[2];
+                    return move;
+                }
+            }
+
+            // Handle promotion
+            let promotionPiece = null;
+            const promotionMatch = cleanSan.match(/=([QRBN])$/);
+            if (promotionMatch) {
+                promotionPiece = promotionMatch[1].toLowerCase();
+                cleanSan = cleanSan.replace(/=([QRBN])$/, '');
+                move.promotion = promotionPiece;
+            }
+
+            // Parse regular moves
+            const moveMatch = cleanSan.match(/^([NBRQK]?)([a-h]?[1-8]?)x?([a-h][1-8])$/);
+            if (moveMatch) {
+                const pieceChar = moveMatch[1] || 'p'; // Default to pawn if no piece specified
+                const disambiguation = moveMatch[2];
+                const targetSquare = moveMatch[3];
+
+                move.piece = { type: pieceChar.toLowerCase(), color: null };
+                move.to = targetSquare;
+                move.captured = cleanSan.includes('x') ? { type: null, color: null } : null;
+
+                // Try to determine from square from disambiguation
+                if (disambiguation) {
+                    if (disambiguation.length === 2) {
+                        // Full square specified
+                        move.from = disambiguation;
+                    } else if (disambiguation.match(/[a-h]/)) {
+                        // File specified
+                        move.from = disambiguation + '?'; // Partial information
+                    } else if (disambiguation.match(/[1-8]/)) {
+                        // Rank specified
+                        move.from = '?' + disambiguation; // Partial information
+                    }
+                }
+
+                return move;
+            }
+
+            // If we can't parse it, return a basic move object
+            console.warn(`Could not fully parse SAN: ${san}`);
+            return {
+                san: san,
+                piece: null,
+                from: null,
+                to: null,
+                captured: null,
+                promotion: null,
+                check: move.check,
+                checkmate: move.checkmate,
+                castling: null,
+                enPassant: false,
+                drop: false
+            };
+        } catch (error) {
+            console.error(`Error parsing SAN ${san}:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * Resets the board to the starting position for the current variant
+     * @private
+     */
+    _resetToStartingPosition() {
+        // Load the appropriate starting position based on variant
+        if (this.variant === Variant.CHESS960) {
+            // For Chess960, we need to restore the original starting position
+            // This is stored when the board is first created
+            if (this.chess960StartingFen) {
+                this.loadFen(this.chess960StartingFen);
+            } else {
+                this.loadFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            }
+        } else {
+            this.loadFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+        }
+
+        // Clear move and position history
+        this.moveHistory = [];
+        this.positionHistory = [this.getFen()];
+
+        // Reset captured pieces for Crazyhouse
+        if (this.variant === Variant.CRAZYHOUSE) {
+            this.capturedPieces = {
+                [Color.WHITE]: [],
+                [Color.BLACK]: []
+            };
+        }
+    }
+
+    /**
+     * Rebuilds the board state by replaying all moves from the starting position
+     * @private
+     */
+    _rebuildBoardFromMoveHistory() {
+        // Save the current move history
+        const movesToReplay = [...this.moveHistory];
+
+        // Reset to starting position
+        this._resetToStartingPosition();
+
+        // Replay all moves
+        for (const move of movesToReplay) {
+            this.makeMove(move.san);
+        }
+    }
+
+    /**
+     * Rebuilds the captured pieces state for Crazyhouse by replaying all moves
+     * @private
+     */
+    _rebuildCapturedPiecesState() {
+        if (this.variant !== Variant.CRAZYHOUSE) {
+            return;
+        }
+
+        // Reset captured pieces
+        this.capturedPieces = {
+            [Color.WHITE]: [],
+            [Color.BLACK]: []
+        };
+
+        // Create a temporary board to replay moves
+        const tempBoard = new ChessBoard(this.variant);
+
+        // Replay all moves to rebuild captured pieces state
+        for (const move of this.moveHistory) {
+            if (move.captured) {
+                // Add captured piece to the capturing player's pieces
+                const capturedPieceType = move.captured.promoted ? PieceType.PAWN : move.captured.type;
+                this.capturedPieces[move.piece.color].push(capturedPieceType);
+            }
+
+            if (move.drop) {
+                // Remove dropped piece from captured pieces
+                const droppedPieceType = move.piece.type;
+                const index = this.capturedPieces[move.piece.color].indexOf(droppedPieceType);
+                if (index !== -1) {
+                    this.capturedPieces[move.piece.color].splice(index, 1);
                 }
             }
         }
-
-        return false;
-    }
-
-    /**
-     * Checks if the fifty-move rule can be claimed
-     * @returns {boolean} True if fifty moves have passed without a pawn move or capture
-     */
-    isFiftyMoveRule() {
-        return this.halfmoveClock >= 100;
-    }
-
-    /**
-     * Checks if a draw can be claimed (threefold repetition or fifty-move rule)
-     * @returns {boolean} True if a draw can be claimed
-     */
-    canClaimDraw() {
-        return this.isThreefoldRepetition() || this.isFiftyMoveRule();
-    }
-
-    /**
-     * Gets the move history
-     * @returns {Array} Array of move objects
-     */
-    getMoveHistory() {
-        return [...this.moveHistory];
-    }
-
-    /**
-     * Gets the last move played
-     * @returns {Object|null} Last move object or null if no moves
-     */
-    getLastMove() {
-        return this.moveHistory.length > 0 ? this.moveHistory[this.moveHistory.length - 1] : null;
-    }
-
-    /**
-     * Gets the current game result
-     * @returns {string} Game result from GameResult enum
-     */
-    getGameResult() {
-        if (this.isCheckmate()) {
-            return GameResult.CHECKMATE;
-        }
-        if (this.isStalemate()) {
-            return GameResult.STALEMATE;
-        }
-        if (this.isInsufficientMaterial()) {
-            return GameResult.INSUFFICIENT_MATERIAL;
-        }
-        return GameResult.ONGOING;
-    }
-
-    /**
-     * Gets the claimable draw result if any
-     * @returns {string|null} Draw result that can be claimed, or null if none
-     */
-    getClaimableDrawResult() {
-        if (this.isThreefoldRepetition()) {
-            return GameResult.THREEFOLD_REPETITION;
-        }
-        if (this.isFiftyMoveRule()) {
-            return GameResult.FIFTY_MOVE_RULE;
-        }
-        return null;
-    }
-
-    /**
-     * Gets the current variant being played
-     * @returns {string} Chess variant
-     */
-    getVariant() {
-        return this.variant;
-    }
-
-    /**
-     * Gets the active color (whose turn it is)
-     * @returns {string} Active color ('w' or 'b')
-     */
-    getActiveColor() {
-        return this.activeColor;
     }
 }
 
