@@ -7,11 +7,130 @@
  */
 
 /**
+ * Represents a chess move with all relevant information
+ */
+class Move {
+    /**
+     * Creates a new Move instance
+     * @param {string} san - Standard Algebraic Notation for the move
+     * @param {string} from - Starting square in algebraic notation (e.g., 'e2')
+     * @param {string} to - Ending square in algebraic notation (e.g., 'e4')
+     * @param {Object|null} capturedPiece - The piece that was captured, if any
+     * @param {string|null} promotion - Promotion piece type if this is a promotion move
+     * @param {boolean} isEnPassant - Whether this is an en passant capture
+     * @param {boolean} isCastling - Whether this is a castling move
+     * @param {string|null} castlingSide - 'kingside' or 'queenside' if castling
+     */
+    constructor(san, from, to, capturedPiece = null, promotion = null, isEnPassant = false, isCastling = false, castlingSide = null) {
+        this.san = san;
+        this.from = from;
+        this.to = to;
+        this.capturedPiece = capturedPiece;
+        this.promotion = promotion;
+        this.isEnPassant = isEnPassant;
+        this.isCastling = isCastling;
+        this.castlingSide = castlingSide;
+    }
+
+    /**
+     * Returns whether this move is a capture
+     * @returns {boolean} True if this move captures a piece
+     */
+    isCapture() {
+        return this.capturedPiece !== null || this.isEnPassant;
+    }
+
+    /**
+     * Returns whether this move is a promotion
+     * @returns {boolean} True if this move promotes a pawn
+     */
+    isPromotion() {
+        return this.promotion !== null;
+    }
+
+    /**
+     * Returns a string representation of the move
+     * @returns {string} The SAN notation of the move
+     */
+    toString() {
+        return this.san;
+    }
+
+    /**
+     * Returns a detailed string representation of the move
+     * @returns {string} Detailed move information
+     */
+    toDetailedString() {
+        let details = `${this.san} (${this.from}-${this.to})`;
+
+        if (this.isCapture()) {
+            if (this.isEnPassant) {
+                details += ' [en passant]';
+            } else if (this.capturedPiece) {
+                details += ` [captures ${this.capturedPiece.type}]`;
+            }
+        }
+
+        if (this.isPromotion()) {
+            details += ` [promotes to ${this.promotion}]`;
+        }
+
+        if (this.isCastling) {
+            details += ` [${this.castlingSide} castling]`;
+        }
+
+        return details;
+    }
+
+    /**
+     * Creates a Move object from a simple move object
+     * @param {Object} moveObj - Simple move object with from, to, etc.
+     * @param {string} san - SAN notation for the move
+     * @param {Object|null} capturedPiece - Captured piece if any
+     * @returns {Move} New Move instance
+     */
+    static fromMoveObject(moveObj, san, capturedPiece = null) {
+        return new Move(
+            san,
+            moveObj.from,
+            moveObj.to,
+            capturedPiece,
+            moveObj.promotion || null,
+            moveObj.isEnPassant || false,
+            moveObj.castling !== undefined,
+            moveObj.castling || null
+        );
+    }
+
+    /**
+     * Creates a castling Move object
+     * @param {string} side - 'kingside' or 'queenside'
+     * @param {string} color - 'white' or 'black'
+     * @returns {Move} New castling Move instance
+     */
+    static createCastlingMove(side, color) {
+        const san = side === 'kingside' ? 'O-O' : 'O-O-O';
+        const isWhite = color === 'white';
+
+        let from, to;
+        if (side === 'kingside') {
+            from = isWhite ? 'e1' : 'e8';
+            to = isWhite ? 'g1' : 'g8';
+        } else {
+            from = isWhite ? 'e1' : 'e8';
+            to = isWhite ? 'c1' : 'c8';
+        }
+
+        return new Move(san, from, to, null, null, false, true, side);
+    }
+}
+
+/**
  * Chess piece types
  * @readonly
  * @enum {string}
  */
-const PieceType = {
+export const PieceType = {
     PAWN: 'p',
     ROOK: 'r',
     KNIGHT: 'n',
@@ -25,7 +144,7 @@ const PieceType = {
  * @readonly
  * @enum {string}
  */
-const Color = {
+export const Color = {
     WHITE: 'w',
     BLACK: 'b'
 };
@@ -35,7 +154,7 @@ const Color = {
  * @readonly
  * @enum {string}
  */
-const Variant = {
+export const Variant = {
     STANDARD: 'standard',
     LOSERS: 'losers',
     SUICIDE: 'suicide',
@@ -49,7 +168,7 @@ const Variant = {
  * @readonly
  * @enum {string}
  */
-const GameResult = {
+export const GameResult = {
     ONGOING: 'ongoing',
     CHECKMATE: 'checkmate',
     STALEMATE: 'stalemate',
@@ -353,7 +472,7 @@ export class ChessBoard {
     /**
      * Generates all legal moves for the current position
      * @param {string|null} square - Optional square to get moves for specific piece
-     * @returns {string[]} Array of legal moves in SAN notation
+     * @returns {Move[]} Array of legal Move objects
      */
     getLegalMoves(square = null) {
         const moves = [];
@@ -362,7 +481,7 @@ export class ChessBoard {
             // Get moves for specific piece
             const piece = this.getPiece(square);
             if (piece && piece.color === this.activeColor) {
-                const pieceMoves = this._generatePieceMoves(square, piece);
+                const pieceMoves = this._generatePieceMoveObjects(square, piece);
                 moves.push(...pieceMoves);
             }
         } else {
@@ -372,7 +491,7 @@ export class ChessBoard {
                     const piece = this.board[rank][file];
                     if (piece && piece.color === this.activeColor) {
                         const square = this._coordsToAlgebraic(rank, file);
-                        const pieceMoves = this._generatePieceMoves(square, piece);
+                        const pieceMoves = this._generatePieceMoveObjects(square, piece);
                         moves.push(...pieceMoves);
                     }
                 }
@@ -380,7 +499,7 @@ export class ChessBoard {
         }
 
         // Filter out illegal moves (moves that leave king in check)
-        return moves.filter(move => this._isLegalMove(move));
+        return moves.filter(move => this._isLegalMove(move.san));
     }
 
     /**
@@ -406,6 +525,34 @@ export class ChessBoard {
                 return this._generateQueenMoves(rank, file, piece.color);
             case PieceType.KING:
                 return this._generateKingMoves(rank, file, piece.color);
+            default:
+                return [];
+        }
+    }
+
+    /**
+     * Generates pseudo-legal Move objects for a specific piece
+     * @param {string} square - Square of the piece
+     * @param {Object} piece - Piece object
+     * @returns {Move[]} Array of pseudo-legal Move objects
+     * @private
+     */
+    _generatePieceMoveObjects(square, piece) {
+        const { rank, file } = this._algebraicToCoords(square);
+
+        switch (piece.type) {
+            case PieceType.PAWN:
+                return this._generatePawnMoveObjects(rank, file, piece.color);
+            case PieceType.ROOK:
+                return this._generateRookMoveObjects(rank, file, piece.color);
+            case PieceType.KNIGHT:
+                return this._generateKnightMoveObjects(rank, file, piece.color);
+            case PieceType.BISHOP:
+                return this._generateBishopMoveObjects(rank, file, piece.color);
+            case PieceType.QUEEN:
+                return this._generateQueenMoveObjects(rank, file, piece.color);
+            case PieceType.KING:
+                return this._generateKingMoveObjects(rank, file, piece.color);
             default:
                 return [];
         }
@@ -463,6 +610,84 @@ export class ChessBoard {
                     // En passant capture
                     if (!targetPiece && this.enPassantSquare === this._coordsToAlgebraic(captureRank, captureFile)) {
                         moves.push(this._moveToSan(rank, file, captureRank, captureFile));
+                    }
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    /**
+     * Generates pawn Move objects
+     * @param {number} rank - Current rank
+     * @param {number} file - Current file
+     * @param {string} color - Piece color
+     * @returns {Move[]} Array of Move objects
+     * @private
+     */
+    _generatePawnMoveObjects(rank, file, color) {
+        const moves = [];
+        const direction = color === Color.WHITE ? 1 : -1;
+        const startRank = color === Color.WHITE ? 1 : 6;
+        const promotionRank = color === Color.WHITE ? 7 : 0;
+        const fromSquare = this._coordsToAlgebraic(rank, file);
+
+        // Forward moves
+        const oneSquareForward = rank + direction;
+        if (oneSquareForward >= 0 && oneSquareForward < 8 && !this.board[oneSquareForward][file]) {
+            const toSquare = this._coordsToAlgebraic(oneSquareForward, file);
+
+            if (oneSquareForward === promotionRank) {
+                // Promotion
+                const promotionPieces = ['q', 'r', 'b', 'n'];
+                for (const piece of promotionPieces) {
+                    const san = this._moveToSan(rank, file, oneSquareForward, file, piece);
+                    moves.push(new Move(san, fromSquare, toSquare, null, piece));
+                }
+            } else {
+                const san = this._moveToSan(rank, file, oneSquareForward, file);
+                moves.push(new Move(san, fromSquare, toSquare));
+            }
+
+            // Two squares forward from starting position
+            if (rank === startRank) {
+                const twoSquaresForward = rank + 2 * direction;
+                if (!this.board[twoSquaresForward][file]) {
+                    const toSquare2 = this._coordsToAlgebraic(twoSquaresForward, file);
+                    const san = this._moveToSan(rank, file, twoSquaresForward, file);
+                    moves.push(new Move(san, fromSquare, toSquare2));
+                }
+            }
+        }
+
+        // Captures
+        for (const captureFile of [file - 1, file + 1]) {
+            if (captureFile >= 0 && captureFile < 8) {
+                const captureRank = rank + direction;
+                if (captureRank >= 0 && captureRank < 8) {
+                    const targetPiece = this.board[captureRank][captureFile];
+                    const toSquare = this._coordsToAlgebraic(captureRank, captureFile);
+
+                    // Regular capture
+                    if (targetPiece && targetPiece.color !== color) {
+                        if (captureRank === promotionRank) {
+                            const promotionPieces = ['q', 'r', 'b', 'n'];
+                            for (const piece of promotionPieces) {
+                                const san = this._moveToSan(rank, file, captureRank, captureFile, piece);
+                                moves.push(new Move(san, fromSquare, toSquare, targetPiece, piece));
+                            }
+                        } else {
+                            const san = this._moveToSan(rank, file, captureRank, captureFile);
+                            moves.push(new Move(san, fromSquare, toSquare, targetPiece));
+                        }
+                    }
+
+                    // En passant capture
+                    if (!targetPiece && this.enPassantSquare === toSquare) {
+                        const san = this._moveToSan(rank, file, captureRank, captureFile);
+                        const capturedPawn = { type: PieceType.PAWN, color: color === Color.WHITE ? Color.BLACK : Color.WHITE };
+                        moves.push(new Move(san, fromSquare, toSquare, capturedPawn, null, true));
                     }
                 }
             }
@@ -668,6 +893,207 @@ export class ChessBoard {
             if (this._canCastleQueenside(color)) {
                 moves.push('O-O-O');
             }
+        }
+
+        return moves;
+    }
+
+    /**
+     * Generates rook Move objects
+     * @param {number} rank - Current rank
+     * @param {number} file - Current file
+     * @param {string} color - Piece color
+     * @returns {Move[]} Array of Move objects
+     * @private
+     */
+    _generateRookMoveObjects(rank, file, color) {
+        const moves = [];
+        const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        const fromSquare = this._coordsToAlgebraic(rank, file);
+
+        for (const [rankDir, fileDir] of directions) {
+            for (let i = 1; i < 8; i++) {
+                const newRank = rank + i * rankDir;
+                const newFile = file + i * fileDir;
+
+                if (newRank < 0 || newRank >= 8 || newFile < 0 || newFile >= 8) {
+                    break;
+                }
+
+                const targetPiece = this.board[newRank][newFile];
+                const toSquare = this._coordsToAlgebraic(newRank, newFile);
+
+                if (!targetPiece) {
+                    const san = this._moveToSan(rank, file, newRank, newFile);
+                    moves.push(new Move(san, fromSquare, toSquare));
+                } else {
+                    if (targetPiece.color !== color) {
+                        const san = this._moveToSan(rank, file, newRank, newFile);
+                        moves.push(new Move(san, fromSquare, toSquare, targetPiece));
+                    }
+                    break;
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    /**
+     * Generates knight Move objects
+     * @param {number} rank - Current rank
+     * @param {number} file - Current file
+     * @param {string} color - Piece color
+     * @returns {Move[]} Array of Move objects
+     * @private
+     */
+    _generateKnightMoveObjects(rank, file, color) {
+        const moves = [];
+        const knightMoves = [
+            [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+            [1, -2], [1, 2], [2, -1], [2, 1]
+        ];
+        const fromSquare = this._coordsToAlgebraic(rank, file);
+
+        for (const [rankOffset, fileOffset] of knightMoves) {
+            const newRank = rank + rankOffset;
+            const newFile = file + fileOffset;
+
+            if (newRank >= 0 && newRank < 8 && newFile >= 0 && newFile < 8) {
+                const targetPiece = this.board[newRank][newFile];
+                const toSquare = this._coordsToAlgebraic(newRank, newFile);
+
+                if (!targetPiece || targetPiece.color !== color) {
+                    const san = this._moveToSan(rank, file, newRank, newFile);
+                    moves.push(new Move(san, fromSquare, toSquare, targetPiece));
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    /**
+     * Generates bishop Move objects
+     * @param {number} rank - Current rank
+     * @param {number} file - Current file
+     * @param {string} color - Piece color
+     * @returns {Move[]} Array of Move objects
+     * @private
+     */
+    _generateBishopMoveObjects(rank, file, color) {
+        const moves = [];
+        const directions = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+        const fromSquare = this._coordsToAlgebraic(rank, file);
+
+        for (const [rankDir, fileDir] of directions) {
+            for (let i = 1; i < 8; i++) {
+                const newRank = rank + i * rankDir;
+                const newFile = file + i * fileDir;
+
+                if (newRank < 0 || newRank >= 8 || newFile < 0 || newFile >= 8) {
+                    break;
+                }
+
+                const targetPiece = this.board[newRank][newFile];
+                const toSquare = this._coordsToAlgebraic(newRank, newFile);
+
+                if (!targetPiece) {
+                    const san = this._moveToSan(rank, file, newRank, newFile);
+                    moves.push(new Move(san, fromSquare, toSquare));
+                } else {
+                    if (targetPiece.color !== color) {
+                        const san = this._moveToSan(rank, file, newRank, newFile);
+                        moves.push(new Move(san, fromSquare, toSquare, targetPiece));
+                    }
+                    break;
+                }
+            }
+        }
+
+        return moves;
+    }
+
+    /**
+     * Generates queen Move objects (combination of rook and bishop)
+     * @param {number} rank - Current rank
+     * @param {number} file - Current file
+     * @param {string} color - Piece color
+     * @returns {Move[]} Array of Move objects
+     * @private
+     */
+    _generateQueenMoveObjects(rank, file, color) {
+        return [
+            ...this._generateRookMoveObjects(rank, file, color),
+            ...this._generateBishopMoveObjects(rank, file, color)
+        ];
+    }
+
+    /**
+     * Generates king Move objects
+     * @param {number} rank - Current rank
+     * @param {number} file - Current file
+     * @param {string} color - Piece color
+     * @returns {Move[]} Array of Move objects
+     * @private
+     */
+    _generateKingMoveObjects(rank, file, color) {
+        const moves = [];
+        const kingMoves = [
+            [-1, -1], [-1, 0], [-1, 1],
+            [0, -1],           [0, 1],
+            [1, -1],  [1, 0],  [1, 1]
+        ];
+        const fromSquare = this._coordsToAlgebraic(rank, file);
+
+        for (const [rankOffset, fileOffset] of kingMoves) {
+            const newRank = rank + rankOffset;
+            const newFile = file + fileOffset;
+
+            if (newRank >= 0 && newRank < 8 && newFile >= 0 && newFile < 8) {
+                const targetPiece = this.board[newRank][newFile];
+                const toSquare = this._coordsToAlgebraic(newRank, newFile);
+
+                if (!targetPiece || targetPiece.color !== color) {
+                    const san = this._moveToSan(rank, file, newRank, newFile);
+                    moves.push(new Move(san, fromSquare, toSquare, targetPiece));
+                }
+            }
+        }
+
+        // Add castling moves
+        moves.push(...this._generateCastlingMoveObjects(rank, file, color));
+
+        return moves;
+    }
+
+    /**
+     * Generates castling Move objects
+     * @param {number} rank - King's current rank
+     * @param {number} file - King's current file
+     * @param {string} color - King's color
+     * @returns {Move[]} Array of castling Move objects
+     * @private
+     */
+    _generateCastlingMoveObjects(rank, file, color) {
+        const moves = [];
+
+        if (this._isInCheck(color)) {
+            return moves; // Cannot castle when in check
+        }
+
+        const kingside = color === Color.WHITE ? 'K' : 'k';
+        const queenside = color === Color.WHITE ? 'Q' : 'q';
+        const colorName = color === Color.WHITE ? 'white' : 'black';
+
+        // Kingside castling
+        if (this.castlingRights[kingside] && this._canCastleKingside(color)) {
+            moves.push(Move.createCastlingMove('kingside', colorName));
+        }
+
+        // Queenside castling
+        if (this.castlingRights[queenside] && this._canCastleQueenside(color)) {
+            moves.push(Move.createCastlingMove('queenside', colorName));
         }
 
         return moves;
@@ -1673,6 +2099,11 @@ export class ChessBoard {
             fen: this.getFen()
         });
 
+        // Handle captured pieces for Crazyhouse
+        if (capturedPiece && this.variant === Variant.CRAZYHOUSE) {
+            this._addCapturedPiece(capturedPiece);
+        }
+
         // Handle special moves
         if (move.castling) {
             this._executeCastling(move.castling);
@@ -1684,11 +2115,19 @@ export class ChessBoard {
             // Handle promotion
             if (move.promotion) {
                 this.board[toRank][toFile].type = move.promotion;
+                this.board[toRank][toFile].promoted = true; // Mark as promoted for Crazyhouse
             }
 
             // Handle en passant capture
             if (movingPiece.type === PieceType.PAWN && this.enPassantSquare && move.to === this.enPassantSquare) {
                 const captureRank = this.activeColor === Color.WHITE ? toRank - 1 : toRank + 1;
+                const enPassantCapturedPiece = this.board[captureRank][toFile];
+
+                // Add captured pawn to captured pieces for Crazyhouse
+                if (enPassantCapturedPiece && this.variant === Variant.CRAZYHOUSE) {
+                    this._addCapturedPiece(enPassantCapturedPiece);
+                }
+
                 this.board[captureRank][toFile] = null;
                 // Mark this as a capture for move history
                 move.capture = true;
@@ -1697,7 +2136,7 @@ export class ChessBoard {
             }
 
             // Handle atomic chess explosions
-            if (this.variant === 'atomic' && capturedPiece) {
+            if (this.variant === Variant.ATOMIC && capturedPiece) {
                 this._handleAtomicExplosion(toRank, toFile);
             }
         }
@@ -1728,6 +2167,14 @@ export class ChessBoard {
         if (this.board[toRank][toFile] !== null) {
             return false;
         }
+
+        // Check if the player has this piece available to drop
+        if (!this._hasCapturedPiece(piece, this.activeColor)) {
+            return false;
+        }
+
+        // Remove the piece from captured pieces
+        this._removeCapturedPiece(piece, this.activeColor);
 
         // Place the piece
         this.board[toRank][toFile] = {
@@ -1857,6 +2304,69 @@ export class ChessBoard {
         if (this.activeColor === Color.BLACK) {
             this.fullmoveNumber++;
         }
+    }
+
+    /**
+     * Adds a captured piece to the captured pieces list for Crazyhouse
+     * @param {Object} piece - The captured piece
+     * @private
+     */
+    _addCapturedPiece(piece) {
+        if (this.variant !== Variant.CRAZYHOUSE) {
+            return;
+        }
+
+        // In Crazyhouse, captured pieces change color and can be dropped by the capturing player
+        const capturingColor = this.activeColor;
+        let pieceType = piece.type;
+
+        // Promoted pieces revert to pawns when captured
+        if (piece.promoted) {
+            pieceType = PieceType.PAWN;
+        }
+
+        this.capturedPieces[capturingColor].push(pieceType);
+    }
+
+    /**
+     * Checks if a player has a specific captured piece available to drop
+     * @param {string} pieceType - Type of piece to check
+     * @param {string} color - Color of the player
+     * @returns {boolean} True if the piece is available
+     * @private
+     */
+    _hasCapturedPiece(pieceType, color) {
+        if (this.variant !== Variant.CRAZYHOUSE) {
+            return false;
+        }
+
+        return this.capturedPieces[color].includes(pieceType);
+    }
+
+    /**
+     * Removes a captured piece from the captured pieces list when dropped
+     * @param {string} pieceType - Type of piece to remove
+     * @param {string} color - Color of the player
+     * @private
+     */
+    _removeCapturedPiece(pieceType, color) {
+        if (this.variant !== Variant.CRAZYHOUSE) {
+            return;
+        }
+
+        const index = this.capturedPieces[color].indexOf(pieceType);
+        if (index !== -1) {
+            this.capturedPieces[color].splice(index, 1);
+        }
+    }
+
+    /**
+     * Gets the captured pieces for a specific color
+     * @param {string} color - Color to get captured pieces for
+     * @returns {string[]} Array of captured piece types
+     */
+    getCapturedPieces(color) {
+        return [...this.capturedPieces[color]];
     }
 
     /**
@@ -1993,19 +2503,156 @@ export class ChessBoard {
     }
 
     /**
-     * Validates a premove by checking if it's a valid move from start to end squares
-     * @param {string} from - Starting square in algebraic notation
-     * @param {string} to - Ending square in algebraic notation
-     * @returns {boolean} True if the premove is valid
+     * Validates a premove by checking if it could be a legal move after any opponent move.
+     *
+     * A premove is a move made when it's not the player's turn. It's valid if the move
+     * could be legal in at least one position that could result from any opponent move.
+     *
+     * This is more permissive than checking legality in the current position because:
+     * - The opponent might move a piece that's currently blocking the premove
+     * - The opponent might move a piece that's currently defending against the premove
+     * - The board state will change before the premove is executed
+     *
+     * Examples of valid premoves:
+     * - A knight move that's currently blocked but could become legal
+     * - A pawn capture that's not currently possible but could be after opponent moves
+     * - A piece move to a square currently occupied by an opponent piece that might move
+     *
+     * Examples of invalid premoves:
+     * - Moving a piece that doesn't exist
+     * - Moving a piece of the wrong color (premoves are for the inactive color)
+     * - Moves that violate basic piece movement patterns (e.g., rook moving diagonally)
+     * - Moves that would never be legal regardless of opponent moves
+     *
+     * @param {string} from - Starting square in algebraic notation (e.g., 'e2')
+     * @param {string} to - Ending square in algebraic notation (e.g., 'e4')
+     * @returns {boolean} True if the premove could be valid after any opponent move
+     * @example
+     * // White to move, black can make premoves
+     * board.isValidPremove('e7', 'e5'); // true - black pawn can move
+     * board.isValidPremove('g8', 'f6'); // true - black knight can move
+     * board.isValidPremove('e2', 'e4'); // false - white's turn, can't premove
      */
     isValidPremove(from, to) {
+        // Basic validation - piece must exist and belong to the player making the premove
         const piece = this.getPiece(from);
-        if (!piece || piece.color !== this.activeColor) {
+        if (!piece) {
             return false;
         }
 
-        const legalMoves = this.getLegalMoves(from);
-        return legalMoves.some(move => move.includes(to));
+        // The piece must belong to the player who will move AFTER the opponent
+        // (i.e., the opposite of the current active color)
+        const premoveColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;
+        if (piece.color !== premoveColor) {
+            return false;
+        }
+
+        // Basic move validation - check if the piece can theoretically move to the target square
+        const fromCoords = this._algebraicToCoords(from);
+        const toCoords = this._algebraicToCoords(to);
+
+        if (!this._isPremovePatternValid(fromCoords.rank, fromCoords.file, toCoords.rank, toCoords.file, piece.type)) {
+            return false;
+        }
+
+        // Save current state
+        const originalFen = this.getFen();
+        const originalMoveHistory = [...this.moveHistory];
+        const originalPositionHistory = [...this.positionHistory];
+
+        try {
+            // Get all possible opponent moves
+            const opponentMoves = this.getLegalMoves();
+
+            // If opponent has no legal moves, premove is invalid
+            if (opponentMoves.length === 0) {
+                return false;
+            }
+
+            // Test if the premove could be valid after any opponent move
+            for (const opponentMove of opponentMoves) {
+                // Make the opponent move
+                if (this.makeMove(opponentMove.san)) {
+                    // Check if our premove would be legal now
+                    const ourLegalMoves = this.getLegalMoves(from);
+                    const isPremoveLegal = ourLegalMoves.some(move => move.to === to);
+
+                    // Restore position
+                    this.loadFen(originalFen);
+                    this.moveHistory = originalMoveHistory;
+                    this.positionHistory = originalPositionHistory;
+
+                    if (isPremoveLegal) {
+                        return true; // Premove is valid after this opponent move
+                    }
+                } else {
+                    // Restore position if move failed
+                    this.loadFen(originalFen);
+                    this.moveHistory = originalMoveHistory;
+                    this.positionHistory = originalPositionHistory;
+                }
+            }
+
+            return false; // Premove is not valid after any opponent move
+        } catch (error) {
+            // Restore position on error
+            this.loadFen(originalFen);
+            this.moveHistory = originalMoveHistory;
+            this.positionHistory = originalPositionHistory;
+            return false;
+        }
+    }
+
+    /**
+     * Checks if a premove follows valid piece movement patterns
+     * This is a basic check before testing against actual positions
+     * @param {number} fromRank - Source rank
+     * @param {number} fromFile - Source file
+     * @param {number} toRank - Target rank
+     * @param {number} toFile - Target file
+     * @param {string} pieceType - Type of piece making the move
+     * @returns {boolean} True if the move pattern is theoretically valid for the piece
+     * @private
+     */
+    _isPremovePatternValid(fromRank, fromFile, toRank, toFile, pieceType) {
+        // Can't move to same square
+        if (fromRank === toRank && fromFile === toFile) {
+            return false;
+        }
+
+        const rankDiff = Math.abs(toRank - fromRank);
+        const fileDiff = Math.abs(toFile - fromFile);
+
+        switch (pieceType) {
+            case PieceType.PAWN:
+                // Pawns can move forward 1-2 squares or capture diagonally
+                // This is a basic pattern check - actual legality depends on board state
+                return (fileDiff <= 1 && rankDiff <= 2);
+
+            case PieceType.ROOK:
+                // Rooks move in straight lines
+                return (rankDiff === 0 || fileDiff === 0);
+
+            case PieceType.KNIGHT:
+                // Knights move in L-shape
+                return (rankDiff === 2 && fileDiff === 1) || (rankDiff === 1 && fileDiff === 2);
+
+            case PieceType.BISHOP:
+                // Bishops move diagonally
+                return rankDiff === fileDiff;
+
+            case PieceType.QUEEN:
+                // Queens combine rook and bishop movement
+                return (rankDiff === 0 || fileDiff === 0 || rankDiff === fileDiff);
+
+            case PieceType.KING:
+                // Kings move one square in any direction, or castle
+                return (rankDiff <= 1 && fileDiff <= 1) ||
+                       (rankDiff === 0 && fileDiff === 2); // Castling
+
+            default:
+                return false;
+        }
     }
 
     /**
@@ -2185,3 +2832,6 @@ export class ChessBoard {
         return this.activeColor;
     }
 }
+
+// Export the Move class along with ChessBoard
+export { Move };

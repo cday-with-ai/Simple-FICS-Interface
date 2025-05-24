@@ -3,7 +3,7 @@
  * Tests all chess variants and functionality
  */
 
-import { ChessBoard } from '../scripts/ChessBoard.js';
+import { ChessBoard, Move } from '../scripts/ChessBoard.js';
 
 describe('ChessBoard', () => {
     let board;
@@ -74,26 +74,103 @@ describe('ChessBoard', () => {
         it('should generate legal moves for starting position', () => {
             const moves = board.getLegalMoves();
             expect(moves.length).toBe(20); // 16 pawn moves + 4 knight moves
-            expect(moves).toContain('e4');
-            expect(moves).toContain('Nf3');
-            expect(moves).toContain('a3');
+
+            // Check that moves are Move objects
+            expect(moves[0].constructor.name).toBe('Move');
+
+            // Check for specific moves by SAN
+            const sanMoves = moves.map(move => move.san);
+            expect(sanMoves).toContain('e4');
+            expect(sanMoves).toContain('Nf3');
+            expect(sanMoves).toContain('a3');
+
+            // Check move properties
+            const e4Move = moves.find(move => move.san === 'e4');
+            expect(e4Move.from).toBe('e2');
+            expect(e4Move.to).toBe('e4');
+            expect(e4Move.capturedPiece).toBeNull();
+            expect(e4Move.isCapture()).toBe(false);
         });
 
         it('should generate moves for specific pieces', () => {
             const pawnMoves = board.getLegalMoves('e2');
-            expect(pawnMoves).toContain('e3');
-            expect(pawnMoves).toContain('e4');
+            const pawnSanMoves = pawnMoves.map(move => move.san);
+            expect(pawnSanMoves).toContain('e3');
+            expect(pawnSanMoves).toContain('e4');
             expect(pawnMoves.length).toBe(2);
 
             const knightMoves = board.getLegalMoves('g1');
-            expect(knightMoves).toContain('Nf3');
-            expect(knightMoves).toContain('Nh3');
+            const knightSanMoves = knightMoves.map(move => move.san);
+            expect(knightSanMoves).toContain('Nf3');
+            expect(knightSanMoves).toContain('Nh3');
             expect(knightMoves.length).toBe(2);
+
+            // Check move properties
+            const nf3Move = knightMoves.find(move => move.san === 'Nf3');
+            expect(nf3Move.from).toBe('g1');
+            expect(nf3Move.to).toBe('f3');
         });
 
         it('should not generate moves for opponent pieces', () => {
             const blackPawnMoves = board.getLegalMoves('e7');
             expect(blackPawnMoves.length).toBe(0); // White to move
+        });
+
+        it('should generate Move objects with capture information', () => {
+            // Set up a position with a capture available - white pawn can capture black pawn
+            board.loadFen('rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2');
+
+            const moves = board.getLegalMoves();
+            const captureMoves = moves.filter(move => move.isCapture());
+
+            // Should have at least one capture move (exd5)
+            expect(captureMoves.length).toBeGreaterThan(0);
+
+            // Find the specific capture move
+            const exd5Move = captureMoves.find(move => move.san === 'exd5');
+            expect(exd5Move).toBeDefined();
+            expect(exd5Move.isCapture()).toBe(true);
+            expect(exd5Move.capturedPiece).not.toBeNull();
+            expect(exd5Move.capturedPiece.type).toBe('p');
+            expect(exd5Move.capturedPiece.color).toBe('b');
+        });
+
+        it('should generate Move objects with promotion information', () => {
+            // Set up a position where promotion is possible
+            board.loadFen('8/P7/8/8/8/8/8/8 w - - 0 1');
+
+            const moves = board.getLegalMoves();
+            const promotionMoves = moves.filter(move => move.isPromotion());
+
+            expect(promotionMoves.length).toBe(4); // Q, R, B, N promotions
+
+            const queenPromotion = promotionMoves.find(move => move.promotion === 'q');
+            expect(queenPromotion).toBeDefined();
+            expect(queenPromotion.from).toBe('a7');
+            expect(queenPromotion.to).toBe('a8');
+            expect(queenPromotion.san).toBe('a8=Q');
+        });
+
+        it('should generate castling Move objects', () => {
+            // Set up a position where castling is possible for white (it's white's turn)
+            board.loadFen('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+
+            const moves = board.getLegalMoves();
+            const castlingMoves = moves.filter(move => move.isCastling);
+
+            expect(castlingMoves.length).toBe(2); // Kingside and queenside for white
+
+            const kingsideCastling = castlingMoves.find(move => move.san === 'O-O');
+            expect(kingsideCastling).toBeDefined();
+            expect(kingsideCastling.from).toBe('e1');
+            expect(kingsideCastling.to).toBe('g1');
+            expect(kingsideCastling.castlingSide).toBe('kingside');
+
+            const queensideCastling = castlingMoves.find(move => move.san === 'O-O-O');
+            expect(queensideCastling).toBeDefined();
+            expect(queensideCastling.from).toBe('e1');
+            expect(queensideCastling.to).toBe('c1');
+            expect(queensideCastling.castlingSide).toBe('queenside');
         });
     });
 
@@ -173,7 +250,7 @@ describe('ChessBoard', () => {
         it('should handle pawn promotion', () => {
             board.loadFen('8/P7/8/8/8/8/8/8 w - - 0 1');
             expect(board.makeMove('a8=Q')).toBe(true);
-            expect(board.getPiece('a8')).toEqual({ type: 'q', color: 'w' });
+            expect(board.getPiece('a8')).toEqual({ type: 'q', color: 'w', promoted: true });
         });
 
         it('should handle promotion to different pieces', () => {
@@ -181,7 +258,7 @@ describe('ChessBoard', () => {
             pieces.forEach(piece => {
                 board.loadFen('8/P7/8/8/8/8/8/8 w - - 0 1');
                 expect(board.makeMove(`a8=${piece}`)).toBe(true);
-                expect(board.getPiece('a8')).toEqual({ type: piece.toLowerCase(), color: 'w' });
+                expect(board.getPiece('a8')).toEqual({ type: piece.toLowerCase(), color: 'w', promoted: true });
             });
         });
     });
@@ -273,15 +350,64 @@ describe('ChessBoard', () => {
     });
 
     describe('Premove Validation', () => {
-        it('should validate legal premoves', () => {
-            expect(board.isValidPremove('e2', 'e4')).toBe(true);
-            expect(board.isValidPremove('g1', 'f3')).toBe(true);
+        it('should validate legal premoves for the inactive color', () => {
+            // White to move, so black can make premoves
+            expect(board.isValidPremove('e7', 'e5')).toBe(true); // Black pawn move
+            expect(board.isValidPremove('g8', 'f6')).toBe(true); // Black knight move
+            expect(board.isValidPremove('d7', 'd6')).toBe(true); // Black pawn move
         });
 
-        it('should reject illegal premoves', () => {
-            expect(board.isValidPremove('e2', 'e5')).toBe(false); // Can't jump over pieces
-            expect(board.isValidPremove('e1', 'e2')).toBe(false); // King blocked
-            expect(board.isValidPremove('e7', 'e5')).toBe(false); // Wrong color
+        it('should reject premoves for the active color', () => {
+            // White to move, so white cannot make premoves
+            expect(board.isValidPremove('e2', 'e4')).toBe(false); // White's turn
+            expect(board.isValidPremove('g1', 'f3')).toBe(false); // White's turn
+        });
+
+        it('should reject invalid piece movement patterns', () => {
+            // Invalid moves regardless of position
+            expect(board.isValidPremove('e7', 'e4')).toBe(false); // Pawn can't move 3 squares
+            expect(board.isValidPremove('g8', 'e5')).toBe(false); // Knight invalid move
+            expect(board.isValidPremove('a8', 'h1')).toBe(false); // Rook can't move diagonally
+        });
+
+        it('should validate premoves that become legal after opponent moves', () => {
+            // Set up a position where a premove becomes valid after opponent moves
+            board.loadFen('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2');
+
+            // White to move, black can premove
+            // Black bishop on f8 can potentially move to c5 after white moves
+            expect(board.isValidPremove('f8', 'c5')).toBe(true);
+
+            // Black knight can potentially move to various squares
+            expect(board.isValidPremove('g8', 'f6')).toBe(true);
+            expect(board.isValidPremove('b8', 'c6')).toBe(true);
+        });
+
+        it('should handle premoves in complex positions', () => {
+            // Set up a more complex position
+            board.loadFen('r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 4 4');
+
+            // White to move, black can make premoves
+            // Black can potentially capture the bishop on c4
+            expect(board.isValidPremove('f6', 'e4')).toBe(true); // Knight can potentially move
+            expect(board.isValidPremove('d7', 'd6')).toBe(true); // Pawn move
+        });
+
+        it('should reject premoves when piece does not exist', () => {
+            expect(board.isValidPremove('e4', 'e5')).toBe(false); // No piece on e4
+            expect(board.isValidPremove('d4', 'd5')).toBe(false); // No piece on d4
+        });
+
+        it('should work correctly when switching turns', () => {
+            // Make a white move, now black is active and white can premove
+            board.makeMove('e4');
+
+            // Now black to move, white can make premoves
+            expect(board.isValidPremove('g1', 'f3')).toBe(true); // White knight
+            expect(board.isValidPremove('f1', 'c4')).toBe(true); // White bishop
+
+            // Black cannot make premoves (it's their turn)
+            expect(board.isValidPremove('e7', 'e5')).toBe(false);
         });
     });
 
@@ -582,46 +708,124 @@ describe('ChessBoard', () => {
             it('should play a crazyhouse game with piece drops', () => {
                 board = new ChessBoard('crazyhouse');
 
-                // Simple Crazyhouse game demonstrating captures and drops
-                const moves = [
-                    'e4', 'e5', 'Nf3', 'Nc6', 'Nxe5', 'Nxe5', 'P@f6', 'Ng6',
-                    'N@d5', 'Bc5', 'Nxc7+', 'Qxc7', 'Q@d5', 'Qc6', 'Qxc5', 'Qxc5'
-                ];
+                // Very simple test - just verify basic capture and drop functionality
+                // 1. Make opening moves
+                expect(board.makeMove('e4')).toBe(true);
+                expect(board.makeMove('d5')).toBe(true);
 
-                moves.forEach((move, index) => {
-                    const result = board.makeMove(move);
-                    expect(result).toBe(true, `Crazyhouse Move ${index + 1}: ${move} should be legal`);
-                });
+                // 2. White captures black pawn (white gets pawn)
+                expect(board.makeMove('exd5')).toBe(true);
+                expect(board.getCapturedPieces('w')).toContain('p');
+
+                // 3. Black makes a move
+                expect(board.makeMove('Nf6')).toBe(true);
+
+                // 4. White drops captured pawn
+                expect(board.makeMove('P@e6')).toBe(true);
+                expect(board.getCapturedPieces('w')).not.toContain('p'); // Pawn used
 
                 expect(board.getVariant()).toBe('crazyhouse');
-                expect(board.getMoveHistory().length).toBe(moves.length);
 
-                // Check that some moves were drops (moves with @ symbol)
+                // Check that drop was recorded
                 const moveHistory = board.getMoveHistory();
                 const dropMoves = moveHistory.filter(move => move.san && move.san.includes('@'));
-                expect(dropMoves.length).toBeGreaterThan(0);
+                expect(dropMoves.length).toBe(1); // P@e6
             });
 
             it('should handle simple piece drops', () => {
                 board = new ChessBoard('crazyhouse');
 
-                // Simple game with early drops
-                const moves = [
-                    'e4', 'e5', 'Nf3', 'Nc6', 'Nxe5', 'Nxe5', 'P@f6', 'Ng6',
-                    'N@d5', 'Bc5', 'Nxc7+', 'Qxc7', 'Q@d5', 'Qc6', 'Qxc5', 'Qxc5'
-                ];
+                // Another simple test with knight capture
+                // 1. Opening moves
+                expect(board.makeMove('Nf3')).toBe(true);
+                expect(board.makeMove('Nc6')).toBe(true);
+                expect(board.makeMove('e4')).toBe(true);
+                expect(board.makeMove('e5')).toBe(true);
 
-                moves.forEach((move, index) => {
-                    const result = board.makeMove(move);
-                    expect(result).toBe(true, `Simple Crazyhouse Move ${index + 1}: ${move} should be legal`);
-                });
+                // 2. White captures black pawn (white gets pawn)
+                expect(board.makeMove('Nxe5')).toBe(true);
+                expect(board.getCapturedPieces('w')).toContain('p');
+
+                // 3. Black captures white knight (black gets knight)
+                expect(board.makeMove('Nxe5')).toBe(true);
+                expect(board.getCapturedPieces('b')).toContain('n');
+
+                // 4. White drops captured pawn
+                expect(board.makeMove('P@f6')).toBe(true);
+                expect(board.getCapturedPieces('w')).not.toContain('p');
+
+                // 5. Black knight moves
+                expect(board.makeMove('Ng6')).toBe(true);
+
+                // 6. White makes normal move
+                expect(board.makeMove('d4')).toBe(true);
+
+                // 7. Black drops captured knight
+                expect(board.makeMove('N@e2+')).toBe(true);
+                expect(board.getCapturedPieces('b')).not.toContain('n');
 
                 expect(board.getVariant()).toBe('crazyhouse');
 
                 // Verify drops were recorded
                 const moveHistory = board.getMoveHistory();
                 const dropMoves = moveHistory.filter(move => move.san.includes('@'));
-                expect(dropMoves.length).toBeGreaterThan(0);
+                expect(dropMoves.length).toBe(2); // P@f6 and N@e2+
+            });
+
+            it('should track captured pieces correctly', () => {
+                board = new ChessBoard('crazyhouse');
+
+                // Initially no captured pieces
+                expect(board.getCapturedPieces('w')).toEqual([]);
+                expect(board.getCapturedPieces('b')).toEqual([]);
+
+                // Make some moves leading to captures
+                board.makeMove('e4');
+                board.makeMove('e5');
+                board.makeMove('Nf3');
+                board.makeMove('Nc6');
+
+                // White captures black pawn
+                board.makeMove('Nxe5');
+
+                // White should now have a captured pawn
+                const whiteCaptured = board.getCapturedPieces('w');
+                expect(whiteCaptured).toContain('p');
+                expect(whiteCaptured.length).toBe(1);
+
+                // Black captures white knight
+                board.makeMove('Nxe5');
+
+                // Black should now have a captured knight
+                const blackCaptured = board.getCapturedPieces('b');
+                expect(blackCaptured).toContain('n');
+                expect(blackCaptured.length).toBe(1);
+
+                // Test piece drops
+                board.makeMove('P@f6'); // White drops captured pawn
+
+                // White should no longer have the pawn
+                const whiteAfterDrop = board.getCapturedPieces('w');
+                expect(whiteAfterDrop).not.toContain('p');
+                expect(whiteAfterDrop.length).toBe(0);
+            });
+
+            it('should handle promoted pieces correctly when captured', () => {
+                board = new ChessBoard('crazyhouse');
+
+                // Set up a position where a pawn can promote and then be captured
+                board.loadFen('8/P7/8/8/8/8/8/r7 w - - 0 1');
+
+                // Promote pawn to queen
+                board.makeMove('a8=Q');
+
+                // Black captures the promoted queen with rook
+                board.makeMove('Rxa8');
+
+                // The captured promoted piece should revert to a pawn
+                const blackCaptured = board.getCapturedPieces('b');
+                expect(blackCaptured).toContain('p'); // Should be pawn, not queen
+                expect(blackCaptured).not.toContain('q');
             });
         });
 
@@ -722,14 +926,14 @@ describe('ChessBoard', () => {
                 });
 
                 // Check that all promotions were successful
-                expect(board.getPiece('a8')).toEqual({ type: 'q', color: 'w' });
-                expect(board.getPiece('a1')).toEqual({ type: 'q', color: 'b' });
-                expect(board.getPiece('c8')).toEqual({ type: 'r', color: 'w' });
-                expect(board.getPiece('c1')).toEqual({ type: 'r', color: 'b' });
-                expect(board.getPiece('e8')).toEqual({ type: 'b', color: 'w' });
-                expect(board.getPiece('e1')).toEqual({ type: 'b', color: 'b' });
-                expect(board.getPiece('g8')).toEqual({ type: 'n', color: 'w' });
-                expect(board.getPiece('g1')).toEqual({ type: 'n', color: 'b' });
+                expect(board.getPiece('a8')).toEqual({ type: 'q', color: 'w', promoted: true });
+                expect(board.getPiece('a1')).toEqual({ type: 'q', color: 'b', promoted: true });
+                expect(board.getPiece('c8')).toEqual({ type: 'r', color: 'w', promoted: true });
+                expect(board.getPiece('c1')).toEqual({ type: 'r', color: 'b', promoted: true });
+                expect(board.getPiece('e8')).toEqual({ type: 'b', color: 'w', promoted: true });
+                expect(board.getPiece('e1')).toEqual({ type: 'b', color: 'b', promoted: true });
+                expect(board.getPiece('g8')).toEqual({ type: 'n', color: 'w', promoted: true });
+                expect(board.getPiece('g1')).toEqual({ type: 'n', color: 'b', promoted: true });
             });
 
             it('should handle en passant in complex positions', () => {
