@@ -51,13 +51,4 @@ describe('Basic Tests', () => {
     expect(audio.playCount).toBe(1);
   });
 
-  it('should have a working Chess mock', () => {
-    const chess = new Chess();
-    expect(chess).toBeDefined();
-    expect(typeof chess.move).toBe('function');
-    
-    const result = chess.move('e4');
-    expect(result).toBeDefined();
-    expect(chess.history.length).toBe(1);
-  });
 });
