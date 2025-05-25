@@ -992,7 +992,7 @@ function lastMoveToStartEndAlgebraic() {
  * @param endSquareAlgebraic The ending algebraic square, 'e4', for example.
  * @param isDragging True if dragging, false if click-click move.
  */
-function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
+export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     if (isDragging && !gameState.draggedPiece) {
         return false;
     }
@@ -1690,6 +1690,9 @@ function updateMoveListWithLastMove() {
  * Unselects all moves in the move list.
  */
 function unselectMoveInMoveList() {
+    // Check if movesListDisplayElement exists before using it
+    if (!movesListDisplayElement) return;
+
     // Remove highlight from all moves
     const allMoves = movesListDisplayElement.querySelectorAll('.move-san');
     allMoves.forEach(move => {
@@ -1740,23 +1743,15 @@ export function jumpToMove(moveNumber, color) {
 
         const targetFen = currentGameState.chessBoard.getFenBeforeHalfmove(positionIndex);
 
-        console.log('DEBUG jumpToMove positionIndex:', positionIndex);
-        console.log('DEBUG jumpToMove targetFen:', targetFen);
-
         if (targetFen) {
             // Update the board position
             currentGameState.fen = targetFen;
-            console.log('DEBUG jumpToMove updated gameState.fen to:', targetFen);
 
             // Update UI - call functions directly
-            console.log('DEBUG jumpToMove calling updateBoardGraphicsAndSquareListeners');
             updateBoardGraphicsAndSquareListeners(false);
-
-            console.log('DEBUG jumpToMove calling updateBoardBottomLabels');
             updateBoardBottomLabels();
 
             // Highlight the selected move in the moves list
-            console.log('DEBUG jumpToMove calling highlightSelectedMoveInternal');
             highlightSelectedMoveInternal(moveNumber, color);
         } else {
             console.warn(`No FEN found for move ${moveNumber}${color === 'w' ? '' : '...'}`);
@@ -1774,32 +1769,21 @@ export function jumpToFirstMove() {
     // Use window.gameState for compatibility with tests
     const currentGameState = window.gameState || gameState;
 
-    console.log('DEBUG jumpToFirstMove called');
-    console.log('DEBUG currentGameState.chessBoard:', currentGameState.chessBoard);
-    console.log('DEBUG move history length:', currentGameState.chessBoard ? currentGameState.chessBoard.getMoveHistory().length : 'no chessBoard');
-
     if (!currentGameState.chessBoard || currentGameState.chessBoard.getMoveHistory().length === 0) {
-        console.log('DEBUG jumpToFirstMove exiting early - no chessBoard or empty move history');
         return;
     }
 
     // Get the starting position (before any moves)
     const startingFen = currentGameState.chessBoard.getFenBeforeHalfmove(0);
-    console.log('DEBUG jumpToFirstMove startingFen:', startingFen);
 
     if (startingFen) {
         currentGameState.fen = startingFen;
-        console.log('DEBUG jumpToFirstMove updated gameState.fen to:', startingFen);
 
         // Update UI - call functions directly
-        console.log('DEBUG jumpToFirstMove calling updateBoardGraphicsAndSquareListeners');
         updateBoardGraphicsAndSquareListeners(false);
-
-        console.log('DEBUG jumpToFirstMove calling updateBoardBottomLabels');
         updateBoardBottomLabels();
 
         // Clear any move highlighting since we're at the starting position
-        console.log('DEBUG jumpToFirstMove calling unselectMoveInMoveList');
         unselectMoveInMoveList();
     } else {
         console.warn('No starting position found in position history');
@@ -1813,38 +1797,26 @@ export function jumpToLastMove() {
     // Use window.gameState for compatibility with tests
     const currentGameState = window.gameState || gameState;
 
-    console.log('DEBUG jumpToLastMove called');
-    console.log('DEBUG currentGameState.chessBoard:', currentGameState.chessBoard);
-    console.log('DEBUG move history length:', currentGameState.chessBoard ? currentGameState.chessBoard.getMoveHistory().length : 'no chessBoard');
-
     if (!currentGameState.chessBoard || currentGameState.chessBoard.getMoveHistory().length === 0) {
-        console.log('DEBUG jumpToLastMove exiting early - no chessBoard or empty move history');
         return;
     }
 
     // Get the current position (after all moves)
     const currentFen = currentGameState.chessBoard.getFen();
     currentGameState.fen = currentFen;
-    console.log('DEBUG jumpToLastMove updated gameState.fen to:', currentFen);
 
     // Update UI - call functions directly
-    console.log('DEBUG jumpToLastMove calling updateBoardGraphicsAndSquareListeners');
     updateBoardGraphicsAndSquareListeners(false);
-
-    console.log('DEBUG jumpToLastMove calling updateBoardBottomLabels');
     updateBoardBottomLabels();
 
     // Highlight the last move
     const moveHistory = currentGameState.chessBoard.getMoveHistory();
     const lastMoveIndex = moveHistory.length - 1;
-    console.log('DEBUG jumpToLastMove lastMoveIndex:', lastMoveIndex);
 
     if (lastMoveIndex >= 0) {
         const moveNumber = Math.floor(lastMoveIndex / 2) + 1;
         const color = lastMoveIndex % 2 === 0 ? 'w' : 'b';
-        console.log('DEBUG jumpToLastMove highlighting move:', moveNumber, color);
 
-        console.log('DEBUG jumpToLastMove calling highlightSelectedMoveInternal');
         highlightSelectedMoveInternal(moveNumber, color);
     }
 }
@@ -2140,7 +2112,11 @@ function updateBoardBottomLabels() {
             `Last move: ${gameState.moveNumber} ${convertToUnicodeChessPieces(gameState.lastMovePretty)}` :
             `Last move: ${gameState.moveNumber - 1}...${convertToUnicodeChessPieces(gameState.lastMovePretty)}`;
     }
-    lastMoveLabelElement.innerText = lastMoveLabelText;
+
+    // Only update if the element exists
+    if (lastMoveLabelElement) {
+        lastMoveLabelElement.innerText = lastMoveLabelText;
+    }
 }
 
 function setupMainChessBoardDisplay() {
@@ -2441,7 +2417,7 @@ function setupMainChessBoardDisplay() {
     updateBoardGraphicsAndSquareListeners(); // Initial draw
 }
 
-function flipBoard() {
+export function flipBoard() {
     gameState.isFlipped = !gameState.isFlipped;
 
     // IMPORTANT!

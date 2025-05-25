@@ -5,7 +5,8 @@ A minimalist FICS interface which focuses on easy game play and chat functionali
 
 Currently, under construction. See the Road Map below for the current state.
 
-Functionality (Working functionality):
+**Functionality** (Working functionality):
+- Variants: Chess 960, Losers, Suicide, Atomic, Classic, Wild/*.
 - Clean chess board UI with minimal distractions.
 - LED looking clocks.
 - Move animations.
@@ -21,32 +22,28 @@ Functionality (Working functionality):
 - Preferences/Username/Pwd saved in local storage.
 - ECO/Opening description lookup based on moves made.
 - Fast and efficient, written in ES6.
+- Client side move validation for all variants and premove.
 
-Road Map (Current phase PRE-ALPHA):
-- ALPHA:
-  - Change UI for perspectives, examine, observe, playing, playing end.
-    - Add auto draw, resign buttons for playing.
-    - Add analysis mode when playing end or observing.
-  - Add stockfish 17 web-assembly. Add an analysis mode when playing end or observing.
-  - Preferences:
-    - Expand preferences a bit (not too much).
+**Road Map** (Current phase PRE-ALPHA):
+**ALPHA:**
   - Regression testing.
     - When the board is flipped, it is not adjusting for the next game.
     - Fix the move list not populating bugs.
     - Test all functionality.
-- BETA:
-  - Use AI to create a move validation API.
-  - Automaticly keep track of moves and times per move.
-  - Handle premove validation.
-  - Handle move validation.
-  - Handle crazyhouse, suicide, losers, chess960, atomic.
-  - Handle pieces in hand, for crazyhouse.
-  - Add crazyhouse support.
+    
+**BETA:**
+- Crazyhouse support.
+- Add stockfish 17 web-assembly. Add an analysis mode when playing end or observing.
+Change UI for perspectives, examine, observe, playing, playing end.
+- Add auto draw, resign buttons for playing.
+- Add analysis mode when playing end or observing.
+- Preferences:
+  - Expand preferences a bit (not too much).
 - 1.0: (For phone/tablet support. Added after everything is in place)
   - More changes for Responsive web design that work on mobile and tablets. (Last after features are added.)
     - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
 
 
-Not planned at this time. Let me know if you would like it added:
+*Not planned at this time.* Let me know if you would like it added:
 - Bughouse support.
 - Viewing multiple boards at once.

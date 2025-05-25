@@ -148,7 +148,7 @@ function routeMessage(msg) {
     handleLoginProcess(msg);
     handleFicsSessionStart(msg);
 
-    handleNewGame(msg);
+    handleNewGame(msg); //Playing and Obsing.
     msg = handleStyle12Message(msg);
     handleGameEnd(msg);
     handleIllegalMove(msg);
@@ -341,9 +341,18 @@ function handleChannelTell(msg) {
     return isMainConsoleMessage
 }
 
+/**
+ * Handle new game messages for both observing and playing games.
+ * @param msg The message.
+ * @returns {boolean} True if a new game message was found and processed.
+ */
 function handleNewGame(msg) {
     const containsGameStart = msg.indexOf("Game ");
-    if (containsGameStart === 0 || msg.charAt(containsGameStart - 1) === '\n') {
+    if (containsGameStart === 0 || msg.charAt(containsGameStart - 1) === '\n') { // Observing a game (not playing).
+        //You are now observing game 1.
+        //Game 1: ArasanX (2783) exeComp (2722) rated standard 16 3
+        //
+        //fics%
         const gameStartIndex = containsGameStart;
         const gameEndIndex = msg.indexOf("\n", gameStartIndex + 6);
         const gameLine = msg.substring(gameStartIndex, gameEndIndex);
@@ -362,6 +371,44 @@ function handleNewGame(msg) {
             const increment = parseInt(match[9], 10);
             onNewGame(gameNum, whiteName, whiteRating, blackName, blackRating, isRated, gameType, minutes, increment);
             return true;
+        }
+    } else { //Player is creating a new game
+        //Creating: GuestRTNW (++++) cacanita (++++) unrated blitz 2 12
+        //{Game 51 (GuestRTNW vs. cacanita) Creating unrated blitz match.}
+        //
+        //
+        //Game 51: A disconnection will be considered a forfeit.
+        //fics%
+        const creatingStart = msg.indexOf("Creating: ");
+        if (creatingStart == 0 || creatingStart - 1 === '\n') {
+            const creatingEnd = msg.indexOf("\n", creatingStart + 10);
+            const gameStart = msg.indexOf("{Game ", creatingEnd + 1);
+            const gameEnd = msg.indexOf("\n", gameStart + 6);
+
+            if (creatingEnd === -1 || gameStart === -1 || gameEnd === -1) {
+                return false;
+            }
+
+            const creatingLine = msg.substring(creatingStart, creatingEnd);
+            const gameLine = msg.substring(gameStart, gameEnd);
+
+            const creatingMatch = creatingLine.match(/^Creating: ([a-zA-Z0-9]+) \(([0-9+-]+)\) ([a-zA-Z0-9]+) \(([0-9+-]+)\) (rated|unrated) ([a-zA-Z0-9]+) (\d+) (\d+)$/);
+            const gameMatch = gameLine.match(/^{Game (\d+) \(([a-zA-Z0-9]+) vs. ([a-zA-Z0-9]+)\) (.*)}$/);
+
+            if (creatingMatch && gameMatch) {
+                playSound('start');
+                const gameNum = parseInt(gameMatch[1], 10);
+                const whiteName = creatingMatch[1];
+                const whiteRating = creatingMatch[2];
+                const blackName = creatingMatch[3];
+                const blackRating = creatingMatch[4];
+                const isRated = creatingMatch[5] === 'rated';
+                const gameType = creatingMatch[6];
+                const minutes = parseInt(creatingMatch[7], 10);
+                const increment = parseInt(creatingMatch[8], 10);
+                onNewGame(gameNum, whiteName, whiteRating, blackName, blackRating, isRated, gameType, minutes, increment);
+                return true;
+            }
         }
     }
     return false;
@@ -455,6 +502,11 @@ function handleGameEnd(msg) {
     return false;
 }
 
+/**
+ * Handle draw offers
+ * @param msg The msg.
+ * @returns {boolean} True if draw offer, false otherwise.
+ */
 function handleDraw(msg) {
     //GuestBGBB offers you a draw.
     const drawIndex = regexIndexOf(msg, /[a-zA-Z0-9]+ offers you a draw[.]/);
