@@ -17,7 +17,7 @@ Currently, under construction. See the Road Map below for the current state.
 - resizable board and tab area with adjusters.
 - many available sets.
 - css based for easy theming.
-- 
+- Sound effects.
 - Timeseal2.
 - Drag and drop and 'click-click' move.
 - Premove
