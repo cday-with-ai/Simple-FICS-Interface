@@ -341,14 +341,6 @@ function updateBoardFromStyle12(style12Message) {
         gameState.style12WhiteOnBottom = parseInt(parts[30], 10) === 0;
         gameState.relation = parseInt(parts[19], 10);  // Store the numeric relation value directly
 
-        const previousIsWhiteOnBottom = gameState.isWhiteOnBottom; // Store the previous value of isWhiteOnBottom to detect changes
-        setPlayerOrientationGameState();
-        if (previousIsWhiteOnBottom !== gameState.isWhiteOnBottom) { // If isWhiteOnBottom has changed, recreate the board. The squares change.
-            const boardElement = document.getElementById('chessBoard');
-            if (boardElement) {
-                createBoardSquares(boardElement);
-            }
-        }
         // TODO: Refactored these vars one day to grab from FEN to make the code more reusable.
         gameState.whiteCastleShort = parseInt(parts[11], 10) === 1;
         gameState.whiteCastleLong = parseInt(parts[12], 10) === 1;
@@ -357,6 +349,17 @@ function updateBoardFromStyle12(style12Message) {
         gameState.doublePawnPushFile = style12DoublePawnPushToFile(parseInt(parts[10], 10));
         gameState.irreversibleCount = parseInt(parts[15], 10);
         gameState.isWhitesMove = parts[9] === 'W';
+
+        const previousIsWhiteOnBottom = gameState.isWhiteOnBottom; // Store the previous value of isWhiteOnBottom to detect changes
+        setPlayerOrientationGameState();
+
+        if (previousIsWhiteOnBottom !== gameState.isWhiteOnBottom) { // If isWhiteOnBottom has changed, recreate the board. The squares change.
+            const boardElement = document.getElementById('chessBoard');
+            if (boardElement) {
+                createBoardSquares(boardElement);
+            }
+        }
+
 
 
         // Update ECO opening info
@@ -909,33 +912,27 @@ function style12DoublePawnPushToFile(style12Value) {
 }
 
 /**
- * Sets gamePlayer.PlayerWhite, gameState.isPlayerPlaying, and gameState.isWhitesMove based on the current game state.
+ * Sets gamePlayer.isPlayerWhite, gameState.isPlayerPlaying, and gameState.isWhitesMove based on the current game state.
  */
 function setPlayerOrientationGameState() {
-    gameState.isPlayerWhite = (gameState.relation === GameRelation.PLAYING_MY_MOVE && gameState.isWhitesMove) ||
-        (gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE && !gameState.isWhitesMove);
-
-    /**
-     * IMPORTANT!
-     * gameState.isPlayerPlaying means the user is playing a live game on fics.
-     * In this case he can only move his pieces. If it is his turn, he is making live moves.
-     *
-     * Premove has not yet been implemented but here is what it will do:
-     * If it is not his turn, he is making a premove which is a move that will be
-     * immediately played when it is his turn.
-     */
-    gameState.isPlayerPlaying = gameState.relation === GameRelation.PLAYING_MY_MOVE ||
-        gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
+    gameState.isPlayerPlaying = gameState.relation === GameRelation.PLAYING_MY_MOVE || gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
 
     /**
      * When playing, the user can only move his pieces. Currently, he can only move them when it is his turn, but when
      * premove is added, this will change.
      */
     if (gameState.isPlayerPlaying) {
-        //gameState.isFlipped is the orientation from the board menu in the UI. It has nothing to do with the style12 event.
-        //The menu also does not send the style 12 event.
-        gameState.isWhiteOnBottom = gameState.isFlipped ? !gameState.isPlayerWhite : gameState.isFlipped;
+        gameState.isPlayerWhite = (gameState.isWhitesMove && gameState.relation === GameRelation.PLAYING_MY_MOVE) ||
+            (!gameState.isWhitesMove && gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
+
+        gameState.isWhiteOnBottom = gameState.isPlayerWhite ? true : false;
         gameState.allowUserToMoveBothSides = false;
+
+        // gameState.isFlipped is the orientation from the board menu in the UI. It has nothing to do with the style12 event.
+        // The menu also does not send the fics command to flip the board. It just changes the UI.
+        if (gameState.isFlipped) {
+            gameState.isWhiteOnBottom = !gameState.isWhiteOnBottom;
+        }
     } else {
         const followed = getFollowedPlayer();
         const observed = getObservedPlayer();
@@ -1044,24 +1041,12 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     }
 
     const isPremove = gameState.isPlayerPlaying &&
-        gameState.isWhitesMove !== gameState.isPlayerWhite;
-    const isValidating = !isPremove &&
-        (!gameState.isPlayerPlaying ||
-            (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite));
+        (!gameState.isWhitesMove && gameState.isPlayerWhite) ||
+        (gameState.isWhitesMove && !gameState.isPlayerWhite);
 
-    console.log("isPremove: " + isPremove + " isValidating: " + isValidating);
-
-    let moveResult = null;
-
-    if (!isPremove && isValidating) {
-        moveResult = gameState.chessBoard.makeLongAlgebraicMove(moveObject.from, moveObject.to, moveObject.promotion ? moveObject.promotion : null);
-        if (moveResult) {
-            gameState.fen = gameState.chessBoard.getFen();
-            gameState.lastMove = gameState.chessBoard.getLastMove().san;
-        }
-    }
-    if (isPremove) {
-        moveResult = gameState.chessBoard.isValidPremove(startSquareAlgebraic, endSquareAlgebraic, moveObject.promotion ? moveObject.promotion : null);
+    if (isPremove) { //Premove
+        console.log('Handling premove...');
+        const moveResult = gameState.chessBoard.isValidPremove(startSquareAlgebraic, endSquareAlgebraic, moveObject.promotion ? moveObject.promotion : null);
         if (moveResult) {
             gameState.premove = moveStringPart;
             // Don't update board on pre-move, let it happen when the move is actually played.
@@ -1080,8 +1065,19 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
             gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
             gameState.draggedPieceElement.classList.add('piece-visible');
         }
+
+        if (!moveResult) {
+            console.error("Invalid premove:", moveObject);
+            playSound('illegal');
+        }
         return moveResult;
-    } else if (!isValidating || (isValidating && moveResult)) {
+    } else { //Actual move.
+        console.log('Handling move...');
+        const moveResult = gameState.chessBoard.makeLongAlgebraicMove(moveObject.from, moveObject.to, moveObject.promotion ? moveObject.promotion : null);
+        if (moveResult) {
+            gameState.fen = gameState.chessBoard.getFen();
+            gameState.lastMove = gameState.chessBoard.getLastMove().san;
+        }
 
         /**
          * When not examining or playing: GameRelation.ISOLATED_POSITION or
@@ -1132,20 +1128,11 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         // Update the board graphics which will create the piece at the new location
         updateBoardGraphicsAndSquareListeners(moveStringPart, null);
         restartClockInternal();
-        return true;
-    } else if (!moveResult) {
-        console.error("Invalid move by drop:", moveObject);
-        playSound('illegal');
-        if (!isPremove && isValidating) {
-            gameState.chessBoard.back();
+        if (!moveResult) {
+            console.error("Invalid move:", moveObject);
+            playSound('illegal');
         }
-
-        // Restore the original piece visibility if the move failed
-        if (isDragging && gameState.draggedPieceElement) {
-            gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
-            gameState.draggedPieceElement.classList.add('piece-visible');
-        }
-        return false;
+        return moveResult;
     }
 }
 
