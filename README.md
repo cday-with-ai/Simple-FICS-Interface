@@ -7,6 +7,8 @@ Currently, under construction. See the Road Map below for the current state.
 
 **Functionality** (Working functionality):
 - Variants: Chess 960, Losers, Suicide, Atomic, Classic, Wild/*.
+  - Client side validation.
+  - Premove validation.
 - Clean chess board UI with minimal distractions.
 - LED looking clocks.
 - Move animations.
@@ -14,7 +16,8 @@ Currently, under construction. See the Road Map below for the current state.
 - Channel tabs.
 - resizable board and tab area with adjusters.
 - many available sets.
-- css based so easy to change anything if you pull the source.
+- css based for easy theming.
+- 
 - Timeseal2.
 - Drag and drop and 'click-click' move.
 - Premove
@@ -22,13 +25,11 @@ Currently, under construction. See the Road Map below for the current state.
 - Preferences/Username/Pwd saved in local storage.
 - ECO/Opening description lookup based on moves made.
 - Fast and efficient, written in ES6.
-- Client side move validation for all variants and premove.
 
 **Road Map** (Current phase PRE-ALPHA):
 **ALPHA:**
   - Regression testing.
     - When the board is flipped, it is not adjusting for the next game.
-    - Fix the move list not populating bugs.
     - Test all functionality.
     
 **BETA:**
