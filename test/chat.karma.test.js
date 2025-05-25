@@ -1,11 +1,11 @@
 import { getFicsCommandRegex } from '../scripts/chat.js';
 
 function commandMatches(command) {
-  console.log(`Testing ${command}`);
+ // console.log(`Testing ${command}`);
   for (const regex of getFicsCommandRegex()) {
-    console.log(`Testing ${regex}`);
+   // console.log(`Testing ${regex}`);
     if (regex.test(command)) {
-      console.log(`Matched ${command} with ${regex}`);
+     // console.log(`Matched ${command} with ${regex}`);
       return true;
     }
   }

@@ -31,7 +31,7 @@ More text after`;
     expect(actualFen).toContain(" w "); // Active color
     expect(actualFen).toContain("KQkq"); // Castling rights
     // Don't check en passant and halfmove clock as they might vary
-    expect(actualFen).toContain(" 1"); // Fullmove number
+    expect(actualFen).toContain(" 1"); // Fullmove number (parts[26] = 1)
   });
 
   // Test with different castling rights

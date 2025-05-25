@@ -10,14 +10,12 @@ export default function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      // Load Chess.js mock first
-      { pattern: 'test/chess-mock.js', served: true, included: true },
       // Load setup file next
-      { pattern: 'test/karma-setup.js', type: 'module' },
+      { pattern: 'test/karma-setup.js', variant: 'module' },
       // Load source files
-      { pattern: 'scripts/**/*.js', type: 'module' },
+      { pattern: 'scripts/**/*.js', variant: 'module' },
       // Load test files
-      { pattern: 'test/**/*.karma.test.js', type: 'module' }
+      { pattern: 'test/**/*.karma.test.js', variant: 'module' }
     ],
 
     // list of files / patterns to exclude

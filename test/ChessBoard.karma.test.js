@@ -13,21 +13,21 @@ describe('ChessBoard', () => {
     });
 
     describe('Constructor and Initialization', () => {
-        it('should initialize with standard starting position', () => {
+        it('should initialize with classic starting position', () => {
             expect(board.getFen()).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
             expect(board.getActiveColor()).toBe('w');
-            expect(board.getVariant()).toBe('standard');
+            expect(board.getVariant()).toBe('classic');
         });
 
         it('should initialize with custom FEN', () => {
             const customFen = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1';
-            board = new ChessBoard('standard', customFen);
+            board = new ChessBoard('classic', customFen);
             expect(board.getFen()).toBe(customFen);
             expect(board.getActiveColor()).toBe('b');
         });
 
         it('should initialize different variants', () => {
-            const variants = ['standard', 'losers', 'suicide', 'atomic', 'crazyhouse', 'chess960'];
+            const variants = ['classic', 'losers', 'suicide', 'atomic', 'crazyhouse', 'chess960'];
             variants.forEach(variant => {
                 const testBoard = new ChessBoard(variant);
                 expect(testBoard.getVariant()).toBe(variant);
@@ -528,7 +528,7 @@ describe('ChessBoard', () => {
 
     describe('Chess Variants', () => {
         it('should initialize different variants correctly', () => {
-            const variants = ['standard', 'losers', 'suicide', 'atomic', 'crazyhouse', 'chess960'];
+            const variants = ['classic', 'losers', 'suicide', 'atomic', 'crazyhouse', 'chess960'];
             variants.forEach(variant => {
                 const testBoard = new ChessBoard(variant);
                 expect(testBoard.getVariant()).toBe(variant);
@@ -588,7 +588,7 @@ describe('ChessBoard', () => {
     });
 
     describe('Famous Games Tests', () => {
-        describe('Standard Chess - Famous Games', () => {
+        describe('Classic Chess - Famous Games', () => {
             it('should play the Immortal Game (Anderssen vs Kieseritzky, 1851)', () => {
                 // One of the most famous chess games ever played - ACTUAL GAME SEQUENCE
                 const moves = [
@@ -1087,7 +1087,7 @@ describe('ChessBoard', () => {
         });
 
         it('should reject drops in non-Crazyhouse variants', () => {
-            const standardBoard = new ChessBoard('standard');
+            const standardBoard = new ChessBoard('classic');
             expect(standardBoard.makeDropMove('p', 'e4')).toBe(false);
         });
 
@@ -1394,7 +1394,7 @@ describe('ChessBoard', () => {
             expect(board.getMoveHistory().length).toBe(0);
 
             // Add the moves that led to this position
-            expect(board.updateMoveHistory(['e4', 'e5'])).toBe(true);
+            expect(board.prependMoveHistory(['e4', 'e5'])).toBe(true);
 
             // Check that move history was updated
             const history = board.getMoveHistory();
@@ -1410,7 +1410,7 @@ describe('ChessBoard', () => {
             expect(board.getMoveHistory().length).toBe(2);
 
             // Add more moves to history
-            expect(board.updateMoveHistory(['Nf3', 'Nf6'])).toBe(true);
+            expect(board.prependMoveHistory(['Nf3', 'Nf6'])).toBe(true);
 
             // Check that moves were appended
             const history = board.getMoveHistory();
@@ -1428,7 +1428,7 @@ describe('ChessBoard', () => {
             expect(board.getMoveHistory().length).toBe(2);
 
             // Replace with new move history
-            expect(board.updateMoveHistory(['e4', 'e5', 'Nf3'], true)).toBe(true);
+            expect(board.prependMoveHistory(['e4', 'e5', 'Nf3'], true)).toBe(true);
 
             // Check that history was replaced
             const history = board.getMoveHistory();
@@ -1458,7 +1458,7 @@ describe('ChessBoard', () => {
                 'O-O-O'    // Queenside castling
             ];
 
-            expect(board.updateMoveHistory(moves, true)).toBe(true);
+            expect(board.prependMoveHistory(moves, true)).toBe(true);
 
             const history = board.getMoveHistory();
             expect(history.length).toBe(moves.length);
@@ -1478,7 +1478,7 @@ describe('ChessBoard', () => {
         it('should handle pawn promotion moves', () => {
             const moves = ['e4', 'e5', 'f4', 'exf4', 'e5', 'f6', 'e6', 'fxe6', 'a4', 'e5', 'a5', 'e4', 'a6', 'e3', 'axb7', 'e2', 'bxa8=Q'];
 
-            expect(board.updateMoveHistory(moves, true)).toBe(true);
+            expect(board.prependMoveHistory(moves, true)).toBe(true);
 
             const history = board.getMoveHistory();
             const lastMove = history[history.length - 1];
@@ -1491,7 +1491,7 @@ describe('ChessBoard', () => {
             const crazyhouseBoard = new ChessBoard('crazyhouse');
             const moves = ['e4', 'e5', 'exd5', 'P@e6', 'N@f3', 'Q@d1'];
 
-            expect(crazyhouseBoard.updateMoveHistory(moves, true)).toBe(true);
+            expect(crazyhouseBoard.prependMoveHistory(moves, true)).toBe(true);
 
             const history = crazyhouseBoard.getMoveHistory();
             expect(history[3].san).toBe('P@e6');
@@ -1508,7 +1508,7 @@ describe('ChessBoard', () => {
         it('should handle check and checkmate indicators', () => {
             const moves = ['e4', 'e5', 'Bc4', 'Nc6', 'Qh5', 'Nf6??', 'Qxf7#'];
 
-            expect(board.updateMoveHistory(moves, true)).toBe(true);
+            expect(board.prependMoveHistory(moves, true)).toBe(true);
 
             const history = board.getMoveHistory();
             const lastMove = history[history.length - 1];
@@ -1520,7 +1520,7 @@ describe('ChessBoard', () => {
         it('should skip invalid moves and continue processing', () => {
             const moves = ['e4', '', 'e5', null, 'Nf3', undefined, 'Nc6'];
 
-            expect(board.updateMoveHistory(moves, true)).toBe(true);
+            expect(board.prependMoveHistory(moves, true)).toBe(true);
 
             const history = board.getMoveHistory();
             expect(history.length).toBe(4); // Only valid moves should be added
@@ -1533,7 +1533,7 @@ describe('ChessBoard', () => {
         it('should handle disambiguation in move notation', () => {
             const moves = ['Nf3', 'Nf6', 'Nc3', 'Nc6', 'Nbd2', 'Nge7', 'N2f3', 'Ng6'];
 
-            expect(board.updateMoveHistory(moves, true)).toBe(true);
+            expect(board.prependMoveHistory(moves, true)).toBe(true);
 
             const history = board.getMoveHistory();
             expect(history[4].san).toBe('Nbd2'); // File disambiguation
@@ -1541,27 +1541,27 @@ describe('ChessBoard', () => {
         });
 
         it('should return false for invalid input', () => {
-            expect(board.updateMoveHistory(null)).toBe(false);
-            expect(board.updateMoveHistory(undefined)).toBe(false);
-            expect(board.updateMoveHistory('not an array')).toBe(false);
-            expect(board.updateMoveHistory(123)).toBe(false);
+            expect(board.prependMoveHistory(null)).toBe(false);
+            expect(board.prependMoveHistory(undefined)).toBe(false);
+            expect(board.prependMoveHistory('not an array')).toBe(false);
+            expect(board.prependMoveHistory(123)).toBe(false);
         });
 
         it('should work with empty move array', () => {
             board.makeMove('e4');
             expect(board.getMoveHistory().length).toBe(1);
 
-            expect(board.updateMoveHistory([])).toBe(true);
+            expect(board.prependMoveHistory([])).toBe(true);
             expect(board.getMoveHistory().length).toBe(1); // Should remain unchanged
 
-            expect(board.updateMoveHistory([], true)).toBe(true);
+            expect(board.prependMoveHistory([], true)).toBe(true);
             expect(board.getMoveHistory().length).toBe(0); // Should be cleared due to replace=true
         });
 
         it('should integrate well with existing move-making methods', () => {
             // Load a position and add move history
             board.loadFen('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2');
-            board.updateMoveHistory(['e4', 'e5']);
+            board.prependMoveHistory(['e4', 'e5']);
 
             // Continue making moves normally
             expect(board.makeMove('Nf3')).toBe(true);
@@ -1586,7 +1586,7 @@ describe('ChessBoard', () => {
             const gameHistory = ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Nf6', 'd3'];
 
             board.loadFen(midGameFen);
-            expect(board.updateMoveHistory(gameHistory, true)).toBe(true);
+            expect(board.prependMoveHistory(gameHistory, true)).toBe(true);
 
             // Verify the move history matches the position
             const history = board.getMoveHistory();
@@ -1653,7 +1653,7 @@ describe('ChessBoard', () => {
             // Load a position and add move history
             const startFen = 'rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2';
             board.loadFen(startFen);
-            board.updateMoveHistory(['e4', 'e5']);
+            board.prependMoveHistory(['e4', 'e5']);
 
             // Make additional moves
             board.makeMove('Nf3');
@@ -1733,7 +1733,7 @@ describe('ChessBoard', () => {
             expect(board.start()).toBe(true);
             expect(board.getMoveHistory().length).toBe(0);
 
-            // Verify we're back to the standard starting position
+            // Verify we're back to the classic starting position
             expect(board.getFen()).toBe('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
         });
 
@@ -1841,6 +1841,229 @@ describe('ChessBoard', () => {
             expect(crazyhouseBoard.getMoveHistory().length).toBe(0);
             expect(crazyhouseBoard.getCapturedPieces('w')).toEqual([]);
             expect(crazyhouseBoard.getPiece('e6')).toBe(null);
+        });
+    });
+
+    describe('Move Number and Clock Tracking', () => {
+        it('should start with correct initial move numbers', () => {
+            const fen = board.getFen();
+            expect(fen).toContain(' 0 1'); // halfmove clock 0, fullmove number 1
+            expect(board.getActiveColor()).toBe('w');
+        });
+
+        it('should update move numbers correctly after white moves', () => {
+            board.makeMove('e4');
+            const fen = board.getFen();
+            expect(fen).toContain(' 0 1'); // halfmove clock 0 (pawn move resets), fullmove number still 1
+            expect(board.getActiveColor()).toBe('b');
+        });
+
+        it('should update move numbers correctly after black moves', () => {
+            board.makeMove('e4');
+            board.makeMove('e5');
+            const fen = board.getFen();
+            expect(fen).toContain(' 0 2'); // halfmove clock 0 (pawn move resets), fullmove number 2
+            expect(board.getActiveColor()).toBe('w');
+        });
+
+        it('should handle multiple move pairs correctly', () => {
+            const moves = ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6'];
+            moves.forEach(move => board.makeMove(move));
+
+            const fen = board.getFen();
+            expect(fen).toContain(' 0 4'); // halfmove clock 0 (a6 is pawn move), fullmove number 4
+            expect(board.getActiveColor()).toBe('w');
+        });
+
+        it('should reset halfmove clock on pawn moves', () => {
+            board.makeMove('e4'); // Pawn move
+            board.makeMove('Nc6'); // Knight move
+            board.makeMove('d3'); // Pawn move - should reset halfmove clock
+
+            const fen = board.getFen();
+            expect(fen).toContain(' 0 2'); // halfmove clock reset to 0, fullmove number 2
+        });
+
+        it('should reset halfmove clock on captures', () => {
+            board.makeMove('e4');
+            board.makeMove('d5');
+            board.makeMove('exd5'); // Capture - should reset halfmove clock
+
+            const fen = board.getFen();
+            expect(fen).toContain(' 0 2'); // halfmove clock reset to 0, fullmove number 2
+        });
+
+        it('should increment halfmove clock on non-pawn, non-capture moves', () => {
+            board.makeMove('Nf3'); // Knight move
+            board.makeMove('Nc6'); // Knight move
+            board.makeMove('Ng5'); // Knight move
+            board.makeMove('Nd4'); // Knight move
+
+            const fen = board.getFen();
+            expect(fen).toContain(' 4 3'); // halfmove clock 4, fullmove number 3
+        });
+
+        it('should handle castling move numbers correctly', () => {
+            // Set up castling position
+            board.loadFen('r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1');
+
+            board.makeMove('O-O'); // White castles
+            let fen = board.getFen();
+            expect(fen).toContain(' 1 1'); // halfmove clock 1, fullmove number still 1
+
+            board.makeMove('O-O-O'); // Black castles
+            fen = board.getFen();
+            expect(fen).toContain(' 2 2'); // halfmove clock 2, fullmove number 2
+        });
+
+        it('should handle promotion move numbers correctly', () => {
+            // Set up promotion position
+            board.loadFen('8/P7/8/8/8/8/7p/8 w - - 0 50');
+
+            board.makeMove('a8=Q'); // White promotes
+            let fen = board.getFen();
+            expect(fen).toContain(' 0 50'); // halfmove clock reset (pawn move), fullmove number still 50
+
+            board.makeMove('h1=Q'); // Black promotes
+            fen = board.getFen();
+            expect(fen).toContain(' 0 51'); // halfmove clock reset (pawn move), fullmove number 51
+        });
+
+        it('should handle en passant move numbers correctly', () => {
+            board.makeMove('e4');
+            board.makeMove('a6'); // Random move
+            board.makeMove('e5');
+            board.makeMove('d5'); // Black pawn moves two squares
+            board.makeMove('exd6'); // En passant capture
+
+            const fen = board.getFen();
+            expect(fen).toContain(' 0 3'); // halfmove clock reset (capture), fullmove number 3
+        });
+
+        it('should maintain correct move numbers when loading FEN mid-game', () => {
+            const midGameFen = 'rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 4 3';
+            board.loadFen(midGameFen);
+
+            expect(board.getFen()).toBe(midGameFen);
+
+            // Make a move and verify numbers update correctly
+            board.makeMove('Bc4');
+            const fen = board.getFen();
+            expect(fen).toContain(' 5 3'); // halfmove clock 5, fullmove number still 3
+        });
+
+        it('should handle fifty-move rule counting correctly', () => {
+            // Load position near fifty-move rule
+            board.loadFen('8/8/8/8/8/8/8/K6k w - - 98 100');
+
+            board.makeMove('Ka2'); // Non-pawn, non-capture move
+            let fen = board.getFen();
+            expect(fen).toContain(' 99 100'); // halfmove clock 99
+
+            board.makeMove('Kg2'); // Non-pawn, non-capture move
+            fen = board.getFen();
+            expect(fen).toContain(' 100 101'); // halfmove clock 100 (fifty-move rule)
+
+            expect(board.isFiftyMoveRule()).toBe(true);
+        });
+
+        it('should handle move numbers correctly with back() method', () => {
+            board.makeMove('e4');
+            board.makeMove('e5');
+            board.makeMove('Nf3');
+
+            let fen = board.getFen();
+            expect(fen).toContain(' 1 2'); // After 3 moves: Nf3 increments halfmove clock
+
+            board.back(); // Undo Nf3
+            fen = board.getFen();
+            expect(fen).toContain(' 0 2'); // Back to after e5 (pawn move)
+
+            board.back(); // Undo e5
+            fen = board.getFen();
+            expect(fen).toContain(' 0 1'); // Back to after e4 (pawn move)
+
+            board.back(); // Undo e4
+            fen = board.getFen();
+            expect(fen).toContain(' 0 1'); // Back to starting position
+        });
+
+        it('should handle move numbers correctly with start() method', () => {
+            board.makeMove('e4');
+            board.makeMove('e5');
+            board.makeMove('Nf3');
+            board.makeMove('Nc6');
+
+            let fen = board.getFen();
+            expect(fen).toContain(' 2 3'); // After 4 moves: Nc6 increments halfmove clock to 2
+
+            board.start(); // Go back to beginning
+            fen = board.getFen();
+            expect(fen).toContain(' 0 1'); // Back to starting position
+        });
+
+        it('should handle complex game with mixed move types', () => {
+            const moves = [
+                'e4',      // 1. Pawn move (resets halfmove)
+                'e5',      // 1... Pawn move (resets halfmove)
+                'Nf3',     // 2. Knight move
+                'Nc6',     // 2... Knight move
+                'Bb5',     // 3. Bishop move
+                'a6',      // 3... Pawn move (resets halfmove)
+                'Bxc6',    // 4. Capture (resets halfmove)
+                'dxc6',    // 4... Capture (resets halfmove)
+                'O-O',     // 5. Castling
+                'Bg4',     // 5... Bishop move
+                'd3',      // 6. Pawn move (resets halfmove)
+                'Qd7'      // 6... Queen move
+            ];
+
+            moves.forEach(move => board.makeMove(move));
+
+            const fen = board.getFen();
+            expect(fen).toContain(' 1 7'); // halfmove clock 1 (last move was Qd7, non-pawn non-capture), fullmove number 7
+        });
+
+        it('should handle Crazyhouse drop moves correctly', () => {
+            const crazyhouseBoard = new ChessBoard('crazyhouse');
+
+            crazyhouseBoard.makeMove('e4');
+            crazyhouseBoard.makeMove('d5');
+            crazyhouseBoard.makeMove('exd5'); // Capture to get piece
+
+            let fen = crazyhouseBoard.getFen();
+            expect(fen).toContain(' 0 2'); // Capture resets halfmove clock
+
+            // Make a drop move
+            if (crazyhouseBoard.makeDropMove('p', 'e6')) {
+                fen = crazyhouseBoard.getFen();
+                expect(fen).toContain(' 1 2'); // Drop increments halfmove clock, fullmove still 2
+            }
+        });
+
+        it('should verify FEN consistency after multiple operations', () => {
+            // Test that getFen() always returns consistent move numbers
+            const initialFen = board.getFen();
+            expect(initialFen).toContain(' 0 1');
+
+            // Make moves
+            board.makeMove('d4');
+            const afterD4 = board.getFen();
+            expect(afterD4).toContain(' 0 1'); // Pawn move resets halfmove clock
+
+            board.makeMove('d5');
+            const afterD5 = board.getFen();
+            expect(afterD5).toContain(' 0 2'); // Pawn move resets halfmove clock
+
+            // Load the position again
+            board.loadFen(afterD5);
+            const reloaded = board.getFen();
+            expect(reloaded).toBe(afterD5);
+
+            // Make another move
+            board.makeMove('Nf3');
+            const afterNf3 = board.getFen();
+            expect(afterNf3).toContain(' 1 2'); // Knight move increments halfmove clock
         });
     });
 });

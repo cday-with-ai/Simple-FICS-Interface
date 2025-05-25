@@ -1,9 +1,9 @@
 import {
     applyChessRelatedPreferences,
     initChessSystem,
-    onGameStart,
     onGameEnd,
     onGameMoves,
+    onNewGame,
     onStyle12,
     onUnobserve
 } from './chess.js';
@@ -148,19 +148,15 @@ function routeMessage(msg) {
     handleLoginProcess(msg);
     handleFicsSessionStart(msg);
 
-    let isMainConsoleMessage = handleChannelTell(msg);
-    handleGameCreation(msg);
-
-    const style12Result = handleStyle12Message(msg);
-    isMainConsoleMessage = style12Result.isMainConsoleMessage;
-    msg = style12Result.msg;
-
+    handleNewGame(msg);
+    msg = handleStyle12Message(msg);
     handleGameEnd(msg);
     handleIllegalMove(msg);
     handleDraw(msg);
     handleMovesList(msg);
     handleUnobserve(msg);
 
+    let isMainConsoleMessage = handleChannelTell(msg);
     const isFicsPrompt = msg.trim() === 'fics%';
     if (isMainConsoleMessage) {
         updateMainConsole(msg, isMainConsoleMessage, isFicsPrompt);
@@ -173,10 +169,10 @@ function routeMessage(msg) {
  */
 function handleSentObserve(msg) {
     let obsIndex = msg.indexOf("obs ");
-    if (obsIndex !== 0 ) {
-         obsIndex = msg.indexOf("observe ");
+    if (obsIndex !== 0) {
+        obsIndex = msg.indexOf("observe ");
         if (obsIndex !== 0) {
-             obsIndex = msg.indexOf("o ");
+            obsIndex = msg.indexOf("o ");
         }
     }
 
@@ -196,7 +192,7 @@ function handleSentObserve(msg) {
     }
 
     const unobsIndex = msg.indexOf("unobs");
-    if (unobsIndex === 0 ) {
+    if (unobsIndex === 0) {
         console.log('Unobserving, clearing stored obs player info.');
         obsPlayer.name = null;
         obsPlayer.timestamp = null;
@@ -210,7 +206,7 @@ function handleSentObserve(msg) {
  */
 function handleSentFollow(msg) {
     let followIndex = msg.indexOf("follow ");
-    if (followIndex !== 0 ) {
+    if (followIndex !== 0) {
         followIndex = msg.indexOf("fol ");
     }
 
@@ -225,7 +221,7 @@ function handleSentFollow(msg) {
     }
 
     const unfollowIndex = msg.indexOf("unfollow");
-    if (unfollowIndex === 0 ) {
+    if (unfollowIndex === 0) {
         console.log('Unfollowing, clearing stored obs player info.');
         followPlayer.name = null;
         followPlayer.timestamp = null;
@@ -345,46 +341,29 @@ function handleChannelTell(msg) {
     return isMainConsoleMessage
 }
 
-/**
- * Extract and process game creation messages
- * @param {string} msg - The message to process
- * @returns {boolean} - True if a game creation message was found and processed
- */
-function handleGameCreation(msg) {
-    // Handle game creation messages
-    const containsGameStart = msg.startsWith("Creating: ");
-    let gameStartStr = null;
+function handleNewGame(msg) {
+    const containsGameStart = msg.indexOf("Game ");
+    if (containsGameStart === 0 || msg.charAt(containsGameStart - 1) === '\n') {
+        const gameStartIndex = containsGameStart;
+        const gameEndIndex = msg.indexOf("\n", gameStartIndex + 6);
+        const gameLine = msg.substring(gameStartIndex, gameEndIndex);
 
-    if (containsGameStart) {
-        gameStartStr = msg.substring(10);
-    } else {
-        const index = msg.indexOf("\nCreating: ");
-        if (index !== -1) {
-            gameStartStr = msg.substring(index + 11);
-        } else {
-            if (msg.startsWith("Game ")) {
-                const colonIndex = msg.indexOf(":", 5);
-                if (colonIndex !== -1) {
-                    gameStartStr = msg.substring(colonIndex + 1);
-                }
-            } else {
-                const index = msg.indexOf("\nGame ");
-                if (index !== -1) {
-                    const colonIndex = msg.indexOf(":", index + 6);
-                    if (colonIndex !== -1) {
-                        gameStartStr = msg.substring(colonIndex + 1);
-                    }
-                }
-            }
+        const match = gameLine.match(/^Game (\d+): ([a-zA-Z0-9]+) \(([0-9+-]+)\) ([a-zA-Z0-9]+) \(([0-9+-]+)\) (rated|unrated) ([a-zA-Z0-9]+) (\d+) (\d+)$/);
+        if (match) {
+            playSound('start');
+            const gameNum = parseInt(match[1], 10);
+            const whiteName = match[2];
+            const whiteRating = match[3];
+            const blackName = match[4];
+            const blackRating = match[5];
+            const isRated = match[6] === 'rated';
+            const gameType = match[7];
+            const minutes = parseInt(match[8], 10);
+            const increment = parseInt(match[9], 10);
+            onNewGame(gameNum, whiteName, whiteRating, blackName, blackRating, isRated, gameType, minutes, increment);
+            return true;
         }
     }
-
-    if (gameStartStr != null) {
-        playSound('start');
-        onGameStart(gameStartStr.trim());
-        return true;
-    }
-
     return false;
 }
 
@@ -420,20 +399,15 @@ function handleStyle12Message(msg) {
 
         onStyle12(style12Block);
 
-        if (!preferences.showStyle12Events) {
-            // Remove the Style12 line from the message to be printed in the console
-            let beforeStyle12 = msg.substring(0, style12Start + (msg.startsWith("<12>") ? 0 : 1));
-            let afterStyle12 = end >= 0 ? msg.substring(end + 1) : "";
-            msg = beforeStyle12 + afterStyle12;
-            if (msg.trim() === "" || msg.trim() === "fics%") {
-                isMainConsoleMessage = false;
-            }
-        }
+        // Remove the Style12 line from the message to be printed in the console
+        let beforeStyle12 = msg.substring(0, style12Start + (msg.startsWith("<12>") ? 0 : 1));
+        let afterStyle12 = end >= 0 ? msg.substring(end + 1) : "";
+        msg = beforeStyle12 + afterStyle12;
 
-        return { isMainConsoleMessage, msg, processed: true };
+        return msg;
     }
 
-    return { isMainConsoleMessage, msg, processed: false };
+    return msg;
 }
 
 /**
@@ -502,7 +476,7 @@ function handleUnobserve(msg) {
     var unobserveIndex = msg.indexOf("Removing game ");
     while (unobserveIndex !== -1 && (unobserveIndex === 0 || msg.charAt(unobserveIndex - 1) === '\n')) {
         var nextSpaceIndex = msg.indexOf(" ", unobserveIndex + 14);
-        const gameNum = parseInt(msg.substring(unobserveIndex + 14, nextSpaceIndex),10);
+        const gameNum = parseInt(msg.substring(unobserveIndex + 14, nextSpaceIndex), 10);
         if (gameNum) {
             obsPlayer.gameNumber = null;
             obsPlayer.timestamp = null;

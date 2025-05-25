@@ -155,7 +155,7 @@ export const Color = {
  * @enum {string}
  */
 export const Variant = {
-    STANDARD: 'standard',
+    CLASSIC: 'classic',
     LOSERS: 'losers',
     SUICIDE: 'suicide',
     ATOMIC: 'atomic',
@@ -188,7 +188,7 @@ export class ChessBoard {
      * @param {string} variant - The chess variant to play (default: 'standard')
      * @param {string|null} fen - Optional FEN string to initialize position
      */
-    constructor(variant = Variant.STANDARD, fen = null) {
+    constructor(variant = Variant.CLASSIC, fen = null) {
         this.variant = variant;
         this.board = this._createEmptyBoard();
         this.activeColor = Color.WHITE;
@@ -200,6 +200,7 @@ export class ChessBoard {
         this.positionHistory = [];
         this.capturedPieces = { w: [], b: [] }; // For crazyhouse
         this.chess960StartPosition = null; // For chess960
+        this.originalLoadedPosition = null; // Track the original position that was loaded
 
         // Initialize board position
         if (fen) {
@@ -215,9 +216,10 @@ export class ChessBoard {
     /**
      * Loads a position from FEN notation
      * @param {string} fen - FEN string representing the position
+     * @param {boolean} internal - Whether this is an internal call (default: false)
      * @returns {boolean} True if FEN was loaded successfully
      */
-    loadFen(fen) {
+    loadFen(fen, internal = false) {
         try {
             const parts = fen.trim().split(' ');
             if (parts.length !== 6) {
@@ -272,6 +274,23 @@ export class ChessBoard {
 
             // Parse fullmove number
             this.fullmoveNumber = parseInt(parts[5]);
+
+            // Reset move history and position history when loading a new FEN
+            this.moveHistory = [];
+            this.positionHistory = [fen];
+
+            // Track the original loaded position for start() method (only for external calls)
+            if (!internal) {
+                this.originalLoadedPosition = fen;
+            }
+
+            // Reset captured pieces for Crazyhouse
+            if (this.variant === Variant.CRAZYHOUSE) {
+                this.capturedPieces = {
+                    [Color.WHITE]: [],
+                    [Color.BLACK]: []
+                };
+            }
 
             return true;
         } catch (error) {
@@ -572,7 +591,7 @@ export class ChessBoard {
      */
     isGameOver() {
         return this.isCheckmate() || this.isStalemate() ||
-               this.isInsufficientMaterial();
+            this.isInsufficientMaterial();
     }
 
     /**
@@ -684,6 +703,15 @@ export class ChessBoard {
     }
 
     /**
+     * Gets the FEN before a specific half-move number
+     * @param halfMoveNumber The half-move number to get the FEN for
+     * @returns {*} The FEN string or undefined if not found
+     */
+    getFenBeforeHalfmove(halfMoveNumber) {
+        return this.positionHistory[halfMoveNumber];
+    }
+
+    /**
      * Gets the last move made
      * @returns {Object|null} Last move object or null if no moves made
      */
@@ -748,9 +776,7 @@ export class ChessBoard {
     }
 
     /**
-     * Updates the move history with a list of moves in SAN notation.
-     * This is useful when loading a position from FEN and then receiving
-     * the move history for that game (e.g., when joining a FICS game in progress).
+     * Prepends moves to the move history.
      *
      * @param {string[]} moves - Array of moves in SAN notation (e.g., ['e4', 'e5', 'Nf3'])
      * @param {boolean} replace - If true, replaces existing move history. If false, appends to it. Default: false
@@ -765,42 +791,130 @@ export class ChessBoard {
      * // Now the move history reflects the actual game
      * console.log(board.getMoveHistory()); // [{ san: 'e4', ... }, { san: 'e5', ... }]
      */
-    updateMoveHistory(moves, replace = false) {
-        try {
-            // Validate input
-            if (!Array.isArray(moves)) {
-                console.error('updateMoveHistory: moves must be an array');
-                return false;
-            }
-
-            // If replacing, clear existing history
-            if (replace) {
-                this.moveHistory = [];
-                this.positionHistory = [this.getFen()];
-            }
-
-            // Add each move to the history
-            for (const moveStr of moves) {
-                if (typeof moveStr !== 'string' || moveStr.trim() === '') {
-                    console.warn(`updateMoveHistory: skipping invalid move: ${moveStr}`);
-                    continue;
-                }
-
-                // Create a move object with the SAN notation
-                // We don't have all the detailed information since we're just updating history
-                // but we include what we can determine
-                const move = this._createMoveObjectFromSan(moveStr.trim());
-                if (move) {
-                    this.moveHistory.push(move);
-                }
-            }
-
-            return true;
-        } catch (error) {
-            console.error('Error updating move history:', error);
+    prependMoveHistory(moves, replace = false) {
+        // Validate input
+        if (!Array.isArray(moves)) {
             return false;
         }
+
+        // Filter out invalid moves
+        const validNewMoves = moves.filter(move => move && typeof move === 'string' && move.trim() !== '');
+
+        if (validNewMoves.length === 0 && !replace) {
+            return true; // Nothing to do
+        }
+
+        const currentFen = this.getFen();
+        const oldMoveHistory = [...this.moveHistory];
+
+        // Create move objects for the new moves
+        const newMoveObjects = validNewMoves.map(san => {
+            const move = {
+                san: san,
+                from: null,
+                to: null,
+                piece: null,
+                captured: null,
+                promotion: null,
+                castling: null,
+                enPassant: false,
+                check: false,
+                checkmate: false,
+                drop: false
+            };
+
+            // Parse SAN to extract move properties
+            // Check for castling
+            if (san === 'O-O' || san === 'o-o') {
+                move.castling = 'kingside';
+            } else if (san === 'O-O-O' || san === 'o-o-o') {
+                move.castling = 'queenside';
+            }
+
+            // Check for captures
+            if (san.includes('x')) {
+                move.captured = true;
+            }
+
+            // Check for promotion
+            const promotionMatch = san.match(/=([QRBNqrbn])/);
+            if (promotionMatch) {
+                move.promotion = promotionMatch[1].toLowerCase();
+                move.captured = san.includes('x'); // Promotion can also be a capture
+            }
+
+            // Check for check and checkmate
+            if (san.endsWith('#')) {
+                move.checkmate = true;
+            } else if (san.endsWith('+')) {
+                move.check = true;
+            }
+
+            // Check for drops (Crazyhouse)
+            const dropMatch = san.match(/^([QRBNP])@([a-h][1-8])$/i);
+            if (dropMatch) {
+                move.drop = true;
+                move.piece = { type: dropMatch[1].toLowerCase(), color: 'w' }; // Color will be determined by context
+                move.to = dropMatch[2].toLowerCase();
+            }
+
+            return move;
+        });
+
+        // Update move history
+        if (replace || this.moveHistory.length === 0) {
+            this.moveHistory = [...newMoveObjects];
+        } else {
+            // Append new moves to existing history (not prepend)
+            this.moveHistory = [...oldMoveHistory, ...newMoveObjects];
+        }
+
+        // Recalculate halfmove clock based on the updated move history
+        this._recalculateHalfmoveClock();
+
+        // Rebuild position history to support navigation
+        this._rebuildPositionHistory();
+
+        // The board position remains the same - we're just adding history
+        // The current position should represent the result of all the moves in the history
+        return true;
     }
+
+    /**
+     * Recalculates the halfmove clock and fullmove number based on the current move history
+     * This is used when move history is updated via prependMoveHistory()
+     * @private
+     */
+    _recalculateHalfmoveClock() {
+        // Start from 0 and count moves since last pawn move or capture
+        let halfmoveClock = 0;
+
+        // Go through move history in reverse to find the last pawn move or capture
+        for (let i = this.moveHistory.length - 1; i >= 0; i--) {
+            const move = this.moveHistory[i];
+
+            // Check if this move resets the halfmove clock
+            const isPawnMove = move.san.match(/^[a-h]/); // Pawn moves start with file letter
+            const isCapture = move.captured || move.san.includes('x');
+            const isPromotion = move.promotion || move.san.includes('=');
+
+            if (isPawnMove || isCapture || isPromotion) {
+                // This move resets the halfmove clock, so we stop counting
+                break;
+            }
+
+            halfmoveClock++;
+        }
+
+        this.halfmoveClock = halfmoveClock;
+
+        // Recalculate fullmove number based on move history length
+        // Fullmove number starts at 1 and increments after each black move
+        // So: moves 0,1 = fullmove 1; moves 2,3 = fullmove 2; etc.
+        this.fullmoveNumber = Math.floor(this.moveHistory.length / 2) + 1;
+    }
+
+
 
     /**
      * Validates a premove by checking if it could be a legal move after any opponent move.
@@ -896,7 +1010,7 @@ export class ChessBoard {
             return false; // Premove is not valid after any opponent move
         } catch (error) {
             // Restore position on error
-            this.loadFen(originalFen);
+            this.loadFen(originalFen, true);
             this.moveHistory = originalMoveHistory;
             this.positionHistory = originalPositionHistory;
             return false;
@@ -937,7 +1051,9 @@ export class ChessBoard {
      */
     _setupStandardPosition() {
         const startFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-        this.loadFen(startFen);
+        this.loadFen(startFen, true);
+        // For boards that start from the standard position, this is the original position
+        this.originalLoadedPosition = startFen;
     }
 
     /**
@@ -965,6 +1081,9 @@ export class ChessBoard {
 
         // Update castling rights based on king and rook positions
         this._updateChess960CastlingRights();
+
+        // For Chess960 boards, set the original position
+        this.originalLoadedPosition = this.getFen();
     }
 
     /**
@@ -1750,7 +1869,7 @@ export class ChessBoard {
                 const isLegal = !this._isInCheck(originalActiveColor);
 
                 // Restore the original position and history
-                this.loadFen(originalFen);
+                this.loadFen(originalFen, true);
                 this.moveHistory = originalMoveHistory;
                 this.positionHistory = originalPositionHistory;
 
@@ -1758,7 +1877,7 @@ export class ChessBoard {
             }
         } catch (error) {
             // Restore the original position and history if there was an error
-            this.loadFen(originalFen);
+            this.loadFen(originalFen, true);
             this.moveHistory = originalMoveHistory;
             this.positionHistory = originalPositionHistory;
         }
@@ -1947,13 +2066,13 @@ export class ChessBoard {
                         // Validate capture expectation
                         const actuallyIsCapture = targetPiece !== null;
                         const isEnPassant = piece.type === PieceType.PAWN &&
-                                          isCapture && !actuallyIsCapture &&
-                                          this.enPassantSquare === this._coordsToAlgebraic(toRank, toFile);
+                            isCapture && !actuallyIsCapture &&
+                            this.enPassantSquare === this._coordsToAlgebraic(toRank, toFile);
 
                         // Be more flexible with capture validation for complex games
                         // Allow moves even if capture expectation doesn't perfectly match
                         const captureIsValid = isCapture === actuallyIsCapture || isEnPassant ||
-                                             (!isCapture && !actuallyIsCapture); // Non-capture moves
+                            (!isCapture && !actuallyIsCapture); // Non-capture moves
 
                         if (captureIsValid || actuallyIsCapture || !isCapture) {
                             const square = this._coordsToAlgebraic(rank, file);
@@ -1988,8 +2107,8 @@ export class ChessBoard {
 
         // Return the unique candidate, or null if ambiguous/none found
         return filtered.length === 1 ? filtered[0].square :
-               filtered.length > 1 ? filtered[0].square : // Take first if multiple (shouldn't happen with proper disambiguation)
-               null;
+            filtered.length > 1 ? filtered[0].square : // Take first if multiple (shouldn't happen with proper disambiguation)
+                null;
     }
 
     /**
@@ -2324,13 +2443,13 @@ export class ChessBoard {
                 const isValid = !this._isInCheck(this.activeColor);
 
                 // Restore the position
-                this.loadFen(originalFen);
+                this.loadFen(originalFen, true);
 
                 return isValid;
             } catch (error) {
                 // Restore the position on error
                 try {
-                    this.loadFen(originalFen);
+                    this.loadFen(originalFen, true);
                 } catch (restoreError) {
                     console.log(`Error restoring FEN: ${restoreError.message}`);
                 }
@@ -2499,7 +2618,7 @@ export class ChessBoard {
      */
     _isValidQueenMove(fromRank, fromFile, toRank, toFile) {
         return this._isValidRookMove(fromRank, fromFile, toRank, toFile) ||
-               this._isValidBishopMove(fromRank, fromFile, toRank, toFile);
+            this._isValidBishopMove(fromRank, fromFile, toRank, toFile);
     }
 
     /**
@@ -2575,6 +2694,14 @@ export class ChessBoard {
 
         const movingPiece = this.board[fromRank][fromFile];
         const capturedPiece = this.board[toRank][toFile];
+
+        // Set capture flag if there's a captured piece
+        if (capturedPiece) {
+            move.capture = true;
+        } else {
+            // Ensure capture flag is false for non-captures
+            move.capture = move.capture || false;
+        }
 
         // Store move in history
         this.moveHistory.push({
@@ -2781,13 +2908,13 @@ export class ChessBoard {
         }
 
         // Update halfmove clock
-        if (movingPiece.type === PieceType.PAWN || move.capture) {
+        if (movingPiece.type === PieceType.PAWN || move.promotion || move.capture) {
             this.halfmoveClock = 0;
         } else {
             this.halfmoveClock++;
         }
 
-        // Update fullmove number
+        // Update fullmove number (increment after Black's move)
         if (this.activeColor === Color.BLACK) {
             this.fullmoveNumber++;
         }
@@ -2844,6 +2971,54 @@ export class ChessBoard {
         const index = this.capturedPieces[color].indexOf(pieceType);
         if (index !== -1) {
             this.capturedPieces[color].splice(index, 1);
+        }
+    }
+
+    /**
+     * Goes back to the starting position by undoing all moves
+     * The board state will be equivalent to the starting position or when loadFen was last invoked
+     * @returns {boolean} True if successfully returned to start, false if already at start
+     */
+    start() {
+        // Check if already at starting position
+        if (this.moveHistory.length === 0) {
+            return false;
+        }
+
+        try {
+            // Determine the starting position to return to
+            let startingPosition;
+
+            if (this.originalLoadedPosition) {
+                // Use the original loaded position as the starting position
+                startingPosition = this.originalLoadedPosition;
+            } else if (this.positionHistory.length > 0) {
+                // Fallback to first position in history
+                startingPosition = this.positionHistory[0];
+            } else {
+                // Fallback to standard starting position
+                startingPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+            }
+
+            // Clear all moves
+            this.moveHistory = [];
+
+            // Reset to the starting position
+            this.loadFen(startingPosition, true);
+            this.positionHistory = [startingPosition];
+
+            // Reset captured pieces for Crazyhouse
+            if (this.variant === Variant.CRAZYHOUSE) {
+                this.capturedPieces = {
+                    [Color.WHITE]: [],
+                    [Color.BLACK]: []
+                };
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error returning to start:', error);
+            return false;
         }
     }
 
@@ -3036,7 +3211,7 @@ export class ChessBoard {
             case PieceType.KING:
                 // Kings move one square in any direction, or castle
                 return (rankDiff <= 1 && fileDiff <= 1) ||
-                       (rankDiff === 0 && fileDiff === 2); // Castling
+                    (rankDiff === 0 && fileDiff === 2); // Castling
 
             default:
                 return false;
@@ -3118,7 +3293,7 @@ export class ChessBoard {
                 }
             } finally {
                 // Restore position
-                this.loadFen(originalFen);
+                this.loadFen(originalFen, true);
                 this.moveHistory = originalMoveHistory;
                 this.positionHistory = originalPositionHistory;
             }
@@ -3299,12 +3474,12 @@ export class ChessBoard {
             // For Chess960, we need to restore the original starting position
             // This is stored when the board is first created
             if (this.chess960StartingFen) {
-                this.loadFen(this.chess960StartingFen);
+                this.loadFen(this.chess960StartingFen, true);
             } else {
-                this.loadFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+                this.loadFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', true);
             }
         } else {
-            this.loadFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+            this.loadFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', true);
         }
 
         // Clear move and position history
@@ -3334,6 +3509,62 @@ export class ChessBoard {
         // Replay all moves
         for (const move of movesToReplay) {
             this.makeMove(move.san);
+        }
+    }
+
+    /**
+     * Rebuilds the position history by replaying all moves from the starting position
+     * This is used when move history is updated via prependMoveHistory()
+     * @private
+     */
+    _rebuildPositionHistory() {
+        try {
+            // Save the current board state
+            const currentFen = this.getFen();
+            const currentMoveHistory = [...this.moveHistory];
+
+            // For prependMoveHistory, we always start from the standard starting position
+            // because we're building a position history that shows the progression from
+            // the beginning through all the moves to the current position
+            const startingPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+            // Reset position history with starting position
+            this.positionHistory = [startingPosition];
+
+            // Create a temporary board to replay moves and build position history
+            const tempBoard = new ChessBoard(this.variant);
+            tempBoard.loadFen(startingPosition, true);
+
+            // Replay all moves and capture position after each move
+            for (let i = 0; i < currentMoveHistory.length; i++) {
+                const move = currentMoveHistory[i];
+
+                const success = tempBoard.makeMove(move.san);
+                if (!success) {
+                    console.error(`Failed to replay move: ${move.san}`);
+                    // If a move fails, stop rebuilding and keep what we have
+                    break;
+                }
+
+                const newFen = tempBoard.getFen();
+                this.positionHistory.push(newFen);
+            }
+
+            // Save the built position history before restoring board state
+            const builtPositionHistory = [...this.positionHistory];
+
+            // Restore the current board state
+            this.loadFen(currentFen, true);
+            this.moveHistory = currentMoveHistory;
+
+            // Restore the built position history (loadFen overwrites it)
+            this.positionHistory = builtPositionHistory;
+        } catch (error) {
+            console.error('Error in _rebuildPositionHistory:', error);
+            // If there's an error, ensure we have at least the starting position
+            if (this.positionHistory.length === 0) {
+                this.positionHistory = ['rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'];
+            }
         }
     }
 

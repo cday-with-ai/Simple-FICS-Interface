@@ -3,18 +3,19 @@
 // Import ECO lookup functions
 import {initECO, lookupFromMoveList} from './eco.js';
 import {
+    convertToUnicodeChessPieces,
+    ficsMoveToStartEndArray,
     fileNumberToAlgebraic,
     getPieceAtSquare,
     parseVerboseMove,
+    startEndToAlgebraic,
     style12ToFen,
     toAlgebraicSquare,
-    toRankFile,
-    convertToUnicodeChessPieces,
-    startEndToAlgebraic,
-    ficsMoveToStartEndArray
+    toRankFile
 } from './utils.js';
 import {playSound} from './index.js';
-import {getObservedPlayer,getFollowedPlayer} from "./fics.js"
+import {getFollowedPlayer, getObservedPlayer} from "./fics.js"
+import {ChessBoard, Variant} from "./ChessBoard.js";
 
 
 // GameRelation Enum
@@ -28,13 +29,6 @@ const GameRelation = {
     STARTING_BOARD: -10,
 };
 
-let chess; // The main chess game instance currently just used for highlighting legal moves when moving a piece.
-try {
-    chess = new Chess();
-    console.log("Chess instance initialized successfully");
-} catch (e) {
-    console.error("Failed to initialize chess instance:", e);
-}
 let ws; // WebSocket instance, to be set by an initializer
 let prefs; // Preferences object, to be set by an initializer
 
@@ -44,11 +38,17 @@ let previousPosition = null; // For animation
 let clockTimer = null;
 let movesListDisplayElement; // DOM element for displaying the moves list
 let movesListContainer; // Container for the moves list
+
+/**
+ * TODO: this should be stored in a map by game number so multiple games can be handled correctly with variant, etc.
+ */
 let gameState = { // Reset header
     gameNumber: 0,
     whitePlayer: {name: 'White', rating: ''},
     blackPlayer: {name: 'Black', rating: ''},
-    type: '',
+    variant: Variant.CLASSIC,
+    chessBoard: new ChessBoard(Variant.CLASSIC),
+    type: 'Freeform',
     isRated: false,
     moveNumber: 1,
     lastMove: '',
@@ -71,9 +71,7 @@ let gameState = { // Reset header
     isPlayerWhite: true,
     isPlayerPlaying: true,
     isFlipped: false,
-    isValidationSupported: true,
     allowUserToMoveBothSides: true,
-    moves: [],
     validMoves: [],
     openingDescription: '',
     isWhitesMove: true,
@@ -86,7 +84,7 @@ let gameState = { // Reset header
     clickclickStartSquareAlegbraic: null,
     clickclickLastDropTime: null,
     premove: null, // null if not set.
-    fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', //Just piece positions, no other info.
+    fen: new ChessBoard(Variant.CLASSIC).getFen(),
     status: '',
     result: ''
 };
@@ -105,10 +103,6 @@ export function onStyle12(msg) {
         gameState.premove = null;
     }
 
-    if (!boardInitialized) {
-        setupMainChessBoardDisplay();
-    }
-
     updateBoardFromStyle12(msg);
     updateMoveListWithLastMove();
     updatePlayerInfoAndClockUI();
@@ -124,53 +118,44 @@ export function onStyle12(msg) {
     }
 }
 
-
 /**
- * Sent when the user is playing a game that has started.
- * GuestGTKW (++++) walpurti (2084) unrated blitz 5 0
- * {Game 14 (GuestGTKW vs. walpurti) Creating unrated blitz match.}
- *  Game 14: A disconnection will be considered a forfeit.
- * fics%
- * @param message The message to process
- * @returns {boolean} True if the message was processed, false otherwise.
+ * Invoked when a new fics game is being observed or played.
+ * @param gameNum The game number.
+ * @param whiteName The white player's name.
+ * @param whiteRating The white player's rating.
+ * @param blackName The black player's name.
+ * @param blackRating  The black player's rating.
+ * @param isRated True if the game is rated.
+ * @param gameType The game type.
+ * @param minutes The time limit in minutes.
+ * @param increment The increment in seconds.
  */
-export function onGameStart(message) {
-    if (!message || !message.trim()) return false;
-    //Creating: foo (1668) bobbyrob (1715) rated blitz 3 0
-    //{Game 16 (foo vs. bobbyrob) Creating rated blitz match.}
-    // Regular expression to match game creation messages with more flexible rating patterns
-    const gameCreationRegex = /^([\w.-]+) \(([\d+-]+)\) ([\w.-]+) \(([\d+-]+)\) (rated|unrated) (\w+) (\d+) (\d+)/;
-    const match = message.match(gameCreationRegex);
-
-    if (!match) {
-        if (prefs && prefs.showStyle12Events) {
-            console.log("Game creation message did not match regex pattern:", message);
-        }
-        return false;
-    } else {
-        console.log(`Processing game creation ${message}`);
-    }
-
-    //Parse second line for game number.
-    let gameNumber = null;
-    const startIndex = message.indexOf("\n{Game ");
-    if (startIndex !== -1) {
-        gameNumber = message.substring(startIndex + 7);
-        const spaceIndex = gameNumber.indexOf(" ");
-        gameNumber = gameNumber.substring(0, spaceIndex);
-    }
-
-    gameState.gameNumber = gameNumber;
-    gameState.whitePlayer = {name: match[1], rating: match[2]};
-    gameState.blackPlayer = {name: match[3], rating: match[4]};
-    gameState.type = match[6];
-    gameState.isRated = match[5] === 'rated';
+export function onNewGame(gameNum, whiteName, whiteRating, blackName, blackRating, isRated, ficsGameType, minutes, increment) {
+    console.log("New game:", {
+        gameNum,
+        whiteName,
+        whiteRating,
+        blackName,
+        blackRating,
+        isRated,
+        ficsGameType,
+        minutes,
+        increment
+    });
+    gameState.gameNumber = gameNum;
+    gameState.whitePlayer = {name: whiteName, rating: whiteRating};
+    gameState.blackPlayer = {name: blackName, rating: blackRating};
+    gameState.type = ficsGameType;
+    gameState.variant = ficsGameTypeToVariant(gameState.type);
+    gameState.isRated = isRated;
+    gameState.minutes = minutes;
+    gameState.increment = increment;
+    // This will be followed by a style12 msg later on with the real castling state, etc.
+    // For now, reset everything.
     gameState.moveNumber = 1;
     gameState.lastMove = '';
     gameState.lastMovePretty = '';
     gameState.doublePawnPushFile = -1;
-    gameState.minutes = parseInt(match[7], 10);
-    gameState.increment = parseInt(match[8], 10);
     gameState.whiteTimeSecs = gameState.minutes * 60;
     gameState.blackTimeSecs = gameState.minutes * 60;
     gameState.whiteCastleShort = true;
@@ -189,15 +174,31 @@ export function onGameStart(message) {
     gameState.dndStartSquareAlegbraic = null;
     gameState.clickclickStartSquareAlegbraic = null;
     gameState.dndStartSquareAlegbraic = null;
-    gameState.moves = [];
+    gameState.chessBoard = null;
+    gameState.fen = null;
     gameState.validMoves = [];
     gameState.style12WhiteOnBottom = true;
 
     // Set isWhiteOnBottom to true by default for new games
     // This will be updated correctly when the first Style12 message arrives
     gameState.isWhiteOnBottom = true;
+}
 
-    return true;
+function ficsGameTypeToVariant(gameType) {
+    const result =
+        gameType.startsWith('wild/fr') ? Variant.CHESS960 :
+            gameType.startsWith('wild/') ? Variant.CLASSIC :
+                gameType === 'lightning' ? Variant.CLASSIC :
+                    gameType === 'standard' ? Variant.CLASSIC :
+                        gameType === 'blitz' ? Variant.CLASSIC :
+                            gameType === "losers" ? Variant.LOSERS :
+                                gameType === "suicide" ? Variant.SUICIDE :
+                                    gameType === "atomic" ? Variant.ATOMIC :
+                                        gameType === "crazyhouse" ? Variant.CRAZYHOUSE :
+                                            gameType === "bughouse" ? Variant.CRAZYHOUSE : // Not supported yet.
+                                                Variant.CLASSIC;
+    console.log(`ficsGameTypeToVariant(${gameType}=${result}`);
+    return result;
 }
 
 /**
@@ -222,7 +223,7 @@ export function onGameMoves(rawMovesText) {
         setupMainChessBoardDisplay(); // Ensure UI is ready
     }
     // Update player info UI to show ratings if the game number matches
-    parseAndStoreMovesInternal(rawMovesText);
+    onMoveList(rawMovesText);
     refreshMoveListDisplay();
     highlightLastMoveInMovelist();
     updatePlayerInfoAndClockUI();
@@ -290,15 +291,6 @@ export function onGameEnd(message) {
  * @param style12Message The FICS style 12 message.
  */
 function updateBoardFromStyle12(style12Message) {
-    if (!chess) {
-        try {
-            chess = new Chess();
-        } catch (e) {
-            console.error("Failed to create new chess instance:", e);
-            return;
-        }
-    }
-
     previousPosition = gameState.fen;
 
     const lines = style12Message.split('\n');
@@ -319,8 +311,18 @@ function updateBoardFromStyle12(style12Message) {
     }
 
     const gameNumber = parseInt(parts[16], 10);
-    if (gameNumber !== gameState.gameNumber) {
-        playSound('start');
+    gameState.lastMovePretty = parts[29] === 'none' ? '' : parts[29];
+    gameState.fen = style12ToFen(style12Message); // Store the FEN in gameState. The FEN is used to update the board.
+
+    if (gameState.chessBoard == null) {
+        gameState.chessBoard = new ChessBoard(gameState.variant, gameState.fen);
+    } else {
+        if (!gameState.chessBoard.makeMoveFromSan(gameState.lastMovePretty)) {
+            console.error(`Failed to make move from SAN: ${gameState.lastMovePretty} FEN: ${gameState.fen}`);
+        }
+        if (gameState.fen !== gameState.chessBoard.getFen()) {
+            console.error(`style 12 mismatch with chessBoard fen.\nStyle12=   ${gameState.fen}\t chessBoard=${gameState.chessBoard.getFen()}`);
+        }
     }
 
     try {
@@ -330,15 +332,12 @@ function updateBoardFromStyle12(style12Message) {
         gameState.blackPlayer.name = parts[18];
         gameState.moveNumber = parseInt(parts[26], 10);
         gameState.lastMove = parts[27] === 'none' ? '' : parts[27];
-        gameState.lastMovePretty = parts[29] === 'none' ? '' : parts[29];
         gameState.minutes = parseInt(parts[20], 10);
         gameState.increment = parseInt(parts[21], 10);
         gameState.whiteTimeSecs = parseFloat(parts[24]);
         gameState.blackTimeSecs = parseFloat(parts[25]);
         gameState.isActive = true;
         gameState.openingDescription = '';
-        // TODO: Refactor one day to support validation for everything.
-        gameState.isValidationSupported = gameState.type !== 'atomic' && gameState.type !== 'suicide' && gameState.type !== 'losers';
         gameState.style12WhiteOnBottom = parseInt(parts[30], 10) === 0;
         gameState.relation = parseInt(parts[19], 10);  // Store the numeric relation value directly
 
@@ -350,7 +349,6 @@ function updateBoardFromStyle12(style12Message) {
                 createBoardSquares(boardElement);
             }
         }
-        gameState.fen = style12ToFen(style12Message); // Store the FEN in gameState. The FEN is used to update the board.
         // TODO: Refactored these vars one day to grab from FEN to make the code more reusable.
         gameState.whiteCastleShort = parseInt(parts[11], 10) === 1;
         gameState.whiteCastleLong = parseInt(parts[12], 10) === 1;
@@ -360,13 +358,6 @@ function updateBoardFromStyle12(style12Message) {
         gameState.irreversibleCount = parseInt(parts[15], 10);
         gameState.isWhitesMove = parts[9] === 'W';
 
-        if (gameState.isValidationSupported) {
-            try {
-                chess.load(gameState.fen); // Load new position first for diff
-            } catch (e) {
-                console.error("Error loading FEN:", e);
-            }
-        }
 
         // Update ECO opening info
         updateBoardBottomLabels();
@@ -388,7 +379,6 @@ function updateBoardFromStyle12(style12Message) {
         startClock();  // Restart with new times and turn
     } catch (e) {
         console.error("Failed to process Style12 message:", e);
-        if (chess) chess.reset(); // Fallback
         updateBoardGraphicsAndSquareListeners(true);
     }
 }
@@ -516,7 +506,7 @@ function createSquare(boardElement, algebraicSquare) {
 
             if (treatAsStartMove) {
                 gameState.clickclickStartSquareAlegbraic = squareDiv.dataset.algebraic;
-                const verboseMoves = chess.moves({square: gameState.clickclickStartSquareAlegbraic, verbose: true});
+                const verboseMoves = gameState.chessBoard.getLegalMoves(gameState.clickclickStartSquareAlegbraic);
                 gameState.validMoves = verboseMoves.map(move => move.to);
                 refreshValidMoveStyleOnSquares();
             }
@@ -647,7 +637,7 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
                         gameState.dndStartSquareAlegbraic = squareAlg;
 
                         // Get valid moves for this piece
-                        const verboseMoves = chess.moves({square: squareAlg, verbose: true});
+                        const verboseMoves = gameState.chessBoard.getLegalMoves(squareAlg);
                         gameState.validMoves = verboseMoves.map(move => move.to);
 
                         // Update board highlights to show valid moves
@@ -810,13 +800,13 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
 
     const statusDiv = document.getElementById('gameStatus'); // Assuming gameStatus div exists
     if (statusDiv) {
-        if (chess.game_over()) {
+        if (gameState.chessBoard.isGameOver()) {
             statusDiv.innerText = 'Game Over';
-            if (chess.in_checkmate()) statusDiv.innerText += ': Checkmate';
-            else if (chess.in_draw()) statusDiv.innerText += ': Draw';
+            if (gameState.chessBoard.isCheckmate()) statusDiv.innerText += ': Checkmate';
+            else if (gameState.chessBoard.isInsufficientMaterial() || gameState.chessBoard.isStalemate()) statusDiv.innerText += ': Draw';
             stopClock();
         } else {
-            statusDiv.innerText = chess.turn() === 'w' ? 'White to move' : 'Black to move';
+            statusDiv.innerText = gameState.chessBoard.getActiveColor() === 'w' ? 'White to move' : 'Black to move';
         }
     }
     if (updateNonBoardUI) { // Allow null to be passed if only redrawing
@@ -850,7 +840,7 @@ function updatePlayerInfoAndClockUI() {
     // Update game type info (right-aligned)
     const gameTypeInfo = document.getElementById('gameTypeInfo');
     if (gameTypeInfo) {
-        if (gameState.type !== '' && gameState.minutes) {
+        if (gameState.variant !== '' && gameState.minutes) {
             const ratedStr = gameState.isRated ? 'rated' : 'unrated';
             gameTypeInfo.innerText = `${ratedStr} ${gameState.type} ${gameState.minutes} ${gameState.increment}`;
         } else {
@@ -1055,7 +1045,7 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
 
     const isPremove = gameState.isPlayerPlaying &&
         gameState.isWhitesMove !== gameState.isPlayerWhite;
-    const isValidating = gameState.isValidationSupported && !isPremove &&
+    const isValidating = !isPremove &&
         (!gameState.isPlayerPlaying ||
             (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite));
 
@@ -1064,22 +1054,33 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
     let moveResult = null;
 
     if (!isPremove && isValidating) {
-        moveResult = chess.move(moveObject);
-        gameState.fen = chess.fen();
+        moveResult = gameState.chessBoard.makeLongAlgebraicMove(moveObject.from, moveObject.to, moveObject.promotion ? moveObject.promotion : null);
+        if (moveResult) {
+            gameState.fen = gameState.chessBoard.getFen();
+            gameState.lastMove = gameState.chessBoard.getLastMove().san;
+        }
     }
     if (isPremove) {
-        gameState.premove = moveStringPart;
-        console.log("Making premove: " + gameState.premove);
-        updateBoardBottomLabels();
+        moveResult = gameState.chessBoard.isValidPremove(startSquareAlgebraic, endSquareAlgebraic, moveObject.promotion ? moveObject.promotion : null);
+        if (moveResult) {
+            gameState.premove = moveStringPart;
+            // Don't update board on pre-move, let it happen when the move is actually played.
+            console.log("Making premove: " + gameState.premove);
+            updateBoardBottomLabels();
 
-        document.querySelector(`[data-algebraic="${startSquareAlgebraic}"]`).classList.add('premove-start');
-        document.querySelector(`[data-algebraic="${endSquareAlgebraic}"]`).classList.add('premove-end');
+            document.querySelector(`[data-algebraic="${startSquareAlgebraic}"]`).classList.add('premove-start');
+            document.querySelector(`[data-algebraic="${endSquareAlgebraic}"]`).classList.add('premove-end');
+        } else {
+            console.error("Invalid move by drop:", moveObject);
+            playSound('illegal');
+        }
 
         // Restore the original piece visibility if the move failed
         if (isDragging && gameState.draggedPieceElement) {
             gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
             gameState.draggedPieceElement.classList.add('piece-visible');
         }
+        return moveResult;
     } else if (!isValidating || (isValidating && moveResult)) {
 
         /**
@@ -1134,8 +1135,9 @@ function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         return true;
     } else if (!moveResult) {
         console.error("Invalid move by drop:", moveObject);
+        playSound('illegal');
         if (!isPremove && isValidating) {
-            chess.undo();
+            gameState.chessBoard.back();
         }
 
         // Restore the original piece visibility if the move failed
@@ -1315,7 +1317,7 @@ function startClock() {
                     gameState.whiteClockDisplay = formatClockTimeInternal(gameState.whiteTimeSecs);
                 } else {
                     gameState.blackTimeSecs = Math.max(0, gameState.blackTimeSecs - 1);
-                    gameState.blackClockDisplay =formatClockTimeInternal (gameState.blackTimeSecs);
+                    gameState.blackClockDisplay = formatClockTimeInternal(gameState.blackTimeSecs);
                 }
 
                 // Update the UI
@@ -1446,14 +1448,14 @@ function showPromotionOptions(startSquareAlgebraic, endSquareAlgebraic, isDraggi
         const moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic, promotion: promotion};
 
         const isPremove = gameState.isPlayerPlaying && gameState.isWhitesMove !== gameState.isPlayerWhite;
-        const isValidating = gameState.isValidationSupported && !isPremove &&
+        const isValidating = !isPremove &&
             (!gameState.isPlayerPlaying || (gameState.isPlayerPlaying && gameState.isWhitesMove === gameState.isPlayerWhite));
 
         let moveResult = null;
 
         if (!isPremove && isValidating) {
-            moveResult = chess.move(moveObject);
-            gameState.fen = chess.fen();
+            moveResult = gameState.chessBoard.makeMove(moveObject);
+            gameState.fen = gameState.chessBoard.getFen();
         }
 
         if (isPremove) {
@@ -1476,7 +1478,8 @@ function showPromotionOptions(startSquareAlgebraic, endSquareAlgebraic, isDraggi
 
             // Update the lastMovePretty property so the move list can be updated
             if (moveResult) {
-                gameState.lastMovePretty = moveResult.san;
+                const lastMove = gameState.chessBoard.getLastMove();
+                gameState.lastMovePretty = lastMove ? lastMove.san : '';
             }
 
             // Update the board graphics which will create the piece at the new location
@@ -1485,7 +1488,7 @@ function showPromotionOptions(startSquareAlgebraic, endSquareAlgebraic, isDraggi
         } else if (!moveResult) {
             console.error("Invalid promotion move:", moveObject);
             if (!isPremove && isValidating) {
-                chess.undo();
+                gameState.chessBoard.back();
             }
         }
     };
@@ -1556,16 +1559,6 @@ export function initChessSystem(websocket, preferencesObject) {
     // Initialize ECO database
     initECO();
 
-    // Make sure chess instance is initialized
-    if (!chess) {
-        console.log("Creating new chess instance in initChessSystem");
-        try {
-            chess = new Chess();
-        } catch (e) {
-            console.error("Failed to create chess instance in initChessSystem:", e);
-        }
-    }
-
     setupMainChessBoardDisplay(); // Sets up the DOM for the main board
     boardInitialized = true;
 
@@ -1600,7 +1593,7 @@ export function initChessSystem(websocket, preferencesObject) {
 }
 
 /**
- * Refreshes the move list display with gameState.moves.
+ * Refreshes the move list display with chessBoard.moves.
  */
 function refreshMoveListDisplay() {
     if (!movesListContainer) {
@@ -1621,44 +1614,45 @@ function refreshMoveListDisplay() {
     movesListDisplayElement.innerHTML = '';
 
     // Now update the moves display with actual moves
-    if (gameState.moves.length > 0) {
+    if (gameState.chessBoard.getMoveHistory().length > 0) {
         const table = document.createElement('table');
         table.classList.add('moves-table');
         const tbody = document.createElement('tbody');
 
-        gameState.moves.forEach(move => {
+        // Check if chessBoard is initialized before accessing its methods
+        const moveHistory = gameState.chessBoard ? gameState.chessBoard.getMoveHistory() : [];
+        for (let i = 0; i < moveHistory.length; i += 2) {
+            const whiteMove = moveHistory[i];
+            const blackMove = i + 1 < moveHistory.length ? moveHistory[i + 1] : null;
+            const moveNumber = Math.floor(i / 2) + 1;
+
             const row = tbody.insertRow();
 
+            // Move number cell
             const numCell = row.insertCell();
             numCell.classList.add('move-number');
-            numCell.textContent = `${move.number}.`;
+            numCell.textContent = moveNumber + '.';
 
+            // White move cell
             const whiteCell = row.insertCell();
-            if (move.white && move.white.san) {
-                const whiteSanSpan = document.createElement('span');
-                whiteSanSpan.classList.add('move-san');
-                whiteSanSpan.textContent = convertToUnicodeChessPieces(move.white.san);
-                whiteSanSpan.onclick = () => jumpToMove(move.number, 'w');
-                whiteSanSpan.style.cursor = 'pointer';
-                whiteCell.appendChild(whiteSanSpan);
-            } else {
-                // Don't show 'none' for empty moves
-                whiteCell.innerHTML = '&nbsp;'; // Empty cell if no white move
-            }
+            const whiteSpan = document.createElement('span');
+            whiteSpan.classList.add('move-san');
+            whiteSpan.textContent = convertToUnicodeChessPieces(whiteMove.san);
+            whiteSpan.onclick = () => jumpToMove(moveNumber, 'w');
+            whiteSpan.style.cursor = 'pointer';
+            whiteCell.appendChild(whiteSpan);
 
-            const blackCell = row.insertCell();
-            if (move.black && move.black.san) {
-                const blackSanSpan = document.createElement('span');
-                blackSanSpan.classList.add('move-san');
-                blackSanSpan.textContent = convertToUnicodeChessPieces(move.black.san);
-                blackSanSpan.onclick = () => jumpToMove(move.number, 'b');
-                blackSanSpan.style.cursor = 'pointer';
-                blackCell.appendChild(blackSanSpan);
-            } else {
-                // Don't show 'none' for empty moves
-                blackCell.innerHTML = '&nbsp;'; // Keep cell structure
+            // Black move cell (if exists)
+            if (blackMove) {
+                const blackCell = row.insertCell();
+                const blackSpan = document.createElement('span');
+                blackSpan.classList.add('move-san');
+                blackSpan.textContent = convertToUnicodeChessPieces(blackMove.san);
+                blackSpan.onclick = () => jumpToMove(moveNumber, 'b');
+                blackSpan.style.cursor = 'pointer';
+                blackCell.appendChild(blackSpan);
             }
-        });
+        }
         table.appendChild(tbody);
         movesListDisplayElement.appendChild(table);
     }
@@ -1686,85 +1680,9 @@ function updateMoveListWithLastMove() {
         movesListContainer.style.display = 'block';
     }
 
-    if (gameState.moves.length === 0 && !gameState.isWhitesMove) {
-        gameState.moves = [{
-            number: gameState.moveNumber,
-            white: {
-                san: gameState.lastMovePretty
-            },
-            black: {
-                san: null
-            }
-        }];
-
-        // Update the display
-        refreshMoveListDisplay();
-        highlightLastMoveInMovelist();
-
-        // Update ECO opening info when move list changes
-        updateBoardBottomLabels();
-        return;
-    }
-
-    // Get the last move in the list, or create a new one if needed
-    let lastMove;
-    if (gameState.moves.length > 0) {
-        lastMove = gameState.moves[gameState.moves.length - 1];
-    }
-
-    if (lastMove) {
-        // A move has already been made and we received the Style 12 for it so isWhitesMove will not be the side that made the move.
-        if (gameState.isWhitesMove) { // Black just moved, so it's White's turn
-            // If the last move in the list has a white move but no black move, add the black move
-            console.log(`last move: ${JSON.stringify(lastMove)}`);
-            if (lastMove.white.san && !lastMove.black || !lastMove.black.san) {
-                lastMove.black = {
-                    san: gameState.lastMovePretty
-                };
-                console.log("Added black move to existing move:", lastMove);
-            } else {
-                // Otherwise, create a new move with just the black move
-                const newMove = {
-                    number: gameState.moveNumber,
-                    white: {
-                        san: null
-                    },
-                    black: {
-                        san: gameState.lastMovePretty
-                    }
-                };
-                gameState.moves.push(newMove);
-                console.log("Added new move with black move:", newMove);
-            }
-        } else { // White just moved, so it's Black's turn
-            // If the last move in the list has no white move, add the white move
-            if (!lastMove.white || !lastMove.white.san) {
-                lastMove.white = {
-                    san: gameState.lastMovePretty
-                };
-                console.log("Added white move to existing move:", lastMove);
-            } else {
-                // Otherwise, create a new move with just the white move
-                const newMove = {
-                    number: gameState.moveNumber,
-                    white: {
-                        san: gameState.lastMovePretty
-                    },
-                    black: {
-                        san: null
-                    }
-                };
-                gameState.moves.push(newMove);
-                console.log("Added new move with white move:", newMove);
-            }
-        }
-    }
-
     // Update the display
     refreshMoveListDisplay();
     highlightLastMoveInMovelist();
-
-    // Update ECO opening info when move list changes
     updateBoardBottomLabels();
 }
 
@@ -1798,60 +1716,53 @@ function highlightLastMoveInMovelist() {
  * @param moveNumber The move number to jump to.
  * @param color The color.
  */
-function jumpToMove(moveNumber, color) {
-    console.log(`Navigate to move: ${moveNumber}${color === 'w' ? '.' : '...'}`);
+export function jumpToMove(moveNumber, color) {
+    // Use window.gameState for compatibility with tests
+    const currentGameState = window.gameState || gameState;
 
-    // Create a new chess instance to replay the game
-    const tempChess = new Chess();
-
-    // Replay all moves up to the selected move
-    let reachedTargetMove = false;
-
-    for (let i = 0; i < gameState.moves.length; i++) {
-        const move = gameState.moves[i];
-
-        // Play white's move if it exists
-        if (move.white && move.white.san) {
-            try {
-                tempChess.move(move.white.san);
-            } catch (e) {
-                console.error(`Error playing white move ${move.white.san}:`, e);
-                break;
-            }
-        }
-
-        // Check if we've reached the target move
-        if (move.number === moveNumber && color === 'w') {
-            reachedTargetMove = true;
-            break;
-        }
-
-        // Play black's move if it exists
-        if (move.black && move.black.san) {
-            try {
-                tempChess.move(move.black.san);
-            } catch (e) {
-                console.error(`Error playing black move ${move.black.san}:`, e);
-                break;
-            }
-        }
-
-        // Check if we've reached the target move
-        if (move.number === moveNumber && color === 'b') {
-            reachedTargetMove = true;
-            break;
-        }
+    if (!currentGameState.chessBoard || currentGameState.chessBoard.getMoveHistory().length === 0) {
+        return;
     }
 
-    if (reachedTargetMove) {
-        // Update the board with the position at the selected move
-        chess.load(tempChess.fen());
-        updateBoardGraphicsAndSquareListeners(null, null);
+    // Validate input parameters
+    if (moveNumber < 1 || !['w', 'b'].includes(color)) {
+        console.warn(`Invalid move parameters: ${moveNumber}${color}`);
+        return;
+    }
 
-        // Highlight the selected move in the moves list
-        highlightSelectedMoveInternal(moveNumber, color);
+    // Calculate the half-move index (0-based)
+    const halfMoveIndex = color === 'w' ? 2 * (moveNumber - 1) : 2 * (moveNumber - 1) + 1;
+
+    // Check if the move exists
+    if (halfMoveIndex >= 0 && halfMoveIndex < currentGameState.chessBoard.getMoveHistory().length) {
+        // Get the position after the specified move
+        const positionIndex = halfMoveIndex + 1;
+
+        const targetFen = currentGameState.chessBoard.getFenBeforeHalfmove(positionIndex);
+
+        console.log('DEBUG jumpToMove positionIndex:', positionIndex);
+        console.log('DEBUG jumpToMove targetFen:', targetFen);
+
+        if (targetFen) {
+            // Update the board position
+            currentGameState.fen = targetFen;
+            console.log('DEBUG jumpToMove updated gameState.fen to:', targetFen);
+
+            // Update UI - call functions directly
+            console.log('DEBUG jumpToMove calling updateBoardGraphicsAndSquareListeners');
+            updateBoardGraphicsAndSquareListeners(false);
+
+            console.log('DEBUG jumpToMove calling updateBoardBottomLabels');
+            updateBoardBottomLabels();
+
+            // Highlight the selected move in the moves list
+            console.log('DEBUG jumpToMove calling highlightSelectedMoveInternal');
+            highlightSelectedMoveInternal(moveNumber, color);
+        } else {
+            console.warn(`No FEN found for move ${moveNumber}${color === 'w' ? '' : '...'}`);
+        }
     } else {
-        console.warn(`Could not navigate to move ${moveNumber}${color === 'w' ? '' : '...'}`);
+        console.warn(`Could not navigate to move ${moveNumber}${color === 'w' ? '' : '...'} - move not found`);
     }
 }
 
@@ -1859,70 +1770,100 @@ function jumpToMove(moveNumber, color) {
 /**
  * Jumps to the first move in the move list.
  */
-function jumpToFirstMove() {
-    if (gameState.moves.length === 0) return;
+export function jumpToFirstMove() {
+    // Use window.gameState for compatibility with tests
+    const currentGameState = window.gameState || gameState;
 
-    // Reset the chess board to the starting position
-    chess.reset();
-    // Update ECO opening info
-    updateBoardBottomLabels();
-    updateBoardGraphicsAndSquareListeners(null, null);
+    console.log('DEBUG jumpToFirstMove called');
+    console.log('DEBUG currentGameState.chessBoard:', currentGameState.chessBoard);
+    console.log('DEBUG move history length:', currentGameState.chessBoard ? currentGameState.chessBoard.getMoveHistory().length : 'no chessBoard');
 
-    // Highlight the first move (if any)
-    if (gameState.moves[0] && gameState.moves[0].white) {
-        highlightSelectedMoveInternal(gameState.moves[0].number, 'w');
+    if (!currentGameState.chessBoard || currentGameState.chessBoard.getMoveHistory().length === 0) {
+        console.log('DEBUG jumpToFirstMove exiting early - no chessBoard or empty move history');
+        return;
+    }
+
+    // Get the starting position (before any moves)
+    const startingFen = currentGameState.chessBoard.getFenBeforeHalfmove(0);
+    console.log('DEBUG jumpToFirstMove startingFen:', startingFen);
+
+    if (startingFen) {
+        currentGameState.fen = startingFen;
+        console.log('DEBUG jumpToFirstMove updated gameState.fen to:', startingFen);
+
+        // Update UI - call functions directly
+        console.log('DEBUG jumpToFirstMove calling updateBoardGraphicsAndSquareListeners');
+        updateBoardGraphicsAndSquareListeners(false);
+
+        console.log('DEBUG jumpToFirstMove calling updateBoardBottomLabels');
+        updateBoardBottomLabels();
+
+        // Clear any move highlighting since we're at the starting position
+        console.log('DEBUG jumpToFirstMove calling unselectMoveInMoveList');
+        unselectMoveInMoveList();
+    } else {
+        console.warn('No starting position found in position history');
     }
 }
 
 /**
  * Jumps to the last move in the move list.
  */
-function jumpToLastMove() {
-    if (gameState.moves.length === 0) return;
+export function jumpToLastMove() {
+    // Use window.gameState for compatibility with tests
+    const currentGameState = window.gameState || gameState;
 
-    // Find the last move
-    const lastMove = gameState.moves[gameState.moves.length - 1];
-    const color = lastMove.black ? 'b' : 'w';
+    console.log('DEBUG jumpToLastMove called');
+    console.log('DEBUG currentGameState.chessBoard:', currentGameState.chessBoard);
+    console.log('DEBUG move history length:', currentGameState.chessBoard ? currentGameState.chessBoard.getMoveHistory().length : 'no chessBoard');
 
-    // Create a new chess instance and replay all moves
-    const tempChess = new Chess();
-
-    // Replay all moves
-    for (const move of gameState.moves) {
-        if (move.white && move.white.san) {
-            try {
-                tempChess.move(move.white.san);
-            } catch (e) {
-                console.error(`Error playing white move ${move.white.san}:`, e);
-            }
-        }
-        if (move.black && move.black.san) {
-            try {
-                tempChess.move(move.black.san);
-            } catch (e) {
-                console.error(`Error playing black move ${move.black.san}:`, e);
-            }
-        }
+    if (!currentGameState.chessBoard || currentGameState.chessBoard.getMoveHistory().length === 0) {
+        console.log('DEBUG jumpToLastMove exiting early - no chessBoard or empty move history');
+        return;
     }
 
-    // Update the board with the final position
-    chess.load(tempChess.fen());
-    // Update ECO opening info
+    // Get the current position (after all moves)
+    const currentFen = currentGameState.chessBoard.getFen();
+    currentGameState.fen = currentFen;
+    console.log('DEBUG jumpToLastMove updated gameState.fen to:', currentFen);
+
+    // Update UI - call functions directly
+    console.log('DEBUG jumpToLastMove calling updateBoardGraphicsAndSquareListeners');
+    updateBoardGraphicsAndSquareListeners(false);
+
+    console.log('DEBUG jumpToLastMove calling updateBoardBottomLabels');
     updateBoardBottomLabels();
-    updateBoardGraphicsAndSquareListeners(null, null);
 
     // Highlight the last move
-    highlightSelectedMoveInternal(lastMove.number, color);
+    const moveHistory = currentGameState.chessBoard.getMoveHistory();
+    const lastMoveIndex = moveHistory.length - 1;
+    console.log('DEBUG jumpToLastMove lastMoveIndex:', lastMoveIndex);
+
+    if (lastMoveIndex >= 0) {
+        const moveNumber = Math.floor(lastMoveIndex / 2) + 1;
+        const color = lastMoveIndex % 2 === 0 ? 'w' : 'b';
+        console.log('DEBUG jumpToLastMove highlighting move:', moveNumber, color);
+
+        console.log('DEBUG jumpToLastMove calling highlightSelectedMoveInternal');
+        highlightSelectedMoveInternal(moveNumber, color);
+    }
 }
 
 /**
  * Jumps to the previous move in the move list.
  */
-function jumpToPreviousMove() {
-    if (gameState.moves.length === 0) return;
+export function jumpToPreviousMove() {
+    // Use window.gameState for compatibility with tests
+    const currentGameState = window.gameState || gameState;
+
+    if (!currentGameState.chessBoard || currentGameState.chessBoard.getMoveHistory().length === 0) return;
 
     // Find the currently selected move
-    const selectedMove = movesListDisplayElement.querySelector('.selected-move');
+    let selectedMove = null;
+    if (typeof movesListDisplayElement !== 'undefined' && movesListDisplayElement) {
+        selectedMove = movesListDisplayElement.querySelector('.selected-move');
+    }
+
     if (!selectedMove) {
         // If no move is selected, go to the last move
         jumpToLastMove();
@@ -1939,69 +1880,57 @@ function jumpToPreviousMove() {
     const moveNumber = parseInt(moveNumCell.textContent);
     const isWhiteMove = selectedMove.closest('td') === moveRow.cells[1];
 
-    // Determine the previous move
-    let prevMoveNumber = moveNumber;
-    let prevMoveColor; // w or b.
+    // Calculate the current half-move index
+    const currentHalfMove = isWhiteMove ? 2 * (moveNumber - 1) : 2 * (moveNumber - 1) + 1;
 
-    if (isWhiteMove) {
-        // If white move is selected, go to black move of previous number
-        prevMoveNumber = moveNumber - 1;
-        prevMoveColor = 'b';
+    // Calculate the previous half-move
+    const prevHalfMove = currentHalfMove - 1;
+
+    if (prevHalfMove >= 0) {
+        // Get the FEN at the previous position
+        const targetFen = currentGameState.chessBoard.getFenBeforeHalfmove(prevHalfMove + 1);
+        if (targetFen) {
+            currentGameState.fen = targetFen;
+
+            // Update UI if functions are available
+            if (typeof updateBoardGraphicsAndSquareListeners === 'function') {
+                updateBoardGraphicsAndSquareListeners(false);
+            }
+            if (typeof updateBoardBottomLabels === 'function') {
+                updateBoardBottomLabels();
+            }
+
+            // Calculate the move number and color for highlighting
+            const prevMoveNumber = Math.floor(prevHalfMove / 2) + 1;
+            const prevMoveColor = prevHalfMove % 2 === 0 ? 'w' : 'b';
+            if (typeof highlightSelectedMoveInternal === 'function') {
+                highlightSelectedMoveInternal(prevMoveNumber, prevMoveColor);
+            }
+        }
     } else {
-        // If black move is selected, go to white move of same number
-        prevMoveColor = 'w';
+        // Go to the starting position
+        jumpToFirstMove();
     }
-
-    // Check if previous move exists
-    const prevMoveIndex = gameState.moves.findIndex(m => m.number === prevMoveNumber);
-    if (prevMoveIndex < 0) return; // No previous move
-
-    const prevMove = gameState.moves[prevMoveIndex];
-    if (prevMoveColor === 'b' && !prevMove.black) return; // No black move for this number
-
-    // Create a new chess instance and replay moves up to the previous move
-    const tempChess = new Chess();
-
-    // Replay moves up to the previous move
-    for (let i = 0; i <= prevMoveIndex; i++) {
-        const move = gameState.moves[i];
-        if (move.white && move.white.san) {
-            try {
-                tempChess.move(move.white.san);
-            } catch (e) {
-                console.error(`Error playing white move ${move.white.san}:`, e);
-            }
-        }
-        if (move.black && move.black.san && (i < prevMoveIndex || prevMoveColor === 'b')) {
-            try {
-                tempChess.move(move.black.san);
-            } catch (e) {
-                console.error(`Error playing black move ${move.black.san}:`, e);
-            }
-        }
-    }
-
-    // Update the board with the position after the previous move
-    chess.load(tempChess.fen());
-    // Update ECO opening info
-    updateBoardBottomLabels();
-    updateBoardGraphicsAndSquareListeners(null, null);
-
-    // Highlight the previous move
-    highlightSelectedMoveInternal(prevMoveNumber, prevMoveColor);
 }
 
 /**
  * Jumps to the next move in the move list.
  */
-function jumpToNextMove() {
-    if (gameState.moves.length === 0) return;
+export function jumpToNextMove() {
+    // Use window.gameState for compatibility with tests
+    const currentGameState = window.gameState || gameState;
+
+    if (!currentGameState.chessBoard || currentGameState.chessBoard.getMoveHistory().length === 0) return;
 
     // Find the currently selected move
-    const selectedMove = movesListDisplayElement.querySelector('.selected-move');
+    let selectedMove = null;
+    if (typeof movesListDisplayElement !== 'undefined' && movesListDisplayElement) {
+        selectedMove = movesListDisplayElement.querySelector('.selected-move');
+    }
+
     if (!selectedMove) {
         // If no move is selected, go to the first move
-        jumpToFirstMove();
+        jumpToMove(1, 'w');
         return;
     }
 
@@ -2015,72 +1944,43 @@ function jumpToNextMove() {
     const moveNumber = parseInt(moveNumCell.textContent);
     const isWhiteMove = selectedMove.closest('td') === moveRow.cells[1];
 
-    // Determine the next move
-    let nextMoveNumber = moveNumber;
-    let nextMoveColor;//w or b
+    // Calculate the current half-move index
+    const currentHalfMove = isWhiteMove ? 2 * (moveNumber - 1) : 2 * (moveNumber - 1) + 1;
 
-    if (isWhiteMove) {
-        // If white move is selected, go to black move of same number
-        nextMoveColor = 'b';
+    // Calculate the next half-move
+    const nextHalfMove = currentHalfMove + 1;
+
+    if (nextHalfMove < currentGameState.chessBoard.getMoveHistory().length) {
+        // Get the FEN at the next position
+        const targetFen = currentGameState.chessBoard.getFenBeforeHalfmove(nextHalfMove + 1);
+        if (targetFen) {
+            currentGameState.fen = targetFen;
+
+            // Update UI if functions are available
+            if (typeof updateBoardGraphicsAndSquareListeners === 'function') {
+                updateBoardGraphicsAndSquareListeners(false);
+            }
+            if (typeof updateBoardBottomLabels === 'function') {
+                updateBoardBottomLabels();
+            }
+
+            // Calculate the move number and color for highlighting
+            const nextMoveNumber = Math.floor(nextHalfMove / 2) + 1;
+            const nextMoveColor = nextHalfMove % 2 === 0 ? 'w' : 'b';
+            if (typeof highlightSelectedMoveInternal === 'function') {
+                highlightSelectedMoveInternal(nextMoveNumber, nextMoveColor);
+            }
+        }
     } else {
-        // If black move is selected, go to white move of next number
-        nextMoveNumber = moveNumber + 1;
-        nextMoveColor = 'w';
+        // Go to the final position
+        jumpToLastMove();
     }
-
-    // Check if next move exists
-    const nextMoveIndex = gameState.moves.findIndex(m => m.number === nextMoveNumber);
-    if (nextMoveIndex < 0) return; // No next move
-
-    const nextMove = gameState.moves[nextMoveIndex];
-    if (nextMoveColor === 'b' && !nextMove.black) return; // No black move for this number
-    if (nextMoveColor === 'w' && !nextMove.white) return; // No white move for this number
-
-    // Create a new chess instance and replay moves up to the next move
-    const tempChess = new Chess();
-
-    // Replay moves up to the next move
-    for (let i = 0; i <= nextMoveIndex; i++) {
-        const move = gameState.moves[i];
-        if (move.white && move.white.san) {
-            try {
-                tempChess.move(move.white.san);
-            } catch (e) {
-                console.error(`Error playing white move ${move.white.san}:`, e);
-            }
-        }
-        if (move.black && move.black.san && (i < nextMoveIndex || (i === nextMoveIndex && nextMoveColor === 'b'))) {
-            try {
-                tempChess.move(move.black.san);
-            } catch (e) {
-                console.error(`Error playing black move ${move.black.san}:`, e);
-            }
-        }
-    }
-
-    // Update the board with the position after the next move
-    chess.load(tempChess.fen());
-    // Update ECO opening info
-    updateBoardBottomLabels();
-    updateBoardGraphicsAndSquareListeners(null, null);
-
-    // Highlight the next move
-    highlightSelectedMoveInternal(nextMoveNumber, nextMoveColor);
 }
 
 /**
  * Function to initialize an empty move list with navigation buttons
  */
 function clearMoveList() {
-    // Clear current game moves if we have a current game
-    if (!gameState || !gameState.moves || gameState.moves.length === 0) {
-        gameState.moves = [{
-            number: 1,
-            white: {},
-            black: {}
-        }];
-    }
-
     if (!movesListContainer) return;
 
     // Clear any existing content
@@ -2169,22 +2069,20 @@ function highlightSelectedMoveInternal(moveNumber, color) {
  * Update the ECO opening label from the move list.
  */
 function updateECOLabelFromMoveList() {
-
     let moveListStr = '';
     gameState.openingDescription = '';
     let opening = '';
-    if (gameState.moves && gameState.moves.length > 0) {
-        for (const move of gameState.moves) {
-            if (move.white && move.white.san) {
-                moveListStr += `${move.number}. ${move.white.san} `;
-                const candidate = lookupFromMoveList(moveListStr.trim());
-                opening = candidate || opening;
+    const moveHistory = gameState.chessBoard.getMoveHistory();
+    if (moveHistory.length > 0) {
+        for (let i = 0; i < moveHistory.length; i++) {
+            const move = moveHistory[i];
+            if (i % 2 == 0) {
+                moveListStr += `${(i / 2) + 1}. ${move.san} `;
+            } else {
+                moveListStr += `${move.san} `;
             }
-            if (move.black && move.black.san) {
-                moveListStr += `${move.black.san} `;
-                const candidate = lookupFromMoveList(moveListStr.trim());
-                opening = candidate || opening;
-            }
+            const candidate = lookupFromMoveList(moveListStr.trim());
+            opening = candidate || opening;
         }
         gameState.openingDescription = opening;
         const ecoOpeningLabel = document.getElementById('ecoOpeningLabel');
@@ -2196,18 +2094,16 @@ function updateECOLabelFromMoveList() {
  * Updates the labels below the board. Currently, ecoOpeningLabel and lastMoveLabel.
  */
 function updateBoardBottomLabels() {
-    // Generate a move list string from the gameState.moves array
     let moveListStr = '';
-    if (gameState.moves && gameState.moves.length > 0) {
-        for (const move of gameState.moves) {
-            if (move.white && move.white.san) {
-                moveListStr += `${move.number}. ${move.white.san} `;
+    const moveHistory = gameState.chessBoard.getMoveHistory();
+    if (moveHistory.length > 0) {
+        for (let i = 0; i < moveHistory.length; i++) {
+            const move = moveHistory[i];
+            if (i % 2 == 0) {
+                moveListStr += `${(i / 2) + 1}. ${move.san} `;
+            } else {
+                moveListStr += `${move.san} `;
             }
-
-            if (move.black && move.black.san) {
-                moveListStr += `${move.black.san} `;
-            }
-
         }
         moveListStr = moveListStr.trim();
     }
@@ -2426,10 +2322,10 @@ function setupMainChessBoardDisplay() {
 
     // Create options for Queen, Rook, Bishop, Knight
     const pieceTypes = [
-        { value: 'q', name: 'Queen' },
-        { value: 'r', name: 'Rook' },
-        { value: 'b', name: 'Bishop' },
-        { value: 'n', name: 'Knight' }
+        {value: 'q', name: 'Queen'},
+        {value: 'r', name: 'Rook'},
+        {value: 'b', name: 'Bishop'},
+        {value: 'n', name: 'Knight'}
     ];
 
     pieceTypes.forEach(piece => {
@@ -2531,19 +2427,6 @@ function setupMainChessBoardDisplay() {
     gameState.whiteClockDisplay = (gameState.whiteTimeSecs);
     gameState.blackClockDisplay = (gameState.blackTimeSecs);
 
-    console.log("Resetting chess board in setupMainChessBoardDisplay");
-    try {
-        if (!chess) {
-            console.error("Chess instance is null in setupMainChessBoardDisplay");
-            chess = new Chess();
-            console.log("Created new chess instance");
-        }
-        chess.reset();
-        console.log("Chess board reset to initial position:", chess.fen());
-    } catch (e) {
-        console.error("Error resetting chess board:", e);
-    }
-
     // Reset ECO opening info and last move label
     if (ecoOpeningLabel) {
         ecoOpeningLabel.innerText = '';
@@ -2584,7 +2467,10 @@ function flipBoard() {
     updateBoardGraphicsAndSquareListeners(true);
 }
 
-function parseAndStoreMovesInternal(rawMovesText) {
+function onMoveList(msg) {
+    console.log(`onMoveList:${msg}`);
+    // Movelist for game 20:
+    //
     // Unrated blitz match, initial time: 5 minutes, increment: 2 seconds.
     //     Move  GuestJVNB          GuestYKYQ
     // ----  ----------------   ----------------
@@ -2615,20 +2501,19 @@ function parseAndStoreMovesInternal(rawMovesText) {
     // Check if we should update the current game's player ratings
     let isForLoadedGame = false;
 
-    const lines = rawMovesText.split('\n');
+    const lines = msg.split('\n');
     let parsingHeader = true;
     let moveDataStarted = false; // To identify when actual move lines begin
 
     // Regex patterns for parsing
     const playerRegex = /^([\w.-]+)\s\((\d+)\)\s+vs\.\s+([\w.-]+)\s\((\d+)\)\s+---\s+(.*)$/;
     const gameTypeRegex = /^(.*) (.*) match,\s+initial time:\s+(.*),\s+increment:\s+(.*)\.$/;
-    const moveLineRegex = /^\s*(\d+)\.\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\)(?:\s+([a-zA-Z0-9+#=O-]+)\s+\(([^)]+)\))?/;
     //const statusRegex = /^{\s*(.*?)\s*}(?:\s*([0-1/2*-]+))?$/;
 
-
-    for (const line of lines) {
-        if (line.trim() === "")
-
+    //Might have a game between style 12 and the move list.
+    const moves = [];
+    listLoop: for (const line of lines) {
+        if (line.trim() === "") continue;
         if (parsingHeader) {
             if (line.indexOf("Movelist for game") === 0) {
                 const match = line.match(/Movelist for game (\d+):/);
@@ -2637,56 +2522,64 @@ function parseAndStoreMovesInternal(rawMovesText) {
                     // Check if this moves list is for the current game
                     if (gameNumber === gameState.gameNumber) {
                         isForLoadedGame = true;
-                        gameState.moves = [];
                     }
                 } else {
-                    return;
+                    break listLoop;
                 }
             }
-
-            const playerMatch = line.match(playerRegex);
-            if (playerMatch) {
-                // This is how the ratings are set for observed games.
-                if (!gameState.whitePlayer.rating) {
-                    gameState.whitePlayer.rating = playerMatch[2];
-                }
-                if (!gameState.blackPlayer.rating) {
-                    gameState.blackPlayer.rating = playerMatch[4];
-                }
-            }
-
-            const gameType = line.match(gameTypeRegex);
-            if (playerMatch) {
-                gameState.increment = gameType[4] === 'rated';
-                gameState.minutes = gameType[3] === 'rated';
-                gameState.isRated = gameType[1] === 'rated';
-                gameState.type = gameType[2];
-            }
-
             // Transition from header to move list data
             if (line.startsWith("----  ----------------")) {
                 parsingHeader = false;
                 moveDataStarted = true;
             }
         } else if (moveDataStarted) {
-            const moveMatch = line.match(moveLineRegex);
-            if (moveMatch) {
-                const moveEntry = {
-                    number: parseInt(moveMatch[1], 10),
-                    white: {san: moveMatch[2], time: moveMatch[3]},
-                    black: moveMatch[4] ? {san: moveMatch[4], time: moveMatch[5]} : null
-                };
-                gameState.moves.push(moveEntry);
+            const moveMatch = line.match(/^\s*(\d+)\.\s+([a-zA-Z0-9+@#=O-]+)\s+\(([^)]+)\)(?:\s+([a-zA-Z0-9+@#=O-]+)\s+\(([^)]+)\))?/);
+            //                                move#        whiteMove            whiteTIme           blackMove         blackTime
+
+            if (!moveMatch) {
+                // No match found - could be end of moves or invalid line
+                console.log("No move match found for line:", line);
+                continue;
             }
-            // Lines after status (like fics% prompt) will be ignored by these specific parsers
+
+            switch (moveMatch.length) {
+                case 4: // Only white move: ["1. e4 (0:05)", "1", "e4", "(0:05)"]
+                    moves.push(moveMatch[2]);
+                    continue;
+                case 6: // Both moves: ["1. e4 (0:05) e5 (0:03)", "1", "e4", "(0:05)", "e5", "(0:03)"]
+                    moves.push(moveMatch[2]); // White move
+                    moves.push(moveMatch[4]); // Black move
+                    continue;
+                default:
+                    console.log("Unexpected moveMatch length:", moveMatch.length, "for line:", line);
+                    continue;
+            }
         }
     }
 
-    if (prefs && prefs.showStyle12Events) { // Re-use this pref for general debug logging
-        console.log("Parsed Game Header (Moves List):", gameState);
-        console.log("Parsed Moves (Moves List):", gameState.moves);
+    console.log("Parsed moves:", moves);
+    console.log("Total moves parsed:", moves.length);
+
+    // Safety check before calling prependMoveHistory
+    if (!gameState.chessBoard) {
+        console.error("gameState.chessBoard is not initialized");
+        return;
     }
+
+    if (moves.length > 0) {
+        try {
+            gameState.chessBoard.prependMoveHistory(moves, false);
+            console.log("Successfully added move history");
+        } catch (error) {
+            console.error("Error in prependMoveHistory:", error);
+            return;
+        }
+    } else {
+        console.log("No moves to add to history");
+    }
+
     updateECOLabelFromMoveList();
+    refreshMoveListDisplay();
 }
 
 // --- Preference Application ---
