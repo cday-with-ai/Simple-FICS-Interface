@@ -350,6 +350,7 @@ function updateBoardFromStyle12(style12Message) {
     } else {
         if (!gameState.chessBoard.makeMoveFromSan(gameState.lastMovePretty)) {
             console.error(`Failed to make move from SAN: ${gameState.lastMovePretty} FEN: ${gameState.fen}`);
+            chessBoard.loadFen(gameState.fen); //Reload with style12 FEN.
         }
         if (gameState.fen !== gameState.chessBoard.getFen()) {
             console.error(`style 12 mismatch with chessBoard fen.\nStyle12=   ${gameState.fen}\t chessBoard=${gameState.chessBoard.getFen()}`);
@@ -357,7 +358,7 @@ function updateBoardFromStyle12(style12Message) {
     }
 
     try {
-        // 1. Update game state information from Style12 parts
+        // Update game state information from Style12 parts
         gameState.gameNumber = gameNumber;
         gameState.whitePlayer.name = parts[17];
         gameState.blackPlayer.name = parts[18];
@@ -1484,9 +1485,8 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         console.log('Handling move...');
         const moveResult = gameState.chessBoard.makeLongAlgebraicMove(moveObject.from, moveObject.to, moveObject.promotion ? moveObject.promotion : null);
         if (moveResult) {
-            gameState.chessBoard.back();
             gameState.fen = gameState.chessBoard.getFen();
-            gameState.lastMovePretty = gameState.chessBoard.getLastMove().san;
+            gameState.chessBoard.back();
 
             /**
              * When not examining or playing: GameRelation.ISOLATED_POSITION or
