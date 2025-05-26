@@ -439,23 +439,14 @@ function handleIllegalMove(msg) {
 function handleStyle12Message(msg) {
     let isMainConsoleMessage = true;
 
-    const style12Start = msg.startsWith("<12>") ? 0 : msg.lastIndexOf("\n<12>");
-    if (style12Start >= 0) {
-        const end = msg.indexOf("\n", style12Start + (msg.startsWith("<12>") ? 0 : 1));
-        const style12Block = end >= 0 ?
-            msg.substring(style12Start + (msg.startsWith("<12>") ? 0 : 1), end) :
-            msg.substring(style12Start + (msg.startsWith("<12>") ? 0 : 1));
-
+    let style12Start = msg.indexOf("<12>");
+    while (style12Start === 0 || msg.charAt(style12Start - 1) === '\n') {
+        const end = msg.indexOf("\n", style12Start + 5);
+        const style12Block = end >= 0 ? msg.substring(style12Start, end) :  msg.substring(style12Start);
         onStyle12(style12Block);
-
-        // Remove the Style12 line from the message to be printed in the console
-        let beforeStyle12 = msg.substring(0, style12Start + (msg.startsWith("<12>") ? 0 : 1));
-        let afterStyle12 = end >= 0 ? msg.substring(end + 1) : "";
-        msg = beforeStyle12 + afterStyle12;
-
-        return msg;
+        msg = msg.substring(0,style12Start) + msg.substring(end);
+        style12Start = msg.indexOf("<12>");
     }
-
     return msg;
 }
 
