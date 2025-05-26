@@ -2358,7 +2358,7 @@ function clearMoveList() {
     // First move button
     const firstMoveBtn = document.createElement('button');
     firstMoveBtn.classList.add('moves-nav-btn');
-    firstMoveBtn.innerHTML = '<span>&lt;&lt;</span>';
+    firstMoveBtn.innerHTML = '<span>⏮</span>';
     firstMoveBtn.title = 'Go to first move';
     firstMoveBtn.onclick = jumpToFirstMove;
     navContainer.appendChild(firstMoveBtn);
@@ -2366,7 +2366,7 @@ function clearMoveList() {
     // Previous move button
     const prevMoveBtn = document.createElement('button');
     prevMoveBtn.classList.add('moves-nav-btn');
-    prevMoveBtn.innerHTML = '<span >&lt;</span>';
+    prevMoveBtn.innerHTML = '<span>◄</span>';
     prevMoveBtn.title = 'Go to previous move';
     prevMoveBtn.onclick = jumpToPreviousMove;
     navContainer.appendChild(prevMoveBtn);
@@ -2374,7 +2374,7 @@ function clearMoveList() {
     // Next move button
     const nextMoveBtn = document.createElement('button');
     nextMoveBtn.classList.add('moves-nav-btn');
-    nextMoveBtn.innerHTML = '<span >&gt;</span>';
+    nextMoveBtn.innerHTML = '<span>►</span>';
     nextMoveBtn.title = 'Go to next move';
     nextMoveBtn.onclick = jumpToNextMove;
     navContainer.appendChild(nextMoveBtn);
@@ -2382,7 +2382,7 @@ function clearMoveList() {
     // Last move button
     const lastMoveBtn = document.createElement('button');
     lastMoveBtn.classList.add('moves-nav-btn');
-    lastMoveBtn.innerHTML = '<span >&gt;&gt;</span>';
+    lastMoveBtn.innerHTML = '<span>⏭</span>';
     lastMoveBtn.title = 'Go to last move';
     lastMoveBtn.onclick = jumpToLastMove;
     navContainer.appendChild(lastMoveBtn);
