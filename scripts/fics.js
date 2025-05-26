@@ -380,7 +380,7 @@ function handleNewGame(msg) {
         //Game 51: A disconnection will be considered a forfeit.
         //fics%
         const creatingStart = msg.indexOf("Creating: ");
-        if (creatingStart == 0 || creatingStart - 1 === '\n') {
+        if (creatingStart == 0 || msg.charAt(creatingStart - 1) === '\n') {
             const creatingEnd = msg.indexOf("\n", creatingStart + 10);
             const gameStart = msg.indexOf("{Game ", creatingEnd + 1);
             const gameEnd = msg.indexOf("\n", gameStart + 6);

@@ -28,19 +28,18 @@ Currently, under construction. See the Road Map below for the current state.
 
 **Road Map** (Current phase PRE-ALPHA):
 **ALPHA:**
+  - Change UI for perspectives, examine, observe, playing, playing end.
+  - Add auto draw, resign buttons for playing.
   - Regression testing.
-    - When the board is flipped, it is not adjusting for the next game.
     - Test all functionality.
     
 **BETA:**
 - Crazyhouse support.
 - Add stockfish 17 web-assembly. Add an analysis mode when playing end or observing.
-Change UI for perspectives, examine, observe, playing, playing end.
-- Add auto draw, resign buttons for playing.
 - Add analysis mode when playing end or observing.
 - Preferences:
   - Expand preferences a bit (not too much).
-- 1.0: (For phone/tablet support. Added after everything is in place)
+- Responsive web design. (For phone/tablet support. Added after everything is in place)
   - More changes for Responsive web design that work on mobile and tablets. (Last after features are added.)
     - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
 

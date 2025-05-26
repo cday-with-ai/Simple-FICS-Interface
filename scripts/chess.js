@@ -29,6 +29,17 @@ const GameRelation = {
     STARTING_BOARD: -10,
 };
 
+// GameRelation Enum
+const Perspective = {
+    FREEFORM: 1,
+    PLAYING: 2,
+    FINISHED_PLAYING: 3,
+    OBSERVING: 4,
+    FINISHED_OBSERVING: 5,
+    EXAMINING: 6,
+    FINISHED_EXAMINING: 7
+};
+
 let ws; // WebSocket instance, to be set by an initializer
 let prefs; // Preferences object, to be set by an initializer
 
@@ -54,6 +65,8 @@ let gameState = { // Reset header
     lastMove: '',
     lastMovePretty: '',
     relation: GameRelation.STARTING_BOARD,
+    perspective: Perspective.FREEFORM,
+    lastPerspective: null,
     doublePawnPushFile: '',
     minutes: 5,
     increment: 0,
@@ -86,7 +99,8 @@ let gameState = { // Reset header
     premove: null, // null if not set.
     fen: new ChessBoard(Variant.CLASSIC).getFen(),
     status: '',
-    result: ''
+    result: '',
+    drawOfferPending: false
 };
 
 /**
@@ -102,6 +116,8 @@ export function onStyle12(msg) {
         ws.send(gameState.premove);
         gameState.premove = null;
     }
+
+    handleAutoDraw(); //Send draw if pressed.
 
     updateBoardFromStyle12(msg);
     updateMoveListWithLastMove();
@@ -178,10 +194,14 @@ export function onNewGame(gameNum, whiteName, whiteRating, blackName, blackRatin
     gameState.fen = null;
     gameState.validMoves = [];
     gameState.style12WhiteOnBottom = true;
+    gameState.drawOfferPending = false;
 
     // Set isWhiteOnBottom to true by default for new games
     // This will be updated correctly when the first Style12 message arrives
     gameState.isWhiteOnBottom = true;
+
+    // Update UI elements based on perspective for new game
+    updateUIForPerspective();
 }
 
 function ficsGameTypeToVariant(gameType) {
@@ -272,6 +292,14 @@ export function onGameEnd(message) {
         gameState.result = result;
         gameState.isActive = false;
 
+        if (gameState.perspective === Perspective.OBSERVING) {
+            gameState.perspective = Perspective.FINISHED_OBSERVING;
+        } else if (gameState.perspective === Perspective.EXAMINING) {
+            gameState.perspective = Perspective.FINISHED_EXAMINING;
+        } else if (gameState.perspective === Perspective.PLAYING) {
+            gameState.perspective = Perspective.FINISHED_PLAYING;
+        }
+
         // Update the moves list display to show the game result
         refreshMoveListDisplay();
 
@@ -279,6 +307,9 @@ export function onGameEnd(message) {
         stopClock();
 
         gameState.isPlayerPlaying = false;
+
+        // Update UI elements based on perspective
+        updateUIForPerspective();
 
         return true;
     }
@@ -340,6 +371,15 @@ function updateBoardFromStyle12(style12Message) {
         gameState.openingDescription = '';
         gameState.style12WhiteOnBottom = parseInt(parts[30], 10) === 0;
         gameState.relation = parseInt(parts[19], 10);  // Store the numeric relation value directly
+        gameState.perspective = gameState.relation === GameRelation.PLAYING_MY_MOVE ? Perspective.PLAYING :
+            gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE ? Perspective.PLAYING :
+                gameState.relation === GameRelation.OBSERVING_PLAYED ? Perspective.OBSERVING :
+                    gameState.relation === GameRelation.OBSERVING_EXAMINED ? Perspective.OBSERVING :
+                        gameState.relation === GameRelation.EXAMINING ? Perspective.EXAMINING :
+                            Perspective.EXAMINING;
+
+        // Update UI elements based on perspective change
+        updateUIForPerspective();
 
         // TODO: Refactored these vars one day to grab from FEN to make the code more reusable.
         gameState.whiteCastleShort = parseInt(parts[11], 10) === 1;
@@ -359,7 +399,6 @@ function updateBoardFromStyle12(style12Message) {
                 createBoardSquares(boardElement);
             }
         }
-
 
 
         // Update ECO opening info
@@ -539,31 +578,7 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
         square.classList.remove('premove-end');
     });
 
-    // Show/hide promotion options container based on whether player is playing
-    const promotionContainer = document.getElementById('promotionOptionsContainer');
-    if (promotionContainer) {
-        // Set the piece images based on the current piece set
-        if (gameState.isPlayerPlaying) {
-            // Always show the container when player is playing
-            promotionContainer.style.display = 'flex';
-            promotionContainer.classList.add('visible');
 
-            const pieceColor = gameState.isPlayerWhite ? 'w' : 'b';
-            const promotionLabels = promotionContainer.querySelectorAll('.promotion-options-row .promotion-option label');
-            const pieceTypes = ['q', 'r', 'b', 'n'];
-
-            promotionLabels.forEach((label, index) => {
-                if (index < pieceTypes.length) {
-                    const pieceType = pieceTypes[index].toUpperCase();
-                    label.innerHTML = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" style="width: 22px; height: 22px;" />`;
-                }
-            });
-        } else {
-            // Hide the container when player is not playing
-            promotionContainer.style.display = 'none';
-            promotionContainer.classList.remove('visible');
-        }
-    }
 
     const squareSize = board.clientWidth / 8;
     const pieceFontSize = Math.max(Math.floor(squareSize * 0.8), 24) + 'px';
@@ -818,6 +833,407 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
 }
 
 /**
+ * Handles draw offer/accept actions with toggle state
+ */
+function onDraw() {
+    console.log('Draw action initiated');
+
+    if (!gameState.isPlayerPlaying) {
+        console.warn('Cannot offer draw - not currently playing');
+        return;
+    }
+
+    const drawButton = document.querySelector('[data-action="draw"]');
+    if (!drawButton) {
+        console.warn('Draw button not found');
+        return;
+    }
+
+    // Toggle the draw offer state
+    const isCurrentlyPressed = drawButton.classList.contains('pressed');
+
+    if (isCurrentlyPressed) {
+        // Withdraw draw offer
+        drawButton.classList.remove('pressed');
+        drawButton.textContent = 'Draw';
+        gameState.drawOfferPending = false;
+        ws.send('draw');
+
+    } else {
+        // Offer draw
+        drawButton.classList.add('pressed');
+        drawButton.textContent = 'Auto Draw Active';
+    }
+}
+
+function handleAutoDraw() {
+    const drawButton = document.querySelector('[data-action="draw"]');
+    if (!drawButton) {
+        console.warn('Draw button not found');
+        return;
+    }
+
+    // Toggle the draw offer state
+    const isCurrentlyPressed = drawButton.classList.contains('pressed');
+    if (isCurrentlyPressed) {
+        ws.send('draw');
+    }
+}
+
+/**
+ * Handles resignation actions
+ */
+function onResign() {
+    if (!gameState.isPlayerPlaying) {
+        console.warn('Cannot resign - not currently playing');
+        return;
+    }
+    // Confirm resignation with user
+    if (confirm('Are you sure you want to resign this game?')) {
+        ws.send('resign');
+    }
+}
+
+/**
+ * Handles rematch requests
+ */
+function onRematch() {
+    ws.send('rematch');
+}
+
+/**
+ * Handles analysis mode activation
+ */
+function onAnalysis() {
+    console.log('Analysis action initiated');
+    console.log('Analysis mode would be activated');
+}
+
+/**
+ * Shows the Setup from FEN dialog
+ */
+function showSetupFenDialog() {
+    // Validate that we're in FREEFORM mode
+    if (gameState.perspective !== Perspective.FREEFORM) {
+        console.warn('Setup from FEN is only available in FREEFORM mode');
+        return;
+    }
+
+    // Create modal overlay if it doesn't exist
+    let modalOverlay = document.getElementById('fenModalOverlay');
+    if (!modalOverlay) {
+        modalOverlay = createFenModal();
+    }
+
+    // Pre-populate with current FEN
+    const fenTextarea = modalOverlay.querySelector('#fenInput');
+    if (fenTextarea && gameState.chessBoard) {
+        fenTextarea.value = gameState.chessBoard.getFen();
+    }
+
+    // Clear any previous error messages
+    const errorMessage = modalOverlay.querySelector('.error-message');
+    if (errorMessage) {
+        errorMessage.style.display = 'none';
+        errorMessage.textContent = '';
+    }
+
+    // Show the modal
+    modalOverlay.classList.add('show');
+
+    // Focus on the textarea
+    if (fenTextarea) {
+        fenTextarea.focus();
+        fenTextarea.select();
+    }
+}
+
+/**
+ * Creates the FEN setup modal dialog
+ * @returns {HTMLElement} The modal overlay element
+ */
+function createFenModal() {
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'fenModalOverlay';
+    modalOverlay.classList.add('fen-modal-overlay');
+
+    const modal = document.createElement('div');
+    modal.classList.add('fen-modal');
+
+    modal.innerHTML = `
+        <h3>Setup Position from FEN</h3>
+        <div class="instructions">
+            Enter a valid FEN (Forsyth-Edwards Notation) string to set up a custom chess position.
+            FEN format: piece placement, active color, castling rights, en passant, halfmove clock, fullmove number.
+        </div>
+        <label for="fenInput">FEN String:</label>
+        <textarea id="fenInput" placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"></textarea>
+        <div class="error-message" id="fenErrorMessage"></div>
+        <div class="button-container">
+            <button type="button" id="fenCancelBtn">Cancel</button>
+            <button type="button" id="fenApplyBtn" class="primary">Apply</button>
+        </div>
+    `;
+
+    modalOverlay.appendChild(modal);
+    document.body.appendChild(modalOverlay);
+
+    // Add event listeners
+    setupFenModalEventListeners(modalOverlay);
+
+    return modalOverlay;
+}
+
+/**
+ * Sets up event listeners for the FEN modal
+ * @param {HTMLElement} modalOverlay - The modal overlay element
+ */
+function setupFenModalEventListeners(modalOverlay) {
+    const fenInput = modalOverlay.querySelector('#fenInput');
+    const cancelBtn = modalOverlay.querySelector('#fenCancelBtn');
+    const applyBtn = modalOverlay.querySelector('#fenApplyBtn');
+    const errorMessage = modalOverlay.querySelector('#fenErrorMessage');
+
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+        hideFenModal();
+    });
+
+    // Apply button
+    applyBtn.addEventListener('click', () => {
+        const fenString = fenInput.value.trim();
+        if (applyFenPosition(fenString, errorMessage)) {
+            hideFenModal();
+        }
+    });
+
+    // Enter key in textarea
+    fenInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            const fenString = fenInput.value.trim();
+            if (applyFenPosition(fenString, errorMessage)) {
+                hideFenModal();
+            }
+        }
+    });
+
+    // Escape key to close modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalOverlay.classList.contains('show')) {
+            hideFenModal();
+        }
+    });
+
+    // Click outside modal to close
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            hideFenModal();
+        }
+    });
+}
+
+/**
+ * Applies the FEN position to the chess board
+ * @param {string} fenString - The FEN string to apply
+ * @param {HTMLElement} errorMessage - The error message element
+ * @returns {boolean} True if successful, false if error
+ */
+function applyFenPosition(fenString, errorMessage) {
+    // Validate that we're still in FREEFORM mode
+    if (gameState.perspective !== Perspective.FREEFORM) {
+        showFenError(errorMessage, 'FEN setup is only available in FREEFORM mode');
+        return false;
+    }
+
+    if (!fenString) {
+        showFenError(errorMessage, 'Please enter a FEN string');
+        return false;
+    }
+
+    try {
+        // Attempt to load the FEN
+        const success = gameState.chessBoard.loadFen(fenString);
+
+        if (!success) {
+            showFenError(errorMessage, 'Invalid FEN format. Please check your input and try again.');
+            return false;
+        }
+
+        // Update game state
+        gameState.fen = gameState.chessBoard.getFen();
+
+        // Update board graphics and UI
+        updateBoardGraphicsAndSquareListeners(true);
+
+        console.log('Successfully loaded FEN:', fenString);
+        return true;
+
+    } catch (error) {
+        console.error('Error loading FEN:', error);
+        showFenError(errorMessage, 'Error loading FEN: ' + error.message);
+        return false;
+    }
+}
+
+/**
+ * Shows an error message in the FEN modal
+ * @param {HTMLElement} errorMessage - The error message element
+ * @param {string} message - The error message to display
+ */
+function showFenError(errorMessage, message) {
+    if (errorMessage) {
+        errorMessage.textContent = message;
+        errorMessage.style.display = 'block';
+    }
+}
+
+/**
+ * Hides the FEN modal
+ */
+function hideFenModal() {
+    const modalOverlay = document.getElementById('fenModalOverlay');
+    if (modalOverlay) {
+        modalOverlay.classList.remove('show');
+    }
+}
+
+/**
+ * Centralized UI management function that controls element visibility based on game perspective
+ */
+function updateUIForPerspective() {
+    if (gameState.lastPerspective === gameState.perspective) {
+        return;
+    }
+    gameState.lastPerspective = gameState.perspective;
+
+    const gameActionLinksContainer = document.getElementById('gameActionLinksContainer');
+    const promotionContainer = document.getElementById('promotionOptionsContainer');
+
+    // Control individual game action links based on perspective
+    if (gameActionLinksContainer) {
+        // Define all possible action links
+        const allActionLinks = [
+            { text: 'Draw', action: 'draw', handler: onDraw },
+            { text: 'Resign', action: 'resign', handler: onResign },
+            { text: 'Rematch', action: 'rematch', handler: onRematch },
+            { text: 'Analysis', action: 'analysis', handler: onAnalysis }
+        ];
+
+        // Determine which links should be visible based on perspective
+        let visibleActions = [];
+
+        switch (gameState.perspective) {
+            case Perspective.PLAYING:
+                // Draw and Resign links: Show only when playing
+                visibleActions = ['draw', 'resign'];
+                break;
+
+            case Perspective.FINISHED_PLAYING:
+                // Rematch and Analysis links: Show when finished playing
+                visibleActions = ['rematch', 'analysis'];
+                break;
+
+            case Perspective.OBSERVING:
+            case Perspective.FINISHED_OBSERVING:
+            case Perspective.FREEFORM:
+                // Analysis link: Show when observing, finished observing, or freeform
+                visibleActions = ['analysis'];
+                break;
+
+            case Perspective.EXAMINING:
+            case Perspective.FINISHED_EXAMINING:
+                // No action links: Hide all action links when examining
+                visibleActions = [];
+                break;
+
+            default:
+                // For any other perspective, hide all links
+                visibleActions = [];
+                break;
+        }
+
+        // Clear the container and rebuild with only visible links
+        gameActionLinksContainer.innerHTML = '';
+
+        if (visibleActions.length > 0) {
+            // Add only the visible action links
+            visibleActions.forEach(actionName => {
+                const linkData = allActionLinks.find(link => link.action === actionName);
+                if (linkData) {
+                    const link = document.createElement('a');
+                    link.href = '#';
+                    link.classList.add('game-action-link');
+                    link.textContent = linkData.text;
+                    link.dataset.action = linkData.action;
+
+                    // Add click handler
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        linkData.handler();
+                    });
+
+                    // Set initial state for draw button
+                    if (linkData.action === 'draw') {
+                        if (gameState.drawOfferPending) {
+                            link.classList.add('pressed');
+                            link.textContent = 'Auto Draw Active';
+                        } else {
+                            link.classList.remove('pressed');
+                            link.textContent = 'Draw';
+                        }
+                    }
+
+                    gameActionLinksContainer.appendChild(link);
+                }
+            });
+
+            gameActionLinksContainer.classList.add('visible');
+        } else {
+            gameActionLinksContainer.classList.remove('visible');
+        }
+    }
+
+    // Show promotion options only when player is playing
+    if (promotionContainer) {
+        const shouldShowPromotion = gameState.perspective === Perspective.PLAYING;
+
+        if (shouldShowPromotion) {
+            promotionContainer.style.display = 'flex';
+            promotionContainer.classList.add('visible');
+
+            // Set the piece images based on the current piece set
+            const pieceColor = gameState.isPlayerWhite ? 'w' : 'b';
+            const promotionLabels = promotionContainer.querySelectorAll('.promotion-options-row .promotion-option label');
+            const pieceTypes = ['q', 'r', 'b', 'n'];
+
+            promotionLabels.forEach((label, index) => {
+                if (index < pieceTypes.length && prefs) {
+                    const pieceType = pieceTypes[index].toUpperCase();
+                    label.innerHTML = `<img src="pieces/${prefs.pieceSet}/${pieceColor}${pieceType}.svg" alt="${pieceColor}${pieceType}" style="width: 22px; height: 22px;" />`;
+                }
+            });
+        } else {
+            promotionContainer.style.display = 'none';
+            promotionContainer.classList.remove('visible');
+        }
+    }
+
+    // Show move list for all perspectives except FREEFORM
+    if (movesListContainer) {
+        const shouldShowMoveList = gameState.perspective !== Perspective.FREEFORM;
+        movesListContainer.style.display = shouldShowMoveList ? 'block' : 'none';
+    }
+
+    // Show/hide Setup from FEN menu item based on perspective
+    const setupFenBtn = document.getElementById('setupFenBtn');
+    if (setupFenBtn) {
+        const shouldShowSetupFen = gameState.perspective === Perspective.FREEFORM;
+        setupFenBtn.style.display = shouldShowSetupFen ? 'block' : 'none';
+    }
+}
+
+/**
  * Updates the non-board UI elements such as player names, clocks, and game status.
  */
 function updatePlayerInfoAndClockUI() {
@@ -851,10 +1267,7 @@ function updatePlayerInfoAndClockUI() {
         }
     }
 
-    // Show the move list if it exists
-    if (movesListContainer) {
-        movesListContainer.style.display = 'block';
-    }
+
 
     if (!gameState.isWhiteOnBottom) { //White on top
         topPlayerNameEl.innerText = whiteNameWithRating;
@@ -895,6 +1308,9 @@ function updatePlayerInfoAndClockUI() {
             bottomPlayerClockEl.classList.add('clock-inactive');
         }
     }
+
+    // Update UI elements based on perspective
+    updateUIForPerspective();
 }
 
 /**
@@ -2187,12 +2603,24 @@ function setupMainChessBoardDisplay() {
 
     const flipBtn = document.createElement('button');
     flipBtn.title = 'Flip Board';
-    flipBtn.innerHTML = '<i class="material-icons">swap_vert</i>';
+    flipBtn.innerHTML = 'Flip Board <i class="material-icons">swap_vert</i>';
     flipBtn.onclick = () => {
         flipBoard();
         boardMenu.classList.remove('show');
     };
     boardMenu.appendChild(flipBtn);
+
+    // Setup from FEN button (only visible in FREEFORM mode)
+    const setupFenBtn = document.createElement('button');
+    setupFenBtn.id = 'setupFenBtn';
+    setupFenBtn.title = 'Setup Position from FEN';
+    setupFenBtn.innerHTML = 'Setup from FEN <i class="material-icons">edit</i>';
+    setupFenBtn.onclick = () => {
+        showSetupFenDialog();
+        boardMenu.classList.remove('show');
+    };
+    setupFenBtn.style.display = 'none'; // Hidden by default
+    boardMenu.appendChild(setupFenBtn);
 
     boardMenuButton.addEventListener('click', (event) => {
         boardMenu.classList.toggle('show');
@@ -2314,10 +2742,17 @@ function setupMainChessBoardDisplay() {
         promotionOptionsRow.appendChild(optionDiv); // Add to row instead of directly to container
     });
 
+    // Create game action links container (initially empty)
+    const gameActionLinksContainer = document.createElement('div');
+    gameActionLinksContainer.id = 'gameActionLinksContainer';
+    gameActionLinksContainer.classList.add('game-action-links-container');
+    // Links will be dynamically created by updateUIForPerspective()
+
     // Board menu and player divider setup
     playerDivider.appendChild(boardMenu);
     playerDivider.style.position = 'relative';
     playerDivider.appendChild(topPlayerNameContainer);
+    playerDivider.appendChild(gameActionLinksContainer); // Add game action links between player names
     playerDivider.appendChild(promotionOptionsContainer); // Add promotion container above bottom player name
     playerDivider.appendChild(bottomPlayerNameContainer);
 
@@ -2335,25 +2770,17 @@ function setupMainChessBoardDisplay() {
     // Create chess board squares
     createBoardSquares(board);
 
-    // --- Add the Moves List Container ---
-    // The 'playerInfoContainer' variable here refers to the one created above.
-    // We don't need to query the DOM for it again.
-    if (playerInfoContainer) { // This check is to ensure it was created successfully
-        movesListContainer = document.createElement('div'); // Assign to global
-        movesListContainer.id = 'movesListContainer';
-        movesListContainer.classList.add('moves-list-container');
-        movesListContainer.style.display = 'block'; // Show by default
+    //Move list.
+    movesListContainer = document.createElement('div'); // Assign to global
+    movesListContainer.id = 'movesListContainer';
+    movesListContainer.classList.add('moves-list-container');
+    movesListContainer.style.display = 'block'; // Show by default
+    // The movesListDisplayElement will be created by initializeEmptyMoveListInternal
+    playerDivider.appendChild(movesListContainer); // Add moves list to the player divider between names
+    // Initialize an empty move list with navigation buttons
+    refreshMoveListDisplay();
 
-        // The movesListDisplayElement will be created by initializeEmptyMoveListInternal
-        playerDivider.appendChild(movesListContainer); // Add moves list to the player divider between names
 
-        // Initialize an empty move list with navigation buttons
-        refreshMoveListDisplay();
-    } else {
-        // This else block should ideally not be reached if createElement was successful.
-        // The original error occurred because a query for '.player-info-container' failed.
-        console.error("playerInfoContainer (created element) is unexpectedly null or undefined.");
-    }
 
     // Resize observer for the main board area
     const mainBoardResizeObserver = new ResizeObserver(() => {
@@ -2402,6 +2829,9 @@ function setupMainChessBoardDisplay() {
         lastMoveLabelElement.innerText = '';
     }
     updateBoardGraphicsAndSquareListeners(); // Initial draw
+
+    // Update UI elements based on initial perspective
+    updateUIForPerspective();
 }
 
 export function flipBoard() {
