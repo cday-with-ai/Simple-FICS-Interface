@@ -156,10 +156,12 @@ function routeMessage(msg) {
     handleMovesList(msg);
     handleUnobserve(msg);
 
+    const msgTrim = msg.trim();
+    if (msgTrim === '' || msgTrim === 'fics%') return;
+
     let isMainConsoleMessage = handleChannelTell(msg);
-    const isFicsPrompt = msg.trim() === 'fics%';
     if (isMainConsoleMessage) {
-        updateMainConsole(msg, isMainConsoleMessage, isFicsPrompt);
+        updateMainConsole(msg);
     }
 }
 
@@ -547,18 +549,11 @@ function handleUnobserve(msg) {
 /**
  * Update the main console with the message if needed
  * @param {string} msg - The message to display
- * @param {boolean} isMainConsoleMessage - Whether to display in main console
- * @param {boolean} isFicsPrompt - Whether the message is just a FICS prompt
  */
-function updateMainConsole(msg, isFicsPrompt) {
-    if (msg.trim() !== '') {
-        const consoleEndsWithPrompt = mainTextArea.innerHTML.endsWith('fics% ');
-        if (!(isFicsPrompt && consoleEndsWithPrompt)) {
-            const autoScroll = mainTextArea.scrollHeight - mainTextArea.scrollTop <= mainTextArea.clientHeight + 10;
-            mainTextArea.innerHTML += processTextToHTML(msg);
-            if (autoScroll) mainTextArea.scrollTop = mainTextArea.scrollHeight;
-        }
-    }
+function updateMainConsole(msg) {
+    const autoScroll = mainTextArea.scrollHeight - mainTextArea.scrollTop <= mainTextArea.clientHeight + 10;
+    mainTextArea.innerHTML += processTextToHTML(msg);
+    if (autoScroll) mainTextArea.scrollTop = mainTextArea.scrollHeight;
 }
 
 
