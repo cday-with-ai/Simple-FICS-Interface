@@ -9,8 +9,10 @@
     <meta http-equiv="Expires" content="0">
     <title>Simple FICS Interface</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="css/chat.css?v=1" rel="stylesheet"> <!--load with cache busting versions. Increment the number in each release. -->
-    <link href="css/chess.css?v=1" rel="stylesheet"> <!--load with cache busting versions. Increment the number in each release. -->
+    <link href="css/chat.css?v=1" rel="stylesheet">
+    <!--load with cache busting versions. Increment the number in each release. -->
+    <link href="css/chess.css?v=1" rel="stylesheet">
+    <!--load with cache busting versions. Increment the number in each release. -->
 </head>
 <body>
 <!-- Hamburger Menu -->
@@ -150,18 +152,16 @@
             </div>
 
             <div class="preference-group">
-                <label for="prefAutoLogin">Auto Login:</label>
-                <div style="display: flex; align-items: center;">
+                <div style="display: flex; align-items: center; margin-bottom: 8px;">
                     <input type="checkbox" id="prefAutoLogin" style="width: auto; margin-right: 5px;">
-                    <span>Automatically login when connecting to FICS</span>
+                    <label for="prefAutoLogin" style="font-weight: normal;">Auto Login</label>
                 </div>
             </div>
 
             <div class="preference-group">
-                <label for="prefStayLoggedIn">Stay Logged In:</label>
-                <div style="display: flex; align-items: center;">
+                <div style="display: flex; align-items: center; margin-bottom: 8px;">
                     <input type="checkbox" id="prefStayLoggedIn" style="width: auto; margin-right: 5px;">
-                    <span>Send periodic commands to keep connection alive</span>
+                    <label for="prefStayLoggedIn" style="font-weight: normal;">Stay Logged In</label>
                 </div>
             </div>
         </div>
@@ -281,7 +281,8 @@
 
                     <div style="display: flex; align-items: center; margin-bottom: 8px;">
                         <input type="checkbox" id="prefGameTellsToTabs" style="width: auto; margin-right: 10px;">
-                        <label for="prefGameTellsToTabs" style="font-weight: normal;">Send all game tells to game tab</label>
+                        <label for="prefGameTellsToTabs" style="font-weight: normal;">Send all game tells to game
+                            tab</label>
                     </div>
                 </div>
             </div>
@@ -317,7 +318,8 @@
         </div>
     </div>
 </div>
-<script src="scripts/chess.js?v=1" type="module"></script> <!--load with cache busting versions. Increment the number in each release. -->
+<script src="scripts/chess.js?v=1" type="module"></script>
+<!--load with cache busting versions. Increment the number in each release. -->
 <script src="scripts/fics.js?v=1" type="module"></script> <!--FICS-related functionality -->
 <script src="scripts/chat.js?v=1" type="module"></script> <!--Chat-related functionality -->
 <script src="scripts/index.js?v=1" type="module"></script> <!--Main initialization script -->

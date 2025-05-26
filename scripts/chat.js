@@ -148,7 +148,7 @@ function updateViewMode(mode) {
             if (rightContentEl) rightContentEl.style.display = 'flex';
             if (topDividerEl) {
                 topDividerEl.style.display = 'block';
-                topDividerEl.style.left = '57.5%';
+                topDividerEl.style.left = '57.0%';
             }
             if (rightDividerEl) {
                 rightDividerEl.style.display = tabElements.length > 0 ? 'block' : 'none';
@@ -166,7 +166,7 @@ function updateViewMode(mode) {
             if (topDividerEl) topDividerEl.style.display = 'none';
             if (rightDividerEl) {
                 rightDividerEl.style.display = tabElements.length > 0 ? 'block' : 'none';
-                rightDividerEl.style.top = '75%';
+                rightDividerEl.style.top = '70%';
             }
             if (mainConsoleEl) mainConsoleEl.style.flexBasis = '70%';
             requestAnimationFrame(scrollConsolesToBottom);
@@ -187,12 +187,12 @@ function resizeDividers(e) {
         let percentage = ((e.clientX - containerRect.left) / containerRect.width) * 100;
         percentage = Math.max(30, Math.min(70, percentage));
         chessBoardAreaEl.style.flexBasis = `${percentage}%`;
-        topDivider.style.left = `${percentage -.5}%`;
+        topDivider.style.left = `${percentage - 1}%`;
     } else if (activeResizer === 'vertical') {
         if (!rightContentEl || !mainConsoleEl || !chatTabsContainerEl || !rightDivider) return;
         const containerRect = rightContentEl.getBoundingClientRect();
         let percentage = ((e.clientY - containerRect.top) / containerRect.height) * 100;
-        percentage = Math.max(35, Math.min(65, percentage));
+        percentage = Math.max(35, Math.min(63, percentage));
         mainConsoleEl.style.flexBasis = `${percentage}%`;
         chatTabsContainerEl.style.flexBasis = `${100 - percentage}%`;
         rightDivider.style.top = `${percentage}%`;

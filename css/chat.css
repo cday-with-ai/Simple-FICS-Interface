@@ -200,7 +200,7 @@ body {
 .horizontal-divider::before {
     position: absolute;
     top: 47%;
-    left: 5%;
+    left: 4.9%;
     content: "⋮⋮";
     font-size: 20px;
     color: #666;

@@ -905,8 +905,7 @@ function onRematch() {
  * Handles analysis mode activation
  */
 function onAnalysis() {
-    console.log('Analysis action initiated');
-    console.log('Analysis mode would be activated');
+    alert("Under Construction. If you want this feature pester cday to add it.")
 }
 
 /**
@@ -2188,6 +2187,11 @@ export function jumpToFirstMove() {
 
         // Clear any move highlighting since we're at the starting position
         unselectMoveInMoveList();
+
+        // Scroll the move list to the top to show the beginning of the game
+        if (typeof movesListDisplayElement !== 'undefined' && movesListDisplayElement) {
+            movesListDisplayElement.scrollTop = 0;
+        }
     } else {
         console.warn('No starting position found in position history');
     }
@@ -2368,7 +2372,7 @@ function clearMoveList() {
     // First move button
     const firstMoveBtn = document.createElement('button');
     firstMoveBtn.classList.add('moves-nav-btn');
-    firstMoveBtn.innerHTML = '⏮'; // Unicode double left arrow
+    firstMoveBtn.innerHTML = '<span class="material-icons">keyboard_double_arrow_left</span>';
     firstMoveBtn.title = 'Go to first move';
     firstMoveBtn.onclick = jumpToFirstMove;
     navContainer.appendChild(firstMoveBtn);
@@ -2376,7 +2380,7 @@ function clearMoveList() {
     // Previous move button
     const prevMoveBtn = document.createElement('button');
     prevMoveBtn.classList.add('moves-nav-btn');
-    prevMoveBtn.innerHTML = '◀'; // Unicode left arrow
+    prevMoveBtn.innerHTML = '<span class="material-icons">west</span>';
     prevMoveBtn.title = 'Go to previous move';
     prevMoveBtn.onclick = jumpToPreviousMove;
     navContainer.appendChild(prevMoveBtn);
@@ -2384,7 +2388,7 @@ function clearMoveList() {
     // Next move button
     const nextMoveBtn = document.createElement('button');
     nextMoveBtn.classList.add('moves-nav-btn');
-    nextMoveBtn.innerHTML = '▶'; // Unicode right arrow
+    nextMoveBtn.innerHTML = '<span class="material-icons">east</span>';
     nextMoveBtn.title = 'Go to next move';
     nextMoveBtn.onclick = jumpToNextMove;
     navContainer.appendChild(nextMoveBtn);
@@ -2392,7 +2396,7 @@ function clearMoveList() {
     // Last move button
     const lastMoveBtn = document.createElement('button');
     lastMoveBtn.classList.add('moves-nav-btn');
-    lastMoveBtn.innerHTML = '⏭'; // Unicode double right arrow
+    lastMoveBtn.innerHTML = '<span class="material-icons">keyboard_double_arrow_right</span>';
     lastMoveBtn.title = 'Go to last move';
     lastMoveBtn.onclick = jumpToLastMove;
     navContainer.appendChild(lastMoveBtn);

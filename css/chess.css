@@ -206,7 +206,7 @@
     padding-left: 8px;
     margin-left: 10px;
     letter-spacing: 0.05em;
-    width: 67%;
+    width: 55%;
     transition: color 0.3s ease;
 }
 
@@ -731,7 +731,7 @@
 
 /* Moves list styles */
 .moves-list-container {
-    width: 130px;
+    width: 175px;
     display: flex;
     flex-direction: column;
     border-radius: 5px;
@@ -753,7 +753,7 @@
 
 .moves-list-display {
     width: 100%;
-    max-height: 70px; /* Height for the scrollable area */
+    max-height: 100px; /* Height for the scrollable area */
     overflow-y: auto;
     padding-right: 2px;
 }
@@ -774,7 +774,7 @@
 .moves-nav-btn {
     width: 24px;
     height: 24px;
-    margin: 3px;
+    margin: 5px;
     border: none;
     background: linear-gradient(135deg, #f0f0f0, #d8d8d8);
     border-radius: 3px;
@@ -786,6 +786,11 @@
     justify-content: center;
     color: #444;
     transition: all 0.2s ease;
+}
+
+.moves-nav-btn .material-icons {
+    font-size: 14px;
+    line-height: 1;
 }
 
 .moves-nav-btn:hover {
@@ -806,8 +811,9 @@
 }
 
 .moves-table td {
-    font-size: 0.85em;
+    font-size: 1em;
     vertical-align: middle;
+    padding: 2px;
 }
 
 .move-number {
@@ -823,7 +829,7 @@
 .move-san {
     cursor: pointer;
     flex-grow: 1;
-    font-size: 1.15em;
+    font-size: 1.25em;
     font-family: Arial, sans-serif; /* Ensure good Unicode support */
 }
 
@@ -839,8 +845,7 @@
 }
 
 .moves-list-footer-info {
-    padding-left: 57px;
-    text-align: left;
-    font-size: 1.0em;
+    text-align: center;
+    font-size: 1.25em;
     background: white;
 }
