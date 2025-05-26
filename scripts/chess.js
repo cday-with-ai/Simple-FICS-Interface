@@ -414,6 +414,11 @@ function updateBoardFromStyle12(style12Message) {
                 updateBoardGraphicsAndSquareListeners();
             });
         } else {
+            if (gameState.lastMovePretty.includes('x')) {
+                playSound('capture');
+            } else { // any move
+                playSound('move');
+            }
             updateBoardGraphicsAndSquareListeners();
         }
 
@@ -868,7 +873,6 @@ function onDraw() {
 function handleAutoDraw() {
     const drawButton = document.querySelector('[data-action="draw"]');
     if (!drawButton) {
-        console.warn('Draw button not found');
         return;
     }
 
@@ -1418,10 +1422,6 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         return false;
     }
 
-    // if (!gameState.validMoves.includes(endSquareAlgebraic)) {
-    //     return false;
-    // }
-
     const movingPiece = getPieceAtSquare(gameState.fen, startSquareAlgebraic);
     const targetRank = parseInt(endSquareAlgebraic.charAt(1));
     const isPromotion = movingPiece !== '' &&
@@ -1484,59 +1484,56 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         console.log('Handling move...');
         const moveResult = gameState.chessBoard.makeLongAlgebraicMove(moveObject.from, moveObject.to, moveObject.promotion ? moveObject.promotion : null);
         if (moveResult) {
+            gameState.chessBoard.back();
             gameState.fen = gameState.chessBoard.getFen();
-            gameState.lastMove = gameState.chessBoard.getLastMove().san;
-        }
+            gameState.lastMovePretty = gameState.chessBoard.getLastMove().san;
 
-        /**
-         * When not examining or playing: GameRelation.ISOLATED_POSITION or
-         *                                GameRelation.OBSERVING_PLAYED or
-         *                                GameRelation.OBSERVING_EXAMINED or
-         *                                GameRelation.STARTING_BOARD:
-         * Let the user make moves on the board if not playing or examining. These changes are not permanent and will
-         * be erased when style 12 events arrive. This is fine, it lets the user move pieces around just to see the position. The changes
-         * made in these modes are not live and not sent to fics.
-         *
-         * When playing: GameRelation.PLAYING_MY_MOVE or
-         *               GameRelation.PLAYING_OPPONENT_MOVE
-         * (Pre-move not implemented yet)
-         * Only let the user make moves for the color he is playing. If it is his turn this is the move that will be sent to fics.
-         * If it is not his turn, this is a premove. A premove is a move that will be saved and sent to fics immediately when it is
-         * the users turn. Just one premove can be saved. If the user makes a move for his color while it is not his turn, that
-         * will become the new premove and replace the old one.
-         *
-         * When examining: GameRelation.EXAMINING (Not implemented yet.)
-         * It is similar to playing, but the user can make moves for both sides. No premove is allowed while examining. The user is
-         * actively playing both sides. Examine mode is for analysis of a previous game. It is live and connected to fics.
-         */
-        if (gameState.relation !== GameRelation.ISOLATED_POSITION &&
-            gameState.relation !== GameRelation.OBSERVING_PLAYED &&
-            gameState.relation !== GameRelation.OBSERVING_EXAMINED &&
-            gameState.relation !== GameRelation.STARTING_BOARD) {
             /**
-             * IMPORTANT!
-             * Do not change the move list, play sounds, or anything that is not irreversable here.
-             * FICS will send style12 events for changes. When style 12 events are received that is where
-             * the change is made permanent (i.e. sound played, move list updated, etc.)
+             * When not examining or playing: GameRelation.ISOLATED_POSITION or
+             *                                GameRelation.OBSERVING_PLAYED or
+             *                                GameRelation.OBSERVING_EXAMINED or
+             *                                GameRelation.STARTING_BOARD:
+             * Let the user make moves on the board if not playing or examining. These changes are not permanent and will
+             * be erased when style 12 events arrive. This is fine, it lets the user move pieces around just to see the position. The changes
+             * made in these modes are not live and not sent to fics.
+             *
+             * When playing: GameRelation.PLAYING_MY_MOVE or
+             *               GameRelation.PLAYING_OPPONENT_MOVE
+             * (Pre-move not implemented yet)
+             * Only let the user make moves for the color he is playing. If it is his turn this is the move that will be sent to fics.
+             * If it is not his turn, this is a premove. A premove is a move that will be saved and sent to fics immediately when it is
+             * the users turn. Just one premove can be saved. If the user makes a move for his color while it is not his turn, that
+             * will become the new premove and replace the old one.
+             *
+             * When examining: GameRelation.EXAMINING (Not implemented yet.)
+             * It is similar to playing, but the user can make moves for both sides. No premove is allowed while examining. The user is
+             * actively playing both sides. Examine mode is for analysis of a previous game. It is live and connected to fics.
              */
-            ws.send(`${moveStringPart}`);
-        }
+            if (gameState.relation !== GameRelation.ISOLATED_POSITION &&
+                gameState.relation !== GameRelation.OBSERVING_PLAYED &&
+                gameState.relation !== GameRelation.OBSERVING_EXAMINED &&
+                gameState.relation !== GameRelation.STARTING_BOARD) {
+                /**
+                 * IMPORTANT!
+                 * Do not change the move list, play sounds, or anything that is not irreversable here.
+                 * FICS will send style12 events for changes. When style 12 events are received that is where
+                 * the change is made permanent (i.e. sound played, move list updated, etc.)
+                 */
+                ws.send(`${moveStringPart}`);
+            }
 
+            updateBoardBottomLabels();
+
+            // Update the board graphics which will create the piece at the new location
+            updateBoardGraphicsAndSquareListeners(false);
+            restartClockInternal();
+        }
         // We'll make the original piece fully transparent but not rely solely on this
         if (isDragging && gameState.draggedPieceElement) {
             gameState.draggedPieceElement.classList.remove('piece-visible', 'piece-semi-transparent');
             gameState.draggedPieceElement.classList.add('piece-hidden');
         }
 
-        // Update ECO opening info
-        updateBoardBottomLabels();
-
-        // Update the lastMovePretty property so the move list can be updated
-        gameState.lastMovePretty = moveResult.san;
-
-        // Update the board graphics which will create the piece at the new location
-        updateBoardGraphicsAndSquareListeners(false);
-        restartClockInternal();
         if (!moveResult) {
             console.error("Invalid move:", moveObject);
             playSound('illegal');
