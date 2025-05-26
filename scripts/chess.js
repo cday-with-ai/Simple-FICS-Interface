@@ -404,7 +404,7 @@ function updateBoardFromStyle12(style12Message) {
         // Update ECO opening info
         updateBoardBottomLabels();
         const startEnd = lastMoveToStartEndAlgebraic();
-        if (startEnd && startEnd.length === 2) {
+        if (startEnd && startEnd.length === 2 && (gameState.perspective === Perspective.PLAYING && gameState.isWhitesMove === gameState.isPlayerWhite)) {
             animatePieceMoveInternal(startEnd[0], startEnd[1], () => {
                 if (gameState.lastMovePretty.includes('x')) {
                     playSound('capture');
@@ -577,7 +577,6 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
     board.querySelectorAll(".premove-end").forEach(square => {
         square.classList.remove('premove-end');
     });
-
 
 
     const squareSize = board.clientWidth / 8;
@@ -1113,10 +1112,10 @@ function updateUIForPerspective() {
     if (gameActionLinksContainer) {
         // Define all possible action links
         const allActionLinks = [
-            { text: 'Draw', action: 'draw', handler: onDraw },
-            { text: 'Resign', action: 'resign', handler: onResign },
-            { text: 'Rematch', action: 'rematch', handler: onRematch },
-            { text: 'Analysis', action: 'analysis', handler: onAnalysis }
+            {text: 'Draw', action: 'draw', handler: onDraw},
+            {text: 'Resign', action: 'resign', handler: onResign},
+            {text: 'Rematch', action: 'rematch', handler: onRematch},
+            {text: 'Analysis', action: 'analysis', handler: onAnalysis}
         ];
 
         // Determine which links should be visible based on perspective
@@ -1218,9 +1217,10 @@ function updateUIForPerspective() {
         }
     }
 
-    // Show move list for all perspectives except FREEFORM
+    // Show move list for all perspectives except FREEFORM and PLAYING
     if (movesListContainer) {
-        const shouldShowMoveList = gameState.perspective !== Perspective.FREEFORM;
+        const shouldShowMoveList = gameState.perspective !== Perspective.FREEFORM &&
+            gameState.perspective !== Perspective.PLAYING;
         movesListContainer.style.display = shouldShowMoveList ? 'block' : 'none';
     }
 
@@ -1265,7 +1265,6 @@ function updatePlayerInfoAndClockUI() {
             gameTypeInfo.innerText = '';
         }
     }
-
 
 
     if (!gameState.isWhiteOnBottom) { //White on top
@@ -1480,11 +1479,6 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
             gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
             gameState.draggedPieceElement.classList.add('piece-visible');
         }
-
-        if (!moveResult) {
-            console.error("Invalid premove:", moveObject);
-            playSound('illegal');
-        }
         return moveResult;
     } else { //Actual move.
         console.log('Handling move...');
@@ -1541,7 +1535,7 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         gameState.lastMovePretty = moveResult.san;
 
         // Update the board graphics which will create the piece at the new location
-        updateBoardGraphicsAndSquareListeners(moveStringPart, null);
+        updateBoardGraphicsAndSquareListeners(false);
         restartClockInternal();
         if (!moveResult) {
             console.error("Invalid move:", moveObject);
@@ -2077,11 +2071,6 @@ function refreshMoveListDisplay() {
 function updateMoveListWithLastMove() {
     if (!movesListDisplayElement || gameState.lastMovePretty === '') return;
 
-    // Make sure the moves list container is visible
-    if (movesListContainer) {
-        movesListContainer.style.display = 'block';
-    }
-
     // Update the display
     refreshMoveListDisplay();
     highlightLastMoveInMovelist();
@@ -2372,7 +2361,7 @@ function clearMoveList() {
     // First move button
     const firstMoveBtn = document.createElement('button');
     firstMoveBtn.classList.add('moves-nav-btn');
-    firstMoveBtn.innerHTML = '<span class="material-icons">keyboard_double_arrow_left</span>';
+    firstMoveBtn.innerHTML = '<span>&lt;&lt;</span>';
     firstMoveBtn.title = 'Go to first move';
     firstMoveBtn.onclick = jumpToFirstMove;
     navContainer.appendChild(firstMoveBtn);
@@ -2380,7 +2369,7 @@ function clearMoveList() {
     // Previous move button
     const prevMoveBtn = document.createElement('button');
     prevMoveBtn.classList.add('moves-nav-btn');
-    prevMoveBtn.innerHTML = '<span class="material-icons">west</span>';
+    prevMoveBtn.innerHTML = '<span >&lt;</span>';
     prevMoveBtn.title = 'Go to previous move';
     prevMoveBtn.onclick = jumpToPreviousMove;
     navContainer.appendChild(prevMoveBtn);
@@ -2388,7 +2377,7 @@ function clearMoveList() {
     // Next move button
     const nextMoveBtn = document.createElement('button');
     nextMoveBtn.classList.add('moves-nav-btn');
-    nextMoveBtn.innerHTML = '<span class="material-icons">east</span>';
+    nextMoveBtn.innerHTML = '<span >&gt;</span>';
     nextMoveBtn.title = 'Go to next move';
     nextMoveBtn.onclick = jumpToNextMove;
     navContainer.appendChild(nextMoveBtn);
@@ -2396,7 +2385,7 @@ function clearMoveList() {
     // Last move button
     const lastMoveBtn = document.createElement('button');
     lastMoveBtn.classList.add('moves-nav-btn');
-    lastMoveBtn.innerHTML = '<span class="material-icons">keyboard_double_arrow_right</span>';
+    lastMoveBtn.innerHTML = '<span >&gt;&gt;</span>';
     lastMoveBtn.title = 'Go to last move';
     lastMoveBtn.onclick = jumpToLastMove;
     navContainer.appendChild(lastMoveBtn);
@@ -2783,7 +2772,6 @@ function setupMainChessBoardDisplay() {
     playerDivider.appendChild(movesListContainer); // Add moves list to the player divider between names
     // Initialize an empty move list with navigation buttons
     refreshMoveListDisplay();
-
 
 
     // Resize observer for the main board area
