@@ -1,9 +1,9 @@
 # Simple-FICS-Interface
+<img src="screenshot.png">
 Try it <a href="https://cday-with-ai.github.io/Simple-FICS-Interface/" target="_blank">here</a>.
 
-A minimalist FICS interface which focuses on easy game play and chat functionality. It should eventually work on mobile and tablet devices.
 
-Currently, under construction. See the Road Map below for the current state.
+A minimalist FICS interface which focuses on easy game play and chat functionality. It should eventually work on mobile and tablet devices.
 
 **Functionality** (Working functionality):
 - Variants: Chess 960, Losers, Suicide, Atomic, Classic, Wild/*.
@@ -26,13 +26,12 @@ Currently, under construction. See the Road Map below for the current state.
 - ECO/Opening description lookup based on moves made.
 - Fast and efficient, written in ES6.
 
-**Road Map** (Current phase PRE-ALPHA):
+**Road Map** 
+
 **ALPHA:**
-  - Change UI for perspectives, examine, observe, playing, playing end.
-  - Add auto draw, resign buttons for playing.
   - Regression testing.
-    - Test all functionality.
-    
+    - Test all functionality. 
+
 **BETA:**
 - Crazyhouse support.
 - Add stockfish 17 web-assembly. Add an analysis mode when playing end or observing.
@@ -43,7 +42,6 @@ Currently, under construction. See the Road Map below for the current state.
   - More changes for Responsive web design that work on mobile and tablets. (Last after features are added.)
     - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
 
-
-*Not planned at this time.* Let me know if you would like it added:
+**Unplanned:**
 - Bughouse support.
 - Viewing multiple boards at once.
