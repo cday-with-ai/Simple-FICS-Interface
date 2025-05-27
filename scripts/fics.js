@@ -3,7 +3,7 @@ import {
     initChessSystem,
     onGameEnd,
     onGameMoves,
-    onNewGame,
+    onGameStart,
     onStyle12,
     onUnobserve
 } from './chess.js';
@@ -371,7 +371,7 @@ function handleNewGame(msg) {
             const gameType = match[7];
             const minutes = parseInt(match[8], 10);
             const increment = parseInt(match[9], 10);
-            onNewGame(gameNum, whiteName, whiteRating, blackName, blackRating, isRated, gameType, minutes, increment);
+            onGameStart(gameNum, whiteName, whiteRating, blackName, blackRating, isRated, gameType, minutes, increment);
             return true;
         }
     } else { //Player is creating a new game
@@ -408,7 +408,7 @@ function handleNewGame(msg) {
                 const gameType = creatingMatch[6];
                 const minutes = parseInt(creatingMatch[7], 10);
                 const increment = parseInt(creatingMatch[8], 10);
-                onNewGame(gameNum, whiteName, whiteRating, blackName, blackRating, isRated, gameType, minutes, increment);
+                onGameStart(gameNum, whiteName, whiteRating, blackName, blackRating, isRated, gameType, minutes, increment);
                 return true;
             }
         }
