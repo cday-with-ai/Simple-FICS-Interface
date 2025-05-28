@@ -1,5 +1,6 @@
 # Simple-FICS-Interface
 <img src="screenshot.png">
+<img src="analysis-screenshot.png">
 Try it <a href="https://cday-with-ai.github.io/Simple-FICS-Interface/" target="_blank">here</a>.
 
 

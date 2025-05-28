@@ -70,7 +70,7 @@ let gameState = { // Reset header
     perspective: Perspective.FREESTYLE,
     lastPerspective: null,
     doublePawnPushFile: '',
-    minutes: 5,
+    minutes: 0,
     increment: 0,
     whiteTimeSecs: 0,
     whiteClockDisplay: "",
