@@ -61,7 +61,7 @@ let gameState = { // Reset header
     blackPlayer: {name: 'Black', rating: ''},
     variant: Variant.CLASSIC,
     chessBoard: new ChessBoard(Variant.CLASSIC),
-    type: 'Freeform',
+    type: 'freestyle',
     isRated: false,
     moveNumber: 1,
     lastMove: '',
@@ -1317,9 +1317,9 @@ function stopAnalysis() {
  * Shows the Setup from FEN dialog
  */
 function showSetupFenDialog() {
-    // Validate that we're in FREEFORM mode
+    // Validate that we're in FREESTYLE mode
     if (gameState.perspective !== Perspective.FREESTYLE) {
-        console.warn('Setup from FEN is only available in FREEFORM mode');
+        console.warn('Setup from FEN is only available in FREESTYLE mode');
         return;
     }
 
@@ -1444,9 +1444,9 @@ function setupFenModalEventListeners(modalOverlay) {
  * @returns {boolean} True if successful, false if error
  */
 function applyFenPosition(fenString, errorMessage) {
-    // Validate that we're still in FREEFORM mode
+    // Validate that we're still in Freestyle mode
     if (gameState.perspective !== Perspective.FREESTYLE) {
-        showFenError(errorMessage, 'FEN setup is only available in FREEFORM mode');
+        showFenError(errorMessage, 'FEN setup is only available in FREESTYLE mode');
         return false;
     }
 
@@ -1552,7 +1552,7 @@ function updateUIForPerspective() {
             case Perspective.OBSERVING:
             case Perspective.FINISHED_OBSERVING:
             case Perspective.FREESTYLE:
-                // Analysis link: Show when observing, finished observing, or freeform
+                // Analysis link: Show when observing, finished observing, or FREESTYLE
                 visibleActions = ['analysis'];
                 break;
 
@@ -1649,7 +1649,7 @@ function updateUIForPerspective() {
         }
     }
 
-    // Show move list for all perspectives except FREEFORM and PLAYING
+    // Show move list for all perspectives except FREESTYLE and PLAYING
     if (movesListContainer) {
         const shouldShowMoveList = gameState.perspective !== Perspective.FREESTYLE &&
             gameState.perspective !== Perspective.PLAYING;
@@ -1828,7 +1828,7 @@ function exitAnalysisMode() {
         strengthBars.remove();
     }
 
-    // Return to previous perspective or FREEFORM if none
+    // Return to previous perspective or FREESTYLE if none
     const previousPerspective = gameState.lastPerspective || Perspective.FREESTYLE;
     gameState.perspective = previousPerspective;
 
@@ -3195,7 +3195,7 @@ function setupMainChessBoardDisplay() {
     };
     boardMenu.appendChild(flipBtn);
 
-    // Setup from FEN button (only visible in FREEFORM mode)
+    // Setup from FEN button (only visible in FREESTYLE mode)
     const setupFenBtn = document.createElement('button');
     setupFenBtn.id = 'setupFenBtn';
     setupFenBtn.title = 'Setup Position from FEN';

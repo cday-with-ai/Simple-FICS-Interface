@@ -3,12 +3,13 @@
 Try it <a href="https://cday-with-ai.github.io/Simple-FICS-Interface/" target="_blank">here</a>.
 
 
-A minimalist FICS interface which focuses on easy game play and chat functionality with few UI distractions.  
+A minimalist FICS interface which focuses on easy game play and chat functionality with few UI distractions.
 
 **Functionality** (Working functionality):
 - Variants: Chess 960, Losers, Suicide, Atomic, Classic, Wild/*.
   - Client side validation.
-  - Premove validation.
+  - Pre-move validation.
+- Stockfish 16 WASM integration with:
 - Move animations.
 - Smart scroll.
 - Channel tabs.
@@ -18,16 +19,18 @@ A minimalist FICS interface which focuses on easy game play and chat functionali
 - Drag and drop and 'click-click' move.
 - ECO/Opening description lookup based on moves made.
 
-**Road Map** 
+**Road Map**
 
 **ALPHA:**
+
   - Regression testing.
-    - Test all functionality. 
+    - Test all functionality.
+  - Setup a place to host the site including js files with headers needed.
 
 **BETA:**
+
 - Crazyhouse support.
-- Add stockfish 17 web-assembly. Add an analysis mode when playing end or observing.
-- Add analysis mode when playing end or observing.
+- ~~Add stockfish 16 web-assembly. Add an analysis mode when playing end or observing.~~ ✅ **COMPLETED**
 - Preferences:
   - Expand preferences a bit (not too much).
 - Responsive web design. (For phone/tablet support. Added after everything is in place)
@@ -35,5 +38,65 @@ A minimalist FICS interface which focuses on easy game play and chat functionali
     - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
 
 **Unplanned:**
+
 - Bughouse support.
 - Viewing multiple boards at once.
+
+## Development Setup
+
+### Running Locally
+
+For basic functionality, you can open `index.html` directly in a browser. However, **for chess analysis mode to work properly**, you must run the application through a web server due to WebAssembly security restrictions.
+
+#### Option 1: Node.js Server (Recommended)
+```bash
+# Install Node.js if not already installed
+# Then run:
+node server.js
+```
+
+The application will be available at `http://localhost:3000`
+
+#### Option 2: Python Server
+```bash
+# Python 3
+python -m http.server 3000
+
+# Python 2
+python -m SimpleHTTPServer 3000
+```
+
+### Analysis Mode Requirements
+
+The chess analysis feature uses Stockfish 16 WebAssembly and requires specific HTTP headers to function properly:
+
+#### Required Headers for Stockfish Files
+The following files **must** be served with these specific headers:
+
+**For `sf16-7.js`:**
+```
+Content-Type: application/javascript
+Cross-Origin-Embedder-Policy: require-corp
+Cross-Origin-Opener-Policy: same-origin
+```
+
+**For `sf16-7.wasm`:**
+```
+Content-Type: application/wasm
+Cross-Origin-Embedder-Policy: require-corp
+Cross-Origin-Opener-Policy: same-origin
+```
+
+#### Why These Headers Are Required
+- **Cross-Origin-Embedder-Policy: require-corp**: Required for SharedArrayBuffer support in WebAssembly
+- **Cross-Origin-Opener-Policy: same-origin**: Enables cross-origin isolation for enhanced security
+- **Proper Content-Type**: Ensures browsers handle the files correctly
+
+#### Troubleshooting Analysis Mode
+If analysis mode doesn't work:
+1. **Check browser console** for CORS or WebAssembly errors
+2. **Verify server headers** using browser developer tools (Network tab)
+3. **Use a proper web server** - file:// protocol won't work
+4. **Check browser compatibility** - modern browsers required for WebAssembly
+
+The included `server.js` automatically sets these headers correctly.
