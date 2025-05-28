@@ -1,0 +1,6 @@
+Ok you got it working! But now for some bug fixes and tweeks.
+- I want the Analysis UI to show up between the player names.
+- I want a toggle at the top to turn analysis on and off.
+- The strength bars should be vertical and align with the board.
+- I want a back button that enters the previous player perspective.
+- I also want to see the entire best line. The best move should also be shown in short algebraic.

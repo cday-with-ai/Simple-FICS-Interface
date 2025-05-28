@@ -119,7 +119,7 @@ body {
 .chess-board-area {
     flex: 0 0 50%;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: visible; /* Allow strength bars to show */
     display: flex;
     flex-direction: column;
     align-items: center; /* Changed from flex-end to center */

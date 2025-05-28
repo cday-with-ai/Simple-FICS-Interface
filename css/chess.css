@@ -37,6 +37,7 @@
     align-items: center;
     flex-shrink: 0;
     position: relative;
+    overflow: visible; /* Allow strength bars to show outside */
 }
 
 /* Board and labels container */
@@ -131,7 +132,7 @@
     justify-content: center; /* Center content vertically */
     height: 100%;
     box-sizing: border-box;
-    margin-left: 10px; /* Increased margin between board and player info */
+    margin-left: 20px; /* Increased margin between board and player info */
 }
 
 /* Player divider box */
@@ -849,4 +850,103 @@
     text-align: center;
     font-size: 1.25em;
     background: white;
+}
+
+/* Analysis UI Styles */
+.analysis-container {
+    margin: 10px 0;
+    width: 100%;
+    max-width: 100%;
+}
+
+.analysis-header {
+    padding: 4px 8px;
+}
+
+.analysis-content {
+    padding: 8px 12px;
+    font-size: 0.85em;
+}
+
+.analysis-info {
+    flex: 1;
+}
+
+.analysis-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 1px 0;
+}
+
+.analysis-pv {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    cursor: help;
+    font-weight: bold;
+    font-size: .75em;
+    color: black;
+    padding: 4px 0;
+    min-height: 20px;
+}
+
+/* Board-side strength bars */
+.board-side-strength-bars {
+    position: fixed;
+    left: 45px;
+    top: 180px;
+    width: 18px;
+    height: 420px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.board-strength-evaluation-label{
+    position: absolute;
+    font-weight: bold;
+    top: -15px;
+    left: -9px;
+    width: 100%;
+    font-size: 0.75em;
+    color: black;
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.board-strength-bar-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    border: 1px solid #444;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f5f5f5;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.board-strength-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: height 0.3s ease, background-color 0.3s ease;
+    position: relative;
+    min-height: 20px;
+}
+
+
+.board-strength-bar.white-advantage {
+    background: #2E7D32; /* Darker, more vibrant green for white advantage */
+}
+
+.board-strength-bar.black-advantage {
+    background: #C62828; /* Darker, more vibrant red for black advantage */
+}
+
+/* Ensure board container has relative positioning for absolute positioning of strength bars */
+.board-container {
+    position: relative;
 }

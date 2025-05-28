@@ -7,12 +7,13 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
     <title>Simple FICS Interface</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--load with cache busting versions. Increment the number in each release. -->
     <link href="css/chat.css?v=1" rel="stylesheet">
-    <!--load with cache busting versions. Increment the number in each release. -->
     <link href="css/chess.css?v=1" rel="stylesheet">
-    <!--load with cache busting versions. Increment the number in each release. -->
 </head>
 <body>
 <!-- Hamburger Menu -->
@@ -318,12 +319,31 @@
         </div>
     </div>
 </div>
-<script src="scripts/chess.js?v=1" type="module"></script>
 <!--load with cache busting versions. Increment the number in each release. -->
+<script>
+// Initialize Stockfish loading flag
+window.stockfishLoading = true;
+window.stockfishReady = false;
+</script>
+<script type="module">
+// Load the sf16-7 Stockfish engine
+import Sf167Web from 'https://pub-87bef782b2e94d1d9e532896521e6f83.r2.dev/sf16-7.js';
+
+// Initialize and expose Stockfish globally
+window.Stockfish = Sf167Web;
+window.stockfishReady = true;
+window.stockfishLoading = false;
+console.log('Stockfish sf16-7 loaded successfully');
+console.log('window.Stockfish:', typeof window.Stockfish);
+
+// Dispatch a custom event to notify that Stockfish is ready
+window.dispatchEvent(new CustomEvent('stockfishReady', { detail: { Stockfish: Sf167Web } }));
+</script>
+<script src="scripts/stockfishEngine.js"></script> <!--Stockfish wrapper -->
+<script src="scripts/chess.js?v=1" type="module"></script>
 <script src="scripts/fics.js?v=1" type="module"></script> <!--FICS-related functionality -->
 <script src="scripts/chat.js?v=1" type="module"></script> <!--Chat-related functionality -->
 <script src="scripts/index.js?v=1" type="module"></script> <!--Main initialization script -->
-
 
 </body>
 </html>

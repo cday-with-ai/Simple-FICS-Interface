@@ -3,28 +3,20 @@
 Try it <a href="https://cday-with-ai.github.io/Simple-FICS-Interface/" target="_blank">here</a>.
 
 
-A minimalist FICS interface which focuses on easy game play and chat functionality. It should eventually work on mobile and tablet devices.
+A minimalist FICS interface which focuses on easy game play and chat functionality with few UI distractions.  
 
 **Functionality** (Working functionality):
 - Variants: Chess 960, Losers, Suicide, Atomic, Classic, Wild/*.
   - Client side validation.
   - Premove validation.
-- Clean chess board UI with minimal distractions.
-- LED looking clocks.
 - Move animations.
 - Smart scroll.
 - Channel tabs.
 - resizable board and tab area with adjusters.
-- many available sets.
-- css based for easy theming.
-- Sound effects.
+- svg chess sets
 - Timeseal2.
 - Drag and drop and 'click-click' move.
-- Premove
-- Move validation.
-- Preferences/Username/Pwd saved in local storage.
 - ECO/Opening description lookup based on moves made.
-- Fast and efficient, written in ES6.
 
 **Road Map** 
 

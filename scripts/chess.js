@@ -16,6 +16,7 @@ import {
 import {playSound} from './index.js';
 import {getFollowedPlayer, getObservedPlayer} from "./fics.js"
 import {ChessBoard, Variant} from "./ChessBoard.js";
+// StockfishEngine is loaded globally from stockfishEngine.js
 
 
 // GameRelation Enum
@@ -26,18 +27,19 @@ const GameRelation = {
     PLAYING_OPPONENT_MOVE: -1,
     PLAYING_MY_MOVE: 1,
     OBSERVING_PLAYED: 0,
-    FREEFORM: -10,
+    FREESTYLE: -10,
 };
 
 // GameRelation Enum
 const Perspective = {
-    FREEFORM: 1,
+    FREESTYLE: 1,
     PLAYING: 2,
     FINISHED_PLAYING: 3,
     OBSERVING: 4,
     FINISHED_OBSERVING: 5,
     EXAMINING: 6,
-    FINISHED_EXAMINING: 7
+    FINISHED_EXAMINING: 7,
+    ANALYSIS: 8
 };
 
 let ws; // WebSocket instance, to be set by an initializer
@@ -64,8 +66,8 @@ let gameState = { // Reset header
     moveNumber: 1,
     lastMove: '',
     lastMovePretty: '',
-    relation: GameRelation.FREEFORM,
-    perspective: Perspective.FREEFORM,
+    relation: GameRelation.FREESTYLE,
+    perspective: Perspective.FREESTYLE,
     lastPerspective: null,
     doublePawnPushFile: '',
     minutes: 5,
@@ -80,14 +82,14 @@ let gameState = { // Reset header
     blackCastleLong: true,
     irreversibleCount: 0,
     isWhiteOnBottom: true,
+    isWhitesMove: true,
     isActive: false,
     isPlayerWhite: true,
-    isPlayerPlaying: true,
+    isPlayerPlaying: false,
     isFlipped: false,
     allowUserToMoveBothSides: true,
     validMoves: [],
     openingDescription: '',
-    isWhitesMove: true,
     isClockRunning: false,
     requestedMovesForGame: false,
     draggedPiece: null,
@@ -100,7 +102,17 @@ let gameState = { // Reset header
     fen: new ChessBoard(Variant.CLASSIC).getFen(),
     status: '',
     result: '',
-    drawOfferPending: false
+    drawOfferPending: false,
+    // Analysis state
+    analysis: {
+        engine: null,
+        isActive: false,
+        bestMove: '',
+        evaluation: 0,
+        mateInMoves: null,
+        principalVariation: [],
+        isEngineReady: false
+    }
 };
 
 /**
@@ -299,7 +311,7 @@ export function onGameEnd(message) {
         } else if (gameState.perspective === Perspective.PLAYING) {
             gameState.perspective = Perspective.FINISHED_PLAYING;
         }
-        gameState.relation = GameRelation.FREEFORM
+        gameState.relation = GameRelation.FREESTYLE
 
         // Update the moves list display to show the game result
         refreshMoveListDisplay();
@@ -981,11 +993,324 @@ function onRematch() {
     ws.send('rematch');
 }
 
+
+
 /**
  * Handles analysis mode activation
  */
-function onAnalysis() {
-    alert("Under Construction. If you want this feature pester cday to add it.")
+async function onAnalysis() {
+    // Store current perspective before switching to analysis
+    if (gameState.perspective !== Perspective.ANALYSIS) {
+        gameState.lastPerspective = gameState.perspective;
+    }
+
+    // Switch to Analysis perspective
+    gameState.perspective = Perspective.ANALYSIS;
+
+    // Initialize Stockfish engine if not already done
+    if (!gameState.analysis.engine) {
+        gameState.analysis.engine = new window.StockfishEngine();
+
+        try {
+            const success = await gameState.analysis.engine.initialize();
+            if (success) {
+                gameState.analysis.isEngineReady = true;
+            } else {
+                console.error('Failed to initialize Stockfish engine');
+                alert('Failed to initialize chess analysis engine. Please check your internet connection.');
+                return;
+            }
+        } catch (error) {
+            console.error('Error initializing Stockfish:', error);
+            alert('Error initializing chess analysis engine: ' + error.message);
+            return;
+        }
+    }
+
+    // Activate analysis
+    gameState.analysis.isActive = true;
+
+    // Update UI for Analysis perspective
+    updateUIForPerspective();
+
+    // Start analyzing current position
+    if (gameState.fen && gameState.analysis.isEngineReady) {
+        startPositionAnalysis();
+    }
+}
+
+/**
+ * Start analyzing the current chess position
+ */
+function startPositionAnalysis() {
+    if (!gameState.analysis.engine || !gameState.analysis.isEngineReady || !gameState.fen) {
+        return;
+    }
+
+    // Set up analysis callback for our new engine
+    gameState.analysis.engine.setAnalysisCallback((data) => {
+        if (data.type === 'info') {
+            // Parse UCI info line
+            parseUCIInfo(data.line);
+        } else if (data.type === 'bestmove') {
+            // Update best move
+            gameState.analysis.bestMove = data.move;
+            updateAnalysisDisplay();
+        }
+    });
+
+    // Start analysis
+    gameState.analysis.engine.analyzePosition(gameState.fen);
+}
+
+/**
+ * Parse UCI info line and update analysis state
+ */
+function parseUCIInfo(infoLine) {
+    // Example: info depth 12 score cp 25 pv e2e4 e7e5 g1f3
+    const parts = infoLine.split(' ');
+
+    for (let i = 0; i < parts.length; i++) {
+        if (parts[i] === 'depth') {
+            gameState.analysis.depth = parseInt(parts[i + 1]);
+        } else if (parts[i] === 'score') {
+            if (parts[i + 1] === 'cp') {
+                // Centipawn score
+                if (gameState.isWhitesMove && gameState.isWhiteOnBottom) {
+                    console.log('no change to eval')
+                    gameState.analysis.evaluation = parseInt(parts[i + 2]) / 100;
+                } else {
+                    console.log('-1* eval')
+                    gameState.analysis.evaluation = -parseInt(parts[i + 2]) / 100;
+                }
+                gameState.analysis.mateInMoves = null;
+            } else if (parts[i + 1] === 'mate') {
+                // Mate in X moves
+                gameState.analysis.mateInMoves = parseInt(parts[i + 2]);
+                if (gameState.isWhitesMove && gameState.isWhiteOnBottom) {
+                    gameState.analysis.evaluation = gameState.analysis.mateInMoves > 0 ? 999 : -999;
+                } else {
+                    gameState.analysis.evaluation = gameState.analysis.mateInMoves > 0 ? -999 : 999;
+                }
+            }
+        } else if (parts[i] === 'pv') {
+            // Principal variation - rest of the line
+            gameState.analysis.principalVariation = parts.slice(i + 1);
+            break;
+        }
+    }
+
+    // Update UI with new analysis data
+    updateAnalysisDisplay();
+}
+
+/**
+ * Update the analysis display with current engine results
+ */
+function updateAnalysisDisplay() {
+    const analysisContainer = document.getElementById('analysisContainer');
+
+    if (!analysisContainer || gameState.perspective !== Perspective.ANALYSIS) {
+        return;
+    }
+
+    // Update principal variation display
+    const pvElement = document.getElementById('analysisPrincipalVariation');
+    if (pvElement && gameState.analysis.principalVariation && gameState.analysis.principalVariation.length > 0) {
+        let evalText = '';
+        if (gameState.analysis.mateInMoves !== null) {
+            const mateSign = gameState.analysis.mateInMoves > 0 ? '+' : '';
+            evalText = `${mateSign}M${Math.abs(gameState.analysis.mateInMoves)}`;
+        } else {
+            const evalSign = gameState.analysis.evaluation >= 0 ? '+' : '';
+            evalText = `${evalSign}${gameState.analysis.evaluation.toFixed(2)}`;
+        }
+
+        // Convert principal variation moves to short algebraic notation
+        const shortMoves = convertPVToSAN(gameState.analysis.principalVariation, gameState.chessBoard.getFen());
+
+        // Show full principal variation with line wrapping
+        const pvText = evalText + ' ' + shortMoves.join(' ');
+        pvElement.textContent = pvText;
+        pvElement.title = `Principal Variation: ${pvText}`; // Full line in tooltip
+    }
+
+    // Update strength bars
+    updateStrengthBars();
+}
+
+/**
+ * Convert UCI move to Short Algebraic Notation (SAN)
+ * @param {string} uciMove - UCI move like "e2e4" or "e7e8q"
+ * @param {string} fen - Current position FEN
+ * @returns {string} - SAN move like "e4" or "exd5"
+ */
+function convertUCIToSAN(uciMove, fen) {
+    try {
+        // Create a temporary board to make the move and get SAN
+        const tempBoard = new ChessBoard('chess');
+        tempBoard.loadFen(fen);
+
+        // Parse UCI move
+        const from = uciMove.substring(0, 2);
+        const to = uciMove.substring(2, 4);
+        const promotion = uciMove.length > 4 ? uciMove.substring(4) : null;
+
+        // Get all legal moves and find the matching one
+        const legalMoves = tempBoard.getLegalMoves();
+        for (const move of legalMoves) {
+            if (move.from === from && move.to === to) {
+                // Check promotion match if applicable
+                if (promotion && move.promotion !== promotion) {
+                    continue;
+                }
+                if (!promotion && move.promotion) {
+                    continue;
+                }
+                return move.san;
+            }
+        }
+
+
+    } catch (e) {
+        console.log('Could not convert UCI to SAN:', uciMove, e);
+    }
+
+    // Fallback: return the original UCI move
+    return uciMove;
+}
+
+/**
+ * Convert Principal Variation (array of UCI moves) to SAN notation
+ * @param {string[]} pvMoves - Array of UCI moves
+ * @param {string} startFen - Starting position FEN
+ * @returns {string[]} - Array of SAN moves
+ */
+function convertPVToSAN(pvMoves, startFen) {
+    const sanMoves = [];
+
+    try {
+        // Create a temporary board to play through the variation
+        const tempBoard = new ChessBoard('chess');
+        tempBoard.loadFen(startFen);
+
+        for (let i = 0; i < pvMoves.length; i++) {
+            const uciMove = pvMoves[i];
+
+            // Parse UCI move
+            const from = uciMove.substring(0, 2);
+            const to = uciMove.substring(2, 4);
+            const promotion = uciMove.length > 4 ? uciMove.substring(4) : null;
+
+            // Get all legal moves and find the matching one
+            const legalMoves = tempBoard.getLegalMoves();
+            let moveFound = false;
+
+            for (const move of legalMoves) {
+                if (move.from === from && move.to === to) {
+                    // Check promotion match if applicable
+                    if (promotion && move.promotion !== promotion) {
+                        continue;
+                    }
+                    if (!promotion && move.promotion) {
+                        continue;
+                    }
+
+                    // Found the move, add its SAN and make it on the board
+                    sanMoves.push(move.san);
+                    tempBoard.makeMove(move.san);
+                    moveFound = true;
+                    break;
+                }
+            }
+
+            if (!moveFound) {
+                // If conversion fails, use UCI move and stop processing
+
+                sanMoves.push(uciMove);
+                break;
+            }
+        }
+    } catch (e) {
+        console.log('Could not convert PV to SAN:', pvMoves, e);
+        // Fallback: return original UCI moves
+        return pvMoves;
+    }
+
+    return sanMoves;
+}
+
+/**
+ * Update the visual strength bars based on current evaluation
+ */
+function updateStrengthBars() {
+    const strengthContainer = document.getElementById('boardSideStrengthBars');
+
+    if (!strengthContainer) {
+        createBoardSideStrengthBars();
+        return;
+    }
+
+    let evaluation = 0; // Default to equal
+    let evaluationText = '0.00';
+
+    if (gameState.analysis.mateInMoves !== null) {
+        // Mate situation - set to extreme values
+        evaluation = gameState.analysis.mateInMoves > 0 ? 10 : -10;
+        evaluationText = gameState.analysis.mateInMoves > 0 ? `M${gameState.analysis.mateInMoves}` : `M${Math.abs(gameState.analysis.mateInMoves)}`;
+    } else {
+        evaluation = gameState.analysis.evaluation || 0;
+        evaluationText = evaluation >= 0 ? `+${evaluation.toFixed(2)}` : evaluation.toFixed(2);
+    }
+
+    // Update evaluation label
+    const evaluationLabel = document.getElementById('strengthEvaluationLabel');
+    if (evaluationLabel) {
+        evaluationLabel.textContent = evaluationText;
+    }
+
+    // Get the bar container (not the main container)
+    const barContainer = strengthContainer.querySelector('.board-strength-bar-container');
+    if (!barContainer) {
+        return;
+    }
+
+    if (evaluation > 0) {
+        // Positive evaluation: Green bar growing upward from middle
+        const greenBarHeight = Math.min(50, Math.abs(evaluation) * 10); // Max 50% height
+
+        barContainer.innerHTML = `
+            <div style="height: ${50 - greenBarHeight}%; background: transparent;"></div>
+            <div style="height: ${greenBarHeight}%; background: #2E7D32; transition: height 0.3s ease;"></div>
+            <div style="height: 50%; background: transparent;"></div>
+        `;
+    } else if (evaluation < 0) {
+        // Negative evaluation: Red bar growing downward from middle
+        const redBarHeight = Math.min(50, Math.abs(evaluation) * 10); // Max 50% height
+
+        barContainer.innerHTML = `
+            <div style="height: 50%; background: transparent;"></div>
+            <div style="height: ${redBarHeight}%; background: #C62828; transition: height 0.3s ease;"></div>
+            <div style="height: ${50 - redBarHeight}%; background: transparent;"></div>
+        `;
+    } else {
+        // Equal position: Small neutral indicator in the middle
+        barContainer.innerHTML = `
+            <div style="height: 47%; background: transparent;"></div>
+            <div style="height: 6%; background: #FFC107; transition: height 0.3s ease;"></div>
+            <div style="height: 47%; background: transparent;"></div>
+        `;
+    }
+}
+
+/**
+ * Stop analysis and cleanup
+ */
+function stopAnalysis() {
+    if (gameState.analysis.engine && gameState.analysis.isActive) {
+        gameState.analysis.engine.stopAnalysis();
+        gameState.analysis.isActive = false;
+    }
 }
 
 /**
@@ -993,7 +1318,7 @@ function onAnalysis() {
  */
 function showSetupFenDialog() {
     // Validate that we're in FREEFORM mode
-    if (gameState.perspective !== Perspective.FREEFORM) {
+    if (gameState.perspective !== Perspective.FREESTYLE) {
         console.warn('Setup from FEN is only available in FREEFORM mode');
         return;
     }
@@ -1120,7 +1445,7 @@ function setupFenModalEventListeners(modalOverlay) {
  */
 function applyFenPosition(fenString, errorMessage) {
     // Validate that we're still in FREEFORM mode
-    if (gameState.perspective !== Perspective.FREEFORM) {
+    if (gameState.perspective !== Perspective.FREESTYLE) {
         showFenError(errorMessage, 'FEN setup is only available in FREEFORM mode');
         return false;
     }
@@ -1144,6 +1469,11 @@ function applyFenPosition(fenString, errorMessage) {
 
         // Update board graphics and UI
         updateBoardGraphicsAndSquareListeners(true);
+
+        // Trigger analysis if in analysis mode
+        if (gameState.perspective === Perspective.ANALYSIS && gameState.analysis.isEngineReady) {
+            startPositionAnalysis();
+        }
 
         console.log('Successfully loaded FEN:', fenString);
         return true;
@@ -1184,7 +1514,12 @@ function updateUIForPerspective() {
     if (gameState.lastPerspective === gameState.perspective) {
         return;
     }
-    gameState.lastPerspective = gameState.perspective;
+
+    // Only update lastPerspective if we're not in analysis mode
+    // Analysis mode should preserve the original lastPerspective for returning to
+    if (gameState.perspective !== Perspective.ANALYSIS) {
+        gameState.lastPerspective = gameState.perspective;
+    }
 
     const gameActionLinksContainer = document.getElementById('gameActionLinksContainer');
     const promotionContainer = document.getElementById('promotionOptionsContainer');
@@ -1196,7 +1531,8 @@ function updateUIForPerspective() {
             {text: 'Draw', action: 'draw', handler: onDraw},
             {text: 'Resign', action: 'resign', handler: onResign},
             {text: 'Rematch', action: 'rematch', handler: onRematch},
-            {text: 'Analysis', action: 'analysis', handler: onAnalysis}
+            {text: 'Analysis', action: 'analysis', handler: onAnalysis},
+            {text: 'End Analysis', action: 'endAnalysis', handler: exitAnalysisMode}
         ];
 
         // Determine which links should be visible based on perspective
@@ -1215,9 +1551,14 @@ function updateUIForPerspective() {
 
             case Perspective.OBSERVING:
             case Perspective.FINISHED_OBSERVING:
-            case Perspective.FREEFORM:
+            case Perspective.FREESTYLE:
                 // Analysis link: Show when observing, finished observing, or freeform
                 visibleActions = ['analysis'];
+                break;
+
+            case Perspective.ANALYSIS:
+                // No action links in analysis mode - analysis UI is shown instead
+                visibleActions = ['endAnalysis'];
                 break;
 
             case Perspective.EXAMINING:
@@ -1233,7 +1574,14 @@ function updateUIForPerspective() {
         }
 
         // Clear the container and rebuild with only visible links
+        // But preserve analysis container if it exists
+        const existingAnalysisContainer = gameActionLinksContainer.querySelector('#analysisContainer');
         gameActionLinksContainer.innerHTML = '';
+
+        // Restore analysis container if we're in analysis mode
+        if (existingAnalysisContainer && gameState.perspective === Perspective.ANALYSIS) {
+            gameActionLinksContainer.appendChild(existingAnalysisContainer);
+        }
 
         if (visibleActions.length > 0) {
             // Add only the visible action links
@@ -1268,6 +1616,9 @@ function updateUIForPerspective() {
             });
 
             gameActionLinksContainer.classList.add('visible');
+        } else if (gameState.perspective === Perspective.ANALYSIS) {
+            // Keep container visible in analysis mode for the analysis UI
+            gameActionLinksContainer.classList.add('visible');
         } else {
             gameActionLinksContainer.classList.remove('visible');
         }
@@ -1300,7 +1651,7 @@ function updateUIForPerspective() {
 
     // Show move list for all perspectives except FREEFORM and PLAYING
     if (movesListContainer) {
-        const shouldShowMoveList = gameState.perspective !== Perspective.FREEFORM &&
+        const shouldShowMoveList = gameState.perspective !== Perspective.FREESTYLE &&
             gameState.perspective !== Perspective.PLAYING;
         movesListContainer.style.display = shouldShowMoveList ? 'block' : 'none';
     }
@@ -1308,9 +1659,182 @@ function updateUIForPerspective() {
     // Show/hide Setup from FEN menu item based on perspective
     const setupFenBtn = document.getElementById('setupFenBtn');
     if (setupFenBtn) {
-        const shouldShowSetupFen = gameState.perspective === Perspective.FREEFORM;
+        const shouldShowSetupFen = gameState.perspective === Perspective.FREESTYLE;
         setupFenBtn.style.display = shouldShowSetupFen ? 'block' : 'none';
     }
+
+    // Show/hide analysis UI based on perspective
+    const analysisContainer = document.getElementById('analysisContainer');
+    if (analysisContainer) {
+        const shouldShowAnalysis = gameState.perspective === Perspective.ANALYSIS;
+        analysisContainer.style.display = shouldShowAnalysis ? 'block' : 'none';
+
+        if (shouldShowAnalysis) {
+            // Ensure analysis container is created and visible
+            createAnalysisUI();
+        }
+    } else if (gameState.perspective === Perspective.ANALYSIS) {
+        // Create analysis container if it doesn't exist
+        createAnalysisUI();
+    }
+}
+
+/**
+ * Create and setup the analysis UI components
+ */
+function createAnalysisUI() {
+    // Check if analysis container already exists
+    let analysisContainer = document.getElementById('analysisContainer');
+    if (analysisContainer) {
+        return; // Already exists
+    }
+
+    // Find the game action links container between player names
+    const gameActionLinksContainer = document.getElementById('gameActionLinksContainer');
+    if (!gameActionLinksContainer) {
+        console.error('Could not find game action links container for analysis UI');
+        return;
+    }
+
+    // Create analysis container
+    analysisContainer = document.createElement('div');
+    analysisContainer.id = 'analysisContainer';
+    analysisContainer.className = 'analysis-container';
+
+    // Create analysis UI HTML without strength bars (they'll be positioned separately)
+    analysisContainer.innerHTML = `
+        <div class="analysis-content">
+            <div class="analysis-info">
+               <div id="analysisPrincipalVariation" class="analysis-value analysis-pv"></div>
+            </div>
+        </div>
+    `;
+
+    // Insert analysis container at the bottom of the board area
+    const chessBoardArea = document.querySelector('.chess-board-area');
+    if (chessBoardArea) {
+        chessBoardArea.appendChild(analysisContainer);
+    } else {
+        // Fallback to game action links area
+        gameActionLinksContainer.after(analysisContainer);
+    }
+
+    // Add event listeners
+    const toggleBtn = document.getElementById('analysisToggleBtn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleAnalysis);
+    }
+
+    const backBtn = document.getElementById('analysisBackBtn');
+    if (backBtn) {
+        backBtn.addEventListener('click', exitAnalysisMode);
+    }
+
+    // Create strength bars on the left side of the chess board
+    createBoardSideStrengthBars();
+}
+
+/**
+ * Create strength bars on the left side of the chess board
+ */
+function createBoardSideStrengthBars() {
+    // Remove existing strength bars if they exist
+    const existingBars = document.getElementById('boardSideStrengthBars');
+    if (existingBars) {
+        existingBars.remove();
+    }
+
+    // Find the main container to attach strength bars
+    const mainContainer = document.querySelector('.main-container') || document.body;
+
+    // Create strength bars container
+    const strengthBarsContainer = document.createElement('div');
+    strengthBarsContainer.id = 'boardSideStrengthBars';
+    strengthBarsContainer.className = 'board-side-strength-bars';
+
+    // Initialize with equal position (neutral yellow bar in middle) and evaluation label
+    strengthBarsContainer.innerHTML = `
+        <div class="board-strength-evaluation-label" id="strengthEvaluationLabel">0.00</div>
+        <div class="board-strength-bar-container">
+            <div style="height: 47%; background: transparent;"></div>
+            <div style="height: 6%; background: #FFC107; transition: height 0.3s ease;"></div>
+            <div style="height: 47%; background: transparent;"></div>
+        </div>
+    `;
+
+    // Insert the strength bars into the main container
+    mainContainer.appendChild(strengthBarsContainer);
+
+    // Position the strength bars dynamically based on chess board position
+    positionStrengthBars();
+}
+
+/**
+ * Position strength bars dynamically based on chess board position and size
+ */
+function positionStrengthBars() {
+    const strengthBars = document.getElementById('boardSideStrengthBars');
+    const chessBoard = document.getElementById('chessBoard');
+
+    if (!strengthBars || !chessBoard) {
+        return;
+    }
+
+    // Get chess board position and dimensions
+    const boardRect = chessBoard.getBoundingClientRect();
+
+    // Position strength bars to the left of the chess board
+    strengthBars.style.position = 'fixed';
+    strengthBars.style.left = (boardRect.left - 25) + 'px'; // 25px to the left of board
+    strengthBars.style.top = boardRect.top + 'px'; // Align with top of board
+    strengthBars.style.width = '18px';
+    strengthBars.style.height = boardRect.height + 'px'; // Match board height exactly
+}
+
+/**
+ * Toggle analysis on/off
+ */
+function toggleAnalysis() {
+    const toggleIcon = document.getElementById('analysisToggleIcon');
+
+    if (gameState.analysis.isActive) {
+        // Stop analysis
+        stopAnalysis();
+        if (toggleIcon) toggleIcon.textContent = '▶';
+    } else {
+        // Start analysis
+        gameState.analysis.isActive = true;
+        startPositionAnalysis();
+        if (toggleIcon) toggleIcon.textContent = '⏸';
+    }
+}
+
+/**
+ * Exit analysis mode and return to previous perspective
+ */
+function exitAnalysisMode() {
+    // Stop analysis
+    stopAnalysis();
+
+    // Remove analysis container
+    const analysisContainer = document.getElementById('analysisContainer');
+    if (analysisContainer) {
+        analysisContainer.remove();
+    }
+
+    // Remove board-side strength bars
+    const strengthBars = document.getElementById('boardSideStrengthBars');
+    if (strengthBars) {
+        strengthBars.remove();
+    }
+
+    // Return to previous perspective or FREEFORM if none
+    const previousPerspective = gameState.lastPerspective || Perspective.FREESTYLE;
+    gameState.perspective = previousPerspective;
+
+    // Force UI update by resetting lastPerspective
+    gameState.lastPerspective = null;
+    updateUIForPerspective();
 }
 
 /**
@@ -1565,18 +2089,25 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
             console.log(`Fen before move: ${gameState.fen} after move: ${gameState.chessBoard.getFen()}`);
             gameState.fen = gameState.chessBoard.getFen();
 
-            // Only call back() for live games where moves will be confirmed by Style12 events
-            // In other modes, we want the moves to stick
+            // Make move on fics.
             if (gameState.relation === GameRelation.PLAYING_MY_MOVE ||
                 gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE ||
                 gameState.relation === GameRelation.EXAMINING) {
                 ws.send(`${moveStringPart}`);
                 gameState.chessBoard.back();
+            } else {
+                // Make move manually.
+                gameState.isWhitesMove = !gameState.isWhitesMove;
             }
 
             // Update the board graphics which will create the piece at the new location
             updateBoardGraphicsAndSquareListeners(false);
             restartClockInternal();
+
+            // Trigger analysis if in analysis mode and move was successful
+            if (gameState.perspective === Perspective.ANALYSIS && gameState.analysis.isEngineReady) {
+                startPositionAnalysis();
+            }
         }
         // We'll make the original piece fully transparent but not rely solely on this
         if (isDragging && gameState.draggedPieceElement) {
@@ -1636,8 +2167,6 @@ function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
     const startPosition = getSquareTopLeftAdjustment(fromSquare.rank, fromSquare.file, squareSize);
     const endPosition = getSquareTopLeftAdjustment(toSquare.rank, toSquare.file, squareSize);
 
-    console.log(`Animating piece from: ${algrebraicFrom} ${JSON.stringify(startPosition)} to: ${algebraicTo} ${JSON.stringify(endPosition)}`);
-
     animatedPiece.style.left = startPosition.left + 'px';
     animatedPiece.style.top = startPosition.top + 'px';
 
@@ -1650,9 +2179,7 @@ function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
         animatedPiece.style.top = endPosition.top + 'px';
 
         animatedPiece.addEventListener('transitionend', function onEnd(e) {
-            console.log("Transition ended for property:", e.propertyName);
             if (e.propertyName === 'left' || e.propertyName === 'top') { // Wait for one of them
-                console.log("Removing animated piece");
                 animatedPiece.removeEventListener('transitionend', onEnd);
 
                 // Get the destination square and restore the piece content there
@@ -1661,9 +2188,6 @@ function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
                     const destPieceElement = toElement.querySelector('.chess-piece');
                     if (destPieceElement) {
                         destPieceElement.innerHTML = pieceContent;
-                        console.log("Restored piece content at destination");
-                    } else {
-                        console.error("No piece element found at destination square");
                     }
                 }
 
@@ -1671,7 +2195,6 @@ function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
                 animatedPiece.remove();
 
                 if (callback) {
-                    console.log("Calling animation callback");
                     callback();
                 }
             }
@@ -1704,7 +2227,6 @@ function getSquareTopLeftAdjustment(rank, file, squareSize) {
 }
 
 function removeAllBoardSquareIndicationStyles() {
-    console.log("removeBoardHighlightsInternal() called.");
     const boardElement = document.getElementById('chessBoard');
     if (!boardElement) return;
 
@@ -1715,7 +2237,6 @@ function removeAllBoardSquareIndicationStyles() {
 }
 
 function refreshValidMoveStyleOnSquares() {
-    console.log("removeBoardHighlightsInternal() called.");
     removeAllBoardSquareIndicationStyles();
 
     // Add highlights to valid moves
@@ -1725,7 +2246,6 @@ function refreshValidMoveStyleOnSquares() {
             moveSquareDiv.classList.add('valid-move');
         }
     });
-
 }
 
 /**
@@ -1912,7 +2432,7 @@ function showPromotionOptions(startSquareAlgebraic, endSquareAlgebraic, isDraggi
             if (gameState.relation !== GameRelation.ISOLATED_POSITION &&
                 gameState.relation !== GameRelation.OBSERVING_PLAYED &&
                 gameState.relation !== GameRelation.OBSERVING_EXAMINED &&
-                gameState.relation !== GameRelation.FREEFORM) {
+                gameState.relation !== GameRelation.FREESTYLE) {
                 ws.send(`${moveStringPart}`);
             }
 
@@ -2189,6 +2709,11 @@ export function jumpToMove(moveNumber, color) {
             updateBoardGraphicsAndSquareListeners(false);
             updateBoardBottomLabels();
 
+            // Trigger analysis if in analysis mode
+            if (currentGameState.perspective === Perspective.ANALYSIS && currentGameState.analysis.isEngineReady) {
+                startPositionAnalysis();
+            }
+
             // Highlight the selected move in the moves list
             highlightSelectedMoveInternal(moveNumber, color);
         } else {
@@ -2221,6 +2746,11 @@ export function jumpToFirstMove() {
         updateBoardGraphicsAndSquareListeners(false);
         updateBoardBottomLabels();
 
+        // Trigger analysis if in analysis mode
+        if (currentGameState.perspective === Perspective.ANALYSIS && currentGameState.analysis.isEngineReady) {
+            startPositionAnalysis();
+        }
+
         // Clear any move highlighting since we're at the starting position
         unselectMoveInMoveList();
 
@@ -2251,6 +2781,11 @@ export function jumpToLastMove() {
     // Update UI - call functions directly
     updateBoardGraphicsAndSquareListeners(false);
     updateBoardBottomLabels();
+
+    // Trigger analysis if in analysis mode
+    if (currentGameState.perspective === Perspective.ANALYSIS && currentGameState.analysis.isEngineReady) {
+        startPositionAnalysis();
+    }
 
     // Highlight the last move
     const moveHistory = currentGameState.chessBoard.getMoveHistory();
@@ -2315,6 +2850,11 @@ export function jumpToPreviousMove() {
                 updateBoardBottomLabels();
             }
 
+            // Trigger analysis if in analysis mode
+            if (currentGameState.perspective === Perspective.ANALYSIS && currentGameState.analysis.isEngineReady) {
+                startPositionAnalysis();
+            }
+
             // Calculate the move number and color for highlighting
             const prevMoveNumber = Math.floor(prevHalfMove / 2) + 1;
             const prevMoveColor = prevHalfMove % 2 === 0 ? 'w' : 'b';
@@ -2377,6 +2917,11 @@ export function jumpToNextMove() {
             }
             if (typeof updateBoardBottomLabels === 'function') {
                 updateBoardBottomLabels();
+            }
+
+            // Trigger analysis if in analysis mode
+            if (currentGameState.perspective === Perspective.ANALYSIS && currentGameState.analysis.isEngineReady) {
+                startPositionAnalysis();
             }
 
             // Calculate the move number and color for highlighting
@@ -2735,6 +3280,8 @@ function setupMainChessBoardDisplay() {
     topPlayerNameContainer.appendChild(boardMenuButton);
     bottomPlayerNameContainer.appendChild(bottomPlayerNameWrapper);
 
+
+
     // Create promotion options container
     const promotionOptionsContainer = document.createElement('div');
     promotionOptionsContainer.id = 'promotionOptionsContainer';
@@ -2826,7 +3373,7 @@ function setupMainChessBoardDisplay() {
         const chessBoardArea = document.querySelector('.chess-board-area');
         if (!chessBoardArea || !board) return;
 
-        const availableWidth = chessBoardArea.clientWidth - 302; // Adjusted for potential player info width
+        const availableWidth = chessBoardArea.clientWidth - 302 - 30; // Adjusted for player info width + strength bars
         const availableHeight = chessBoardArea.clientHeight - 40; // Adjusted for potential margins/padding
         const maxWidth = Math.max(100, availableWidth);
         const maxSize = Math.min(maxWidth, availableHeight, 1500);
@@ -2844,6 +3391,9 @@ function setupMainChessBoardDisplay() {
         if (boardOnlyContainer) boardOnlyContainer.style.width = maxSize + 'px';
 
         updateBoardGraphicsAndSquareListeners(); // Redraw board graphics which includes piece sizes
+
+        // Reposition strength bars if they exist
+        positionStrengthBars();
     });
 
     if (boardArea) mainBoardResizeObserver.observe(boardArea);
@@ -2851,6 +3401,9 @@ function setupMainChessBoardDisplay() {
     window.addEventListener('resize', () => {
         mainBoardResizeObserver.disconnect();
         if (boardArea) mainBoardResizeObserver.observe(boardArea);
+
+        // Reposition strength bars on window resize
+        setTimeout(() => positionStrengthBars(), 100);
     });
 
     gameState.whiteClockDisplay = (gameState.whiteTimeSecs);

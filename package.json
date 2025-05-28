@@ -18,6 +18,8 @@
   "license": "ISC",
   "dependencies": {
     "chess.js": "^1.2.0",
+    "express": "^5.1.0",
+    "stockfish.wasm": "^0.10.0",
     "yarn": "^1.22.22"
   },
   "devDependencies": {
