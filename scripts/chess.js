@@ -2047,11 +2047,8 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
                 return showPromotionOptions(startSquareAlgebraic, endSquareAlgebraic, isDragging);
             }
         } else {
-            // Use prompt for observers
-            const promotionPiece = prompt('Promote pawn to: (q)ueen, (r)ook, (b)ishop, (n)knight', 'q');
-            const promotion = ['q', 'r', 'b', 'n'].includes(promotionPiece) ? promotionPiece : 'q';
-            moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic, promotion: promotion};
-            moveStringPart += `=${promotion}`;
+            // Show promotion dialog for observers
+            return showPromotionDialog(startSquareAlgebraic, endSquareAlgebraic, isDragging);
         }
     } else {
         moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic};
@@ -2329,6 +2326,199 @@ function restartClockInternal() {
     stopClock();
     updatePlayerInfoAndClockUI(); // Update display
     startClock(); // Start with current state
+}
+
+/**
+ * Shows a modal promotion dialog with clickable piece buttons
+ * @param startSquareAlgebraic The starting square in algebraic notation.
+ * @param endSquareAlgebraic The ending square in algebraic notation.
+ * @param isDragging Whether the move is being made via drag and drop.
+ * @returns {boolean} Always returns false to prevent further processing.
+ */
+function showPromotionDialog(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.className = 'modal-overlay';
+    modalOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    `;
+
+    // Create modal content
+    const modal = document.createElement('div');
+    modal.className = 'modal-content';
+    modal.style.cssText = `
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        text-align: center;
+        min-width: 300px;
+    `;
+
+    // Determine piece color based on the promoting piece
+    const fromSquare = document.querySelector(`[data-algebraic="${startSquareAlgebraic}"]`);
+    const pieceElement = fromSquare ? fromSquare.querySelector('.chess-piece') : null;
+    let pieceColor = 'w'; // Default to white
+
+    if (pieceElement && pieceElement.textContent) {
+        // Check if the piece is black (lowercase) or white (uppercase)
+        const pieceChar = pieceElement.textContent.trim();
+        pieceColor = pieceChar === pieceChar.toLowerCase() ? 'b' : 'w';
+    } else {
+        // Fallback: determine by whose turn it is
+        pieceColor = gameState.isWhitesMove ? 'w' : 'b';
+    }
+    const pieceTypes = [
+        { value: 'q', name: 'Queen' },
+        { value: 'r', name: 'Rook' },
+        { value: 'b', name: 'Bishop' },
+        { value: 'n', name: 'Knight' }
+    ];
+
+    modal.innerHTML = `
+        <h3>Choose Promotion Piece</h3>
+        <div class="promotion-buttons" style="display: flex; gap: 15px; justify-content: center; margin: 20px 0;">
+            ${pieceTypes.map(piece => `
+                <button class="promotion-button" data-piece="${piece.value}" style="
+                    background: #f0f0f0;
+                    border: 2px solid #ccc;
+                    border-radius: 8px;
+                    padding: 10px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 5px;
+                    min-width: 60px;
+                " title="${piece.name}">
+                    <img src="pieces/${prefs.pieceSet}/${pieceColor}${piece.value.toUpperCase()}.svg"
+                         alt="${piece.name}" style="width: 40px; height: 40px;" />
+                    <span style="font-size: 12px; font-weight: bold;">${piece.name}</span>
+                </button>
+            `).join('')}
+        </div>
+    `;
+
+    modalOverlay.appendChild(modal);
+    document.body.appendChild(modalOverlay);
+
+    // Add hover effects
+    const buttons = modal.querySelectorAll('.promotion-button');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', () => {
+            button.style.background = '#e0e0e0';
+            button.style.borderColor = '#999';
+            button.style.transform = 'scale(1.05)';
+        });
+        button.addEventListener('mouseleave', () => {
+            button.style.background = '#f0f0f0';
+            button.style.borderColor = '#ccc';
+            button.style.transform = 'scale(1)';
+        });
+    });
+
+    // Handle piece selection
+    const handlePieceSelection = (promotion) => {
+        // Remove modal
+        modalOverlay.remove();
+
+        // Complete the move with the selected promotion piece
+        const moveStringPart = `${startSquareAlgebraic}${endSquareAlgebraic}=${promotion}`;
+        const moveObject = {from: startSquareAlgebraic, to: endSquareAlgebraic, promotion: promotion};
+
+        // Continue with the move logic (same as the original prompt logic)
+        const isPremove = gameState.isPlayerPlaying &&
+            (!gameState.isWhitesMove && gameState.isPlayerWhite) ||
+            (gameState.isWhitesMove && !gameState.isPlayerWhite);
+
+        if (isPremove) {
+            const moveResult = gameState.chessBoard.isValidPremove(startSquareAlgebraic, endSquareAlgebraic, promotion);
+            if (moveResult) {
+                gameState.premove = moveStringPart;
+                console.log("Making premove: " + gameState.premove);
+                updateBoardBottomLabels();
+                document.querySelector(`[data-algebraic="${startSquareAlgebraic}"]`).classList.add('premove-start');
+                document.querySelector(`[data-algebraic="${endSquareAlgebraic}"]`).classList.add('premove-end');
+            } else {
+                console.error("Invalid move by drop:", moveObject);
+                playSound('illegal');
+            }
+        } else {
+            const moveResult = gameState.chessBoard.makeLongAlgebraicMove(moveObject.from, moveObject.to, moveObject.promotion);
+            if (moveResult) {
+                console.log(`Fen before move: ${gameState.fen} after move: ${gameState.chessBoard.getFen()}`);
+                gameState.fen = gameState.chessBoard.getFen();
+
+                // Make move on fics if connected
+                if (gameState.relation === GameRelation.PLAYING_MY_MOVE ||
+                    gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE ||
+                    gameState.relation === GameRelation.EXAMINING) {
+                    ws.send(`${moveStringPart}`);
+                    gameState.chessBoard.back();
+                } else {
+                    gameState.isWhitesMove = !gameState.isWhitesMove;
+                }
+
+                updateBoardGraphicsAndSquareListeners(false);
+                restartClockInternal();
+
+                // Trigger analysis if in analysis mode
+                if (gameState.perspective === Perspective.ANALYSIS && gameState.analysis.isEngineReady) {
+                    startPositionAnalysis();
+                }
+            } else {
+                console.error("Invalid move:", moveObject);
+                playSound('illegal');
+            }
+        }
+
+        // Restore piece visibility if dragging
+        if (isDragging && gameState.draggedPieceElement) {
+            gameState.draggedPieceElement.classList.remove('piece-hidden', 'piece-semi-transparent');
+            gameState.draggedPieceElement.classList.add('piece-visible');
+        }
+    };
+
+    // Add click listeners to buttons
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            const piece = button.getAttribute('data-piece');
+            handlePieceSelection(piece);
+        });
+    });
+
+    // Close on escape key
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            modalOverlay.remove();
+            document.removeEventListener('keydown', handleEscape);
+            // Default to queen if user cancels
+            handlePieceSelection('q');
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // Close on click outside modal
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            modalOverlay.remove();
+            document.removeEventListener('keydown', handleEscape);
+            // Default to queen if user cancels
+            handlePieceSelection('q');
+        }
+    });
+
+    return false; // Prevent further processing
 }
 
 /**
