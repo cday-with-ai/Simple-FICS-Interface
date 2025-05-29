@@ -2369,14 +2369,25 @@ function showPromotionDialog(startSquareAlgebraic, endSquareAlgebraic, isDraggin
     const pieceElement = fromSquare ? fromSquare.querySelector('.chess-piece') : null;
     let pieceColor = 'w'; // Default to white
 
-    if (pieceElement && pieceElement.textContent) {
-        // Check if the piece is black (lowercase) or white (uppercase)
+    // First try to get the piece from the ChessBoard state (most reliable)
+    const piece = gameState.chessBoard.getPiece(startSquareAlgebraic);
+    if (piece && piece.color) {
+        // Handle both 'white'/'black' and 'w'/'b' formats
+        if (piece.color === 'white' || piece.color === 'w') {
+            pieceColor = 'w';
+        } else if (piece.color === 'black' || piece.color === 'b') {
+            pieceColor = 'b';
+        }
+    } else if (pieceElement && pieceElement.textContent) {
+        // Fallback: Check the visual piece (Unicode symbols)
         const pieceChar = pieceElement.textContent.trim();
         pieceColor = pieceChar === pieceChar.toLowerCase() ? 'b' : 'w';
     } else {
-        // Fallback: determine by whose turn it is
+        // Final fallback: determine by whose turn it is (for normal chess)
         pieceColor = gameState.isWhitesMove ? 'w' : 'b';
     }
+
+    console.log(`Promotion dialog: piece at ${startSquareAlgebraic}:`, piece, 'detected color:', pieceColor);
     const pieceTypes = [
         { value: 'q', name: 'Queen' },
         { value: 'r', name: 'Rook' },
