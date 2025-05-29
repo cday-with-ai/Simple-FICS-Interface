@@ -59,8 +59,8 @@ let gameState = { // Reset header
     gameNumber: 0,
     whitePlayer: {name: 'White', rating: ''},
     blackPlayer: {name: 'Black', rating: ''},
-    variant: Variant.CLASSIC,
-    chessBoard: new ChessBoard(Variant.CLASSIC),
+    variant: Variant.FREESTYLE,
+    chessBoard: new ChessBoard(Variant.FREESTYLE),
     type: 'freestyle',
     isRated: false,
     moveNumber: 1,
@@ -99,7 +99,7 @@ let gameState = { // Reset header
     clickclickStartSquareAlegbraic: null,
     clickclickLastDropTime: null,
     premove: null, // null if not set.
-    fen: new ChessBoard(Variant.CLASSIC).getFen(),
+    fen: new ChessBoard(Variant.FREESTYLE).getFen(),
     status: '',
     result: '',
     drawOfferPending: false,
@@ -228,7 +228,8 @@ function ficsGameTypeToVariant(gameType) {
                                     gameType === "atomic" ? Variant.ATOMIC :
                                         gameType === "crazyhouse" ? Variant.CRAZYHOUSE :
                                             gameType === "bughouse" ? Variant.CRAZYHOUSE : // Not supported yet.
-                                                Variant.CLASSIC;
+                                                gameType === "freestyle" ? Variant.FREESTYLE :
+                                                    Variant.CLASSIC;
     console.log(`ficsGameTypeToVariant(${gameType}=${result}`);
     return result;
 }
@@ -1317,9 +1318,9 @@ function stopAnalysis() {
  * Shows the Setup from FEN dialog
  */
 function showSetupFenDialog() {
-    // Validate that we're in FREESTYLE mode
-    if (gameState.perspective !== Perspective.FREESTYLE) {
-        console.warn('Setup from FEN is only available in FREESTYLE mode');
+    // Validate that we're in FREESTYLE or ANALYSIS mode
+    if (gameState.perspective !== Perspective.FREESTYLE && gameState.perspective !== Perspective.ANALYSIS) {
+        console.warn('Setup from FEN is only available in FREESTYLE or ANALYSIS mode');
         return;
     }
 
@@ -1444,9 +1445,9 @@ function setupFenModalEventListeners(modalOverlay) {
  * @returns {boolean} True if successful, false if error
  */
 function applyFenPosition(fenString, errorMessage) {
-    // Validate that we're still in Freestyle mode
-    if (gameState.perspective !== Perspective.FREESTYLE) {
-        showFenError(errorMessage, 'FEN setup is only available in FREESTYLE mode');
+    // Validate that we're still in Freestyle or Analysis mode
+    if (gameState.perspective !== Perspective.FREESTYLE && gameState.perspective !== Perspective.ANALYSIS) {
+        showFenError(errorMessage, 'FEN setup is only available in FREESTYLE or ANALYSIS mode');
         return false;
     }
 
@@ -1659,7 +1660,7 @@ function updateUIForPerspective() {
     // Show/hide Setup from FEN menu item based on perspective
     const setupFenBtn = document.getElementById('setupFenBtn');
     if (setupFenBtn) {
-        const shouldShowSetupFen = gameState.perspective === Perspective.FREESTYLE;
+        const shouldShowSetupFen = gameState.perspective === Perspective.FREESTYLE || gameState.perspective === Perspective.ANALYSIS;
         setupFenBtn.style.display = shouldShowSetupFen ? 'block' : 'none';
     }
 
@@ -2083,7 +2084,6 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
         }
         return moveResult;
     } else { //Actual move.
-        console.log('Handling move...');
         const moveResult = gameState.chessBoard.makeLongAlgebraicMove(moveObject.from, moveObject.to, moveObject.promotion ? moveObject.promotion : null);
         if (moveResult) {
             console.log(`Fen before move: ${gameState.fen} after move: ${gameState.chessBoard.getFen()}`);

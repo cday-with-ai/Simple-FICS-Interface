@@ -160,7 +160,8 @@ export const Variant = {
     SUICIDE: 'suicide',
     ATOMIC: 'atomic',
     CRAZYHOUSE: 'crazyhouse',
-    CHESS960: 'chess960'
+    CHESS960: 'chess960',
+    FREESTYLE: 'freestyle'
 };
 
 /**
@@ -434,6 +435,47 @@ export class ChessBoard {
             return false;
         }
     }
+    /**
+     * Makes a freestyle move - simple piece movement with no validation
+     * @param {string} from - Source square (e.g., "e2")
+     * @param {string} to - Target square (e.g., "e4")
+     * @param {string} promotion - Promotion piece type (optional)
+     * @returns {boolean} True if the move was successful
+     * @private
+     */
+    _makeFreestyleMove(from, to, promotion = null) {
+        try {
+            const { rank: fromRank, file: fromFile } = this._algebraicToCoords(from);
+            const { rank: toRank, file: toFile } = this._algebraicToCoords(to);
+
+            // Get the piece to move
+            const piece = this.board[fromRank][fromFile];
+            if (!piece) {
+                return false; // No piece to move
+            }
+
+            // Simple move: clear source, place piece at destination
+            this.board[fromRank][fromFile] = null;
+            this.board[toRank][toFile] = piece;
+
+            // Handle promotion if specified
+            if (promotion) {
+                this.board[toRank][toFile].type = promotion;
+            }
+
+            // Switch turns (allow any color to move)
+            this.activeColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;
+
+            // Update fullmove number after black's move
+            if (this.activeColor === Color.WHITE) {
+                this.fullmoveNumber++;
+            }
+
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
 
     /**
      * Makes a move using long algebraic notation (e.g., 'e2e4', 'g1f3')
@@ -443,6 +485,11 @@ export class ChessBoard {
      * @returns {boolean} True if the move was made successfully
      */
     makeLongAlgebraicMove(startAlgebraic, endAlgebraic, promotionPiece = null) {
+        // Use dedicated freestyle function for freestyle variant
+        if (this.variant === Variant.FREESTYLE) {
+            return this._makeFreestyleMove(startAlgebraic, endAlgebraic, promotionPiece);
+        }
+
         try {
             // Basic validation
             if (!startAlgebraic || !endAlgebraic ||
@@ -1850,6 +1897,7 @@ export class ChessBoard {
      * @private
      */
     _isLegalMove(move) {
+
         // Special handling for castling moves
         if (move === 'O-O' || move === 'O-O-O') {
             return this._isCastlingLegal(move === 'O-O');
