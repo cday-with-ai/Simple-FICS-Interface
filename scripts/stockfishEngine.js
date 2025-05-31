@@ -1,30 +1,3 @@
-class Queue {
-    constructor() {
-        this.elements = {};
-        this.head = 0;
-        this.tail = 0;
-    }
-    enqueue(element) {
-        this.elements[this.tail] = element;
-        this.tail++;
-    }
-    dequeue() {
-        const item = this.elements[this.head];
-        delete this.elements[this.head];
-        this.head++;
-        return item;
-    }
-    peek() {
-        return this.elements[this.head];
-    }
-    get length() {
-        return this.tail - this.head;
-    }
-    get isEmpty() {
-        return this.length === 0;
-    }
-}
-
 /**
  * Simple Stockfish Engine Wrapper
  * Based on official Lichess stockfish.wasm documentation
@@ -35,7 +8,6 @@ class StockfishEngine {
         this.isReady = false;
         this.uciReady = false;
         this.analysisCallback = null;
-        this.queue = new Queue();
     }
 
     /**
@@ -159,11 +131,7 @@ class StockfishEngine {
 
         if (line === 'readyok') {
             this.isReady = true;
-            if (queue.size > 0) {
-                const command = this.queue.dequeue();
-                console.log(`Sending message from Stockfish: ${command}`);
-                this.engine.uci(command);
-            }
+            return
         }
 
         // Handle analysis info
@@ -216,15 +184,9 @@ class StockfishEngine {
      * Analyze a position
      */
     analyzePosition(fen, options = {}) {
-        while(!this.queue.isEmpty) { //Empty the queue.
-            this.queue.dequeue();
-        }
-        this.engine.uci('isready');
-        this.queue.enqueue('stop');
-        this.queue.enqueue('isready');
-        this.queue.enqueue('position fen ${fen}');
-        this.queue.enqueue('isready');
-        this.queue.enqueue('go infinite');
+        this.engine.uci('stop');
+        this.engine.uci('position fen ${fen}');
+        this.engine.uci('go infinite');
     }
 
     /**
@@ -232,7 +194,6 @@ class StockfishEngine {
      */
     stopAnalysis() {
         this.engine.uci('stop');
-        this.engine.uci('isready');
     }
 
     /**
@@ -241,8 +202,8 @@ class StockfishEngine {
     resetEngine() {
         console.log('Resetting Stockfish engine...');
         this.engine.uci('stop');
-        this.engine.uci('ucinewgame');
         this.isReady = false;
+        this.engine.uci('ucinewgame');
 
         // Re-initialize
         setTimeout(() => {
