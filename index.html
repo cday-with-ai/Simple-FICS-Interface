@@ -335,19 +335,15 @@ try {
     const StockfishModule = Sf167Web.default || Sf167Web;
 
     window.Stockfish = async (options = {}) => {
-        // Force single-threaded mode to prevent worker loops
+        // Force single-threaded mode but allow shared memory
         const config = {
             ...options,
-            // Disable all threading
+            // Disable worker creation but allow shared memory
             mainScriptUrlOrBlob: null,
             // Force single-threaded execution
             __IS_SINGLE_THREADED__: true,
-            // Disable SharedArrayBuffer to force single-threaded
-            wasmMemory: new WebAssembly.Memory({
-                initial: 1024,
-                maximum: 32768,
-                shared: false  // Force non-shared memory
-            })
+            // Let it use the default shared memory that it expects
+            // wasmMemory: null  // Let it create its own shared memory
         };
 
         return await StockfishModule(config);
