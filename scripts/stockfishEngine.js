@@ -8,6 +8,7 @@ class StockfishEngine {
         this.isReady = false;
         this.uciReady = false;
         this.analysisCallback = null;
+        this.pendingAnalysis = null;
     }
 
     /**
@@ -121,7 +122,6 @@ class StockfishEngine {
      * Handle messages from the engine
      */
     handleMessage(line) {
-        console.log(`Received message from Stockfish: ${line}`);
         // Handle UCI handshake
         if (line === 'uciok') {
             this.uciReady = true;
@@ -131,7 +131,14 @@ class StockfishEngine {
 
         if (line === 'readyok') {
             this.isReady = true;
-            return
+
+            // If there's a pending analysis request, execute it now
+            if (this.pendingAnalysis) {
+                const { fen, options } = this.pendingAnalysis;
+                this.pendingAnalysis = null;
+                this.analyzePosition(fen, options);
+            }
+            return;
         }
 
         // Handle analysis info
@@ -184,31 +191,22 @@ class StockfishEngine {
      * Analyze a position
      */
     analyzePosition(fen, options = {}) {
+        if (!this.isReady) {
+            this.pendingAnalysis = { fen, options };
+            return;
+        }
         this.engine.uci('stop');
-        this.engine.uci('position fen ${fen}');
-        this.engine.uci('go infinite');
+        this.engine.uci(`position fen ${fen}`);
+        this.engine.uci(`go infinite`);
     }
 
     /**
      * Stop current analysis
      */
     stopAnalysis() {
-        this.engine.uci('stop');
-    }
-
-    /**
-     * Reset the engine if it gets stuck
-     */
-    resetEngine() {
-        console.log('Resetting Stockfish engine...');
-        this.engine.uci('stop');
-        this.isReady = false;
-        this.engine.uci('ucinewgame');
-
-        // Re-initialize
-        setTimeout(() => {
-            this.engine.uci('isready');
-        }, 100);
+        if (this.engine && this.isReady) {
+            this.engine.uci('stop');
+        }
     }
 
     /**
