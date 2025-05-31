@@ -1,0 +1,15 @@
+# This file is for cloudflare pages.
+# The headers are set so stockfish can load.
+/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+
+/scripts/sf16-7.js
+  Content-Type: application/javascript
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+
+/scripts/sf16-7.wasm
+  Content-Type: application/wasm
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
