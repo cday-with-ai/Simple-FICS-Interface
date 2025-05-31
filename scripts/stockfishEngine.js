@@ -18,6 +18,11 @@ class StockfishEngine {
         try {
             console.log('Initializing Stockfish engine...');
 
+            // Check if Stockfish failed to load
+            if (window.stockfishError) {
+                throw new Error('Stockfish module failed to load: ' + window.stockfishError.message);
+            }
+
             // Check for sf16-7 Stockfish function
             if (typeof window.Stockfish !== 'function') {
                 console.log('Stockfish not found globally, waiting for load...');
@@ -35,13 +40,28 @@ class StockfishEngine {
                         return;
                     }
 
+                    if (window.stockfishError) {
+                        clearTimeout(timeout);
+                        reject(new Error('Stockfish module failed to load: ' + window.stockfishError.message));
+                        return;
+                    }
+
                     const handleStockfishReady = () => {
                         clearTimeout(timeout);
                         window.removeEventListener('stockfishReady', handleStockfishReady);
+                        window.removeEventListener('stockfishError', handleStockfishError);
                         resolve();
                     };
 
+                    const handleStockfishError = (event) => {
+                        clearTimeout(timeout);
+                        window.removeEventListener('stockfishReady', handleStockfishReady);
+                        window.removeEventListener('stockfishError', handleStockfishError);
+                        reject(new Error('Stockfish module failed to load: ' + event.detail.error.message));
+                    };
+
                     window.addEventListener('stockfishReady', handleStockfishReady);
+                    window.addEventListener('stockfishError', handleStockfishError);
                 });
 
                 if (typeof window.Stockfish !== 'function') {
