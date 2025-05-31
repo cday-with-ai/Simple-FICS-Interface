@@ -330,16 +330,29 @@ window.stockfishReady = false;
 const OriginalWorker = window.Worker;
 window.Worker = function(scriptURL, options) {
     console.log('Worker creation blocked:', scriptURL);
-    // Return a mock worker that does nothing
-    return {
-        postMessage: () => {},
+    // Return a mock worker that simulates successful initialization
+    const mockWorker = {
+        postMessage: function(data) {
+            console.log('Mock worker received message:', data);
+            // Simulate immediate successful responses
+            setTimeout(() => {
+                if (this.onmessage) {
+                    // Simulate worker loaded successfully
+                    this.onmessage({ data: { ka: 'loaded' } });
+                }
+            }, 10);
+        },
         terminate: () => {},
         onmessage: null,
         onerror: null,
-        addEventListener: () => {},
+        addEventListener: function(event, handler) {
+            if (event === 'message') this.onmessage = handler;
+            if (event === 'error') this.onerror = handler;
+        },
         removeEventListener: () => {},
         dispatchEvent: () => {}
     };
+    return mockWorker;
 };
 
 // Load the sf16-7 Stockfish engine with error handling
