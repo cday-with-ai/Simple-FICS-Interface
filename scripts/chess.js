@@ -441,7 +441,7 @@ function updateBoardFromStyle12(style12Message) {
         startClock();  // Restart with new times and turn
 
         // Trigger analysis if in analysis mode
-        if (gameState.perspective === Perspective.ANALYSIS && gameState.analysis.isEngineReady) {
+        if (gameState.perspective === Perspective.ANALYSIS) {
             startPositionAnalysis();
         }
     } catch (e) {
@@ -1049,10 +1049,6 @@ async function onAnalysis() {
  * Start analyzing the current chess position
  */
 function startPositionAnalysis() {
-    if (!gameState.analysis.engine || !gameState.analysis.isEngineReady || !gameState.fen) {
-        return;
-    }
-
     // Set up analysis callback for our new engine
     gameState.analysis.engine.setAnalysisCallback((data) => {
         if (data.type === 'info') {
