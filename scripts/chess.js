@@ -1516,6 +1516,24 @@ function updateUIForPerspective() {
         return;
     }
 
+    // Clean up analysis mode if we're switching away from it
+    if (gameState.lastPerspective === Perspective.ANALYSIS && gameState.perspective !== Perspective.ANALYSIS) {
+        // Stop analysis
+        stopAnalysis();
+
+        // Remove analysis container
+        const analysisContainer = document.getElementById('analysisContainer');
+        if (analysisContainer) {
+            analysisContainer.remove();
+        }
+
+        // Remove board-side strength bars
+        const strengthBars = document.getElementById('boardSideStrengthBars');
+        if (strengthBars) {
+            strengthBars.remove();
+        }
+    }
+
     // Only update lastPerspective if we're not in analysis mode
     // Analysis mode should preserve the original lastPerspective for returning to
     if (gameState.perspective !== Perspective.ANALYSIS) {

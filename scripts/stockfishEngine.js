@@ -191,26 +191,45 @@ class StockfishEngine {
      * Analyze a position
      */
     analyzePosition(fen, options = {}) {
-        this.engine.uci('stop');
         if (!this.isReady) {
             this.pendingAnalysis = { fen, options };
             return;
         }
 
-        // Set position
-        this.engine.uci(`position fen ${fen}`);
+        // Reset engine for clean state on each position change
+        this.engine.uci('stop');
+        this.engine.uci('ucinewgame');
 
-        // Start analysis
-        this.engine.uci(`go infinite`);
+        // Set position and start analysis with proper timing
+        setTimeout(() => {
+            this.engine.uci(`position fen ${fen}`);
+
+            setTimeout(() => {
+                this.engine.uci(`go infinite`);
+            }, 10);
+        }, 50);
     }
 
     /**
      * Stop current analysis
      */
     stopAnalysis() {
-        if (this.engine && this.isReady) {
-            this.engine.uci('stop');
-        }
+        this.engine.uci('stop');
+    }
+
+    /**
+     * Reset the engine if it gets stuck
+     */
+    resetEngine() {
+        console.log('Resetting Stockfish engine...');
+        this.engine.uci('stop');
+        this.engine.uci('ucinewgame');
+        this.isReady = false;
+
+        // Re-initialize
+        setTimeout(() => {
+            this.engine.uci('isready');
+        }, 100);
     }
 
     /**

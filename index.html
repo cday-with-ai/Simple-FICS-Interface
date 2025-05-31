@@ -326,34 +326,6 @@ window.stockfishLoading = true;
 window.stockfishReady = false;
 </script>
 <script type="module">
-// Debug worker creation but allow them to work
-const OriginalWorker = window.Worker;
-
-window.Worker = function(scriptURL, options) {
-    console.log('Worker being created:', scriptURL.toString());
-    console.log('Worker options:', options);
-
-    const worker = new OriginalWorker(scriptURL, options);
-
-    // Add debugging to see what's happening with workers
-    worker.addEventListener('error', (e) => {
-        console.error('Worker error:', e);
-        console.error('Error details:', e.error, e.message, e.filename, e.lineno);
-    });
-
-    worker.addEventListener('message', (e) => {
-        console.log('Worker message received:', e.data);
-    });
-
-    const originalPostMessage = worker.postMessage;
-    worker.postMessage = function(data, transfer) {
-        console.log('Sending to worker:', data);
-        return originalPostMessage.call(this, data, transfer);
-    };
-
-    return worker;
-};
-
 // Load the sf16-7 Stockfish engine with error handling
 try {
     console.log('Loading Stockfish module...');
