@@ -1,3 +1,30 @@
+class Queue {
+    constructor() {
+        this.elements = {};
+        this.head = 0;
+        this.tail = 0;
+    }
+    enqueue(element) {
+        this.elements[this.tail] = element;
+        this.tail++;
+    }
+    dequeue() {
+        const item = this.elements[this.head];
+        delete this.elements[this.head];
+        this.head++;
+        return item;
+    }
+    peek() {
+        return this.elements[this.head];
+    }
+    get length() {
+        return this.tail - this.head;
+    }
+    get isEmpty() {
+        return this.length === 0;
+    }
+}
+
 /**
  * Simple Stockfish Engine Wrapper
  * Based on official Lichess stockfish.wasm documentation
@@ -8,7 +35,7 @@ class StockfishEngine {
         this.isReady = false;
         this.uciReady = false;
         this.analysisCallback = null;
-        this.pendingAnalysis = null;
+        this.queue = new Queue();
     }
 
     /**
@@ -122,6 +149,7 @@ class StockfishEngine {
      * Handle messages from the engine
      */
     handleMessage(line) {
+        console.log(`Received message from Stockfish: ${line}`);
         // Handle UCI handshake
         if (line === 'uciok') {
             this.uciReady = true;
@@ -131,14 +159,11 @@ class StockfishEngine {
 
         if (line === 'readyok') {
             this.isReady = true;
-
-            // If there's a pending analysis request, execute it now
-            if (this.pendingAnalysis) {
-                const { fen, options } = this.pendingAnalysis;
-                this.pendingAnalysis = null;
-                this.analyzePosition(fen, options);
+            if (queue.size > 0) {
+                const command = this.queue.dequeue();
+                console.log(`Sending message from Stockfish: ${command}`);
+                this.engine.uci(command);
             }
-            return;
         }
 
         // Handle analysis info
@@ -191,23 +216,15 @@ class StockfishEngine {
      * Analyze a position
      */
     analyzePosition(fen, options = {}) {
-        if (!this.isReady) {
-            this.pendingAnalysis = { fen, options };
-            return;
+        while(queue.length > 0) { //Empty the queue.
+            queue.dequeue();
         }
-
-        // Reset engine for clean state on each position change
-        this.engine.uci('stop');
-        this.engine.uci('ucinewgame');
-
-        // Set position and start analysis with proper timing
-        setTimeout(() => {
-            this.engine.uci(`position fen ${fen}`);
-
-            setTimeout(() => {
-                this.engine.uci(`go infinite`);
-            }, 10);
-        }, 50);
+        this.engine.uci('isready');
+        queue.push('stop');
+        queue.push('isready');
+        queue.push('position fen ${fen}');
+        queue.push('isready');
+        queue.push('go infinite');
     }
 
     /**
@@ -215,6 +232,7 @@ class StockfishEngine {
      */
     stopAnalysis() {
         this.engine.uci('stop');
+        this.engine.uci('isready');
     }
 
     /**
