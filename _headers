@@ -7,6 +7,7 @@ Access-Control-Allow-Headers: *
 
 /scripts/sf16-7.js
   Content-Type: application/javascript
+  Cross-Origin-Resource-Policy: cross-origin
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Access-Control-Allow-Origin: *
@@ -15,6 +16,7 @@ Access-Control-Allow-Headers: *
 
 /scripts/sf16-7.wasm
   Content-Type: application/wasm
+  Cross-Origin-Resource-Policy: cross-origin
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Access-Control-Allow-Origin: *
