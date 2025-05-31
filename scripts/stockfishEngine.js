@@ -220,11 +220,11 @@ class StockfishEngine {
             this.queue.dequeue();
         }
         this.engine.uci('isready');
-        this.queue.push('stop');
-        this.queue.push('isready');
-        this.queue.push('position fen ${fen}');
-        this.queue.push('isready');
-        this.queue.push('go infinite');
+        this.queue.enqueue('stop');
+        this.queue.enqueue('isready');
+        this.queue.enqueue('position fen ${fen}');
+        this.queue.enqueue('isready');
+        this.queue.enqueue('go infinite');
     }
 
     /**
