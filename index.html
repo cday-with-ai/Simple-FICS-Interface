@@ -326,32 +326,32 @@ window.stockfishLoading = true;
 window.stockfishReady = false;
 </script>
 <script type="module">
-// Allow limited worker creation but prevent infinite loops
+// Debug worker creation but allow them to work
 const OriginalWorker = window.Worker;
-let workerCount = 0;
-const maxWorkers = 1; // Allow only 1 worker
 
 window.Worker = function(scriptURL, options) {
-    workerCount++;
-    console.log(`Worker creation attempt #${workerCount}:`, scriptURL.toString());
+    console.log('Worker being created:', scriptURL.toString());
+    console.log('Worker options:', options);
 
-    if (workerCount > maxWorkers) {
-        console.log('Worker creation blocked - max workers reached');
-        // Return a mock worker for excess workers
-        return {
-            postMessage: () => {},
-            terminate: () => {},
-            onmessage: null,
-            onerror: null,
-            addEventListener: () => {},
-            removeEventListener: () => {},
-            dispatchEvent: () => {}
-        };
-    }
+    const worker = new OriginalWorker(scriptURL, options);
 
-    console.log('Allowing worker creation');
-    // Allow the first worker to be created normally
-    return new OriginalWorker(scriptURL, options);
+    // Add debugging to see what's happening with workers
+    worker.addEventListener('error', (e) => {
+        console.error('Worker error:', e);
+        console.error('Error details:', e.error, e.message, e.filename, e.lineno);
+    });
+
+    worker.addEventListener('message', (e) => {
+        console.log('Worker message received:', e.data);
+    });
+
+    const originalPostMessage = worker.postMessage;
+    worker.postMessage = function(data, transfer) {
+        console.log('Sending to worker:', data);
+        return originalPostMessage.call(this, data, transfer);
+    };
+
+    return worker;
 };
 
 // Load the sf16-7 Stockfish engine with error handling
@@ -359,31 +359,8 @@ try {
     console.log('Loading Stockfish module...');
     const Sf167Web = await import('./scripts/sf16-7.js');
 
-    // Initialize and expose Stockfish globally with single-threaded configuration
-    const StockfishModule = Sf167Web.default || Sf167Web;
-
-    window.Stockfish = async (options = {}) => {
-        // Force single-threaded mode by setting thread count to 1
-        const config = {
-            ...options,
-            // Disable threading entirely
-            noInitialRun: false,
-            noExitRuntime: true,
-            // Set thread count to 1 to force single-threaded
-            arguments: ['--threads', '1'],
-            // Disable worker creation
-            mainScriptUrlOrBlob: null
-        };
-
-        const engine = await StockfishModule(config);
-
-        // After engine loads, set UCI options for single-threaded mode
-        if (engine.uci) {
-            engine.uci('setoption name Threads value 1');
-        }
-
-        return engine;
-    };
+    // Initialize and expose Stockfish globally (simple approach like local)
+    window.Stockfish = Sf167Web.default || Sf167Web;
 
     window.stockfishReady = true;
     window.stockfishLoading = false;
