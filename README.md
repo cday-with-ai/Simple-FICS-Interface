@@ -10,7 +10,7 @@ A minimalist FICS interface which focuses on easy game play and chat functionali
 - Variants: Chess 960, Losers, Suicide, Atomic, Classic, Wild/*.
   - Client side validation.
   - Pre-move validation.
-- Stockfish 16 WASM integration with:
+- Lichess Stockfish 16 WASM integration for analysis.
 - Move animations.
 - Smart scroll.
 - Channel tabs.
