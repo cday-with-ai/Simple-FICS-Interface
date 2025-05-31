@@ -326,42 +326,32 @@ window.stockfishLoading = true;
 window.stockfishReady = false;
 </script>
 <script type="module">
-// Completely disable Worker constructor before loading Stockfish
+// Allow limited worker creation but prevent infinite loops
 const OriginalWorker = window.Worker;
+let workerCount = 0;
+const maxWorkers = 1; // Allow only 1 worker
+
 window.Worker = function(scriptURL, options) {
-    console.log('Worker creation blocked:', scriptURL);
-    // Return a mock worker that simulates successful initialization
-    const mockWorker = {
-        postMessage: function(data) {
-            console.log('Mock worker received message:', data);
-            // Respond appropriately based on message type
-            setTimeout(() => {
-                if (this.onmessage) {
-                    if (data.ka === 'load') {
-                        // Respond that worker is loaded
-                        this.onmessage({ data: { ka: 'loaded' } });
-                    } else if (data.ka === 'run') {
-                        // For run commands, we don't need to respond
-                        // The main thread will handle the UCI communication
-                        console.log('Mock worker: ignoring run command');
-                    } else {
-                        // For other commands, just acknowledge
-                        console.log('Mock worker: unknown command', data.ka);
-                    }
-                }
-            }, 10);
-        },
-        terminate: () => {},
-        onmessage: null,
-        onerror: null,
-        addEventListener: function(event, handler) {
-            if (event === 'message') this.onmessage = handler;
-            if (event === 'error') this.onerror = handler;
-        },
-        removeEventListener: () => {},
-        dispatchEvent: () => {}
-    };
-    return mockWorker;
+    workerCount++;
+    console.log(`Worker creation attempt #${workerCount}:`, scriptURL.toString());
+
+    if (workerCount > maxWorkers) {
+        console.log('Worker creation blocked - max workers reached');
+        // Return a mock worker for excess workers
+        return {
+            postMessage: () => {},
+            terminate: () => {},
+            onmessage: null,
+            onerror: null,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => {}
+        };
+    }
+
+    console.log('Allowing worker creation');
+    // Allow the first worker to be created normally
+    return new OriginalWorker(scriptURL, options);
 };
 
 // Load the sf16-7 Stockfish engine with error handling
