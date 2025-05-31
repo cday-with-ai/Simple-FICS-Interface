@@ -11,7 +11,7 @@ Access-Control-Allow-Headers: Content-Type
   Cross-Origin-Opener-Policy: same-origin
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, POST, OPTIONS
-  Access-Control-Allow-Headers: Content-Type
+  Access-Control-Allow-Headers: *
 
 /scripts/sf16-7.wasm
   Content-Type: application/wasm
@@ -19,4 +19,4 @@ Access-Control-Allow-Headers: Content-Type
   Cross-Origin-Opener-Policy: same-origin
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, POST, OPTIONS
-  Access-Control-Allow-Headers: Content-Type
+  Access-Control-Allow-Headers: *
