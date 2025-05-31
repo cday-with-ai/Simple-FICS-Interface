@@ -334,11 +334,20 @@ window.Worker = function(scriptURL, options) {
     const mockWorker = {
         postMessage: function(data) {
             console.log('Mock worker received message:', data);
-            // Simulate immediate successful responses
+            // Respond appropriately based on message type
             setTimeout(() => {
                 if (this.onmessage) {
-                    // Simulate worker loaded successfully
-                    this.onmessage({ data: { ka: 'loaded' } });
+                    if (data.ka === 'load') {
+                        // Respond that worker is loaded
+                        this.onmessage({ data: { ka: 'loaded' } });
+                    } else if (data.ka === 'run') {
+                        // For run commands, we don't need to respond
+                        // The main thread will handle the UCI communication
+                        console.log('Mock worker: ignoring run command');
+                    } else {
+                        // For other commands, just acknowledge
+                        console.log('Mock worker: unknown command', data.ka);
+                    }
                 }
             }, 10);
         },
@@ -360,8 +369,31 @@ try {
     console.log('Loading Stockfish module...');
     const Sf167Web = await import('./scripts/sf16-7.js');
 
-    // Initialize and expose Stockfish globally
-    window.Stockfish = Sf167Web.default || Sf167Web;
+    // Initialize and expose Stockfish globally with single-threaded configuration
+    const StockfishModule = Sf167Web.default || Sf167Web;
+
+    window.Stockfish = async (options = {}) => {
+        // Force single-threaded mode by setting thread count to 1
+        const config = {
+            ...options,
+            // Disable threading entirely
+            noInitialRun: false,
+            noExitRuntime: true,
+            // Set thread count to 1 to force single-threaded
+            arguments: ['--threads', '1'],
+            // Disable worker creation
+            mainScriptUrlOrBlob: null
+        };
+
+        const engine = await StockfishModule(config);
+
+        // After engine loads, set UCI options for single-threaded mode
+        if (engine.uci) {
+            engine.uci('setoption name Threads value 1');
+        }
+
+        return engine;
+    };
 
     window.stockfishReady = true;
     window.stockfishLoading = false;
