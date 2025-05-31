@@ -331,8 +331,27 @@ try {
     console.log('Loading Stockfish module...');
     const Sf167Web = await import('./scripts/sf16-7.js');
 
-    // Initialize and expose Stockfish globally
-    window.Stockfish = Sf167Web.default || Sf167Web;
+    // Initialize and expose Stockfish globally with forced single-threaded mode
+    const StockfishModule = Sf167Web.default || Sf167Web;
+
+    window.Stockfish = async (options = {}) => {
+        // Force single-threaded mode to prevent worker loops
+        const config = {
+            ...options,
+            // Disable all threading
+            mainScriptUrlOrBlob: null,
+            // Force single-threaded execution
+            __IS_SINGLE_THREADED__: true,
+            // Disable SharedArrayBuffer to force single-threaded
+            wasmMemory: new WebAssembly.Memory({
+                initial: 1024,
+                maximum: 32768,
+                shared: false  // Force non-shared memory
+            })
+        };
+
+        return await StockfishModule(config);
+    };
 
     window.stockfishReady = true;
     window.stockfishLoading = false;
