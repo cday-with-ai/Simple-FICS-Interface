@@ -822,7 +822,7 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
             const needsFontUpdate = pieceElement.style.fontSize !== pieceFontSize;
 
             if (needsContentUpdate) {
-                console.log("Updating piece content for square:", squareAlg);
+                //console.log("Updating piece content for square:", squareAlg);
                 // Remove old event listeners only when we're updating content
                 if (pieceElement._mouseDownHandler) {
                     pieceElement.removeEventListener('mousedown', pieceElement._mouseDownHandler);
@@ -832,7 +832,7 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
             }
 
             if (needsFontUpdate) {
-                console.log("Updating fontSize for square:", squareAlg);
+                //console.log("Updating fontSize for square:", squareAlg);
                 pieceElement.style.fontSize = pieceFontSize;
             }
 
@@ -3294,12 +3294,9 @@ function updateBoardBottomLabels() {
         moveListStr = moveListStr.trim();
     }
 
-    console.log("Looking up ECO opening for move list:", moveListStr);
-
     // Get the ECO opening information from the move list
     if (moveListStr) {
         const openingInfo = lookupFromMoveList(moveListStr);
-        console.log("ECO lookup result:", openingInfo);
 
         // Only update if we got a valid result
         if (openingInfo) {
