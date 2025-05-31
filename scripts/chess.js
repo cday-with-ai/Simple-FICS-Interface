@@ -1137,8 +1137,11 @@ function updateAnalysisDisplay() {
         // Convert principal variation moves to short algebraic notation
         const shortMoves = convertPVToSAN(gameState.analysis.principalVariation, gameState.chessBoard.getFen());
 
+        // Convert SAN moves to Unicode chess pieces (like in move list)
+        const unicodeMoves = shortMoves.map(move => convertToUnicodeChessPieces(move));
+
         // Show full principal variation with line wrapping
-        const pvText = evalText + ' ' + shortMoves.join(' ');
+        const pvText = evalText + ' ' + unicodeMoves.join(' ');
         pvElement.textContent = pvText;
         pvElement.title = `Principal Variation: ${pvText}`; // Full line in tooltip
     }
