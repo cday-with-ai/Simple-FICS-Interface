@@ -1,9 +1,11 @@
 # This file is for cloudflare pages.
 # The headers are set so stockfish can load.
 /*
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: GET, POST, OPTIONS
-Access-Control-Allow-Headers: *
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, POST, OPTIONS
+  Access-Control-Allow-Headers: *
 
 /scripts/sf16-7.js
   Content-Type: application/javascript
@@ -22,3 +24,19 @@ Access-Control-Allow-Headers: *
   Access-Control-Allow-Origin: *
   Access-Control-Allow-Methods: GET, POST, OPTIONS
   Access-Control-Allow-Headers: *
+
+# Ensure all JS files have proper headers for worker loading
+*.js
+  Content-Type: application/javascript
+  Cross-Origin-Resource-Policy: cross-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Access-Control-Allow-Origin: *
+
+# Ensure all WASM files have proper headers
+*.wasm
+  Content-Type: application/wasm
+  Cross-Origin-Resource-Policy: cross-origin
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Access-Control-Allow-Origin: *
