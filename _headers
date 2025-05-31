@@ -4,15 +4,14 @@
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
 
-# All JavaScript files need proper headers for worker loading
-*.js
+# Specific Stockfish files
+/scripts/sf16-7.js
   Content-Type: application/javascript
   Cross-Origin-Resource-Policy: cross-origin
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
 
-# All WebAssembly files need proper headers
-*.wasm
+/scripts/sf16-7.wasm
   Content-Type: application/wasm
   Cross-Origin-Resource-Policy: cross-origin
   Cross-Origin-Embedder-Policy: require-corp
