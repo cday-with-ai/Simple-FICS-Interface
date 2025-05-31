@@ -439,6 +439,11 @@ function updateBoardFromStyle12(style12Message) {
 
         stopClock(); // Stop existing timer
         startClock();  // Restart with new times and turn
+
+        // Trigger analysis if in analysis mode
+        if (gameState.perspective === Perspective.ANALYSIS && gameState.analysis.isEngineReady) {
+            startPositionAnalysis();
+        }
     } catch (e) {
         console.error("Failed to process Style12 message:", e);
         updateBoardGraphicsAndSquareListeners(true);
