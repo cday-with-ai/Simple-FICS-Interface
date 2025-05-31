@@ -191,6 +191,7 @@ class StockfishEngine {
      * Analyze a position
      */
     analyzePosition(fen, options = {}) {
+        console.log("Call to analyzePosition with fen:", fen);
         if (!this.isReady) {
             this.pendingAnalysis = { fen, options };
             return;
@@ -204,9 +205,8 @@ class StockfishEngine {
      * Stop current analysis
      */
     stopAnalysis() {
-        if (this.engine && this.isReady) {
-            this.engine.uci('stop');
-        }
+        console.log("Call to stop analysis.");
+        this.engine.uci('stop');
     }
 
     /**
