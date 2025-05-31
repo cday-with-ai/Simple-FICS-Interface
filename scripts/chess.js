@@ -1081,13 +1081,15 @@ function parseUCIInfo(infoLine) {
             gameState.analysis.depth = parseInt(parts[i + 1]);
         } else if (parts[i] === 'score') {
             if (parts[i + 1] === 'cp') {
-                // Centipawn score
-                if (gameState.isWhitesMove && gameState.isWhiteOnBottom) {
-                    console.log('no change to eval')
-                    gameState.analysis.evaluation = parseInt(parts[i + 2]) / 100;
+                // Centipawn score - convert from centipawns to pawns
+                const rawEval = parseInt(parts[i + 2]) / 100;
+
+                // Stockfish always gives evaluation from white's perspective
+                // If it's black's turn or board is flipped, we need to adjust the perspective
+                if (!gameState.isWhitesMove || !gameState.isWhiteOnBottom) {
+                    gameState.analysis.evaluation = -rawEval;
                 } else {
-                    console.log('-1* eval')
-                    gameState.analysis.evaluation = -parseInt(parts[i + 2]) / 100;
+                    gameState.analysis.evaluation = rawEval;
                 }
                 gameState.analysis.mateInMoves = null;
             } else if (parts[i + 1] === 'mate') {
