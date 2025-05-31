@@ -326,67 +326,13 @@ window.stockfishLoading = true;
 window.stockfishReady = false;
 </script>
 <script type="module">
-// Disable Worker creation globally to prevent Stockfish from creating workers
-const OriginalWorker = window.Worker;
-let workersDisabled = false;
-
-function disableWorkers() {
-    if (workersDisabled) return;
-    workersDisabled = true;
-
-    window.Worker = function(scriptURL, options) {
-        console.log('Worker creation blocked for Stockfish compatibility:', scriptURL);
-        // Return a mock worker that doesn't actually create a worker
-        return {
-            postMessage: () => {},
-            terminate: () => {},
-            onmessage: null,
-            onerror: null,
-            addEventListener: () => {},
-            removeEventListener: () => {}
-        };
-    };
-}
-
-// Load the sf16-7 Stockfish engine with better error handling
+// Load the sf16-7 Stockfish engine with error handling
 try {
     console.log('Loading Stockfish module...');
-
-    // Disable workers before loading Stockfish
-    disableWorkers();
-
     const Sf167Web = await import('./scripts/sf16-7.js');
 
-    // Initialize and expose Stockfish globally with worker disabled
-    const StockfishModule = Sf167Web.default || Sf167Web;
-
-    // Create a wrapper that forces single-threaded mode
-    window.Stockfish = async (options = {}) => {
-        // Force single-threaded mode and disable all worker-related features
-        const config = {
-            ...options,
-            // Disable worker creation
-            mainScriptUrlOrBlob: null,
-            // Force single-threaded
-            __IS_SINGLE_THREADED__: true,
-            // Disable SharedArrayBuffer to prevent cross-origin issues
-            wasmMemory: null,
-            // Prevent worker spawning
-            noInitialRun: false,
-            noExitRuntime: true,
-            // Additional WebAssembly configuration
-            instantiateWasm: undefined, // Let it use default instantiation
-            locateFile: (path, prefix) => {
-                // Ensure WASM file is loaded from correct location
-                if (path.endsWith('.wasm')) {
-                    return './scripts/' + path;
-                }
-                return prefix + path;
-            }
-        };
-
-        return await StockfishModule(config);
-    };
+    // Initialize and expose Stockfish globally
+    window.Stockfish = Sf167Web.default || Sf167Web;
 
     window.stockfishReady = true;
     window.stockfishLoading = false;

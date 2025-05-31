@@ -71,8 +71,7 @@ class StockfishEngine {
 
             console.log('Found window.Stockfish, creating engine instance...');
 
-            // Create Stockfish engine instance with proper configuration
-            // Use single-threaded mode to avoid SharedArrayBuffer issues
+            // Create Stockfish engine instance
             this.engine = await window.Stockfish({
                 // Set up message handlers
                 listen: (line) => {
@@ -80,15 +79,7 @@ class StockfishEngine {
                 },
                 onError: (error) => {
                     console.error('Stockfish error:', error);
-                },
-                // Force single-threaded mode and disable workers
-                __IS_SINGLE_THREADED__: true,
-                noInitialRun: false,
-                noExitRuntime: true,
-                // Disable worker creation to avoid worker loading issues
-                mainScriptUrlOrBlob: null,
-                // Ensure we don't try to use SharedArrayBuffer
-                wasmMemory: null
+                }
             });
 
             console.log('Stockfish engine loaded successfully');
