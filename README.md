@@ -1,8 +1,8 @@
 # Simple-FICS-Interface
 <img src="screenshot.png">
 <img src="analysis-screenshot.png">
-Try it <a href="https://simple-fics-interface.pages.dev/" target="_blank">here</a>.
 
+Try it <a href="https://simple-fics-interface.pages.dev/" target="_blank">here</a>.
 
 A minimalist FICS interface which focuses on easy game play and chat functionality with few UI distractions.
 
