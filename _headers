@@ -13,3 +13,13 @@
   Content-Type: application/wasm
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
+
+# Additional headers for WebAssembly support
+*.wasm
+  Content-Type: application/wasm
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+
+*.js
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin

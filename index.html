@@ -326,18 +326,32 @@ window.stockfishLoading = true;
 window.stockfishReady = false;
 </script>
 <script type="module">
-// Load the sf16-7 Stockfish engine
-import Sf167Web from './sf16-7.js';
+// Load the sf16-7 Stockfish engine with better error handling
+try {
+    console.log('Loading Stockfish module...');
+    const Sf167Web = await import('./scripts/sf16-7.js');
 
-// Initialize and expose Stockfish globally
-window.Stockfish = Sf167Web;
-window.stockfishReady = true;
-window.stockfishLoading = false;
-console.log('Stockfish sf16-7 loaded successfully');
-console.log('window.Stockfish:', typeof window.Stockfish);
+    // Initialize and expose Stockfish globally
+    window.Stockfish = Sf167Web.default || Sf167Web;
+    window.stockfishReady = true;
+    window.stockfishLoading = false;
+    console.log('Stockfish sf16-7 loaded successfully');
+    console.log('window.Stockfish:', typeof window.Stockfish);
 
-// Dispatch a custom event to notify that Stockfish is ready
-window.dispatchEvent(new CustomEvent('stockfishReady', { detail: { Stockfish: Sf167Web } }));
+    // Dispatch a custom event to notify that Stockfish is ready
+    window.dispatchEvent(new CustomEvent('stockfishReady', { detail: { Stockfish: window.Stockfish } }));
+} catch (error) {
+    console.error('Failed to load Stockfish module:', error);
+    window.stockfishReady = false;
+    window.stockfishLoading = false;
+    window.stockfishError = error;
+
+    // Show error message to user
+    alert('Failed to load Stockfish chess engine. Chess analysis features will not be available.');
+
+    // Dispatch error event
+    window.dispatchEvent(new CustomEvent('stockfishError', { detail: { error } }));
+}
 </script>
 <script src="scripts/stockfishEngine.js"></script> <!--Stockfish wrapper -->
 <script src="scripts/chess.js?v=1" type="module"></script>
