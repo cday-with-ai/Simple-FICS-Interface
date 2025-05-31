@@ -331,11 +331,31 @@ try {
     console.log('Loading Stockfish module...');
     const Sf167Web = await import('./scripts/sf16-7.js');
 
-    // Initialize and expose Stockfish globally
-    window.Stockfish = Sf167Web.default || Sf167Web;
+    // Initialize and expose Stockfish globally with worker disabled
+    const StockfishModule = Sf167Web.default || Sf167Web;
+
+    // Create a wrapper that forces single-threaded mode
+    window.Stockfish = async (options = {}) => {
+        // Force single-threaded mode and disable all worker-related features
+        const config = {
+            ...options,
+            // Disable worker creation
+            mainScriptUrlOrBlob: null,
+            // Force single-threaded
+            __IS_SINGLE_THREADED__: true,
+            // Disable SharedArrayBuffer
+            wasmMemory: null,
+            // Prevent worker spawning
+            noInitialRun: false,
+            noExitRuntime: true
+        };
+
+        return await StockfishModule(config);
+    };
+
     window.stockfishReady = true;
     window.stockfishLoading = false;
-    console.log('Stockfish sf16-7 loaded successfully');
+    console.log('Stockfish sf16-7 loaded successfully (single-threaded mode)');
     console.log('window.Stockfish:', typeof window.Stockfish);
 
     // Dispatch a custom event to notify that Stockfish is ready

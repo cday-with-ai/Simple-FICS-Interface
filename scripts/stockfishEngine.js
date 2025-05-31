@@ -81,8 +81,14 @@ class StockfishEngine {
                 onError: (error) => {
                     console.error('Stockfish error:', error);
                 },
-                // Force single-threaded mode
-                __IS_SINGLE_THREADED__: true
+                // Force single-threaded mode and disable workers
+                __IS_SINGLE_THREADED__: true,
+                noInitialRun: false,
+                noExitRuntime: true,
+                // Disable worker creation to avoid worker loading issues
+                mainScriptUrlOrBlob: null,
+                // Ensure we don't try to use SharedArrayBuffer
+                wasmMemory: null
             });
 
             console.log('Stockfish engine loaded successfully');
