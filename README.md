@@ -1,7 +1,7 @@
 # Simple-FICS-Interface
 <img src="screenshot.png">
 <img src="analysis-screenshot.png">
-Try it <a href="https://cday-with-ai.github.io/Simple-FICS-Interface/" target="_blank">here</a>.
+Try it <a href="https://simple-fics-interface.pages.dev/" target="_blank">here</a>.
 
 
 A minimalist FICS interface which focuses on easy game play and chat functionality with few UI distractions.
@@ -22,23 +22,18 @@ A minimalist FICS interface which focuses on easy game play and chat functionali
 
 **Road Map**
 
-**ALPHA:**
-
-  - Regression testing.
-    - Test all functionality.
-  - Setup a place to host the site including js files with headers needed.
-
-**BETA:**
+**Planned features to add:**
 
 - Crazyhouse support.
-- ~~Add stockfish 16 web-assembly. Add an analysis mode when playing end or observing.~~ ✅ **COMPLETED**
 - Preferences:
   - Expand preferences a bit (not too much).
 - Responsive web design. (For phone/tablet support. Added after everything is in place)
   - More changes for Responsive web design that work on mobile and tablets. (Last after features are added.)
     - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
+- Regression testing.
+  - Test all functionality.
 
-**Unplanned:**
+**Features that are not going to be supported:**
 
 - Bughouse support.
 - Viewing multiple boards at once.
