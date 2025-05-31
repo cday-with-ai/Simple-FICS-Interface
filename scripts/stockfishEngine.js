@@ -216,15 +216,15 @@ class StockfishEngine {
      * Analyze a position
      */
     analyzePosition(fen, options = {}) {
-        while(queue.length > 0) { //Empty the queue.
-            queue.dequeue();
+        while(!this.queue.isEmpty) { //Empty the queue.
+            this.queue.dequeue();
         }
         this.engine.uci('isready');
-        queue.push('stop');
-        queue.push('isready');
-        queue.push('position fen ${fen}');
-        queue.push('isready');
-        queue.push('go infinite');
+        this.queue.push('stop');
+        this.queue.push('isready');
+        this.queue.push('position fen ${fen}');
+        this.queue.push('isready');
+        this.queue.push('go infinite');
     }
 
     /**
