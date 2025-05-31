@@ -4,7 +4,7 @@
 
 Try it <a href="https://simple-fics-interface.pages.dev/" target="_blank">here</a>.
 
-A minimalist FICS interface which focuses on easy game play and chat functionality with few UI distractions.
+A minimalist FICS interface which focuses on easy game play and chat functionality with few UI distractions. Currently, it runs best in desktops, but phone/tablet will eventually be supported.
 
 **Functionality** (Working functionality):
 - Variants: Chess 960, Losers, Suicide, Atomic, Classic, Wild/*.
@@ -27,9 +27,10 @@ A minimalist FICS interface which focuses on easy game play and chat functionali
 - Crazyhouse support.
 - Preferences:
   - Expand preferences a bit (not too much).
-- Responsive web design. (For phone/tablet support. Added after everything is in place)
+- Responsive web design. (phone/tablet support)
+  Added after everything is in place
   - More changes for Responsive web design that work on mobile and tablets. (Last after features are added.)
-    - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
+  - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
 - Regression testing.
   - Test all functionality.
 
