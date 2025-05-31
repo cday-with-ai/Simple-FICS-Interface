@@ -326,9 +326,35 @@ window.stockfishLoading = true;
 window.stockfishReady = false;
 </script>
 <script type="module">
+// Disable Worker creation globally to prevent Stockfish from creating workers
+const OriginalWorker = window.Worker;
+let workersDisabled = false;
+
+function disableWorkers() {
+    if (workersDisabled) return;
+    workersDisabled = true;
+
+    window.Worker = function(scriptURL, options) {
+        console.log('Worker creation blocked for Stockfish compatibility:', scriptURL);
+        // Return a mock worker that doesn't actually create a worker
+        return {
+            postMessage: () => {},
+            terminate: () => {},
+            onmessage: null,
+            onerror: null,
+            addEventListener: () => {},
+            removeEventListener: () => {}
+        };
+    };
+}
+
 // Load the sf16-7 Stockfish engine with better error handling
 try {
     console.log('Loading Stockfish module...');
+
+    // Disable workers before loading Stockfish
+    disableWorkers();
+
     const Sf167Web = await import('./scripts/sf16-7.js');
 
     // Initialize and expose Stockfish globally with worker disabled
@@ -343,11 +369,20 @@ try {
             mainScriptUrlOrBlob: null,
             // Force single-threaded
             __IS_SINGLE_THREADED__: true,
-            // Disable SharedArrayBuffer
+            // Disable SharedArrayBuffer to prevent cross-origin issues
             wasmMemory: null,
             // Prevent worker spawning
             noInitialRun: false,
-            noExitRuntime: true
+            noExitRuntime: true,
+            // Additional WebAssembly configuration
+            instantiateWasm: undefined, // Let it use default instantiation
+            locateFile: (path, prefix) => {
+                // Ensure WASM file is loaded from correct location
+                if (path.endsWith('.wasm')) {
+                    return './scripts/' + path;
+                }
+                return prefix + path;
+            }
         };
 
         return await StockfishModule(config);
