@@ -1030,6 +1030,54 @@ function onAbort() {
     }
 }
 
+/**
+ * FICS Examination Navigation Functions
+ */
+
+/**
+ * Jump to the start of the examined game
+ */
+function examineGoToStart() {
+    if (gameState.perspective !== Perspective.EXAMINING) {
+        console.warn('Cannot use examine navigation - not in examining mode');
+        return;
+    }
+    ws.send('back 500');
+}
+
+/**
+ * Go back one move in the examined game
+ */
+function examineGoBack() {
+    if (gameState.perspective !== Perspective.EXAMINING) {
+        console.warn('Cannot use examine navigation - not in examining mode');
+        return;
+    }
+    ws.send('back');
+}
+
+/**
+ * Go forward one move in the examined game
+ */
+function examineGoForward() {
+    if (gameState.perspective !== Perspective.EXAMINING) {
+        console.warn('Cannot use examine navigation - not in examining mode');
+        return;
+    }
+    ws.send('forward');
+}
+
+/**
+ * Jump to the end of the examined game
+ */
+function examineGoToEnd() {
+    if (gameState.perspective !== Perspective.EXAMINING) {
+        console.warn('Cannot use examine navigation - not in examining mode');
+        return;
+    }
+    ws.send('forward 500');
+}
+
 
 
 /**
@@ -1647,8 +1695,12 @@ function updateUIForPerspective() {
                 break;
 
             case Perspective.EXAMINING:
-            case Perspective.FINISHED_EXAMINING:
                 // No action links: Hide all action links when examining
+                visibleActions = [];
+                break;
+
+            case Perspective.FINISHED_EXAMINING:
+                // No action links: Hide all action links when finished examining
                 visibleActions = [];
                 break;
 
@@ -1739,6 +1791,13 @@ function updateUIForPerspective() {
         const shouldShowMoveList = gameState.perspective !== Perspective.FREESTYLE &&
             gameState.perspective !== Perspective.PLAYING;
         movesListContainer.style.display = shouldShowMoveList ? 'block' : 'none';
+
+        // Refresh navigation buttons if perspective changed to/from EXAMINING
+        if (shouldShowMoveList &&
+            (gameState.perspective === Perspective.EXAMINING ||
+             gameState.lastPerspective === Perspective.EXAMINING)) {
+            refreshMoveListDisplay();
+        }
     }
 
     // Show/hide Setup from FEN menu item based on perspective
@@ -3253,17 +3312,53 @@ export function jumpToNextMove() {
 }
 
 /**
- * Function to initialize an empty move list with navigation buttons
+ * Function to create examination navigation buttons
  */
-function clearMoveList() {
-    if (!movesListContainer) return;
-
-    // Clear any existing content
-    movesListContainer.innerHTML = '';
-
-    // Create navigation buttons container (outside the scrollable area)
+function createExaminationNavigation() {
     const navContainer = document.createElement('div');
-    navContainer.classList.add('moves-nav-container');
+    navContainer.classList.add('moves-nav-container', 'examination-nav');
+
+    // Start button (⏮⏮)
+    const startBtn = document.createElement('button');
+    startBtn.classList.add('moves-nav-btn', 'examine-nav-btn');
+    startBtn.innerHTML = '<span>⏮⏮</span>';
+    startBtn.title = 'Go to start of game';
+    startBtn.onclick = examineGoToStart;
+    navContainer.appendChild(startBtn);
+
+    // Back button (⏮)
+    const backBtn = document.createElement('button');
+    backBtn.classList.add('moves-nav-btn', 'examine-nav-btn');
+    backBtn.innerHTML = '<span>⏮</span>';
+    backBtn.title = 'Go back one move';
+    backBtn.onclick = examineGoBack;
+    navContainer.appendChild(backBtn);
+
+    // Forward button (⏭)
+    const forwardBtn = document.createElement('button');
+    forwardBtn.classList.add('moves-nav-btn', 'examine-nav-btn');
+    forwardBtn.innerHTML = '<span>⏭</span>';
+    forwardBtn.title = 'Go forward one move';
+    forwardBtn.onclick = examineGoForward;
+    navContainer.appendChild(forwardBtn);
+
+    // End button (⏭⏭)
+    const endBtn = document.createElement('button');
+    endBtn.classList.add('moves-nav-btn', 'examine-nav-btn');
+    endBtn.innerHTML = '<span>⏭⏭</span>';
+    endBtn.title = 'Go to end of game';
+    endBtn.onclick = examineGoToEnd;
+    navContainer.appendChild(endBtn);
+
+    return navContainer;
+}
+
+/**
+ * Function to create regular move list navigation buttons
+ */
+function createRegularNavigation() {
+    const navContainer = document.createElement('div');
+    navContainer.classList.add('moves-nav-container', 'regular-nav');
 
     // First move button
     const firstMoveBtn = document.createElement('button');
@@ -3296,6 +3391,26 @@ function clearMoveList() {
     lastMoveBtn.title = 'Go to last move';
     lastMoveBtn.onclick = jumpToLastMove;
     navContainer.appendChild(lastMoveBtn);
+
+    return navContainer;
+}
+
+/**
+ * Function to initialize an empty move list with navigation buttons
+ */
+function clearMoveList() {
+    if (!movesListContainer) return;
+
+    // Clear any existing content
+    movesListContainer.innerHTML = '';
+
+    // Create appropriate navigation based on perspective
+    let navContainer;
+    if (gameState.perspective === Perspective.EXAMINING) {
+        navContainer = createExaminationNavigation();
+    } else {
+        navContainer = createRegularNavigation();
+    }
 
     // Create the scrollable moves display area
     movesListDisplayElement = document.createElement('div');

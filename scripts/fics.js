@@ -474,6 +474,7 @@ function handleMovesList(msg) {
  * @returns {boolean} - True if a game end message was found and processed
  */
 function handleGameEnd(msg) {
+    // Check for standard game end messages first
     const gameEndStart = msg.startsWith("{Game ");
     let gameEndString = null;
 
@@ -490,6 +491,36 @@ function handleGameEnd(msg) {
         playSound('end');
         onGameEnd(gameEndString);
         return true;
+    }
+
+    // Check for examination end messages
+    // Format: "You are no longer examining game 29"
+    const examineEndPattern = "You are no longer examining game ";
+    const examineEndStart = msg.startsWith(examineEndPattern);
+    let examineEndFound = false;
+
+    if (examineEndStart) {
+        examineEndFound = true;
+    } else {
+        // Check if the message appears after a newline
+        const examineEndIndex = msg.indexOf("\n" + examineEndPattern);
+        if (examineEndIndex !== -1) {
+            examineEndFound = true;
+        }
+    }
+
+    if (examineEndFound) {
+        // Extract the game number from the message
+        const match = msg.match(/You are no longer examining game (\d+)/);
+        if (match && match[1]) {
+            const gameNumber = parseInt(match[1], 10);
+            // Create a synthetic game end message for the examination end
+            // Format: "gameNumber (player1 vs. player2) reason} result"
+            const syntheticGameEnd = `${gameNumber} (examiner vs. examiner) Examination terminated} *`;
+            playSound('end');
+            onGameEnd(syntheticGameEnd);
+            return true;
+        }
     }
 
     return false;

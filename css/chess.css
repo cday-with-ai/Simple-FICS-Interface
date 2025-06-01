@@ -849,6 +849,24 @@
     transform: translateY(1px);
 }
 
+/* Examination navigation button styling */
+.examine-nav-btn {
+    background: linear-gradient(135deg, #e8f4fd, #c3e0f7) !important;
+    border: 1px solid #4a90e2 !important;
+    color: #2c5aa0 !important;
+}
+
+.examine-nav-btn:hover {
+    background: linear-gradient(135deg, #d6ebfa, #b0d4f1) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+}
+
+.examine-nav-btn:active {
+    background: linear-gradient(135deg, #c3e0f7, #9cc5e8) !important;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1), inset 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    transform: translateY(1px);
+}
+
 .moves-table {
     width: 100%;
     border-collapse: separate;
