@@ -270,33 +270,33 @@ export function onGameMoves(rawMovesText) {
 export function onGameEnd(message) {
     if (!message || !message.trim()) return false;
 
-    // Regular expression to match game end messages
-    // This regex is very flexible to handle all types of player names and game end reasons
-    const gameEndRegex = /^(\d+) \(([^)]+) vs\. ([^)]+)\) (.*)}\s*([012\/-]+).*/;
+    let gameNumber, whitePlayer, blackPlayer, reason, result;
+
+    // Try to match game end messages - updated to handle both standard results and aborts
+    // Standard format: "12 (genieman vs. Pawnlightly) genieman resigns} 0-1"
+    // Abort format: "28 (stayalive vs. cday) Game aborted on move 1} *"
+    const gameEndRegex = /^(\d+) \(([^)]+) vs\. ([^)]+)\) (.*)}\s*([012\/-]+|\*).*/;
     const match = message.match(gameEndRegex);
 
-    if (!match || match.length !== 6) {
-        if (prefs && prefs.showStyle12Events) { // Use the debug preference for logging
-            console.log("Game end message did not match regex pattern:", message);
-        }
+    if (match && match.length === 6) {
+        gameNumber = parseInt(match[1], 10);
+        whitePlayer = match[2];
+        blackPlayer = match[3];
+        reason = match[4];
+        result = match[5];
+    } else {
+        console.log("Game end message did not match regex pattern:", message);
         return false;
     }
 
-    const gameNumber = parseInt(match[1], 10);
-    const whitePlayer = match[2];
-    const blackPlayer = match[3];
-    const reason = match[4];
-    const result = match[5];
+    console.log("Parsed game end message:", {
+        gameNumber,
+        whitePlayer,
+        blackPlayer,
+        reason,
+        result
+    });
 
-    if (prefs && prefs.showStyle12Events) { // Use the debug preference for logging
-        console.log("Parsed game end message:", {
-            gameNumber,
-            whitePlayer,
-            blackPlayer,
-            reason,
-            result
-        });
-    }
 
     // Check if this game end message is for the current game
     if (gameState.gameNumber === gameNumber) {
@@ -312,7 +312,10 @@ export function onGameEnd(message) {
         } else if (gameState.perspective === Perspective.PLAYING) {
             gameState.perspective = Perspective.FINISHED_PLAYING;
         }
-        gameState.relation = GameRelation.FREESTYLE
+
+        // Set variant to FREESTYLE for all finished states
+        gameState.variant = Variant.FREESTYLE;
+        gameState.relation = GameRelation.FREESTYLE;
 
         // Update the moves list display to show the game result
         refreshMoveListDisplay();
@@ -999,6 +1002,34 @@ function onRematch() {
     ws.send('rematch');
 }
 
+/**
+ * Handles abort game requests
+ */
+function onAbort() {
+    if (!gameState.isPlayerPlaying) {
+        console.warn('Cannot abort - not currently playing');
+        return;
+    }
+
+    // Send abort command to FICS
+    ws.send('abort');
+
+    // Disable the abort button temporarily to prevent spam
+    const abortButton = document.querySelector('[data-action="abort"]');
+    if (abortButton) {
+        abortButton.disabled = true;
+        abortButton.style.opacity = '0.6';
+
+        // Re-enable after 3 seconds
+        setTimeout(() => {
+            if (abortButton) {
+                abortButton.disabled = false;
+                abortButton.style.opacity = '1';
+            }
+        }, 3000);
+    }
+}
+
 
 
 /**
@@ -1522,6 +1553,22 @@ function updateUIForPerspective() {
         return;
     }
 
+    // Log perspective changes for debugging
+    const perspectiveNames = {
+        [Perspective.FREESTYLE]: 'FREESTYLE',
+        [Perspective.PLAYING]: 'PLAYING',
+        [Perspective.FINISHED_PLAYING]: 'FINISHED_PLAYING',
+        [Perspective.OBSERVING]: 'OBSERVING',
+        [Perspective.FINISHED_OBSERVING]: 'FINISHED_OBSERVING',
+        [Perspective.EXAMINING]: 'EXAMINING',
+        [Perspective.FINISHED_EXAMINING]: 'FINISHED_EXAMINING',
+        [Perspective.ANALYSIS]: 'ANALYSIS'
+    };
+
+    const fromPerspective = perspectiveNames[gameState.lastPerspective] || gameState.lastPerspective;
+    const toPerspective = perspectiveNames[gameState.perspective] || gameState.perspective;
+    console.log(`Perspective change: ${fromPerspective} → ${toPerspective}`);
+
     // Clean up analysis mode if we're switching away from it
     if (gameState.lastPerspective === Perspective.ANALYSIS && gameState.perspective !== Perspective.ANALYSIS) {
         // Stop analysis
@@ -1553,6 +1600,7 @@ function updateUIForPerspective() {
     if (gameActionLinksContainer) {
         // Define all possible action links
         const allActionLinks = [
+            {text: 'Abort', action: 'abort', handler: onAbort},
             {text: 'Draw', action: 'draw', handler: onDraw},
             {text: 'Resign', action: 'resign', handler: onResign},
             {text: 'Rematch', action: 'rematch', handler: onRematch},
@@ -1565,8 +1613,20 @@ function updateUIForPerspective() {
 
         switch (gameState.perspective) {
             case Perspective.PLAYING:
-                // Draw and Resign links: Show only when playing
-                visibleActions = ['draw', 'resign'];
+                // Check if abort should be shown (move 1 or less)
+                const moveHistory = gameState.chessBoard.getMoveHistory();
+                const totalMoves = moveHistory.length;
+                const canAbort = totalMoves <= 1 &&
+                    (gameState.relation === GameRelation.PLAYING_MY_MOVE ||
+                     gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
+
+                if (canAbort) {
+                    // Show Abort prominently for early game
+                    visibleActions = ['abort', 'draw', 'resign'];
+                } else {
+                    // Show Draw and Resign for later game
+                    visibleActions = ['draw', 'resign'];
+                }
                 break;
 
             case Perspective.FINISHED_PLAYING:
@@ -1686,6 +1746,18 @@ function updateUIForPerspective() {
     if (setupFenBtn) {
         const shouldShowSetupFen = gameState.perspective === Perspective.FREESTYLE || gameState.perspective === Perspective.ANALYSIS;
         setupFenBtn.style.display = shouldShowSetupFen ? 'block' : 'none';
+    }
+
+    // Show/hide Abort Game menu item based on perspective and move count
+    const abortGameBtn = document.getElementById('abortGameBtn');
+    if (abortGameBtn) {
+        const moveHistory = gameState.chessBoard.getMoveHistory();
+        const totalMoves = moveHistory.length;
+        const shouldShowAbortGame = gameState.perspective === Perspective.PLAYING &&
+            totalMoves > 1 &&
+            (gameState.relation === GameRelation.PLAYING_MY_MOVE ||
+             gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
+        abortGameBtn.style.display = shouldShowAbortGame ? 'block' : 'none';
     }
 
     // Show/hide analysis UI based on perspective
@@ -1904,11 +1976,20 @@ function updatePlayerInfoAndClockUI() {
         bottomPlayerClockEl.innerText = gameState.blackClockDisplay || '00:00';
 
         // Update clock styles using CSS classes
-        topPlayerClockEl.classList.remove('clock-active', 'clock-inactive');
-        bottomPlayerClockEl.classList.remove('clock-active', 'clock-inactive');
+        topPlayerClockEl.classList.remove('clock-active', 'clock-inactive', 'clock-finished');
+        bottomPlayerClockEl.classList.remove('clock-active', 'clock-inactive', 'clock-finished');
 
-        // Add active class for all active games (playing, examining, or observing)
-        if (gameState.isPlayerPlaying || gameState.relation === 2 || gameState.relation === 0) {
+        // Check if game is finished
+        const isFinishedGame = gameState.perspective === Perspective.FINISHED_PLAYING ||
+                              gameState.perspective === Perspective.FINISHED_OBSERVING ||
+                              gameState.perspective === Perspective.FINISHED_EXAMINING;
+
+        if (isFinishedGame) {
+            // For finished games, both clocks are grayed out
+            topPlayerClockEl.classList.add('clock-finished');
+            bottomPlayerClockEl.classList.add('clock-finished');
+        } else if (gameState.isPlayerPlaying || gameState.relation === 2 || gameState.relation === 0) {
+            // Add active class for all active games (playing, examining, or observing)
             topPlayerClockEl.classList.add(gameState.isWhitesMove ? 'clock-active' : 'clock-inactive');
             bottomPlayerClockEl.classList.add(gameState.isWhitesMove ? 'clock-inactive' : 'clock-active');
         } else {
@@ -1923,11 +2004,20 @@ function updatePlayerInfoAndClockUI() {
         bottomPlayerClockEl.innerText = gameState.whiteClockDisplay || '00:00';
 
         // Update clock styles using CSS classes
-        topPlayerClockEl.classList.remove('clock-active', 'clock-inactive');
-        bottomPlayerClockEl.classList.remove('clock-active', 'clock-inactive');
+        topPlayerClockEl.classList.remove('clock-active', 'clock-inactive', 'clock-finished');
+        bottomPlayerClockEl.classList.remove('clock-active', 'clock-inactive', 'clock-finished');
 
-        // Add active class for all active games (playing, examining, or observing)
-        if (gameState.isPlayerPlaying || gameState.relation === 2 || gameState.relation === 0) {
+        // Check if game is finished
+        const isFinishedGame = gameState.perspective === Perspective.FINISHED_PLAYING ||
+                              gameState.perspective === Perspective.FINISHED_OBSERVING ||
+                              gameState.perspective === Perspective.FINISHED_EXAMINING;
+
+        if (isFinishedGame) {
+            // For finished games, both clocks are grayed out
+            topPlayerClockEl.classList.add('clock-finished');
+            bottomPlayerClockEl.classList.add('clock-finished');
+        } else if (gameState.isPlayerPlaying || gameState.relation === 2 || gameState.relation === 0) {
+            // Add active class for all active games (playing, examining, or observing)
             topPlayerClockEl.classList.add(gameState.isWhitesMove ? 'clock-inactive' : 'clock-active');
             bottomPlayerClockEl.classList.add(gameState.isWhitesMove ? 'clock-active' : 'clock-inactive');
         } else {
@@ -3428,6 +3518,18 @@ function setupMainChessBoardDisplay() {
     };
     setupFenBtn.style.display = 'none'; // Hidden by default
     boardMenu.appendChild(setupFenBtn);
+
+    // Abort Game button (only visible when playing and move 2+)
+    const abortGameBtn = document.createElement('button');
+    abortGameBtn.id = 'abortGameBtn';
+    abortGameBtn.title = 'Abort Game';
+    abortGameBtn.innerHTML = 'Abort Game <i class="material-icons">cancel</i>';
+    abortGameBtn.onclick = () => {
+        onAbort();
+        boardMenu.classList.remove('show');
+    };
+    abortGameBtn.style.display = 'none'; // Hidden by default
+    boardMenu.appendChild(abortGameBtn);
 
     boardMenuButton.addEventListener('click', (event) => {
         boardMenu.classList.toggle('show');
