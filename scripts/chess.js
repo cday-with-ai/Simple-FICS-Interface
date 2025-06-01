@@ -55,7 +55,7 @@ let movesListContainer; // Container for the moves list
 /**
  * TODO: this should be stored in a map by game number so multiple games can be handled correctly with variant, etc.
  */
-let gameState = { // Reset header
+export let gameState = { // Reset header
     gameNumber: 0,
     whitePlayer: {name: 'White', rating: ''},
     blackPlayer: {name: 'Black', rating: ''},
@@ -422,7 +422,13 @@ function updateBoardFromStyle12(style12Message) {
         // Update ECO opening info
         updateBoardBottomLabels();
         const startEnd = lastMoveToStartEndAlgebraic();
-        if (startEnd && startEnd.length === 2 && (gameState.perspective === Perspective.PLAYING && gameState.isWhitesMove === gameState.isPlayerWhite)) {
+
+        // Check if we should animate the move
+        const shouldAnimate = startEnd && startEnd.length === 2 &&
+            (gameState.perspective === Perspective.PLAYING && gameState.isWhitesMove === gameState.isPlayerWhite) &&
+            !shouldDisableAnimations();
+
+        if (shouldAnimate) {
             animatePieceMoveInternal(startEnd[0], startEnd[1], () => {
                 if (gameState.lastMovePretty.includes('x')) {
                     playSound('capture');
@@ -2300,6 +2306,15 @@ export function makeMove(startSquareAlgebraic, endSquareAlgebraic, isDragging) {
  * @param callback Callback to call when complete.
  */
 function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
+    // Check if animations should be disabled due to time pressure
+    if (shouldDisableAnimations()) {
+        // Skip animation, just call callback immediately
+        if (callback) {
+            callback();
+        }
+        return;
+    }
+
     const board = document.getElementById('chessBoard');
     const fromElement = document.querySelector(`[data-algebraic="${algrebraicFrom}"]`);
     const fromSquare = {
@@ -2343,7 +2358,7 @@ function animatePieceMoveInternal(algrebraicFrom, algebraicTo, callback) {
     requestAnimationFrame(() => {
         animatedPiece.getBoundingClientRect(); // Force reflow
 
-        // Use the original animation duration (0.1s)
+        // Use the original animation duration (0.25s)
         animatedPiece.style.transition = 'left .25s ease-out, top .25s ease-out';
         animatedPiece.style.left = endPosition.left + 'px';
         animatedPiece.style.top = endPosition.top + 'px';
@@ -2881,6 +2896,56 @@ function formatClockTimeInternal(totalSeconds) {
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = Math.floor(totalSeconds % 60);
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Parses a clock display string (e.g., "1:30", "0:45") into total seconds
+ * @param {string} clockDisplay - The clock display string
+ * @returns {number} - Total seconds, or 0 if parsing fails
+ */
+function parseClockDisplayToSeconds(clockDisplay) {
+    if (!clockDisplay || typeof clockDisplay !== 'string') {
+        return 0;
+    }
+
+    const parts = clockDisplay.split(':');
+    if (parts.length !== 2) {
+        return 0;
+    }
+
+    const minutes = parseInt(parts[0], 10);
+    const seconds = parseInt(parts[1], 10);
+
+    if (isNaN(minutes) || isNaN(seconds)) {
+        return 0;
+    }
+
+    return (minutes * 60) + seconds;
+}
+
+/**
+ * Checks if the current player has low time (less than 60 seconds)
+ * @returns {boolean} - True if current player has less than 60 seconds
+ */
+function isCurrentPlayerInTimePress() {
+    // Only apply time pressure detection in PLAYING perspective
+    if (gameState.perspective !== Perspective.PLAYING) {
+        return false;
+    }
+
+    // Determine current player's time based on whose turn it is
+    const currentPlayerTime = gameState.isWhitesMove ? gameState.whiteTimeSecs : gameState.blackTimeSecs;
+
+    // Return true if current player has less than 60 seconds
+    return currentPlayerTime < 60;
+}
+
+/**
+ * Checks if animations should be disabled due to time pressure
+ * @returns {boolean} - True if animations should be disabled
+ */
+function shouldDisableAnimations() {
+    return isCurrentPlayerInTimePress();
 }
 
 /**

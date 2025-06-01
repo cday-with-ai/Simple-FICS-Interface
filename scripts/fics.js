@@ -5,7 +5,8 @@ import {
     onGameMoves,
     onGameStart,
     onStyle12,
-    onUnobserve
+    onUnobserve,
+    gameState
 } from './chess.js';
 
 import {createTab, routeMessageToTab} from './chat.js';
@@ -521,6 +522,32 @@ function handleGameEnd(msg) {
             onGameEnd(syntheticGameEnd);
             return true;
         }
+    }
+
+    // Check for disconnection messages
+    // Format: "Disconnected" or "\nDisconnected"
+    const disconnectedPattern = "Disconnected";
+    const disconnectedStart = msg.startsWith(disconnectedPattern);
+    let disconnectedFound = false;
+
+    if (disconnectedStart) {
+        disconnectedFound = true;
+    } else {
+        // Check if the message appears after a newline
+        const disconnectedIndex = msg.indexOf("\n" + disconnectedPattern);
+        if (disconnectedIndex !== -1) {
+            disconnectedFound = true;
+        }
+    }
+
+    if (disconnectedFound) {
+        // Create a synthetic game end message for disconnection
+        // Use current game number if available, otherwise use 0
+        const gameNumber = gameState?.gameNumber || 0;
+        const syntheticGameEnd = `${gameNumber} (player vs. player) Game ended by disconnection} *`;
+        playSound('end');
+        onGameEnd(syntheticGameEnd);
+        return true;
     }
 
     return false;
