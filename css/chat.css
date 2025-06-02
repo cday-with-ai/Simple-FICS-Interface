@@ -114,6 +114,7 @@ body {
     width: 100%;
     height: 100%;
     position: relative;
+    overflow: hidden; /* Prevent expansion */
 }
 
 .chess-board-area {
@@ -137,6 +138,8 @@ body {
     display: flex;
     flex-direction: column;
     position: relative;
+    min-width: 0; /* Allow flex item to shrink */
+    overflow: hidden; /* Prevent expansion */
 }
 
 /* Unified chat container - replaces both main console and chat tabs */
@@ -147,6 +150,8 @@ body {
     flex-direction: column;
     margin-right: 20px;
     position: relative;
+    min-width: 0; /* Allow flex item to shrink */
+    max-width: 100%; /* Prevent expansion beyond parent */
 }
 
 /* Legacy containers - hidden when unified system is active */
@@ -331,6 +336,18 @@ body {
     display: block;
 }
 
+/* Specific styling for unified tab text areas */
+.unified-tab-content .ics-text-area,
+.unified-tab-content .tab-text-area {
+    flex: 1;
+    height: 100% !important;
+    max-height: 100% !important;
+    margin: 0;
+    border-radius: 8px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 /* Styles for links in text areas */
 .ics-text-area a, .tab-text-area a {
     color: #00ffff; /* Cyan for links */
@@ -467,6 +484,16 @@ body {
     font-size: calc(14px * var(--console-font-scale)); /* Match text area font size */
 }
 
+/* Specific styling for unified tab inputs */
+.unified-tab-content .tab-input,
+.unified-tab-content .ics-input {
+    width: calc(100% - 10px);
+    height: 35px;
+    margin: 0 5px;
+    border-radius: 8px;
+    box-sizing: border-box;
+}
+
 .tab-input-label {
     color: black;
     position: relative;
@@ -479,28 +506,82 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-width: 0; /* Allow flex item to shrink */
+    overflow: hidden; /* Prevent expansion */
+}
+
+.unified-tabs-container {
+    display: flex;
+    align-items: center;
+    max-height: 35px;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.unified-tabs-scroll-btn {
+    flex: 0 0 30px;
+    height: 35px;
+    background: linear-gradient(135deg, #f5f0e8, #e8dcc6);
+    border: 1px solid #b8a082;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 3px;
+    font-weight: bold;
+    color: #5d4e37;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.unified-tabs-scroll-btn:hover {
+    background: linear-gradient(135deg, #f8f3eb, #eee2d0);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.unified-tabs-scroll-btn:active {
+    transform: translateY(0);
+}
+
+.unified-tabs-scroll-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background: linear-gradient(135deg, #e8dcc6, #d4c4a8);
+}
+
+.unified-tabs-wrapper {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    min-width: 0; /* Allow flex item to shrink below content size */
+    max-width: 100%; /* Prevent expansion */
 }
 
 .unified-tabs {
     display: flex;
-    background: linear-gradient(135deg, #e8e0c8, #d4c4a8);
-    border-radius: 10px 10px 0 0;
     padding: 5px 5px 0 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    border: 1px solid #b8a082;
-    border-bottom: none;
-    min-height: 45px;
     align-items: flex-end;
+    transition: transform 0.3s ease;
+    min-height: 45px;
+    width: max-content; /* Allow tabs to extend beyond wrapper */
+    flex-shrink: 0; /* Don't shrink the tabs container */
 }
 
 .unified-tab {
-    padding: 8px 16px;
+    padding: 8px 8px;
     cursor: pointer;
     margin-right: 3px;
+    margin-bottom: 6px;
     border-radius: 8px 8px 0 0;
     position: relative;
-    font-family: 'Astalamet Pro', 'Courier New', Courier, monospace;
-    font-size: 14px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
     font-weight: bold;
     transition: all 0.2s ease;
     border: 1px solid #b8a082;
@@ -510,7 +591,12 @@ body {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
-    min-height: 32px;
+    max-height: 16px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    max-width: 75px;
+    overflow: visible;
+    text-overflow: ellipsis;
 }
 
 .unified-tab:hover {
@@ -538,33 +624,18 @@ body {
     position: relative;
 }
 
-.unified-tab-unread::after {
-    content: '';
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    width: 8px;
-    height: 8px;
-    background: linear-gradient(135deg, #ff4444, #cc0000);
-    border-radius: 50%;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-    animation: pulse-notification 2s infinite;
-}
+/* Removed duplicate unread indicator - using .unified-tab-unread-count instead */
 
 .unified-tab-unread-count {
     position: absolute;
-    top: -6px;
-    right: -6px;
-    background: linear-gradient(135deg, #ff4444, #cc0000);
-    color: white;
-    border-radius: 10px;
-    padding: 2px 6px;
-    font-size: 11px;
-    font-weight: bold;
-    min-width: 16px;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-    border: 1px solid #990000;
+    top: 2px;
+    left: 2px;
+    width: 8px;
+    height: 8px;
+    background: #ff0000;
+    border-radius: 50%;
+    z-index: 15;
+    display: block;
 }
 
 @keyframes pulse-notification {
@@ -578,13 +649,38 @@ body {
     display: none;
     flex-direction: column;
     height: calc(100% - 45px);
-    background: linear-gradient(135deg, #ffffff, #f8f8f8);
-    border: 1px solid #b8a082;
-    border-top: none;
-    border-radius: 0 0 10px 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     position: relative;
+}
+
+.unified-tab-content .grid-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.unified-tab-content .grid-row:first-child {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100% - 60px) !important;
+    max-height: calc(100% - 60px) !important;
+    overflow: hidden;
+}
+
+.unified-tab-content .grid-row:last-child {
+    flex: 0 0 50px;
+    padding: 5px 10px;
+    margin: 0;
+    height: 50px !important;
+    min-height: 50px !important;
+    position: relative !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    border-top: 1px solid #e0e0e0;
 }
 
 .unified-tab-content-active {
@@ -649,26 +745,35 @@ body {
 
 /* Unified tab close button */
 .unified-close-btn {
-    margin-left: 8px;
+    margin-left: 4px;
     color: #8b7355;
     cursor: pointer;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 12px;
     line-height: 1;
-    padding: 2px 4px;
-    border-radius: 3px;
+    padding: 1px 2px;
+    border-radius: 2px;
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
 .unified-close-btn:hover {
     background: rgba(255, 68, 68, 0.2);
     color: #cc0000;
     transform: scale(1.1);
+}
+
+.unified-tab-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 
 .unified-tab-main {

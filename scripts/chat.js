@@ -39,6 +39,7 @@ let useUnifiedChatSystem = true; // Enable unified chat system by default
 let unifiedTabCounter = 0;
 let activeUnifiedTab = 'main';
 let unreadCounts = {}; // Track unread messages per tab
+let tabScrollPosition = 0; // Track horizontal scroll position of tabs
 
 // Initialize chat system
 export function initChat() {
@@ -57,29 +58,56 @@ export function initChat() {
 
 // Initialize unified chat system
 function initUnifiedChatSystem() {
+    console.log('Initializing unified chat system...');
+
     // Hide legacy containers
-    if (legacyMainConsole) legacyMainConsole.style.display = 'none';
-    if (legacyChatTabs) legacyChatTabs.style.display = 'none';
-    if (rightDivider) rightDivider.style.display = 'none';
+    if (legacyMainConsole) {
+        legacyMainConsole.style.display = 'none';
+        console.log('Hidden legacy main console');
+    }
+    if (legacyChatTabs) {
+        legacyChatTabs.style.display = 'none';
+        console.log('Hidden legacy chat tabs');
+    }
+    if (rightDivider) {
+        rightDivider.style.display = 'none';
+        console.log('Hidden right divider');
+    }
 
     // Show unified container
-    if (unifiedChatContainer) unifiedChatContainer.style.display = 'flex';
+    if (unifiedChatContainer) {
+        unifiedChatContainer.style.display = 'flex';
+        console.log('Shown unified chat container');
+    } else {
+        console.error('Unified chat container not found!');
+    }
 
     // Set up main console tab click handler
     const mainTab = document.getElementById('unified-tab-main');
     if (mainTab) {
         mainTab.addEventListener('click', () => switchUnifiedTab('main'));
+        console.log('Set up main tab click handler');
+    } else {
+        console.error('Main tab not found!');
     }
+
+    // Set up tab scroll buttons
+    setupTabScrollButtons();
 
     // Initialize unread counts
     unreadCounts['main'] = 0;
+    console.log('Unified chat system initialized successfully');
 }
 
 // Switch to a unified tab
 function switchUnifiedTab(tabId) {
+    console.log(`Switching to unified tab: ${tabId}`);
+
     // Deactivate all tabs
     const allTabs = document.querySelectorAll('.unified-tab');
     const allContents = document.querySelectorAll('.unified-tab-content');
+
+    console.log(`Found ${allTabs.length} tabs and ${allContents.length} contents`);
 
     allTabs.forEach(tab => {
         tab.classList.remove('unified-tab-active');
@@ -87,6 +115,7 @@ function switchUnifiedTab(tabId) {
     });
 
     allContents.forEach(content => {
+        content.style.display = 'none';
         content.classList.remove('unified-tab-content-active');
         content.classList.add('unified-tab-content-inactive');
     });
@@ -95,9 +124,13 @@ function switchUnifiedTab(tabId) {
     const selectedTab = document.getElementById(`unified-tab-${tabId}`);
     const selectedContent = document.getElementById(`unified-tab-content-${tabId}`);
 
+    console.log(`Selected tab:`, selectedTab);
+    console.log(`Selected content:`, selectedContent);
+
     if (selectedTab && selectedContent) {
         selectedTab.classList.add('unified-tab-active');
         selectedTab.classList.remove('unified-tab-inactive');
+        selectedContent.style.display = 'flex';
         selectedContent.classList.add('unified-tab-content-active');
         selectedContent.classList.remove('unified-tab-content-inactive');
 
@@ -109,6 +142,10 @@ function switchUnifiedTab(tabId) {
 
         // Scroll to bottom
         scrollUnifiedTabToBottom(tabId);
+
+        console.log(`Successfully switched to tab: ${tabId}`);
+    } else {
+        console.error(`Failed to find tab or content for: ${tabId}`);
     }
 }
 
@@ -160,7 +197,16 @@ export function createUnifiedTab(type, name) {
         return createTab(type, name);
     }
 
-    const id = `${type}-${name}-${++unifiedTabCounter}`;
+    // Check if tab already exists for this type and name
+    const existingTabId = `${type}-${name}`;
+    const existingTab = document.getElementById(`unified-tab-${existingTabId}`);
+    if (existingTab) {
+        console.log(`Tab already exists for ${type} ${name}, returning existing ID: ${existingTabId}`);
+        return existingTabId;
+    }
+
+    const id = existingTabId; // Use consistent ID without counter
+    console.log(`Creating unified tab: ${id} for ${type} ${name}`);
 
     // Create tab element
     const tabDiv = document.createElement('div');
@@ -170,7 +216,12 @@ export function createUnifiedTab(type, name) {
     // Create tab label
     const tabLabel = document.createElement('span');
     tabLabel.classList.add('unified-tab-label');
-    tabLabel.textContent = `${type} ${name}`;
+    // For channels, show just the number; for others, show type and name
+    if (type === 'channel') {
+        tabLabel.textContent = name;
+    } else {
+        tabLabel.textContent = `${type} ${name}`;
+    }
     tabDiv.appendChild(tabLabel);
 
     // Create close button (not for main console)
@@ -191,6 +242,9 @@ export function createUnifiedTab(type, name) {
     // Add tab to tabs container
     unifiedTabs.appendChild(tabDiv);
 
+    // Update scroll buttons after adding tab
+    setTimeout(updateTabScrollButtons, 50);
+
     // Create tab content
     const tabContent = document.createElement('div');
     tabContent.id = `unified-tab-content-${id}`;
@@ -203,20 +257,18 @@ export function createUnifiedTab(type, name) {
 
     const textRow = document.createElement('div');
     textRow.classList.add('grid-row');
-    textRow.style.cssText = 'flex: 1; padding: 0 3px 0 0; display: flex; flex-direction: column; height: calc(100% - 70px); max-height: calc(100% - 70px);';
 
     const textArea = document.createElement('div');
     textArea.id = `unified-textarea-${id}`;
     textArea.classList.add('tab-text-area');
-    textArea.style.cssText = 'flex: 1; min-height: 100px; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;';
 
     const inputRow = document.createElement('div');
     inputRow.classList.add('grid-row');
-    inputRow.style.cssText = 'padding: 0 6px 10px 10px; margin-top: 6px; height: 50px; min-height: 50px; position: absolute; bottom: 0; left: -10px; right: 0;';
 
     const input = document.createElement('input');
     input.id = `unified-input-${id}`;
     input.classList.add('tab-input');
+    input.placeholder = `Tell ${name}...`;
 
     // Set up input handlers
     input.addEventListener('keypress', (event) => {
@@ -255,6 +307,9 @@ export function createUnifiedTab(type, name) {
     // Initialize unread count
     unreadCounts[id] = 0;
 
+    console.log(`Created tab content with ID: unified-tab-content-${id}`);
+    console.log(`Tab content element:`, tabContent);
+
     // Switch to new tab if auto-switch is enabled
     const autoSwitch = localStorage.getItem('autoSwitchToNewTabs') === 'true';
     if (autoSwitch) {
@@ -277,6 +332,9 @@ function closeUnifiedTab(tabId) {
     // Clean up unread count
     delete unreadCounts[tabId];
 
+    // Update scroll buttons after removing tab
+    setTimeout(updateTabScrollButtons, 50);
+
     // If this was the active tab, switch to main
     if (activeUnifiedTab === tabId) {
         switchUnifiedTab('main');
@@ -285,7 +343,10 @@ function closeUnifiedTab(tabId) {
 
 // Route message to unified tab
 export function routeMessageToUnifiedTab(tabId, message) {
+    console.log(`Routing message to unified tab: ${tabId}`);
     const textArea = document.getElementById(`unified-textarea-${tabId}`);
+    console.log(`Found text area:`, textArea);
+
     if (textArea) {
         const autoScroll = textArea.scrollHeight - textArea.scrollTop <= textArea.clientHeight + 10;
         textArea.innerHTML += processTextToHTML(message);
@@ -295,6 +356,9 @@ export function routeMessageToUnifiedTab(tabId, message) {
         if (tabId !== activeUnifiedTab) {
             addUnreadIndicator(tabId);
         }
+        console.log(`Successfully routed message to tab: ${tabId}`);
+    } else {
+        console.error(`Text area not found for tab: ${tabId}`);
     }
 }
 
@@ -766,4 +830,154 @@ export function createGameTab(opponent) {
 
 export function getFicsCommandRegex() {
     return ficsCommandRegex;
+}
+
+// Global reference to update function
+let globalUpdateScrollButtons = null;
+let updateScrollButtonsTimeout = null;
+
+// Set up tab scroll buttons
+function setupTabScrollButtons() {
+    const scrollLeftBtn = document.getElementById('scrollTabsLeft');
+    const scrollRightBtn = document.getElementById('scrollTabsRight');
+    const tabsWrapper = document.querySelector('.unified-tabs-wrapper');
+    const tabs = document.getElementById('unifiedTabs');
+
+    if (!scrollLeftBtn || !scrollRightBtn || !tabsWrapper || !tabs) {
+        console.error('Tab scroll elements not found');
+        return;
+    }
+
+    // Scroll amount per click (in pixels)
+    const scrollAmount = 150;
+
+    // Track if we're currently scrolling to prevent button hiding during scroll
+    let isScrolling = false;
+
+    // Update scroll button states
+    function updateScrollButtons() {
+        // Force recalculation of dimensions
+        const tabsWidth = tabs.scrollWidth;
+
+        // Use the unified chat container width as the reference (fixed width)
+        const chatContainer = document.getElementById('unifiedChatContainer');
+        const containerWidth = chatContainer ? chatContainer.clientWidth : tabsWrapper.parentElement.clientWidth;
+
+        const scrollButtonWidth = 30 + 6; // 30px width + 3px margin on each side
+        const availableWidthForTabs = containerWidth - (scrollButtonWidth * 2);
+
+        // Determine if we need scrolling - always use the same calculation
+        const needsScrolling = tabsWidth > availableWidthForTabs;
+
+        console.log(`Tabs width: ${tabsWidth}, Container width: ${containerWidth}, Available for tabs: ${availableWidthForTabs}, Needs scrolling: ${needsScrolling}, Is scrolling: ${isScrolling}`);
+
+        // Only hide buttons if we're not currently scrolling and don't need scrolling
+        if (!needsScrolling && !isScrolling) {
+            scrollLeftBtn.style.display = 'none';
+            scrollRightBtn.style.display = 'none';
+            // Reset scroll position when not needed
+            tabScrollPosition = 0;
+            tabs.style.transform = 'translateX(0px)';
+            return;
+        }
+
+        // Show buttons if we need scrolling
+        if (needsScrolling) {
+            scrollLeftBtn.style.display = 'flex';
+            scrollRightBtn.style.display = 'flex';
+        }
+
+        // When scrolling is needed, calculate max scroll
+        const maxScroll = Math.max(0, tabsWidth - availableWidthForTabs);
+
+        // Ensure scroll position is within bounds
+        if (tabScrollPosition > maxScroll) {
+            tabScrollPosition = maxScroll;
+            tabs.style.transform = `translateX(-${tabScrollPosition}px)`;
+        }
+
+        // Disable/enable left button
+        if (tabScrollPosition <= 0) {
+            scrollLeftBtn.classList.add('disabled');
+        } else {
+            scrollLeftBtn.classList.remove('disabled');
+        }
+
+        // Disable/enable right button
+        if (tabScrollPosition >= maxScroll) {
+            scrollRightBtn.classList.add('disabled');
+        } else {
+            scrollRightBtn.classList.remove('disabled');
+        }
+    }
+
+    // Store global reference
+    globalUpdateScrollButtons = updateScrollButtons;
+
+    // Scroll left
+    scrollLeftBtn.addEventListener('click', () => {
+        if (scrollLeftBtn.classList.contains('disabled')) return;
+
+        isScrolling = true;
+        tabScrollPosition = Math.max(0, tabScrollPosition - scrollAmount);
+        tabs.style.transform = `translateX(-${tabScrollPosition}px)`;
+
+        // Clear scrolling flag after animation
+        setTimeout(() => {
+            isScrolling = false;
+            updateScrollButtons();
+        }, 350); // Slightly longer than CSS transition
+
+        updateScrollButtons();
+    });
+
+    // Scroll right
+    scrollRightBtn.addEventListener('click', () => {
+        if (scrollRightBtn.classList.contains('disabled')) return;
+
+        isScrolling = true;
+        const chatContainer = document.getElementById('unifiedChatContainer');
+        const containerWidth = chatContainer ? chatContainer.clientWidth : tabsWrapper.parentElement.clientWidth;
+        const scrollButtonWidth = 30 + 6;
+        const availableWidthForTabs = containerWidth - (scrollButtonWidth * 2);
+        const maxScroll = Math.max(0, tabs.scrollWidth - availableWidthForTabs);
+
+        tabScrollPosition = Math.min(maxScroll, tabScrollPosition + scrollAmount);
+        tabs.style.transform = `translateX(-${tabScrollPosition}px)`;
+
+        // Clear scrolling flag after animation
+        setTimeout(() => {
+            isScrolling = false;
+            updateScrollButtons();
+        }, 350); // Slightly longer than CSS transition
+
+        updateScrollButtons();
+    });
+
+    // Update buttons on window resize
+    window.addEventListener('resize', () => {
+        setTimeout(updateScrollButtons, 50);
+    });
+
+    // Initial update
+    setTimeout(updateScrollButtons, 100); // Delay to ensure DOM is ready
+}
+
+// Update scroll buttons when tabs are added/removed
+function updateTabScrollButtons() {
+    console.log('updateTabScrollButtons called');
+
+    // Clear any existing timeout to debounce rapid calls
+    if (updateScrollButtonsTimeout) {
+        clearTimeout(updateScrollButtonsTimeout);
+    }
+
+    // Debounce the update to prevent rapid toggling
+    updateScrollButtonsTimeout = setTimeout(() => {
+        if (globalUpdateScrollButtons) {
+            console.log('Executing debounced scroll button update');
+            globalUpdateScrollButtons();
+        }
+        updateScrollButtonsTimeout = null;
+    }, 100);
 }
