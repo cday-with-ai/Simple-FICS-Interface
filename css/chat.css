@@ -139,7 +139,17 @@ body {
     position: relative;
 }
 
-/* Main console on the top left */
+/* Unified chat container - replaces both main console and chat tabs */
+.unified-chat-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    margin-right: 20px;
+    position: relative;
+}
+
+/* Legacy containers - hidden when unified system is active */
 .main-console {
     flex: 0 0 35%;
     overflow: hidden;
@@ -463,6 +473,129 @@ body {
     top: 5px
 }
 
+/* Modern unified tab system */
+.unified-tabset {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.unified-tabs {
+    display: flex;
+    background: linear-gradient(135deg, #e8e0c8, #d4c4a8);
+    border-radius: 10px 10px 0 0;
+    padding: 5px 5px 0 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    border: 1px solid #b8a082;
+    border-bottom: none;
+    min-height: 45px;
+    align-items: flex-end;
+}
+
+.unified-tab {
+    padding: 8px 16px;
+    cursor: pointer;
+    margin-right: 3px;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+    font-family: 'Astalamet Pro', 'Courier New', Courier, monospace;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    border: 1px solid #b8a082;
+    border-bottom: none;
+    background: linear-gradient(135deg, #f5f0e8, #e8dcc6);
+    color: #5d4e37;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+}
+
+.unified-tab:hover {
+    background: linear-gradient(135deg, #f8f3eb, #eee2d0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+}
+
+.unified-tab-active {
+    background: linear-gradient(135deg, #ffffff, #f8f8f8);
+    color: #2c2c2c;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transform: translateY(-2px);
+    z-index: 10;
+    border-color: #a0906f;
+}
+
+.unified-tab-inactive {
+    color: #8b7355;
+    background: linear-gradient(135deg, #e8dcc6, #d4c4a8);
+}
+
+/* Unread message indicators */
+.unified-tab-unread {
+    position: relative;
+}
+
+.unified-tab-unread::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    animation: pulse-notification 2s infinite;
+}
+
+.unified-tab-unread-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: linear-gradient(135deg, #ff4444, #cc0000);
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 16px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+    border: 1px solid #990000;
+}
+
+@keyframes pulse-notification {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+}
+
+/* Tab content for unified system */
+.unified-tab-content {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    height: calc(100% - 45px);
+    background: linear-gradient(135deg, #ffffff, #f8f8f8);
+    border: 1px solid #b8a082;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    position: relative;
+}
+
+.unified-tab-content-active {
+    display: flex;
+}
+
+.unified-tab-content-inactive {
+    display: none;
+}
+
+/* Legacy tab system - keep for compatibility */
 .tabset {
     margin: 10px auto;
     width: 100%;
@@ -514,6 +647,42 @@ body {
     display: none; /* Hide when inactive */
 }
 
+/* Unified tab close button */
+.unified-close-btn {
+    margin-left: 8px;
+    color: #8b7355;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.unified-close-btn:hover {
+    background: rgba(255, 68, 68, 0.2);
+    color: #cc0000;
+    transform: scale(1.1);
+}
+
+.unified-tab-main {
+    background: linear-gradient(135deg, #e8f4fd, #c3e0f7) !important;
+    border-color: #4a90e2 !important;
+    color: #2c5aa0 !important;
+}
+
+.unified-tab-main.unified-tab-active {
+    background: linear-gradient(135deg, #f0f8ff, #e6f3ff) !important;
+    color: #1e3a5f !important;
+}
+
+/* Legacy close button - keep for compatibility */
 .close-btn {
     position: relative;
     top: -10px;

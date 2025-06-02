@@ -95,28 +95,54 @@
         <!-- Horizontal resizable divider -->
         <div class="divider horizontal-divider" id="topDivider"></div>
 
-        <!-- Right side content (main console and chat tabs) -->
+        <!-- Right side content (unified chat system) -->
         <div class="right-content">
-            <!-- Main console (top right) -->
-            <div class="main-console">
-                <div class="grid-container">
-                    <div class="grid-row"
-                         style="flex: 1; padding: 0 3px 0 0; display: flex; flex-direction: column; height: calc(100% - 70px); max-height: calc(100% - 70px);">
-                        <div id="mainTextArea" class="ics-text-area"
-                             style="flex: 1; min-height: 100px; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;"></div>
+            <!-- Unified chat container -->
+            <div class="unified-chat-container" id="unifiedChatContainer">
+                <div class="unified-tabset" id="unifiedTabset">
+                    <div class="unified-tabs" id="unifiedTabs">
+                        <!-- Main console tab (always present, non-closeable) -->
+                        <div class="unified-tab unified-tab-active unified-tab-main" id="unified-tab-main">
+                            <span class="unified-tab-label">Console</span>
+                        </div>
                     </div>
-                    <div class="grid-row"
-                         style="padding: 0 6px 10px 10px; margin-top: 6px; height: 50px; min-height: 50px; position: absolute; bottom: 0; left: -10px; right: 0;">
-                        <input id="mainInput" class="ics-input"/>
+                    <!-- Tab content area -->
+                    <div class="unified-tab-content unified-tab-content-active" id="unified-tab-content-main">
+                        <div class="grid-container" style="height: 100%;">
+                            <div class="grid-row"
+                                 style="flex: 1; padding: 0 3px 0 0; display: flex; flex-direction: column; height: calc(100% - 70px); max-height: calc(100% - 70px);">
+                                <div id="mainTextArea" class="ics-text-area"
+                                     style="flex: 1; min-height: 100px; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;"></div>
+                            </div>
+                            <div class="grid-row"
+                                 style="padding: 0 6px 10px 10px; margin-top: 6px; height: 50px; min-height: 50px; position: absolute; bottom: 0; left: -10px; right: 0;">
+                                <input id="mainInput" class="ics-input"/>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Vertical resizable divider -->
+            <!-- Legacy containers (hidden by default) -->
+            <div class="main-console" id="legacyMainConsole" style="display: none;">
+                <div class="grid-container">
+                    <div class="grid-row"
+                         style="flex: 1; padding: 0 3px 0 0; display: flex; flex-direction: column; height: calc(100% - 70px); max-height: calc(100% - 70px);">
+                        <div id="legacyMainTextArea" class="ics-text-area"
+                             style="flex: 1; min-height: 100px; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;"></div>
+                    </div>
+                    <div class="grid-row"
+                         style="padding: 0 6px 10px 10px; margin-top: 6px; height: 50px; min-height: 50px; position: absolute; bottom: 0; left: -10px; right: 0;">
+                        <input id="legacyMainInput" class="ics-input"/>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vertical resizable divider (hidden in unified mode) -->
             <div class="divider vertical-divider" id="rightDivider" style="display: none;margin-left: 3px"></div>
 
-            <!-- Chat tabs (bottom right) -->
-            <div class="chat-tabs-container">
+            <!-- Legacy chat tabs (hidden by default) -->
+            <div class="chat-tabs-container" id="legacyChatTabs" style="display: none;">
                 <div id="tabset" class="tabset">
                     <div id="tabs" class="tabs"></div>
                 </div>

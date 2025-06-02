@@ -11,6 +11,13 @@ const rightContent = document.querySelector('.right-content');
 const mainConsole = document.querySelector('.main-console');
 const chatTabsContainer = document.querySelector('.chat-tabs-container');
 
+// Unified chat system elements
+const unifiedChatContainer = document.getElementById('unifiedChatContainer');
+const unifiedTabset = document.getElementById('unifiedTabset');
+const unifiedTabs = document.getElementById('unifiedTabs');
+const legacyMainConsole = document.getElementById('legacyMainConsole');
+const legacyChatTabs = document.getElementById('legacyChatTabs');
+
 // FICS command regex patterns for validation
 const ficsCommandRegex = [
     /(^match .*$)|(^m .*$)/i,
@@ -28,15 +35,267 @@ const ficsCommandRegex = [
 // UI state variables
 let activeResizer = null;
 let currentView = 'both'; // Default view mode
+let useUnifiedChatSystem = true; // Enable unified chat system by default
+let unifiedTabCounter = 0;
+let activeUnifiedTab = 'main';
+let unreadCounts = {}; // Track unread messages per tab
 
 // Initialize chat system
 export function initChat() {
     setupConsoleResizeObserver();
     setupViewToggle();
-    updateTabsVisibility();
+
+    if (useUnifiedChatSystem) {
+        initUnifiedChatSystem();
+    } else {
+        updateTabsVisibility();
+    }
 
     // Set up divider event listeners
     setupDividers();
+}
+
+// Initialize unified chat system
+function initUnifiedChatSystem() {
+    // Hide legacy containers
+    if (legacyMainConsole) legacyMainConsole.style.display = 'none';
+    if (legacyChatTabs) legacyChatTabs.style.display = 'none';
+    if (rightDivider) rightDivider.style.display = 'none';
+
+    // Show unified container
+    if (unifiedChatContainer) unifiedChatContainer.style.display = 'flex';
+
+    // Set up main console tab click handler
+    const mainTab = document.getElementById('unified-tab-main');
+    if (mainTab) {
+        mainTab.addEventListener('click', () => switchUnifiedTab('main'));
+    }
+
+    // Initialize unread counts
+    unreadCounts['main'] = 0;
+}
+
+// Switch to a unified tab
+function switchUnifiedTab(tabId) {
+    // Deactivate all tabs
+    const allTabs = document.querySelectorAll('.unified-tab');
+    const allContents = document.querySelectorAll('.unified-tab-content');
+
+    allTabs.forEach(tab => {
+        tab.classList.remove('unified-tab-active');
+        tab.classList.add('unified-tab-inactive');
+    });
+
+    allContents.forEach(content => {
+        content.classList.remove('unified-tab-content-active');
+        content.classList.add('unified-tab-content-inactive');
+    });
+
+    // Activate selected tab
+    const selectedTab = document.getElementById(`unified-tab-${tabId}`);
+    const selectedContent = document.getElementById(`unified-tab-content-${tabId}`);
+
+    if (selectedTab && selectedContent) {
+        selectedTab.classList.add('unified-tab-active');
+        selectedTab.classList.remove('unified-tab-inactive');
+        selectedContent.classList.add('unified-tab-content-active');
+        selectedContent.classList.remove('unified-tab-content-inactive');
+
+        // Clear unread indicator for this tab
+        clearUnreadIndicator(tabId);
+
+        // Update active tab
+        activeUnifiedTab = tabId;
+
+        // Scroll to bottom
+        scrollUnifiedTabToBottom(tabId);
+    }
+}
+
+// Clear unread indicator for a tab
+function clearUnreadIndicator(tabId) {
+    unreadCounts[tabId] = 0;
+    const tab = document.getElementById(`unified-tab-${tabId}`);
+    if (tab) {
+        tab.classList.remove('unified-tab-unread');
+        const countElement = tab.querySelector('.unified-tab-unread-count');
+        if (countElement) {
+            countElement.remove();
+        }
+    }
+}
+
+// Add unread indicator to a tab
+function addUnreadIndicator(tabId) {
+    if (tabId === activeUnifiedTab) return; // Don't add indicator to active tab
+
+    unreadCounts[tabId] = (unreadCounts[tabId] || 0) + 1;
+    const tab = document.getElementById(`unified-tab-${tabId}`);
+    if (tab) {
+        tab.classList.add('unified-tab-unread');
+
+        // Update or create count badge
+        let countElement = tab.querySelector('.unified-tab-unread-count');
+        if (!countElement) {
+            countElement = document.createElement('span');
+            countElement.classList.add('unified-tab-unread-count');
+            tab.appendChild(countElement);
+        }
+        countElement.textContent = unreadCounts[tabId];
+    }
+}
+
+// Scroll unified tab to bottom
+function scrollUnifiedTabToBottom(tabId) {
+    const textArea = document.querySelector(`#unified-tab-content-${tabId} .ics-text-area, #unified-tab-content-${tabId} .tab-text-area`);
+    if (textArea) {
+        textArea.scrollTop = textArea.scrollHeight;
+    }
+}
+
+// Create a new unified tab
+export function createUnifiedTab(type, name) {
+    if (!useUnifiedChatSystem) {
+        // Fall back to legacy system
+        return createTab(type, name);
+    }
+
+    const id = `${type}-${name}-${++unifiedTabCounter}`;
+
+    // Create tab element
+    const tabDiv = document.createElement('div');
+    tabDiv.id = `unified-tab-${id}`;
+    tabDiv.classList.add('unified-tab', 'unified-tab-inactive');
+
+    // Create tab label
+    const tabLabel = document.createElement('span');
+    tabLabel.classList.add('unified-tab-label');
+    tabLabel.textContent = `${type} ${name}`;
+    tabDiv.appendChild(tabLabel);
+
+    // Create close button (not for main console)
+    if (id !== 'main') {
+        const closeBtn = document.createElement('span');
+        closeBtn.classList.add('unified-close-btn');
+        closeBtn.innerHTML = '×';
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeUnifiedTab(id);
+        });
+        tabDiv.appendChild(closeBtn);
+    }
+
+    // Add click handler
+    tabDiv.addEventListener('click', () => switchUnifiedTab(id));
+
+    // Add tab to tabs container
+    unifiedTabs.appendChild(tabDiv);
+
+    // Create tab content
+    const tabContent = document.createElement('div');
+    tabContent.id = `unified-tab-content-${id}`;
+    tabContent.classList.add('unified-tab-content', 'unified-tab-content-inactive');
+
+    // Create content structure
+    const gridContainer = document.createElement('div');
+    gridContainer.classList.add('grid-container');
+    gridContainer.style.height = '100%';
+
+    const textRow = document.createElement('div');
+    textRow.classList.add('grid-row');
+    textRow.style.cssText = 'flex: 1; padding: 0 3px 0 0; display: flex; flex-direction: column; height: calc(100% - 70px); max-height: calc(100% - 70px);';
+
+    const textArea = document.createElement('div');
+    textArea.id = `unified-textarea-${id}`;
+    textArea.classList.add('tab-text-area');
+    textArea.style.cssText = 'flex: 1; min-height: 100px; overflow-y: auto; overflow-x: hidden; white-space: pre-wrap; word-break: break-word;';
+
+    const inputRow = document.createElement('div');
+    inputRow.classList.add('grid-row');
+    inputRow.style.cssText = 'padding: 0 6px 10px 10px; margin-top: 6px; height: 50px; min-height: 50px; position: absolute; bottom: 0; left: -10px; right: 0;';
+
+    const input = document.createElement('input');
+    input.id = `unified-input-${id}`;
+    input.classList.add('tab-input');
+
+    // Set up input handlers
+    input.addEventListener('keypress', (event) => {
+        if (event.key === "Enter") {
+            const message = input.value;
+            const ws = getWebSocket();
+
+            let isFicsCmd = false;
+            for (var regex of ficsCommandRegex) {
+                if (regex.test(message)) {
+                    isFicsCmd = true;
+                    break;
+                }
+            }
+            if (isFicsCmd) {
+                if (ws) ws.send(message);
+            } else if (message.trim()) {
+                if (ws) ws.send("tell " + name + " " + message);
+            }
+            addToMessageHistory(input.id, message);
+            input.value = '';
+        }
+    });
+    input.addEventListener('keydown', (event) => handleArrowKeys(event, input));
+
+    // Assemble content
+    textRow.appendChild(textArea);
+    inputRow.appendChild(input);
+    gridContainer.appendChild(textRow);
+    gridContainer.appendChild(inputRow);
+    tabContent.appendChild(gridContainer);
+
+    // Add content to tabset
+    unifiedTabset.appendChild(tabContent);
+
+    // Initialize unread count
+    unreadCounts[id] = 0;
+
+    // Switch to new tab if auto-switch is enabled
+    const autoSwitch = localStorage.getItem('autoSwitchToNewTabs') === 'true';
+    if (autoSwitch) {
+        switchUnifiedTab(id);
+    }
+
+    return id;
+}
+
+// Close a unified tab
+function closeUnifiedTab(tabId) {
+    if (tabId === 'main') return; // Cannot close main console tab
+
+    const tab = document.getElementById(`unified-tab-${tabId}`);
+    const content = document.getElementById(`unified-tab-content-${tabId}`);
+
+    if (tab) tab.remove();
+    if (content) content.remove();
+
+    // Clean up unread count
+    delete unreadCounts[tabId];
+
+    // If this was the active tab, switch to main
+    if (activeUnifiedTab === tabId) {
+        switchUnifiedTab('main');
+    }
+}
+
+// Route message to unified tab
+export function routeMessageToUnifiedTab(tabId, message) {
+    const textArea = document.getElementById(`unified-textarea-${tabId}`);
+    if (textArea) {
+        const autoScroll = textArea.scrollHeight - textArea.scrollTop <= textArea.clientHeight + 10;
+        textArea.innerHTML += processTextToHTML(message);
+        if (autoScroll) textArea.scrollTop = textArea.scrollHeight;
+
+        // Add unread indicator if not active tab
+        if (tabId !== activeUnifiedTab) {
+            addUnreadIndicator(tabId);
+        }
+    }
 }
 
 // Function to set up divider event listeners
@@ -204,8 +463,16 @@ function resizeDividers(e) {
 export function scrollConsolesToBottom() {
     requestAnimationFrame(() => {
         if (mainTextArea) mainTextArea.scrollTop = mainTextArea.scrollHeight;
-        const tabTextAreas = document.querySelectorAll('.tab-text-area');
-        tabTextAreas.forEach(textArea => textArea.scrollTop = textArea.scrollHeight);
+
+        if (useUnifiedChatSystem) {
+            // Scroll all unified tab text areas
+            const unifiedTextAreas = document.querySelectorAll('.unified-tab-content .tab-text-area, .unified-tab-content .ics-text-area');
+            unifiedTextAreas.forEach(textArea => textArea.scrollTop = textArea.scrollHeight);
+        } else {
+            // Legacy system
+            const tabTextAreas = document.querySelectorAll('.tab-text-area');
+            tabTextAreas.forEach(textArea => textArea.scrollTop = textArea.scrollHeight);
+        }
     });
 }
 
@@ -266,6 +533,12 @@ export function updateTabsVisibility() {
 }
 
 export function createTab(type, name) {
+    // Use unified system if enabled
+    if (useUnifiedChatSystem) {
+        return createUnifiedTab(type, name);
+    }
+
+    // Legacy system
     const id = type + "-" + name;
     inactiveAllTabs();
 
@@ -367,6 +640,27 @@ export function createTab(type, name) {
 }
 
 export function routeMessageToTab(tabId, message) {
+    // Use unified system if enabled
+    if (useUnifiedChatSystem) {
+        // For main console, route to main tab
+        if (tabId === 'main' || !tabId) {
+            if (mainTextArea) {
+                const autoScroll = mainTextArea.scrollHeight - mainTextArea.scrollTop <= mainTextArea.clientHeight + 10;
+                mainTextArea.innerHTML += processTextToHTML(message);
+                if (autoScroll) mainTextArea.scrollTop = mainTextArea.scrollHeight;
+
+                // Add unread indicator if not active tab
+                if (activeUnifiedTab !== 'main') {
+                    addUnreadIndicator('main');
+                }
+            }
+        } else {
+            routeMessageToUnifiedTab(tabId, message);
+        }
+        return;
+    }
+
+    // Legacy system
     const textArea = document.getElementById("textarea-" + tabId);
     if (textArea) {
         const autoScroll = textArea.scrollHeight - textArea.scrollTop <= textArea.clientHeight + 10;
