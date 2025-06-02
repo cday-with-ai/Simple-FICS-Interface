@@ -10,6 +10,7 @@
     <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
     <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
     <title>Simple FICS Interface</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <!--load with cache busting versions. Increment the number in each release. -->
     <link href="css/chat.css?v=1" rel="stylesheet">
@@ -100,11 +101,17 @@
             <!-- Unified chat container -->
             <div class="unified-chat-container" id="unifiedChatContainer">
                 <div class="unified-tabset" id="unifiedTabset">
-                    <div class="unified-tabs" id="unifiedTabs">
-                        <!-- Main console tab (always present, non-closeable) -->
-                        <div class="unified-tab unified-tab-active unified-tab-main" id="unified-tab-main">
-                            <span class="unified-tab-label">Console</span>
+                    <div class="unified-tabs-container">
+                        <div class="unified-tabs-scroll-btn" id="scrollTabsLeft" title="Scroll tabs left">‹</div>
+                        <div class="unified-tabs-wrapper">
+                            <div class="unified-tabs" id="unifiedTabs">
+                                <!-- Main console tab (always present, non-closeable) -->
+                                <div class="unified-tab unified-tab-active unified-tab-main" id="unified-tab-main">
+                                    <span class="unified-tab-label">Console</span>
+                                </div>
+                            </div>
                         </div>
+                        <div class="unified-tabs-scroll-btn" id="scrollTabsRight" title="Scroll tabs right">›</div>
                     </div>
                     <!-- Tab content area -->
                     <div class="unified-tab-content unified-tab-content-active" id="unified-tab-content-main">

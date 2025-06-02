@@ -628,12 +628,17 @@ body {
 
 .unified-tab-unread-count {
     position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 8px;
-    height: 8px;
+    top: -5px;
+    left: 1px;
+    width: 12px;
+    height: 12px;
+    text-align: center;
+    font-size: 7pt;
+    vertical-align: middle;
+    line-height: 12px;
+    color: white;
     background: #ff0000;
-    border-radius: 50%;
+    border-radius: 100%;
     z-index: 15;
     display: block;
 }

@@ -34,6 +34,8 @@
     "karma-jasmine-html-reporter": "^2.1.0",
     "karma-spec-reporter": "^0.0.36",
     "karma-webpack": "^5.0.1",
+    "sharp": "^0.34.2",
+    "to-ico": "^1.1.5",
     "webpack": "^5.99.8",
     "webpack-cli": "^5.1.4"
   }

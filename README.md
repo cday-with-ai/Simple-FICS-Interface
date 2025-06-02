@@ -1,6 +1,6 @@
 # Simple-FICS-Interface
-<img src="screenshot.png">
-<img src="analysis-screenshot.png">
+<img src="docs/screenshot.png">
+<img src="docs/analysis-screenshot.png">
 
 Try it <a href="https://simple-fics-interface.pages.dev/" target="_blank">here</a>.
 
