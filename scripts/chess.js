@@ -365,12 +365,23 @@ function updateBoardFromStyle12(style12Message) {
     if (gameState.chessBoard == null) {
         gameState.chessBoard = new ChessBoard(gameState.variant, gameState.fen);
     } else {
-        if (!gameState.chessBoard.makeMoveFromSan(gameState.lastMovePretty)) {
-            console.error(`Failed to make move from SAN: ${gameState.lastMovePretty} FEN: ${gameState.fen}`);
-            gameState.chessBoard.loadFen(gameState.fen); //Reload with style12 FEN.
+        // Store the current board state before attempting the move
+        const currentBoardFen = gameState.chessBoard.getFen();
+
+        // Only try to make the move if we have a valid move string
+        if (gameState.lastMovePretty && gameState.lastMovePretty !== 'none' && gameState.lastMovePretty.trim() !== '') {
+            if (!gameState.chessBoard.makeMoveFromSan(gameState.lastMovePretty)) {
+                console.warn(`Failed to make move from SAN: ${gameState.lastMovePretty}, resyncing with Style12 FEN`);
+                // Force reload with style12 FEN to resync
+                gameState.chessBoard.loadFen(gameState.fen);
+            }
         }
+
+        // Always check for FEN mismatch and force resync if needed
         if (gameState.fen !== gameState.chessBoard.getFen()) {
-            console.error(`style 12 mismatch with chessBoard fen.\nStyle12=   ${gameState.fen}\t chessBoard=${gameState.chessBoard.getFen()}`);
+            console.log(`Board state mismatch detected, resyncing.\nStyle12 FEN: ${gameState.fen}\nBoard FEN:   ${gameState.chessBoard.getFen()}`);
+            // Force resync by loading the Style12 FEN - this is the authoritative source
+            gameState.chessBoard.loadFen(gameState.fen);
         }
     }
 
