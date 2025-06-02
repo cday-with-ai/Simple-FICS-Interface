@@ -442,12 +442,12 @@
 }
 
 .last-move-start, .last-move-end {
-    filter: brightness(60%);
+    filter: brightness(85%);
 }
 
 .last-move-start.last-move-fade, .last-move-end.last-move-fade {
     filter: brightness(100%);
-    transition: filter 2s ease;
+    transition: filter 1.5s ease;
 }
 
 .game-controls {

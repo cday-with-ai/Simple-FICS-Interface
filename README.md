@@ -23,7 +23,8 @@ A minimalist FICS interface which focuses on easy game play and chat functionali
 **Road Map**
 
 **Planned features to add:**
-
+- When playing and the other side castles, my pieces are 
+  flashed as moving when they should not be.
 - Crazyhouse support.
 - Preferences:
   - Expand preferences a bit (not too much).
