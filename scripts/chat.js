@@ -43,13 +43,16 @@ let tabScrollPosition = 0; // Track horizontal scroll position of tabs
 
 // Initialize chat system
 export function initChat() {
-    setupConsoleResizeObserver();
     setupViewToggle();
 
     if (useUnifiedChatSystem) {
         initUnifiedChatSystem();
+        // Set up console resize observer after unified system is initialized
+        setupConsoleResizeObserver();
     } else {
         updateTabsVisibility();
+        // Set up console resize observer for legacy system
+        setupConsoleResizeObserver();
     }
 
     // Set up divider event listeners
@@ -393,30 +396,61 @@ function setupDividers() {
 // Function to set up console resize observer
 function setupConsoleResizeObserver() {
     const consoleResizeObserver = new ResizeObserver(entries => {
-        const mainConsoleEl = document.querySelector('.main-console');
-        const chatTabsContainerEl = document.querySelector('.chat-tabs-container');
-        if (!mainConsoleEl && !chatTabsContainerEl) return;
-
         let availableWidth = 0;
         let availableHeight = 0;
-        if (mainConsoleEl) {
-            availableWidth = Math.max(availableWidth, mainConsoleEl.clientWidth);
-            availableHeight = Math.max(availableHeight, mainConsoleEl.clientHeight);
+
+        if (useUnifiedChatSystem) {
+            // For unified chat system, observe the unified container
+            const unifiedContainer = document.getElementById('unifiedChatContainer');
+            if (unifiedContainer) {
+                availableWidth = unifiedContainer.clientWidth;
+                availableHeight = unifiedContainer.clientHeight;
+            }
+        } else {
+            // For legacy system, observe the original elements
+            const mainConsoleEl = document.querySelector('.main-console');
+            const chatTabsContainerEl = document.querySelector('.chat-tabs-container');
+
+            if (mainConsoleEl) {
+                availableWidth = Math.max(availableWidth, mainConsoleEl.clientWidth);
+                availableHeight = Math.max(availableHeight, mainConsoleEl.clientHeight);
+            }
+            if (chatTabsContainerEl) {
+                availableWidth = Math.max(availableWidth, chatTabsContainerEl.clientWidth);
+            }
         }
-        if (chatTabsContainerEl) {
-            availableWidth = Math.max(availableWidth, chatTabsContainerEl.clientWidth);
-        }
+
+        if (availableWidth === 0 || availableHeight === 0) return;
+
         const widthScale = availableWidth / 800;
         const heightScale = availableHeight / 600;
         const scale = Math.min(widthScale, heightScale);
         const consoleFontScale = Math.max(0.75, Math.min(1.5, scale));
+        console.log("Setting console font scale:", consoleFontScale, "from dimensions:", availableWidth, "x", availableHeight);
         document.documentElement.style.setProperty('--console-font-scale', consoleFontScale);
     });
 
-    const mainConsoleEl = document.querySelector('.main-console');
-    const chatTabsContainerEl = document.querySelector('.chat-tabs-container');
-    if (mainConsoleEl) consoleResizeObserver.observe(mainConsoleEl);
-    if (chatTabsContainerEl) consoleResizeObserver.observe(chatTabsContainerEl);
+    // Observe the appropriate elements based on the chat system
+    if (useUnifiedChatSystem) {
+        const unifiedContainer = document.getElementById('unifiedChatContainer');
+        if (unifiedContainer) {
+            console.log("Setting up ResizeObserver for unified chat container");
+            consoleResizeObserver.observe(unifiedContainer);
+        } else {
+            console.error("Unified chat container not found for ResizeObserver");
+        }
+    } else {
+        const mainConsoleEl = document.querySelector('.main-console');
+        const chatTabsContainerEl = document.querySelector('.chat-tabs-container');
+        if (mainConsoleEl) {
+            console.log("Setting up ResizeObserver for legacy main console");
+            consoleResizeObserver.observe(mainConsoleEl);
+        }
+        if (chatTabsContainerEl) {
+            console.log("Setting up ResizeObserver for legacy chat tabs container");
+            consoleResizeObserver.observe(chatTabsContainerEl);
+        }
+    }
 }
 
 // Function to set up view toggle radio buttons
