@@ -3988,6 +3988,7 @@ function setupMainChessBoardDisplay() {
         board.style.height = maxSize + 'px';
 
         const fontScale = Math.max(0.45, Math.min(1.125, maxSize / 800 * 0.75));
+        console.log('Font scaling - maxSize:', maxSize, 'fontScale:', fontScale);
         document.documentElement.style.setProperty('--font-scale', fontScale);
         chessBoardArea.dataset.maxSize = maxSize;
         chessBoardArea.dataset.fontScale = fontScale;

@@ -74,7 +74,7 @@
     color: gray;
     text-align: right;
     font-family: Arial, Sans-Serif;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -87,7 +87,7 @@
     color: gray;
     text-align: left;
     font-family: Arial, Sans-Serif;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -101,7 +101,7 @@
     color: gray;
     text-align: left;
     font-family: Arial, Sans-Serif;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -115,7 +115,7 @@
     color: gray;
     text-align: right;
     font-family: Arial, Sans-Serif;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -289,7 +289,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 36px;
+    font-size: calc(36px * var(--font-scale, 1));
     cursor: pointer;
     position: relative;
     width: 100%;
@@ -297,7 +297,7 @@
 }
 
 .chess-piece {
-    font-size: 36px;
+    font-size: calc(36px * var(--font-scale, 1));
     cursor: grab;
     user-select: none;
     z-index: 1;
@@ -339,6 +339,14 @@
     transition: opacity 0.1s ease;
 }
 
+/* Smooth piece updating class */
+.piece-updating {
+    opacity: 1 !important;
+    transition: opacity 0.15s ease-in-out;
+    transform: scale(1.02);
+    transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+
 /* Animation specific styles */
 .animated-piece {
     position: absolute !important;
@@ -368,7 +376,7 @@
     top: 2px;
     right: 2px;
     left: auto !important; /* Force right alignment */
-    font-size: 6px; /* Smaller font size */
+    font-size: calc(6px * var(--font-scale, 1)); /* Scales with board size */
     font-weight: bold;
     font-family: Arial, Sans-Serif;
     opacity: 1.0;
@@ -383,7 +391,7 @@
     bottom: 1px;
     left: 1px !important; /* Force left alignment for all file labels */
     right: auto !important; /* Ensure right is not set */
-    font-size: 6px; /* Smaller font size */
+    font-size: calc(6px * var(--font-scale, 1)); /* Scales with board size */
     font-weight: bold;
     font-family: Arial, Sans-Serif;
     opacity: 1.0;
@@ -627,36 +635,7 @@
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
-/* Abort button styling - destructive action */
-.game-action-link[data-action="abort"] {
-    background: linear-gradient(135deg, #ffebee, #ffcdd2);
-    color: #c62828;
-    border: 1px solid #ef5350;
-}
-
-.game-action-link[data-action="abort"]:hover {
-    background: linear-gradient(135deg, #ffcdd2, #ef9a9a);
-    color: #b71c1c;
-    border: 1px solid #e53935;
-}
-
-.game-action-link[data-action="abort"]:active {
-    background: linear-gradient(135deg, #ef9a9a, #e57373);
-    color: #b71c1c;
-}
-
-/* Resign button styling - also destructive */
-.game-action-link[data-action="resign"] {
-    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
-    color: #e65100;
-    border: 1px solid #ff9800;
-}
-
-.game-action-link[data-action="resign"]:hover {
-    background: linear-gradient(135deg, #ffe0b2, #ffcc02);
-    color: #bf360c;
-    border: 1px solid #f57c00;
-}
+/* All game action buttons now use consistent styling - no special colors for destructive actions */
 
 /* Setup from FEN modal styles */
 .fen-modal-overlay {
