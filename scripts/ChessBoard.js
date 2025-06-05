@@ -3560,18 +3560,27 @@ export class ChessBoard {
      * @private
      */
     _resetToStartingPosition() {
-        // Load the appropriate starting position based on variant
-        if (this.variant === Variant.CHESS960) {
+        // Determine the correct starting position to reset to
+        let startingPosition;
+
+        if (this.originalLoadedPosition) {
+            // Use the original loaded position as the starting position
+            startingPosition = this.originalLoadedPosition;
+        } else if (this.variant === Variant.CHESS960) {
             // For Chess960, we need to restore the original starting position
             // This is stored when the board is first created
             if (this.chess960StartingFen) {
-                this.loadFen(this.chess960StartingFen, true);
+                startingPosition = this.chess960StartingFen;
             } else {
-                this.loadFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', true);
+                startingPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
             }
         } else {
-            this.loadFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', true);
+            // Fallback to standard starting position
+            startingPosition = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
         }
+
+        // Load the determined starting position
+        this.loadFen(startingPosition, true);
 
         // Clear move and position history
         this.moveHistory = [];

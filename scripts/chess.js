@@ -122,12 +122,18 @@ export let gameState = { // Reset header
 export function onStyle12(msg) {
     console.log("Processing Style12 message:", msg);
 
+    // Store previous board state before updating
+    const previousBoardState = gameState.fen ? { ...gameState } : null;
+
     // First premove if its set.
     if (gameState.premove) {
         console.log("Sending premove: " + gameState.premove);
         ws.send(gameState.premove);
         gameState.premove = null;
     }
+
+    // Use requestAnimationFrame for smoother transitions
+    requestAnimationFrame(() => {
 
     handleAutoDraw(); //Send draw if pressed.
 
@@ -144,6 +150,7 @@ export function onStyle12(msg) {
         ws.send(movesCommand);
         gameState.requestedMovesForGame = true;
     }
+    }); // Close requestAnimationFrame
 }
 
 /**
@@ -339,6 +346,8 @@ export function onGameEnd(message) {
  * @param style12Message The FICS style 12 message.
  */
 function updateBoardFromStyle12(style12Message) {
+    console.log('DEBUG: updateBoardFromStyle12 called with:', style12Message.substring(0, 100) + '...');
+
     previousPosition = gameState.fen;
 
     const lines = style12Message.split('\n');
@@ -351,6 +360,7 @@ function updateBoardFromStyle12(style12Message) {
 
     const boardLine = lines[boardLineIndex].trim();
     const parts = boardLine.split(' ');
+    console.log('DEBUG: Style 12 parts length:', parts.length);
     if (prefs && prefs.showStyle12Events) console.log('Style 12 parts:', parts);
 
     if (parts.length < 31) {
@@ -359,27 +369,78 @@ function updateBoardFromStyle12(style12Message) {
     }
 
     const gameNumber = parseInt(parts[16], 10);
+    console.log('DEBUG: Setting lastMovePretty to:', parts[29]);
     gameState.lastMovePretty = parts[29] === 'none' ? '' : parts[29];
-    gameState.fen = style12ToFen(style12Message); // Store the FEN in gameState. The FEN is used to update the board.
+    console.log('DEBUG: gameState.lastMovePretty is now:', gameState.lastMovePretty);
+
+    console.log('DEBUG: Calling style12ToFen...');
+    const newFen = style12ToFen(style12Message); // Store the FEN in gameState. The FEN is used to update the board.
+    console.log('DEBUG: style12ToFen returned:', newFen);
+
+    // Detect castling moves for special handling
+    const isCastlingMove = gameState.lastMovePretty &&
+        (gameState.lastMovePretty.includes('O-O') || gameState.lastMovePretty === 'O-O-O');
+
+    // Store castling flag for smooth transitions
+    gameState.isCastlingMove = isCastlingMove;
+    console.log('DEBUG: Setting gameState.fen to:', newFen);
+    gameState.fen = newFen;
+    console.log('DEBUG: gameState.fen is now:', gameState.fen);
 
     if (gameState.chessBoard == null) {
+        console.log(`Creating new ChessBoard with variant: ${gameState.variant}, FEN: ${gameState.fen}`);
         gameState.chessBoard = new ChessBoard(gameState.variant, gameState.fen);
+        console.log(`New ChessBoard created, FEN: ${gameState.chessBoard.getFen()}`);
     } else {
         // Store the current board state before attempting the move
         const currentBoardFen = gameState.chessBoard.getFen();
+        console.log(`Using existing ChessBoard, current FEN: ${currentBoardFen}`);
 
         // Only try to make the move if we have a valid move string
         if (gameState.lastMovePretty && gameState.lastMovePretty !== 'none' && gameState.lastMovePretty.trim() !== '') {
+            // Debug: Log board state before attempting move
+            console.log(`Attempting move: ${gameState.lastMovePretty}`);
+            console.log(`Board FEN before move: ${gameState.chessBoard.getFen()}`);
+            console.log(`Target FEN from Style12: ${gameState.fen}`);
+            console.log(`ChessBoard object ID: ${gameState.chessBoard.constructor.name}`);
+
             if (!gameState.chessBoard.makeMoveFromSan(gameState.lastMovePretty)) {
                 console.warn(`Failed to make move from SAN: ${gameState.lastMovePretty}, resyncing with Style12 FEN`);
+
+                // Debug: Check board state after failed move
+                console.warn(`Board FEN after failed move: ${gameState.chessBoard.getFen()}`);
+                console.warn(`ChessBoard object still valid: ${gameState.chessBoard instanceof ChessBoard}`);
+                console.warn(`Move history length: ${gameState.chessBoard.getMoveHistory().length}`);
+                console.warn(`Original loaded position: ${gameState.chessBoard.originalLoadedPosition}`);
+
                 // Force reload with style12 FEN to resync
-                gameState.chessBoard.loadFen(gameState.fen);
+                const loadResult = gameState.chessBoard.loadFen(gameState.fen);
+                console.log(`LoadFen result: ${loadResult}, Board FEN after loadFen: ${gameState.chessBoard.getFen()}`);
+            } else {
+                console.log(`Move successful. Board FEN after move: ${gameState.chessBoard.getFen()}`);
             }
         }
 
-        // Always check for FEN mismatch and force resync if needed
+        // Check for FEN mismatch - this should not happen if our code is correct
         if (gameState.fen !== gameState.chessBoard.getFen()) {
-            console.log(`Board state mismatch detected, resyncing.\nStyle12 FEN: ${gameState.fen}\nBoard FEN:   ${gameState.chessBoard.getFen()}`);
+            console.warn(`Board state mismatch detected! This indicates a bug in our move processing.`);
+            console.warn(`Style12 FEN: ${gameState.fen}`);
+            console.warn(`Board FEN:   ${gameState.chessBoard.getFen()}`);
+            console.warn(`Last move:   ${gameState.lastMovePretty}`);
+            console.warn(`Is castling: ${gameState.isCastlingMove}`);
+
+            // For debugging: let's compare the FEN parts
+            const style12Parts = gameState.fen.split(' ');
+            const boardParts = gameState.chessBoard.getFen().split(' ');
+
+            console.warn('FEN comparison:');
+            console.warn(`  Position: Style12="${style12Parts[0]}" vs Board="${boardParts[0]}" ${style12Parts[0] === boardParts[0] ? '✓' : '✗'}`);
+            console.warn(`  Active:   Style12="${style12Parts[1]}" vs Board="${boardParts[1]}" ${style12Parts[1] === boardParts[1] ? '✓' : '✗'}`);
+            console.warn(`  Castling: Style12="${style12Parts[2]}" vs Board="${boardParts[2]}" ${style12Parts[2] === boardParts[2] ? '✓' : '✗'}`);
+            console.warn(`  EnPass:   Style12="${style12Parts[3]}" vs Board="${boardParts[3]}" ${style12Parts[3] === boardParts[3] ? '✓' : '✗'}`);
+            console.warn(`  Halfmove: Style12="${style12Parts[4]}" vs Board="${boardParts[4]}" ${style12Parts[4] === boardParts[4] ? '✓' : '✗'}`);
+            console.warn(`  Fullmove: Style12="${style12Parts[5]}" vs Board="${boardParts[5]}" ${style12Parts[5] === boardParts[5] ? '✓' : '✗'}`);
+
             // Force resync by loading the Style12 FEN - this is the authoritative source
             gameState.chessBoard.loadFen(gameState.fen);
         }
@@ -773,6 +834,15 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
     // Check if we're currently in the middle of a drag operation
     const isDragInProgress = gameState.draggedPiece && gameState.draggedPieceElement && gameState.dragClone;
 
+    // Create a map of current piece images to avoid unnecessary DOM updates
+    const currentPieceMap = new Map();
+    board.querySelectorAll('.chess-piece').forEach(pieceElement => {
+        const square = pieceElement.closest('.chess-square');
+        if (square && square.dataset.algebraic) {
+            currentPieceMap.set(square.dataset.algebraic, pieceElement.innerHTML);
+        }
+    });
+
     board.querySelectorAll('.chess-piece.dragging').forEach(piece => {
         piece.classList.remove('dragging');
     });
@@ -838,17 +908,35 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
                 ) : [];
 
             // Only update piece content if it has actually changed
-            const needsContentUpdate = pieceElement.innerHTML !== pieceImage;
+            const currentContent = currentPieceMap.get(squareAlg) || '';
+            const needsContentUpdate = currentContent !== pieceImage;
             const needsFontUpdate = pieceElement.style.fontSize !== pieceFontSize;
 
             if (needsContentUpdate) {
                 //console.log("Updating piece content for square:", squareAlg);
-                // Remove old event listeners only when we're updating content
-                if (pieceElement._mouseDownHandler) {
-                    pieceElement.removeEventListener('mousedown', pieceElement._mouseDownHandler);
-                    delete pieceElement._mouseDownHandler;
-                }
-                pieceElement.innerHTML = pieceImage;
+
+                // Add smooth opacity transition when updating piece content
+                const updatePieceContent = () => {
+                    // Remove old event listeners only when we're updating content
+                    if (pieceElement._mouseDownHandler) {
+                        pieceElement.removeEventListener('mousedown', pieceElement._mouseDownHandler);
+                        delete pieceElement._mouseDownHandler;
+                    }
+                    pieceElement.innerHTML = pieceImage;
+
+                    // Add transition class for smooth appearance
+                    pieceElement.classList.add('piece-updating');
+                    setTimeout(() => {
+                        pieceElement.classList.remove('piece-updating');
+                    }, 150);
+                };
+
+                // Add a small delay for smooth transitions during any piece updates
+                pieceElement.style.opacity = '0.9';
+                setTimeout(() => {
+                    updatePieceContent();
+                    pieceElement.style.opacity = '1';
+                }, 25);
             }
 
             if (needsFontUpdate) {
@@ -949,6 +1037,9 @@ function updateBoardGraphicsAndSquareListeners(updateNonBoardUI = false) {
     if (updateNonBoardUI) { // Allow null to be passed if only redrawing
         updatePlayerInfoAndClockUI();
     }
+
+    // Clean up castling flag after processing
+    gameState.isCastlingMove = false;
 }
 
 /**
@@ -1678,18 +1769,18 @@ function updateUIForPerspective() {
 
         switch (gameState.perspective) {
             case Perspective.PLAYING:
-                // Check if abort should be shown (move 1 or less)
+                // Check if abort should be shown (only on move 1, before any moves are made)
                 const moveHistory = gameState.chessBoard.getMoveHistory();
                 const totalMoves = moveHistory.length;
-                const canAbort = totalMoves <= 1 &&
+                const canAbort = totalMoves === 0 &&
                     (gameState.relation === GameRelation.PLAYING_MY_MOVE ||
                      gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
 
                 if (canAbort) {
-                    // Show Abort prominently for early game
+                    // Show Abort only when no moves have been made yet (move 1)
                     visibleActions = ['abort', 'draw', 'resign'];
                 } else {
-                    // Show Draw and Resign for later game
+                    // Show Draw and Resign after move 1
                     visibleActions = ['draw', 'resign'];
                 }
                 break;
@@ -1830,7 +1921,7 @@ function updateUIForPerspective() {
         const moveHistory = gameState.chessBoard.getMoveHistory();
         const totalMoves = moveHistory.length;
         const shouldShowAbortGame = gameState.perspective === Perspective.PLAYING &&
-            totalMoves > 1 &&
+            totalMoves === 0 &&
             (gameState.relation === GameRelation.PLAYING_MY_MOVE ||
              gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
         abortGameBtn.style.display = shouldShowAbortGame ? 'block' : 'none';
