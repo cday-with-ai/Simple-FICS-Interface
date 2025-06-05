@@ -461,12 +461,22 @@ function updateBoardFromStyle12(style12Message) {
         gameState.openingDescription = '';
         gameState.style12WhiteOnBottom = parseInt(parts[30], 10) === 0;
         gameState.relation = parseInt(parts[19], 10);  // Store the numeric relation value directly
-        gameState.perspective = gameState.relation === GameRelation.PLAYING_MY_MOVE ? Perspective.PLAYING :
-            gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE ? Perspective.PLAYING :
-                gameState.relation === GameRelation.OBSERVING_PLAYED ? Perspective.OBSERVING :
-                    gameState.relation === GameRelation.OBSERVING_EXAMINED ? Perspective.OBSERVING :
-                        gameState.relation === GameRelation.EXAMINING ? Perspective.EXAMINING :
-                            Perspective.EXAMINING;
+
+        // Only update perspective if we're not in a finished state
+        // Finished states should be preserved until explicitly changed (e.g., by starting a new game)
+        // This prevents the perspective from incorrectly switching back to PLAYING after a game ends
+        const isFinishedState = gameState.perspective === Perspective.FINISHED_PLAYING ||
+                               gameState.perspective === Perspective.FINISHED_OBSERVING ||
+                               gameState.perspective === Perspective.FINISHED_EXAMINING;
+
+        if (!isFinishedState) {
+            gameState.perspective = gameState.relation === GameRelation.PLAYING_MY_MOVE ? Perspective.PLAYING :
+                gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE ? Perspective.PLAYING :
+                    gameState.relation === GameRelation.OBSERVING_PLAYED ? Perspective.OBSERVING :
+                        gameState.relation === GameRelation.OBSERVING_EXAMINED ? Perspective.OBSERVING :
+                            gameState.relation === GameRelation.EXAMINING ? Perspective.EXAMINING :
+                                Perspective.EXAMINING;
+        }
 
         // Update UI elements based on perspective change
         updateUIForPerspective();

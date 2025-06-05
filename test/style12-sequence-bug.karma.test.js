@@ -3,7 +3,7 @@
  * Based on the logs provided by the user
  */
 
-import { onStyle12, gameState } from '../scripts/chess.js';
+import { onStyle12, gameState, Perspective } from '../scripts/chess.js';
 import { ChessBoard, Variant } from '../scripts/ChessBoard.js';
 import { style12ToFen } from '../scripts/utils.js';
 
@@ -81,6 +81,30 @@ describe('Style12 Sequence Bug Reproduction', () => {
 
         // The FENs should match
         expect(parsedFen).toBe(boardFen);
+    });
+
+    it('should preserve FINISHED_PLAYING perspective after game ends', () => {
+        console.log('=== Testing perspective preservation after game end ===');
+
+        // Set up a game in progress
+        gameState.perspective = Perspective.PLAYING;
+        gameState.relation = GameRelation.PLAYING_MY_MOVE;
+        console.log('Initial perspective:', gameState.perspective);
+
+        // Simulate game ending with checkmate
+        gameState.perspective = Perspective.FINISHED_PLAYING;
+        console.log('After game end - perspective:', gameState.perspective);
+
+        // Process a Style12 message that might come after the game ends
+        const style12_afterGameEnd = '<12> --rrk--- ----R--p --qp-P-B -p--p--- --n-P--P -p------ PPP-Q--- -K-R---- B -1 0 0 0 0 2 7 cday MIHAILOP -1 3 0 20 27 105 74 30 K/h8-g8 (0:03) Kg8 1 1 37';
+
+        console.log('Processing Style12 after game end...');
+        onStyle12(style12_afterGameEnd);
+
+        console.log('After Style12 processing - perspective:', gameState.perspective);
+
+        // The perspective should remain FINISHED_PLAYING
+        expect(gameState.perspective).toBe(Perspective.FINISHED_PLAYING);
     });
 
     it('should manually verify Style12 to FEN conversion', () => {
