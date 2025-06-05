@@ -346,8 +346,6 @@ export function onGameEnd(message) {
  * @param style12Message The FICS style 12 message.
  */
 function updateBoardFromStyle12(style12Message) {
-    console.log('DEBUG: updateBoardFromStyle12 called with:', style12Message.substring(0, 100) + '...');
-
     previousPosition = gameState.fen;
 
     const lines = style12Message.split('\n');
@@ -360,7 +358,6 @@ function updateBoardFromStyle12(style12Message) {
 
     const boardLine = lines[boardLineIndex].trim();
     const parts = boardLine.split(' ');
-    console.log('DEBUG: Style 12 parts length:', parts.length);
     if (prefs && prefs.showStyle12Events) console.log('Style 12 parts:', parts);
 
     if (parts.length < 31) {
@@ -369,13 +366,8 @@ function updateBoardFromStyle12(style12Message) {
     }
 
     const gameNumber = parseInt(parts[16], 10);
-    console.log('DEBUG: Setting lastMovePretty to:', parts[29]);
     gameState.lastMovePretty = parts[29] === 'none' ? '' : parts[29];
-    console.log('DEBUG: gameState.lastMovePretty is now:', gameState.lastMovePretty);
-
-    console.log('DEBUG: Calling style12ToFen...');
     const newFen = style12ToFen(style12Message); // Store the FEN in gameState. The FEN is used to update the board.
-    console.log('DEBUG: style12ToFen returned:', newFen);
 
     // Detect castling moves for special handling
     const isCastlingMove = gameState.lastMovePretty &&
@@ -383,9 +375,7 @@ function updateBoardFromStyle12(style12Message) {
 
     // Store castling flag for smooth transitions
     gameState.isCastlingMove = isCastlingMove;
-    console.log('DEBUG: Setting gameState.fen to:', newFen);
     gameState.fen = newFen;
-    console.log('DEBUG: gameState.fen is now:', gameState.fen);
 
     if (gameState.chessBoard == null) {
         console.log(`Creating new ChessBoard with variant: ${gameState.variant}, FEN: ${gameState.fen}`);
