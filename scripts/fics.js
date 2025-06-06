@@ -69,11 +69,12 @@ export function initFics() {
     setupMainInput();
 }
 
+
 function connectWebSocket() {
     ws = new WebSocket(wsUrl);
     ws.baseSend = ws.send;
     ws.send = (msg) => {
-        msg = msg.trim();
+        msg = cleanupAndFilterInvalid(msg);
         handleSentObserve(msg);
         handleSentFollow(msg);
 
@@ -136,6 +137,22 @@ function connectWebSocket() {
         requestAnimationFrame(checkTimeAndReconnect);
     };
 }
+
+/**
+ * Clean up the message before sending it to FICS
+ * @param msg The message to clean up.
+ * @returns {string} Replaces “ with ", ’ with ', and … with '...'. Also trims the msg.
+ */
+function cleanupSentMessage(msg) {
+    //“If there’s anything I learned about how deep the deep state is … it’s deeper than we could ever imagine.”
+    msg = msg.trim();
+    msg = msg.replaceAll("“","\"");
+    msg = msg.replaceAll("”","\"");
+    msg = msg.replaceAll("’","'");
+    msg = msg.replaceAll("…","...");
+    return msg;
+}
+
 
 /**
  * Main function to route messages from FICS to the appropriate handlers
@@ -610,7 +627,13 @@ function isAutoLoginEnabled() {
     return preferences.autoLogin === true && preferences.ficsUsername && preferences.ficsPassword;
 }
 
-function filterInvalid(msg) {
+/**
+ * Cleans up the message and filtered invalid characters. If you send these characters, FICS will disconnect you.
+ * @param msg The msg to clean up and filter.
+ * @returns {string} The cleaned up and filtered message.
+ */
+function cleanupAndFilterInvalid(msg) {
+    msg = cleanupSentMessage(msg);
     var result = '';
     var filtered = "";
     for (var i = 0; i < msg.length; i++) {
@@ -979,7 +1002,7 @@ function setupMainInput() {
     mainInput.addEventListener('keypress', (event) => {
         if (event.key === "Enter") {
             const message = mainInput.value;
-            if (ws) ws.send(filterInvalid(message));
+            if (ws) ws.send(message);
             addToMessageHistory('mainInput', message);
             mainInput.value = '';
         }
