@@ -470,9 +470,10 @@ body {
     color: black;
     font-family: 'Courier New', Courier, Monospace; /* Match text area font */
     border-radius: 10px; /* Match chessboard border radius */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Slightly smaller shadow than textarea */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Consistent 3D shadow with proper alpha */
     margin-top: 5px; /* Add some space between textarea and input */
     margin-bottom: 5px; /* Add bottom margin to prevent running off screen */
+    padding: 5px 10px; /* Add padding for better text display */
     font-size: calc(14px * var(--console-font-scale)); /* Match text area font size */
 }
 
@@ -483,21 +484,30 @@ body {
     overflow: hidden;
     font-weight: bold;
     border: none; /* Remove default border */
+    background-color: white;
+    color: black;
     font-family: 'Courier New', Courier, Monospace; /* Match text area font */
     border-radius: 10px; /* Match chessboard border radius */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Slightly smaller shadow than textarea */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Consistent 3D shadow */
     margin-top: 0px; /* Add some space between textarea and input */
     margin-left: 5px; /* Add left margin to prevent running off screen */
     margin-right: 5px; /* Add right margin to prevent running off screen */
+    padding: 5px 10px; /* Add padding for better text display */
     font-size: calc(14px * var(--console-font-scale)); /* Match text area font size */
 }
 
 /* Specific styling for unified tab inputs */
 .unified-tab-content .tab-input,
 .unified-tab-content .ics-input {
+    width: calc(100% - 10px);
     height: 35px;
+    margin: 0 5px;
     border-radius: 8px;
     box-sizing: border-box;
+    background-color: white;
+    color: black;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .75); /* Consistent 3D shadow */
+    padding: 5px 10px; /* Consistent padding */
 }
 
 .tab-input-label {
