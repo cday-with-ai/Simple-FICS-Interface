@@ -3741,7 +3741,7 @@ function setupMainChessBoardDisplay() {
     topPlayerNameWrapper.appendChild(topPlayerName);
 
     const topPlayerClock = document.createElement('div');
-    topPlayerClock.classList.add('player-clock', 'top-player-clock', 'player-clock-display');
+    topPlayerClock.classList.add('player-clock', 'top-player-clock', 'player-clock-display','clock-finished');
     topPlayerClock.id = 'topPlayerClock';
     topPlayerClock.innerText = '00:00';
     topPlayerInfo.appendChild(topPlayerClock);
@@ -3764,7 +3764,7 @@ function setupMainChessBoardDisplay() {
     bottomPlayerNameWrapper.appendChild(bottomPlayerName);
 
     const bottomPlayerClock = document.createElement('div');
-    bottomPlayerClock.classList.add('player-clock', 'bottom-player-clock', 'player-clock-display');
+    bottomPlayerClock.classList.add('player-clock', 'bottom-player-clock', 'player-clock-display','clock-finished');
     bottomPlayerClock.id = 'bottomPlayerClock';
     bottomPlayerClock.innerText = '00:00';
     bottomPlayerInfo.appendChild(bottomPlayerNameWrapper);
