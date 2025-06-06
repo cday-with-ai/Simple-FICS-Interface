@@ -495,9 +495,7 @@ body {
 /* Specific styling for unified tab inputs */
 .unified-tab-content .tab-input,
 .unified-tab-content .ics-input {
-    width: calc(100% - 10px);
     height: 35px;
-    margin: 0 5px;
     border-radius: 8px;
     box-sizing: border-box;
 }
@@ -675,7 +673,6 @@ body {
 
 .unified-tab-content .grid-row:first-child {
     flex: 1;
-    padding: 10px;
     display: flex;
     flex-direction: column;
     height: calc(100% - 60px) !important;
@@ -685,7 +682,6 @@ body {
 
 .unified-tab-content .grid-row:last-child {
     flex: 0 0 50px;
-    padding: 5px 10px;
     margin: 0;
     height: 50px !important;
     min-height: 50px !important;
