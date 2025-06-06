@@ -1,8 +1,10 @@
 /*
  * Chat CSS file for Simple FICS Interface
  */
-body {
+html, body {
     background-color: #ecebe9;
+    height: 100%;
+    overflow: hidden; /* Prevent any scrolling */
 }
 
 /* View toggle radio buttons */
@@ -82,7 +84,11 @@ body {
 /* Basic page styling */
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+    height: 100vh;
+    overflow: hidden; /* Prevent body scrolling */
 }
 
 #title {
@@ -105,7 +111,9 @@ body {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: calc(100vh - 100px); /* Adjust based on your header size */
+    height: calc(100vh - 120px); /* Account for header controls, title, and padding */
+    max-height: calc(100vh - 120px);
+    overflow: hidden; /* Prevent container overflow */
 }
 
 /* Top section with chess tabs and right side content */
