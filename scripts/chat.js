@@ -426,14 +426,11 @@ function setupConsoleResizeObserver() {
         const widthScale = availableWidth / 800;
         const heightScale = availableHeight / 600;
         const scale = Math.min(widthScale, heightScale);
-        const consoleFontScale = Math.max(0.75, Math.min(1.5, scale * 1.0));
+        const consoleFontScale = Math.max(0.9, Math.min(2.5, scale * 1.0));
         console.log("Console font scaling - Container size:", availableWidth, "x", availableHeight, "Scale:", scale, "Final font scale:", consoleFontScale);
         document.documentElement.style.setProperty('--console-font-scale', consoleFontScale);
 
-        // Update debug helper if it exists
-        if (window.updateDebugHelper) {
-            window.updateDebugHelper();
-        }
+
     });
 
     // Observe the appropriate elements based on the chat system
