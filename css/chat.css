@@ -329,7 +329,7 @@ body {
     background-color: blue;
     color: white;
     font-family: 'Courier New', Courier, Monospace;
-    font-size: calc(14px * var(--console-font-scale)); /* Responsive font size */
+    font-size: calc(12px * var(--console-font-scale)); /* Increased base size for better visibility */
     font-weight: bold;
     border-radius: 10px; /* Match chessboard border radius */
     box-shadow: 0 4px 6px rgba(0, 0, 0, .75); /* Match chessboard shadow */
@@ -474,7 +474,7 @@ body {
     margin-top: 5px; /* Add some space between textarea and input */
     margin-bottom: 5px; /* Add bottom margin to prevent running off screen */
     padding: 5px 10px; /* Add padding for better text display */
-    font-size: calc(14px * var(--console-font-scale)); /* Match text area font size */
+    font-size: calc(16px * var(--console-font-scale)); /* Increased base size for better visibility */
 }
 
 .tab-input {
@@ -493,7 +493,7 @@ body {
     margin-left: 5px; /* Add left margin to prevent running off screen */
     margin-right: 5px; /* Add right margin to prevent running off screen */
     padding: 5px 10px; /* Add padding for better text display */
-    font-size: calc(14px * var(--console-font-scale)); /* Match text area font size */
+    font-size: calc(16px * var(--console-font-scale)); /* Increased base size for better visibility */
 }
 
 /* Specific styling for unified tab inputs */

@@ -3978,10 +3978,15 @@ function setupMainChessBoardDisplay() {
         board.style.width = maxSize + 'px';
         board.style.height = maxSize + 'px';
 
-        const fontScale = Math.max(0.45, Math.min(1.125, maxSize / 800 * 0.75));
+        // Updated font scaling with higher base value for consistency with live site
+        const fontScale = Math.max(0.75, Math.min(1.5, maxSize / 800 * 1.0));
+        console.log('Chess font scaling - Board size:', maxSize, 'Font scale:', fontScale, 'Available dimensions:', availableWidth, 'x', availableHeight);
         document.documentElement.style.setProperty('--font-scale', fontScale);
         chessBoardArea.dataset.maxSize = maxSize;
         chessBoardArea.dataset.fontScale = fontScale;
+
+        // Update debug helper if it exists
+        updateDebugHelper();
 
         // Ensure playerInfoContainer and boardOnlyContainer also respond
         if (playerInfoContainer) playerInfoContainer.style.height = maxSize + 'px';
@@ -4203,3 +4208,57 @@ export function applyChessRelatedPreferences() {
         updateBoardGraphicsAndSquareListeners();
     }
 }
+
+// Debug helper function to show current scaling values
+window.updateDebugHelper = function updateDebugHelper() {
+    let debugHelper = document.getElementById('font-scale-debug');
+    if (!debugHelper) {
+        debugHelper = document.createElement('div');
+        debugHelper.id = 'font-scale-debug';
+        debugHelper.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999;
+            max-width: 300px;
+        `;
+        document.body.appendChild(debugHelper);
+    }
+
+    const chessFontScale = getComputedStyle(document.documentElement).getPropertyValue('--font-scale') || 'not set';
+    const consoleFontScale = getComputedStyle(document.documentElement).getPropertyValue('--console-font-scale') || 'not set';
+    const boardArea = document.querySelector('.chess-board-area');
+    const unifiedContainer = document.getElementById('unifiedChatContainer');
+
+    let boardDimensions = 'not found';
+    if (boardArea) {
+        boardDimensions = `${boardArea.clientWidth}x${boardArea.clientHeight}`;
+    }
+
+    let chatDimensions = 'not found';
+    if (unifiedContainer) {
+        chatDimensions = `${unifiedContainer.clientWidth}x${unifiedContainer.clientHeight}`;
+    }
+
+    debugHelper.innerHTML = `
+        <strong>Font Scaling Debug</strong><br>
+        Chess --font-scale: ${chessFontScale}<br>
+        Console --console-font-scale: ${consoleFontScale}<br>
+        Board area: ${boardDimensions}<br>
+        Chat container: ${chatDimensions}<br>
+        Window: ${window.innerWidth}x${window.innerHeight}
+    `;
+}
+
+// Initialize debug helper
+document.addEventListener('DOMContentLoaded', () => {
+    updateDebugHelper();
+    // Update debug helper when window resizes
+    window.addEventListener('resize', updateDebugHelper);
+});

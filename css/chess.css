@@ -2,6 +2,11 @@
  * Chess board related CSS for Simple FICS Interface
  */
 
+/* CSS Variables for font scaling */
+:root {
+    --font-scale: 1; /* Default chess font scale - will be updated by JavaScript */
+}
+
 /* Font definitions */
 @font-face {
     font-family: 'Digital';
@@ -74,7 +79,7 @@
     color: gray;
     text-align: right;
     font-family: Arial, Sans-Serif;
-    font-size: calc(16px * var(--font-scale, 1));
+    font-size: calc(18px * var(--font-scale, 1));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -87,7 +92,7 @@
     color: gray;
     text-align: left;
     font-family: Arial, Sans-Serif;
-    font-size: calc(16px * var(--font-scale, 1));
+    font-size: calc(18px * var(--font-scale, 1));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -101,7 +106,7 @@
     color: gray;
     text-align: left;
     font-family: Arial, Sans-Serif;
-    font-size: calc(16px * var(--font-scale, 1));
+    font-size: calc(18px * var(--font-scale, 1));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -115,7 +120,7 @@
     color: gray;
     text-align: right;
     font-family: Arial, Sans-Serif;
-    font-size: calc(16px * var(--font-scale, 1));
+    font-size: calc(18px * var(--font-scale, 1));
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -196,18 +201,20 @@
 
 .player-name, .player-name-display {
     font-weight: bold;
-    font-size: calc(16px * var(--font-scale, 1));
+    font-size: calc(20px * var(--font-scale, 1));
     margin-left: 10px;
 }
 
 /* Clock styles */
 .player-clock, .player-clock-display {
     font-family: "Digital", monospace !important;
-    font-size: 3em; /* Fixed size, not based on board size */
-    padding-left: 8px;
-    margin-left: 0px;
-    letter-spacing: 0.05em;
-    width: 64%;
+    font-size: calc(72px * var(--font-scale, 1)); /* Increased base size for better visibility */
+    margin: 0;
+    padding: 0 10px;
+    width: fit-content; /* Only as wide as content */
+    max-width: max-content;
+    display: inline-block;
+    text-align: center;
     transition: color 0.3s ease;
 }
 
@@ -289,7 +296,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: calc(36px * var(--font-scale, 1));
+    font-size: calc(42px * var(--font-scale, 1)); /* Increased base size for better visibility */
     cursor: pointer;
     position: relative;
     width: 100%;
@@ -297,7 +304,7 @@
 }
 
 .chess-piece {
-    font-size: calc(36px * var(--font-scale, 1));
+    font-size: calc(42px * var(--font-scale, 1)); /* Increased base size for better visibility */
     cursor: grab;
     user-select: none;
     z-index: 1;
