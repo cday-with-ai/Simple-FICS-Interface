@@ -166,13 +166,15 @@ function routeMessage(msg) {
     handleLoginProcess(msg);
     handleFicsSessionStart(msg);
 
-    handleNewGame(msg); //Playing and Obsing.
+    var isNewGame = handleNewGame(msg); //Playing and Obsing.
     msg = handleStyle12Message(msg);
-    handleGameEnd(msg);
-    handleIllegalMove(msg);
-    handleDraw(msg);
-    handleMovesList(msg);
-    handleUnobserve(msg);
+    if (!isNewGame) {
+        handleGameEnd(msg);
+        handleIllegalMove(msg);
+        handleDraw(msg);
+        handleMovesList(msg);
+        handleUnobserve(msg);
+    }
 
     const msgTrim = msg.trim();
     if (msgTrim === '' || msgTrim === 'fics%') return;
