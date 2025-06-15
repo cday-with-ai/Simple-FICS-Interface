@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Chess Layout System Test</title>
+    
+    <!-- NEW LAYOUT SYSTEM CSS -->
+    <link href="css/chess-layouts.css" rel="stylesheet">
+    <link href="css/chess-board.css" rel="stylesheet">
+    <link href="css/chess-players.css" rel="stylesheet">
+    <link href="css/chess-responsive.css" rel="stylesheet">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+        
+        .test-controls h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        
+        .test-controls button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .test-controls button:hover {
+            background: #e9ecef;
+        }
+        
+        .test-controls button.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .chess-board-area {
+            width: 100%;
+            height: 100vh;
+        }
+        
+        /* Demo chess pieces using Unicode */
+        .chess-piece {
+            font-size: 40px;
+            line-height: 1;
+        }
+        
+        .chess-piece.white.king::before { content: '♔'; }
+        .chess-piece.white.queen::before { content: '♕'; }
+        .chess-piece.white.rook::before { content: '♖'; }
+        .chess-piece.white.bishop::before { content: '♗'; }
+        .chess-piece.white.knight::before { content: '♘'; }
+        .chess-piece.white.pawn::before { content: '♙'; }
+        
+        .chess-piece.black.king::before { content: '♚'; }
+        .chess-piece.black.queen::before { content: '♛'; }
+        .chess-piece.black.rook::before { content: '♜'; }
+        .chess-piece.black.bishop::before { content: '♝'; }
+        .chess-piece.black.knight::before { content: '♞'; }
+        .chess-piece.black.pawn::before { content: '♟'; }
+    </style>
+</head>
+<body class="layout-standard">
+
+<!-- Test Controls -->
+<div class="test-controls">
+    <h3>Layout Test</h3>
+    <button data-layout="standard" class="active">Standard</button>
+    <button data-layout="compact">Compact</button>
+    <button data-layout="side-by-side">Side-by-Side</button>
+    <button data-layout="chat">Chat Only</button>
+    <hr>
+    <button onclick="testBoardResize()">Test Resize</button>
+    <button onclick="testPlayerUpdate()">Update Players</button>
+    <button onclick="showDebugInfo()">Debug Info</button>
+    <button onclick="maximizeBoard()">Maximize Board</button>
+</div>
+
+<!-- Chess Board Area -->
+<div class="chess-board-area">
+    <!-- Layout will be created here by LayoutManager -->
+</div>
+
+<!-- NEW LAYOUT SYSTEM SCRIPTS -->
+<script src="scripts/LayoutManager.js"></script>
+
+<script>
+// Initialize the layout system
+let layoutManager;
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing new layout system test...');
+    
+    // Create layout manager
+    layoutManager = new LayoutManager();
+    
+    // Create demo chess board
+    createDemoChessBoard();
+    
+    // Set up test controls
+    setupTestControls();
+    
+    // Add demo player data
+    addDemoPlayerData();
+    
+    console.log('New layout system test initialized!');
+});
+
+function createDemoChessBoard() {
+    const boardWrapper = document.querySelector('.chess-board-wrapper');
+    if (!boardWrapper) return;
+    
+    const chessBoard = document.getElementById('chessBoard');
+    if (!chessBoard) return;
+    
+    // Create 8x8 grid of squares
+    for (let rank = 7; rank >= 0; rank--) {
+        for (let file = 0; file < 8; file++) {
+            const square = document.createElement('div');
+            square.className = `chess-square ${(rank + file) % 2 === 0 ? 'dark' : 'light'}`;
+            square.dataset.square = String.fromCharCode(97 + file) + (rank + 1);
+            
+            // Add pieces for starting position
+            const piece = getStartingPiece(rank, file);
+            if (piece) {
+                const pieceElement = document.createElement('div');
+                pieceElement.className = `chess-piece ${piece.color} ${piece.type}`;
+                square.appendChild(pieceElement);
+            }
+            
+            chessBoard.appendChild(square);
+        }
+    }
+}
+
+function getStartingPiece(rank, file) {
+    const pieces = {
+        0: ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook'],
+        1: Array(8).fill('pawn'),
+        6: Array(8).fill('pawn'),
+        7: ['rook', 'knight', 'bishop', 'queen', 'king', 'bishop', 'knight', 'rook']
+    };
+    
+    if (pieces[rank]) {
+        return {
+            type: pieces[rank][file],
+            color: rank < 2 ? 'white' : 'black'
+        };
+    }
+    return null;
+}
+
+function addDemoPlayerData() {
+    // Add player info to all player containers
+    const playerInfos = document.querySelectorAll('.chess-player-info');
+    
+    playerInfos.forEach((info, index) => {
+        const isTop = info.closest('.chess-player-top') || info.classList.contains('chess-top-player');
+        const playerName = isTop ? 'GrandMaster2024' : 'You';
+        const playerRating = isTop ? '2156' : '1847';
+        const clockTime = isTop ? '05:23' : '04:17';
+        
+        info.innerHTML = `
+            <div class="chess-player-clock ${isTop ? 'top' : 'bottom'}-player-clock">
+                ${clockTime}
+            </div>
+            <div class="chess-player-name">${playerName}</div>
+            <div class="chess-player-rating">(${playerRating})</div>
+        `;
+    });
+    
+    // Add game info
+    const gameInfo = document.querySelector('.chess-game-info');
+    if (gameInfo) {
+        gameInfo.innerHTML = `
+            <div class="chess-game-number">Game 42</div>
+            <div class="chess-game-type">Blitz 5+0</div>
+        `;
+    }
+    
+    // Add action buttons
+    const actionButtons = document.querySelector('.chess-action-buttons');
+    if (actionButtons) {
+        actionButtons.innerHTML = `
+            <button class="chess-action-button">Resign</button>
+            <button class="chess-action-button secondary">Draw</button>
+            <button class="chess-action-button secondary">Abort</button>
+            <button class="chess-action-button secondary">Analysis</button>
+        `;
+    }
+}
+
+function setupTestControls() {
+    // Layout switching
+    document.querySelectorAll('[data-layout]').forEach(button => {
+        button.addEventListener('click', function() {
+            const layout = this.dataset.layout;
+            
+            // Update active button
+            document.querySelectorAll('[data-layout]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Switch layout
+            if (layoutManager) {
+                layoutManager.setLayout(layout);
+            }
+        });
+    });
+}
+
+function testBoardResize() {
+    if (layoutManager) {
+        console.log('=== BOARD RESIZE DEBUG ===');
+        console.log('Current layout:', layoutManager.getCurrentLayout());
+        console.log('Viewport:', window.innerWidth + 'x' + window.innerHeight);
+
+        const boardWrapper = document.querySelector('.chess-board-wrapper');
+        if (boardWrapper) {
+            const rect = boardWrapper.getBoundingClientRect();
+            console.log('Board wrapper size:', rect.width + 'x' + rect.height);
+        }
+
+        const board = document.getElementById('chessBoard');
+        if (board) {
+            console.log('Current board size:', board.style.width, board.style.height);
+        }
+
+        layoutManager.updateBoardSize();
+        console.log('Board resize triggered');
+
+        // Log new size
+        if (board) {
+            console.log('New board size:', board.style.width, board.style.height);
+        }
+    }
+}
+
+function testPlayerUpdate() {
+    // Simulate clock update
+    const clocks = document.querySelectorAll('.chess-player-clock');
+    clocks.forEach(clock => {
+        const currentTime = clock.textContent;
+        const [minutes, seconds] = currentTime.split(':').map(Number);
+        let totalSeconds = minutes * 60 + seconds - 1;
+        
+        if (totalSeconds < 0) totalSeconds = 300; // Reset to 5:00
+        
+        const newMinutes = Math.floor(totalSeconds / 60);
+        const newSeconds = totalSeconds % 60;
+        clock.textContent = `${newMinutes.toString().padStart(2, '0')}:${newSeconds.toString().padStart(2, '0')}`;
+        
+        // Update clock state classes
+        clock.classList.remove('low-time', 'critical-time');
+        if (totalSeconds < 30) {
+            clock.classList.add('critical-time');
+        } else if (totalSeconds < 60) {
+            clock.classList.add('low-time');
+        }
+    });
+    
+    console.log('Player info updated');
+}
+
+function showDebugInfo() {
+    if (!layoutManager) {
+        alert('Layout manager not initialized');
+        return;
+    }
+
+    const board = document.getElementById('chessBoard');
+    const boardWrapper = document.querySelector('.chess-board-wrapper');
+    const boardAndPlayers = document.querySelector('.chess-board-and-players');
+
+    const info = {
+        currentLayout: layoutManager.getCurrentLayout(),
+        availableLayouts: layoutManager.getAvailableLayouts(),
+        boardSize: getComputedStyle(document.documentElement).getPropertyValue('--chess-board-size'),
+        windowSize: `${window.innerWidth}x${window.innerHeight}`,
+        boardActualSize: board ? `${board.offsetWidth}x${board.offsetHeight}` : 'N/A',
+        boardWrapperSize: boardWrapper ? `${boardWrapper.offsetWidth}x${boardWrapper.offsetHeight}` : 'N/A',
+        boardAndPlayersSize: boardAndPlayers ? `${boardAndPlayers.offsetWidth}x${boardAndPlayers.offsetHeight}` : 'N/A',
+        elements: Object.keys(layoutManager.elements).filter(key => layoutManager.elements[key])
+    };
+
+    console.log('Layout Debug Info:', info);
+    alert(`Current Layout: ${info.currentLayout}\nBoard CSS Size: ${info.boardSize}\nBoard Actual: ${info.boardActualSize}\nWrapper: ${info.boardWrapperSize}\nWindow: ${info.windowSize}`);
+}
+
+function maximizeBoard() {
+    const board = document.getElementById('chessBoard');
+    if (!board) return;
+
+    // Calculate maximum possible size
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const playerInfoWidth = 280;
+    const margins = 60;
+
+    const maxWidth = viewportWidth - playerInfoWidth - margins;
+    const maxHeight = viewportHeight - 100; // Game info + margins
+
+    const maxSize = Math.min(maxWidth, maxHeight);
+    const finalSize = Math.max(400, Math.min(maxSize, 800));
+
+    console.log(`Maximizing board: viewport=${viewportWidth}x${viewportHeight}, calculated=${finalSize}px`);
+
+    // Apply size
+    board.style.width = `${finalSize}px`;
+    board.style.height = `${finalSize}px`;
+    document.documentElement.style.setProperty('--chess-board-size', `${finalSize}px`);
+
+    alert(`Board maximized to ${finalSize}px`);
+}
+
+// Listen for layout changes
+document.addEventListener('layoutChanged', function(e) {
+    console.log('Layout changed to:', e.detail.layout);
+});
+</script>
+
+</body>
+</html>

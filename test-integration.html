@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid Layout Integration Test</title>
+    <link rel="stylesheet" href="css/chess-layouts.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* Basic chess board styling for testing */
+        .chess-board {
+            background: #f0d9b5;
+            border: 2px solid #8b4513;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+        }
+        
+        .chess-square {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .chess-square.dark {
+            background: #b58863;
+        }
+        
+        .chess-square.light {
+            background: #f0d9b5;
+        }
+        
+        /* Test controls */
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+        
+        .test-controls button {
+            margin: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h4>Layout Test Controls</h4>
+        <button onclick="setStandardMode()">Standard Mode</button>
+        <button onclick="setCompactMode()">Compact Mode</button>
+        <button onclick="debugLayout()">Debug Layout</button>
+    </div>
+
+    <div class="chess-board-area">
+        <!-- The hybrid layout will be created here -->
+    </div>
+
+    <script src="scripts/LayoutManager.js"></script>
+    <script>
+        // Initialize layout manager
+        let layoutManager;
+        
+        function initializeTest() {
+            console.log('Initializing hybrid layout test...');
+            
+            // Create basic chess board structure
+            createTestChessBoard();
+            
+            // Initialize layout manager
+            layoutManager = new LayoutManager();
+            
+            console.log('Test initialized successfully');
+        }
+        
+        function createTestChessBoard() {
+            const boardArea = document.querySelector('.chess-board-area');
+            boardArea.innerHTML = '';
+
+            // Create hybrid layout structure
+            const layoutContainer = document.createElement('div');
+            layoutContainer.className = 'chess-layout-container layout-standard';
+
+            // Game Info (Standard Layout)
+            const gameInfo = document.createElement('div');
+            gameInfo.className = 'chess-game-info';
+            gameInfo.innerHTML = `
+                <span class="chess-game-number">Game 42</span>
+                <span class="chess-game-type">Blitz 5+0</span>
+            `;
+
+            // Chess Board Wrapper
+            const boardWrapper = document.createElement('div');
+            boardWrapper.className = 'chess-board-wrapper';
+
+            // Create test chess board
+            const board = document.createElement('div');
+            board.id = 'chessBoard';
+            board.className = 'chess-board';
+            
+            // Create 64 squares for testing
+            for (let i = 0; i < 64; i++) {
+                const square = document.createElement('div');
+                square.className = `chess-square ${(Math.floor(i/8) + i) % 2 === 0 ? 'light' : 'dark'}`;
+                board.appendChild(square);
+            }
+            
+            boardWrapper.appendChild(board);
+
+            // Player Section (Standard Layout)
+            const playerSection = document.createElement('div');
+            playerSection.className = 'chess-player-section';
+            playerSection.innerHTML = `
+                <div class="chess-player-info">
+                    <div class="chess-player-clock active">05:00</div>
+                    <div class="chess-player-name-rating">
+                        <div class="chess-player-name">GrandMaster2024</div>
+                        <div class="chess-player-rating">(2156)</div>
+                    </div>
+                </div>
+                <div class="chess-action-buttons">
+                    <button class="chess-action-button">Resign</button>
+                    <button class="chess-action-button secondary">Draw</button>
+                    <button class="chess-action-button secondary">Abort</button>
+                </div>
+                <div class="chess-move-list">
+                    <div class="move-list-header">Moves</div>
+                    <div class="move-list-content">
+                        <div>1. e4 e5</div>
+                        <div>2. Nf3 Nc6</div>
+                        <div>3. Bb5 a6</div>
+                    </div>
+                </div>
+                <div class="chess-player-info">
+                    <div class="chess-player-clock">04:30</div>
+                    <div class="chess-player-name-rating">
+                        <div class="chess-player-name">You</div>
+                        <div class="chess-player-rating">(1847)</div>
+                    </div>
+                </div>
+            `;
+
+            // Compact mode elements
+            const playerTop = document.createElement('div');
+            playerTop.className = 'chess-player-top';
+            playerTop.innerHTML = `
+                <div>
+                    <div class="chess-player-name">GrandMaster2024</div>
+                    <div class="chess-player-rating">(2156)</div>
+                </div>
+                <div class="chess-player-clock active">05:00</div>
+            `;
+
+            const gameInfoCompact = document.createElement('div');
+            gameInfoCompact.className = 'chess-game-info-compact';
+            gameInfoCompact.innerHTML = `
+                <span class="chess-game-number">Game 42</span>
+                <span class="chess-game-type">Blitz 5+0</span>
+            `;
+
+            const moveOpeningInfo = document.createElement('div');
+            moveOpeningInfo.className = 'chess-move-opening-info';
+            moveOpeningInfo.innerHTML = `
+                <span class="chess-last-move">Last: Bb5</span>
+                <span class="chess-opening">Ruy Lopez</span>
+            `;
+
+            const playerBottom = document.createElement('div');
+            playerBottom.className = 'chess-player-bottom';
+            playerBottom.innerHTML = `
+                <div>
+                    <div class="chess-player-name">You</div>
+                    <div class="chess-player-rating">(1847)</div>
+                </div>
+                <div class="chess-player-clock">04:30</div>
+            `;
+
+            // Assemble layout
+            layoutContainer.appendChild(gameInfo);
+            layoutContainer.appendChild(boardWrapper);
+            layoutContainer.appendChild(playerSection);
+            layoutContainer.appendChild(playerTop);
+            layoutContainer.appendChild(gameInfoCompact);
+            layoutContainer.appendChild(moveOpeningInfo);
+            layoutContainer.appendChild(playerBottom);
+
+            boardArea.appendChild(layoutContainer);
+        }
+        
+        function setStandardMode() {
+            if (layoutManager) {
+                layoutManager.setMode('standard');
+                console.log('Switched to standard mode');
+            }
+        }
+        
+        function setCompactMode() {
+            if (layoutManager) {
+                layoutManager.setMode('compact');
+                console.log('Switched to compact mode');
+            }
+        }
+        
+        function debugLayout() {
+            if (layoutManager) {
+                console.log('Layout Debug Info:', layoutManager.getDimensions());
+            }
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeTest);
+    </script>
+</body>
+</html>

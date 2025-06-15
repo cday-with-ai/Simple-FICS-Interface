@@ -34,7 +34,13 @@ const ficsCommandRegex = [
 
 // UI state variables
 let activeResizer = null;
-let currentView = 'both'; // Default view mode
+let currentView = 'chessandchat'; // Default view mode - will be adjusted based on space
+let userSelectedView = 'chessandchat'; // User's explicitly selected view mode
+let userHasManuallySelectedMode = false; // Track if user has manually selected a mode
+let autoModeEnabled = true; // Enable automatic mode switching
+let chessBoardSpaceMonitoringEnabled = true; // Enable chess board space monitoring
+let chessBoardSizeThreshold = 400; // Minimum chess board size before switching to compact
+let lastAutoSwitchMode = null; // Track last auto-switched mode to prevent loops
 let useUnifiedChatSystem = true; // Enable unified chat system by default
 let unifiedTabCounter = 0;
 let activeUnifiedTab = 'main';
@@ -57,6 +63,12 @@ export function initChat() {
 
     // Set up divider event listeners
     setupDividers();
+
+    // Set up responsive mode switching
+    setupResponsiveModeSwitching();
+
+    // Set up chess board space monitoring
+    setTimeout(() => setupChessBoardSpaceMonitoring(), 500); // Delay to ensure DOM is ready
 }
 
 // Initialize unified chat system
@@ -459,22 +471,63 @@ function setupConsoleResizeObserver() {
 // Function to set up view toggle radio buttons
 function setupViewToggle() {
     const viewChessRadio = document.getElementById('view-chess');
-    const viewBothRadio = document.getElementById('view-both');
+    const viewChessCompactRadio = document.getElementById('view-chess-compact');
+    const viewChessAndChatRadio = document.getElementById('view-chess-and-chat');
+    const viewChessCompactAndChatRadio = document.getElementById('view-chess-compact-and-chat');
     const viewChatRadio = document.getElementById('view-chat');
 
-    if (!viewChessRadio || !viewBothRadio || !viewChatRadio) {
-        console.error('View toggle radio buttons not found');
+    if (!viewChessRadio || !viewChessCompactRadio || !viewChatRadio) {
+        console.error('Essential view toggle radio buttons not found');
         return;
     }
-    updateViewMode(currentView); // Set initial
+
+    // Initialize with optimal mode based on available space
+    setTimeout(() => {
+        initializeWithOptimalMode();
+    }, 100); // Small delay to ensure responsive system is ready
     viewChessRadio.addEventListener('change', function () {
-        if (this.checked) updateViewMode('chess');
+        if (this.checked) {
+            userHasManuallySelectedMode = true;
+            userSelectedView = 'chess';
+            updateViewMode('chess');
+            console.log('User manually selected Chess mode');
+        }
     });
-    viewBothRadio.addEventListener('change', function () {
-        if (this.checked) updateViewMode('both');
+    viewChessCompactRadio.addEventListener('change', function () {
+        if (this.checked) {
+            userHasManuallySelectedMode = true;
+            userSelectedView = 'chesscompact';
+            updateViewMode('chesscompact');
+            console.log('User manually selected ChessCompact mode');
+        }
     });
+    if (viewChessAndChatRadio) {
+        viewChessAndChatRadio.addEventListener('change', function () {
+            if (this.checked) {
+                userHasManuallySelectedMode = true;
+                userSelectedView = 'chessandchat';
+                updateViewMode('chessandchat');
+                console.log('User manually selected ChessAndChat mode');
+            }
+        });
+    }
+    if (viewChessCompactAndChatRadio) {
+        viewChessCompactAndChatRadio.addEventListener('change', function () {
+            if (this.checked) {
+                userHasManuallySelectedMode = true;
+                userSelectedView = 'chesscompactandchat';
+                updateViewMode('chesscompactandchat');
+                console.log('User manually selected ChessCompactAndChat mode');
+            }
+        });
+    }
     viewChatRadio.addEventListener('change', function () {
-        if (this.checked) updateViewMode('chat');
+        if (this.checked) {
+            userHasManuallySelectedMode = true;
+            userSelectedView = 'chat';
+            updateViewMode('chat');
+            console.log('User manually selected Chat mode');
+        }
     });
 }
 
@@ -489,8 +542,12 @@ function updateViewMode(mode) {
 
     const tabElements = document.querySelectorAll('#tabs .tab');
 
+    // Remove all layout mode classes
+    document.body.classList.remove('layout-chess', 'layout-chesscompact', 'layout-chessandchat', 'layout-chesscompactandchat', 'layout-chat');
+
     switch (mode) {
         case 'chess':
+            document.body.classList.add('layout-chess');
             if (chessBoardAreaEl) {
                 chessBoardAreaEl.style.display = 'flex';
                 chessBoardAreaEl.style.flexBasis = '100%';
@@ -498,9 +555,31 @@ function updateViewMode(mode) {
             if (rightContentEl) rightContentEl.style.display = 'none';
             if (topDividerEl) topDividerEl.style.display = 'none';
             if (rightDividerEl) rightDividerEl.style.display = 'none';
-            requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+                if (window.forceChessBoardResize) {
+                    setTimeout(() => window.forceChessBoardResize(), 100);
+                }
+            });
             break;
-        case 'both':
+        case 'chesscompact':
+            document.body.classList.add('layout-chesscompact');
+            if (chessBoardAreaEl) {
+                chessBoardAreaEl.style.display = 'flex';
+                chessBoardAreaEl.style.flexBasis = '100%';
+            }
+            if (rightContentEl) rightContentEl.style.display = 'none';
+            if (topDividerEl) topDividerEl.style.display = 'none';
+            if (rightDividerEl) rightDividerEl.style.display = 'none';
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+                if (window.forceChessBoardResize) {
+                    setTimeout(() => window.forceChessBoardResize(), 100);
+                }
+            });
+            break;
+        case 'chessandchat':
+            document.body.classList.add('layout-chessandchat');
             if (chessBoardAreaEl) {
                 chessBoardAreaEl.style.display = 'flex';
                 chessBoardAreaEl.style.flexBasis = '58%';
@@ -518,9 +597,37 @@ function updateViewMode(mode) {
             requestAnimationFrame(() => {
                 window.dispatchEvent(new Event('resize'));
                 scrollConsolesToBottom();
+                if (window.forceChessBoardResize) {
+                    setTimeout(() => window.forceChessBoardResize(), 100);
+                }
+            });
+            break;
+        case 'chesscompactandchat':
+            document.body.classList.add('layout-chesscompactandchat');
+            if (chessBoardAreaEl) {
+                chessBoardAreaEl.style.display = 'flex';
+                chessBoardAreaEl.style.flexBasis = '58%';
+            }
+            if (rightContentEl) rightContentEl.style.display = 'flex';
+            if (topDividerEl) {
+                topDividerEl.style.display = 'block';
+                topDividerEl.style.left = '57.0%';
+            }
+            if (rightDividerEl) {
+                rightDividerEl.style.display = tabElements.length > 0 ? 'block' : 'none';
+                rightDividerEl.style.top = '70%';
+            }
+            if (mainConsoleEl) mainConsoleEl.style.flexBasis = '70%';
+            requestAnimationFrame(() => {
+                window.dispatchEvent(new Event('resize'));
+                scrollConsolesToBottom();
+                if (window.forceChessBoardResize) {
+                    setTimeout(() => window.forceChessBoardResize(), 100);
+                }
             });
             break;
         case 'chat':
+            document.body.classList.add('layout-chat');
             if (chessBoardAreaEl) chessBoardAreaEl.style.display = 'none';
             if (rightContentEl) rightContentEl.style.display = 'flex';
             if (topDividerEl) topDividerEl.style.display = 'none';
@@ -548,6 +655,12 @@ function resizeDividers(e) {
         percentage = Math.max(30, Math.min(70, percentage));
         chessBoardAreaEl.style.flexBasis = `${percentage}%`;
         topDivider.style.left = `${percentage - 1}%`;
+
+        // Check chess board space during horizontal resize
+        clearTimeout(resizeDividers.chessBoardCheckTimeout);
+        resizeDividers.chessBoardCheckTimeout = setTimeout(() => {
+            checkChessBoardSpaceAndSwitchMode();
+        }, 100);
     } else if (activeResizer === 'vertical') {
         if (!rightContentEl || !mainConsoleEl || !chatTabsContainerEl || !rightDivider) return;
         const containerRect = rightContentEl.getBoundingClientRect();
@@ -584,6 +697,9 @@ function stopResize() {
     document.removeEventListener('mousemove', resizeDividers);
     document.removeEventListener('mouseup', stopResize);
     requestAnimationFrame(() => requestAnimationFrame(scrollConsolesToBottom));
+
+    // Check if we need to switch modes based on chess board space after resize
+    setTimeout(() => checkChessBoardSpaceAndSwitchMode(), 100);
 }
 
 export function inactiveAllTabs() {
@@ -1017,4 +1133,338 @@ function updateTabScrollButtons() {
         }
         updateScrollButtonsTimeout = null;
     }, 100);
+}
+
+export function getCurrentView() {
+    return currentView;
+}
+
+// Make getCurrentView available globally for other modules
+window.getCurrentView = getCurrentView;
+
+/**
+ * Set up responsive mode switching based on screen size
+ */
+function setupResponsiveModeSwitching() {
+    // Listen for screen info changes from responsive.js
+    window.addEventListener('screenInfoChanged', (event) => {
+        if (!autoModeEnabled) return;
+
+        const { current } = event.detail;
+        handleResponsiveModeSwitch(current);
+    });
+
+    // Initial check - use a timeout to ensure responsive.js is loaded
+    setTimeout(() => {
+        if (autoModeEnabled && window.getScreenInfo) {
+            const screenInfo = window.getScreenInfo();
+            handleResponsiveModeSwitch(screenInfo);
+        }
+    }, 100);
+}
+
+/**
+ * Handle automatic mode switching based on screen size
+ * Only switches if user hasn't manually selected a mode, or if switching to unavailable mode
+ */
+function handleResponsiveModeSwitch(screenInfo) {
+    const isMobileOrTablet = screenInfo.deviceType === 'mobile' || screenInfo.deviceType === 'tablet';
+
+    // If user has manually selected a mode, only switch if the mode becomes unavailable
+    if (userHasManuallySelectedMode) {
+        // Check if current mode is available on this device type
+        if (isMobileOrTablet && (currentView === 'chessandchat' || currentView === 'chesscompactandchat')) {
+            // AndChat modes not available on mobile/tablet, switch to appropriate single mode
+            const fallbackMode = screenInfo.deviceType === 'mobile' ? 'chesscompact' : 'chess';
+            console.log(`Switching from unavailable mode ${currentView} to ${fallbackMode} on ${screenInfo.deviceType}`);
+            updateViewMode(fallbackMode);
+            updateViewModeRadioButtons(fallbackMode);
+        }
+        return; // Don't auto-switch if user has made a manual selection
+    }
+
+    // For initial load or when user hasn't manually selected, use optimal mode
+    const optimalMode = determineOptimalModeForScreen(screenInfo);
+
+    // Only switch if we're not already in the optimal mode
+    if (optimalMode !== currentView) {
+        console.log(`Initial responsive switching to ${optimalMode} (screen: ${screenInfo.width}x${screenInfo.height}, device: ${screenInfo.deviceType})`);
+        userSelectedView = optimalMode;
+        updateViewMode(optimalMode);
+        updateViewModeRadioButtons(optimalMode);
+    }
+}
+
+/**
+ * Determine optimal mode for a given screen configuration
+ */
+function determineOptimalModeForScreen(screenInfo) {
+    const isMobileOrTablet = screenInfo.deviceType === 'mobile' || screenInfo.deviceType === 'tablet';
+
+    // On mobile/tablet, AndChat modes are not available
+    if (isMobileOrTablet) {
+        if (screenInfo.width < 600) {
+            return 'chesscompact';
+        } else {
+            return 'chess';
+        }
+    }
+
+    // For desktop: estimate available space
+    const screenWidth = screenInfo.width;
+    const estimatedChessBoardAreaWidth = screenWidth * 0.58;
+    const estimatedAvailableSpace = estimatedChessBoardAreaWidth - 302 - 30;
+
+    // Apply hierarchy
+    if (estimatedAvailableSpace >= chessBoardSizeThreshold + 100) {
+        return 'chessandchat';
+    } else if (estimatedAvailableSpace >= chessBoardSizeThreshold - 50) {
+        return 'chesscompactandchat';
+    } else if (screenWidth >= 800) {
+        return 'chess';
+    } else {
+        return 'chesscompact';
+    }
+}
+
+/**
+ * Update radio button selection to match current mode
+ */
+function updateViewModeRadioButtons(mode) {
+    const radios = {
+        'chess': document.getElementById('view-chess'),
+        'chesscompact': document.getElementById('view-chess-compact'),
+        'chessandchat': document.getElementById('view-chess-and-chat'),
+        'chesscompactandchat': document.getElementById('view-chess-compact-and-chat'),
+        'chat': document.getElementById('view-chat')
+    };
+
+    // Temporarily remove event listeners to prevent triggering during programmatic changes
+    const tempListeners = {};
+    Object.keys(radios).forEach(key => {
+        if (radios[key]) {
+            tempListeners[key] = radios[key].onchange;
+            radios[key].onchange = null;
+        }
+    });
+
+    // Update radio button states
+    Object.keys(radios).forEach(key => {
+        if (radios[key]) {
+            radios[key].checked = (key === mode);
+        }
+    });
+
+    // Restore event listeners
+    setTimeout(() => {
+        Object.keys(radios).forEach(key => {
+            if (radios[key] && tempListeners[key]) {
+                radios[key].onchange = tempListeners[key];
+            }
+        });
+    }, 10);
+
+    console.log(`Radio buttons updated to match mode: ${mode}`);
+}
+
+/**
+ * Enable or disable automatic mode switching
+ */
+export function setAutoModeEnabled(enabled) {
+    autoModeEnabled = enabled;
+    console.log('Auto mode switching:', enabled ? 'enabled' : 'disabled');
+}
+
+/**
+ * Get current auto mode setting
+ */
+export function isAutoModeEnabled() {
+    return autoModeEnabled;
+}
+
+/**
+ * Check chess board space and intelligently switch modes following the hierarchy
+ * Only switches automatically if user hasn't manually selected a mode
+ */
+function checkChessBoardSpaceAndSwitchMode() {
+    if (!chessBoardSpaceMonitoringEnabled) return;
+
+    // Respect manual user selections - only auto-switch for specific cases
+    if (userHasManuallySelectedMode) {
+        // Only auto-switch between ChessAndChat and ChessCompactAndChat if user selected one of these
+        if (currentView !== 'chessandchat' && currentView !== 'chesscompactandchat') {
+            return; // Don't auto-switch if user manually selected a single mode
+        }
+    }
+
+    const chessBoardArea = document.querySelector('.chess-board-area');
+    const chessBoard = document.querySelector('.chess-board');
+
+    if (!chessBoardArea || !chessBoard) return;
+
+    // Get available space for chess board
+    const areaRect = chessBoardArea.getBoundingClientRect();
+    const availableWidth = areaRect.width - 302 - 30; // Account for player info and margins
+    const availableHeight = areaRect.height - 40; // Account for margins
+    const maxAvailableSize = Math.min(availableWidth, availableHeight);
+
+    let targetMode = currentView;
+
+    // Only switch between ChessAndChat and ChessCompactAndChat to prevent loops
+    if (currentView === 'chessandchat' && maxAvailableSize < chessBoardSizeThreshold) {
+        targetMode = 'chesscompactandchat';
+        console.log('Auto-switching to ChessCompactAndChat due to space constraints');
+    } else if (currentView === 'chesscompactandchat' && maxAvailableSize >= chessBoardSizeThreshold + 50) {
+        targetMode = 'chessandchat';
+        console.log('Auto-switching back to ChessAndChat due to available space');
+    }
+
+    // Prevent switching loops by checking if we just switched to this mode
+    if (targetMode === lastAutoSwitchMode) {
+        console.log('Preventing switch loop - already switched to this mode recently');
+        return;
+    }
+
+    // Only switch if mode actually needs to change
+    if (targetMode !== currentView) {
+        lastAutoSwitchMode = targetMode;
+
+        // Don't update userSelectedView for auto-switches to preserve user intent
+        updateViewMode(targetMode);
+        updateViewModeRadioButtons(targetMode);
+
+        // Clear the loop prevention after a delay
+        setTimeout(() => {
+            if (lastAutoSwitchMode === targetMode) {
+                lastAutoSwitchMode = null;
+            }
+        }, 1000);
+    }
+
+    // Update debug overlay if it's visible
+    if (window.updateDebugOverlay) {
+        window.updateDebugOverlay();
+    }
+}
+
+/**
+ * Set up chess board space monitoring
+ */
+function setupChessBoardSpaceMonitoring() {
+    // Monitor chess board area size changes
+    const chessBoardArea = document.querySelector('.chess-board-area');
+    if (!chessBoardArea) return;
+
+    const chessBoardSpaceObserver = new ResizeObserver(() => {
+        // Debounce the check to avoid excessive switching
+        clearTimeout(chessBoardSpaceObserver.timeout);
+        chessBoardSpaceObserver.timeout = setTimeout(() => {
+            checkChessBoardSpaceAndSwitchMode();
+        }, 250); // Increased debounce to prevent loops
+    });
+
+    chessBoardSpaceObserver.observe(chessBoardArea);
+
+    // Also monitor window resize events
+    window.addEventListener('resize', () => {
+        setTimeout(() => checkChessBoardSpaceAndSwitchMode(), 200);
+    });
+
+    console.log('Chess board space monitoring initialized');
+}
+
+/**
+ * Enable or disable chess board space monitoring
+ */
+export function setChessBoardSpaceMonitoringEnabled(enabled) {
+    chessBoardSpaceMonitoringEnabled = enabled;
+    console.log('Chess board space monitoring:', enabled ? 'enabled' : 'disabled');
+}
+
+/**
+ * Set the chess board size threshold for mode switching
+ */
+export function setChessBoardSizeThreshold(threshold) {
+    chessBoardSizeThreshold = threshold;
+    console.log('Chess board size threshold set to:', threshold);
+}
+
+/**
+ * Reset manual selection flag to allow auto-switching again
+ */
+export function resetManualModeSelection() {
+    userHasManuallySelectedMode = false;
+    console.log('Manual mode selection flag reset - auto-switching re-enabled');
+}
+
+/**
+ * Check if user has manually selected a mode
+ */
+export function hasUserManuallySelectedMode() {
+    return userHasManuallySelectedMode;
+}
+
+/**
+ * Determine the best default mode based on available space and device type
+ * Hierarchy: ChessAndChat → ChessCompactAndChat → Chess → ChessCompact
+ */
+function determineOptimalDefaultMode() {
+    const screenInfo = window.getScreenInfo ? window.getScreenInfo() : { width: window.innerWidth, deviceType: 'desktop' };
+    const isMobileOrTablet = screenInfo.deviceType === 'mobile' || screenInfo.deviceType === 'tablet';
+
+    // On mobile/tablet, AndChat modes are not available
+    if (isMobileOrTablet) {
+        // For mobile/tablet: Chess → ChessCompact based on screen size
+        if (screenInfo.width < 600) {
+            return 'chesscompact';
+        } else {
+            return 'chess';
+        }
+    }
+
+    // For desktop: estimate available space for chess board
+    const screenWidth = screenInfo.width;
+    const estimatedChessBoardAreaWidth = screenWidth * 0.58; // Approximate 58% for chess area in AndChat modes
+    const estimatedAvailableSpace = estimatedChessBoardAreaWidth - 302 - 30; // Account for player info and margins
+
+    console.log(`Determining optimal mode - Screen: ${screenWidth}, Estimated chess area: ${estimatedChessBoardAreaWidth}, Available space: ${estimatedAvailableSpace}`);
+
+    // Apply hierarchy based on estimated available space
+    if (estimatedAvailableSpace >= chessBoardSizeThreshold + 100) {
+        // Plenty of space for regular ChessAndChat
+        return 'chessandchat';
+    } else if (estimatedAvailableSpace >= chessBoardSizeThreshold - 50) {
+        // Moderate space, use ChessCompactAndChat
+        return 'chesscompactandchat';
+    } else if (screenWidth >= 800) {
+        // Limited space but decent screen width, use Chess only
+        return 'chess';
+    } else {
+        // Very limited space, use ChessCompact
+        return 'chesscompact';
+    }
+}
+
+/**
+ * Initialize with optimal default mode
+ */
+function initializeWithOptimalMode() {
+    // Only auto-select if user hasn't manually selected and we're not on a device that restricts modes
+    const screenInfo = window.getScreenInfo ? window.getScreenInfo() : { width: window.innerWidth, deviceType: 'desktop' };
+    const isMobileOrTablet = screenInfo.deviceType === 'mobile' || screenInfo.deviceType === 'tablet';
+
+    // Check if the default mode (ChessAndChat) is available
+    if (isMobileOrTablet && (currentView === 'chessandchat' || currentView === 'chesscompactandchat')) {
+        // Switch to available mode on mobile/tablet
+        const fallbackMode = screenInfo.deviceType === 'mobile' ? 'chesscompact' : 'chess';
+        console.log(`Switching default mode from ${currentView} to ${fallbackMode} for ${screenInfo.deviceType}`);
+        currentView = fallbackMode;
+        userSelectedView = fallbackMode;
+        updateViewModeRadioButtons(fallbackMode);
+        updateViewMode(fallbackMode);
+    } else {
+        // Keep the default ChessAndChat mode and just apply it
+        console.log(`Initializing with default mode: ${currentView}`);
+        updateViewMode(currentView);
+    }
 }

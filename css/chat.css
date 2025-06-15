@@ -126,8 +126,8 @@ body {
 }
 
 .chess-board-area {
-    flex: 0 0 50%;
-    overflow-y: auto;
+    flex: 1; /* Allow it to grow and use available space */
+    overflow-y: visible; /* Allow chess board to be fully visible */
     overflow-x: visible; /* Allow strength bars to show */
     display: flex;
     flex-direction: column;
@@ -136,8 +136,8 @@ body {
     box-sizing: border-box;
     height: 100%;
     min-width: 0;
-    padding-left: 50px;
-    padding-right: 50px;
+    padding-left: 10px; /* Reduced padding */
+    padding-right: 10px; /* Reduced padding */
 }
 
 /* Left side content container */
@@ -148,6 +148,22 @@ body {
     position: relative;
     min-width: 0; /* Allow flex item to shrink */
     overflow: hidden; /* Prevent expansion */
+}
+
+/* Layout mode specific styles for chess board area sizing */
+.layout-chess .chess-board-area,
+.layout-chesscompact .chess-board-area {
+    flex: 1 !important; /* Use full available space */
+    min-height: 100vh; /* Ensure full height usage */
+}
+
+.layout-chessandchat .chess-board-area,
+.layout-chesscompactandchat .chess-board-area {
+    flex: 0 0 58% !important; /* Fixed percentage for side-by-side modes */
+}
+
+.layout-chat .chess-board-area {
+    display: none !important;
 }
 
 /* Unified chat container - replaces both main console and chat tabs */
@@ -939,6 +955,234 @@ body {
     width: 24px;
     height: 24px;
     fill: black;
+}
+
+/* ===== RESPONSIVE AND MOBILE STYLES ===== */
+
+/* Mobile-first responsive breakpoints */
+@media (max-width: 767px) {
+    /* Mobile styles */
+    .top-controls {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px 5px;
+    }
+
+    .view-toggle-container.left,
+    .view-toggle-container.right {
+        justify-content: center;
+        margin: 0;
+    }
+
+    .view-toggle-label {
+        font-size: 16px;
+        margin: 0 5px;
+    }
+
+    .view-toggle {
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+
+    .view-toggle label {
+        min-width: 40px;
+        min-height: 40px;
+    }
+
+    #title {
+        font-size: 18px;
+        margin: 5px;
+        text-align: center;
+    }
+
+    .main-container {
+        height: calc(100vh - 140px);
+        max-height: calc(100vh - 140px);
+    }
+}
+
+@media (max-width: 1023px) {
+    /* Tablet and smaller desktop styles */
+    .chess-board-area {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .unified-chat-container {
+        margin-right: 10px;
+    }
+
+    .main-console {
+        margin-right: 10px;
+    }
+}
+
+/* Landscape mobile adjustments */
+@media (max-width: 767px) and (orientation: landscape) {
+    .top-controls {
+        flex-direction: row;
+        padding: 5px 10px;
+    }
+
+    .view-toggle-container.left {
+        flex: 0 0 auto;
+    }
+
+    .view-toggle-label {
+        font-size: 14px;
+    }
+
+    .main-container {
+        height: calc(100vh - 80px);
+        max-height: calc(100vh - 80px);
+    }
+
+    #title {
+        font-size: 16px;
+        margin: 2px;
+    }
+}
+
+/* Touch device improvements */
+.touch-device .view-toggle label {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.touch-device .hamburger-menu {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* Auto-hide AndChat modes on small screens */
+@media (max-width: 1023px) {
+    .layout-chessandchat .chess-board-area,
+    .layout-chesscompactandchat .chess-board-area {
+        flex-basis: 100% !important;
+    }
+
+    .layout-chessandchat .right-content,
+    .layout-chesscompactandchat .right-content {
+        display: none !important;
+    }
+
+    .layout-chessandchat #topDivider,
+    .layout-chessandchat #rightDivider,
+    .layout-chesscompactandchat #topDivider,
+    .layout-chesscompactandchat #rightDivider {
+        display: none !important;
+    }
+}
+
+/* Compact mode is default on very small screens */
+@media (max-width: 767px) {
+    /* Force compact-like behavior for chess mode on mobile */
+    .layout-chess .chess-board-area,
+    .layout-both .chess-board-area {
+        padding: 5px;
+    }
+}
+
+/* High DPI display adjustments */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .view-toggle label svg,
+    .hamburger-menu svg {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Prevent horizontal scrolling on mobile */
+@media (max-width: 767px) {
+    html, body {
+        overflow-x: hidden;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .main-container,
+    .top-section,
+    .chess-board-area,
+    .right-content {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+}
+
+/* Device-specific classes for JavaScript control */
+.device-mobile .top-controls {
+    padding: 8px 5px;
+}
+
+.device-tablet .chess-board-area {
+    padding-left: 30px;
+    padding-right: 30px;
+}
+
+.device-desktop .chess-board-area {
+    padding-left: 50px;
+    padding-right: 50px;
+}
+
+/* Hide "AndChat" modes on mobile and tablet devices */
+.device-mobile #view-chess-and-chat,
+.device-mobile label[for="view-chess-and-chat"],
+.device-mobile #view-chess-compact-and-chat,
+.device-mobile label[for="view-chess-compact-and-chat"],
+.device-tablet #view-chess-and-chat,
+.device-tablet label[for="view-chess-and-chat"],
+.device-tablet #view-chess-compact-and-chat,
+.device-tablet label[for="view-chess-compact-and-chat"] {
+    display: none !important;
+}
+
+/* Adjust view toggle spacing when Both mode is hidden */
+.device-mobile .view-toggle,
+.device-tablet .view-toggle {
+    gap: 3px;
+}
+
+/* Ensure remaining buttons are properly sized on mobile/tablet */
+.device-mobile .view-toggle label,
+.device-tablet .view-toggle label {
+    min-width: 48px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Visual grouping: Chess modes together, then Chat mode */
+.view-toggle {
+    display: flex;
+    gap: 2px;
+}
+
+/* Add subtle visual separation between chess modes and chat mode */
+.view-toggle label[for="view-chat"] {
+    margin-left: 4px;
+    position: relative;
+}
+
+.view-toggle label[for="view-chat"]:before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 20%;
+    bottom: 20%;
+    width: 1px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* On mobile/tablet, adjust spacing since AndChat modes are hidden */
+.device-mobile .view-toggle label[for="view-chat"],
+.device-tablet .view-toggle label[for="view-chat"] {
+    margin-left: 6px;
+}
+
+.device-mobile .view-toggle label[for="view-chat"]:before,
+.device-tablet .view-toggle label[for="view-chat"]:before {
+    left: -4px;
 }
 
 /* Preferences Panel Styles */

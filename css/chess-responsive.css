@@ -1,0 +1,474 @@
+/**
+ * Chess Responsive Styles - Mobile, tablet, and desktop adaptations
+ * Works with the clean layout system
+ */
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+:root {
+    --mobile-breakpoint: 768px;
+    --tablet-breakpoint: 1024px;
+    --desktop-breakpoint: 1200px;
+}
+
+/* ===== MOBILE STYLES (up to 768px) - MAINTAIN STANDARD LAYOUT ===== */
+@media (max-width: 768px) {
+    :root {
+        --player-info-width: 140px;  /* Smaller player info panel */
+        --layout-gap: 8px;  /* Small but visible gap */
+        --layout-padding: 4px;
+        --font-scale: 0.7;  /* Aggressive font scaling */
+    }
+
+    /* Keep standard layout side-by-side but make it more compact */
+    .layout-standard .chess-board {
+        width: min(calc(100vw - 160px), calc(100vh - 60px));
+        height: min(calc(100vw - 160px), calc(100vh - 60px));
+        min-width: 200px;
+        min-height: 200px;
+    }
+
+    .layout-standard .chess-player-section {
+        flex: 0 0 var(--player-info-width);
+        padding: 4px;
+        gap: 4px;
+    }
+
+    /* Compact game info - keep within board area */
+    .layout-standard .chess-game-info {
+        font-size: calc(12px * var(--font-scale));
+        margin-bottom: 4px;
+        text-align: left;
+        width: 100%; /* Take full container width */
+        align-self: stretch;
+        margin-left: 0;
+        max-width: calc(100vw - var(--player-info-width) - var(--layout-gap) - 20px);
+        box-sizing: border-box;
+    }
+
+    /* Fix player info alignment and prevent drift */
+    .layout-standard .chess-player-section {
+        align-items: flex-start;
+        justify-content: flex-start;
+        max-width: var(--player-info-width);
+        min-width: var(--player-info-width);
+        flex-shrink: 0; /* Prevent shrinking */
+    }
+
+    .layout-standard .chess-player-info {
+        width: 100%;
+        justify-content: flex-start;
+        align-items: flex-start;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Ensure board wrapper doesn't push player info away */
+    .layout-standard .chess-board-wrapper {
+        max-width: calc(100vw - var(--player-info-width) - var(--layout-gap) - 20px);
+        flex-shrink: 1;
+    }
+
+    /* Hide non-essential elements */
+    .chess-move-list {
+        display: none;
+    }
+
+    .chess-strength-bars,
+    .chess-board-coordinates {
+        display: none;
+    }
+    
+    /* Mobile-optimized player info */
+    .chess-player-info {
+        padding: 6px 12px;
+        gap: 6px;
+        min-height: 50px;
+    }
+    
+    .chess-player-clock {
+        font-size: calc(18px * var(--font-scale, 0.85));
+        padding: 4px 8px;
+        min-width: 60px;
+    }
+    
+    .chess-player-name {
+        font-size: calc(14px * var(--font-scale, 0.85));
+    }
+    
+    .chess-player-rating {
+        font-size: calc(12px * var(--font-scale, 0.85));
+    }
+    
+    /* Mobile board adjustments */
+    .chess-board {
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        margin: 2px;
+    }
+    
+    .chess-piece {
+        font-size: calc(var(--chess-board-size, 300px) / 12);
+    }
+    
+    /* Hide complex elements on mobile */
+    .chess-strength-bars,
+    .chess-board-coordinates,
+    .chess-move-list {
+        display: none;
+    }
+    
+    /* Simplify action buttons */
+    .chess-action-buttons {
+        gap: 4px;
+        flex-wrap: wrap;
+    }
+    
+    .chess-action-button {
+        padding: 6px 10px;
+        font-size: calc(11px * var(--font-scale, 0.85));
+        min-width: 60px;
+    }
+    
+    /* Touch-friendly interactions */
+    .chess-square {
+        cursor: default;
+    }
+    
+    .chess-piece {
+        cursor: default;
+    }
+    
+    .chess-promotion-piece {
+        width: 50px;
+        height: 50px;
+        font-size: 32px;
+    }
+}
+
+/* ===== SMALL MOBILE (up to 480px) - ULTRA COMPACT STANDARD ===== */
+@media (max-width: 480px) {
+    :root {
+        --player-info-width: 100px;  /* Very narrow player panel */
+        --layout-gap: 6px;  /* Small gap to keep elements close */
+        --layout-padding: 2px;
+        --font-scale: 0.55;  /* Very small fonts */
+    }
+
+    .chess-layout-container {
+        padding: var(--layout-padding);
+    }
+
+    /* Ultra-compact standard layout */
+    .layout-standard .chess-board {
+        width: min(calc(100vw - 110px), calc(100vh - 40px));
+        height: min(calc(100vw - 110px), calc(100vh - 40px));
+        min-width: 150px;
+        min-height: 150px;
+        border-radius: 2px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .layout-standard .chess-player-section {
+        flex: 0 0 var(--player-info-width);
+        padding: 2px;
+        gap: 2px;
+    }
+
+    .layout-standard .chess-game-info {
+        font-size: calc(10px * var(--font-scale));
+        margin-bottom: 2px;
+    }
+
+    .chess-player-info {
+        padding: 2px 4px;
+        gap: 2px;
+        min-height: 30px;
+    }
+
+    .chess-player-clock {
+        font-size: calc(11px * var(--font-scale));
+        padding: 2px 4px;
+        min-width: 40px;
+    }
+
+    .chess-player-name {
+        font-size: calc(9px * var(--font-scale));
+        margin: 0;
+    }
+
+    .chess-player-rating {
+        font-size: calc(8px * var(--font-scale));
+    }
+
+    .chess-piece {
+        font-size: calc(var(--chess-board-size, 150px) / 16);
+    }
+
+    .chess-action-buttons {
+        gap: 1px;
+        flex-direction: column;
+    }
+
+    .chess-action-button {
+        padding: 2px 4px;
+        font-size: calc(8px * var(--font-scale));
+        min-width: 40px;
+        width: 100%;
+    }
+}
+
+/* ===== TINY SCREENS (up to 320px) - EXTREME COMPACT ===== */
+@media (max-width: 320px) {
+    :root {
+        --player-info-width: 80px;   /* Extremely narrow */
+        --layout-gap: 4px;  /* Minimal but visible gap */
+        --layout-padding: 1px;
+        --font-scale: 0.45;  /* Tiny fonts */
+    }
+
+    .layout-standard .chess-board {
+        width: min(calc(100vw - 90px), calc(100vh - 30px));
+        height: min(calc(100vw - 90px), calc(100vh - 30px));
+        min-width: 120px;
+        min-height: 120px;
+        border-radius: 1px;
+    }
+
+    .layout-standard .chess-player-section {
+        flex: 0 0 var(--player-info-width);
+        padding: 1px;
+        gap: 1px;
+    }
+
+    .layout-standard .chess-game-info {
+        font-size: calc(8px * var(--font-scale));
+        margin-bottom: 1px;
+    }
+
+    .chess-player-info {
+        padding: 1px 2px;
+        gap: 1px;
+        min-height: 25px;
+    }
+
+    .chess-player-clock {
+        font-size: calc(9px * var(--font-scale));
+        padding: 1px 2px;
+        min-width: 30px;
+    }
+
+    .chess-player-name {
+        font-size: calc(7px * var(--font-scale));
+        margin: 0;
+    }
+
+    .chess-player-rating {
+        font-size: calc(6px * var(--font-scale));
+    }
+
+    .chess-piece {
+        font-size: calc(var(--chess-board-size, 120px) / 18);
+    }
+
+    .chess-action-button {
+        padding: 1px 2px;
+        font-size: calc(6px * var(--font-scale));
+        min-width: 30px;
+    }
+}
+
+/* ===== TABLET STYLES (769px to 1024px) ===== */
+@media (min-width: 769px) and (max-width: 1024px) {
+    :root {
+        --chess-board-size: min(70vw, 70vh);
+        --player-info-width: 220px;
+        --player-info-height: 70px;
+        --layout-gap: 8px;
+        --layout-padding: 8px;
+        --font-scale: 0.9;
+    }
+    
+    /* Tablet-optimized layouts */
+    .layout-standard .chess-layout-container {
+        flex-direction: row;
+        gap: var(--layout-gap);
+    }
+    
+    .layout-standard .chess-player-section {
+        flex: 0 0 var(--player-info-width);
+        display: flex;
+    }
+    
+    .chess-player-info {
+        padding: 8px 12px;
+        gap: 6px;
+    }
+    
+    .chess-player-clock {
+        font-size: calc(20px * var(--font-scale, 0.9));
+        padding: 6px 12px;
+    }
+    
+    .chess-player-name {
+        font-size: calc(16px * var(--font-scale, 0.9));
+    }
+    
+    .chess-player-rating {
+        font-size: calc(13px * var(--font-scale, 0.9));
+    }
+    
+    /* Show some advanced features on tablet */
+    .chess-move-list {
+        display: block;
+        max-height: 150px;
+    }
+    
+    .chess-board-coordinates {
+        display: block;
+    }
+}
+
+/* ===== DESKTOP STYLES (1025px and up) ===== */
+@media (min-width: 1025px) {
+    :root {
+        --chess-board-size: min(60vw, 80vh);
+        --player-info-width: 250px;
+        --player-info-height: 80px;
+        --layout-gap: 10px;
+        --layout-padding: 10px;
+        --font-scale: 1;
+    }
+    
+    /* Full desktop experience */
+    .chess-player-info {
+        padding: 12px;
+        gap: 8px;
+    }
+    
+    .chess-player-clock {
+        font-size: calc(24px * var(--font-scale, 1));
+        padding: 8px 16px;
+    }
+    
+    .chess-player-name {
+        font-size: calc(18px * var(--font-scale, 1));
+    }
+    
+    .chess-player-rating {
+        font-size: calc(14px * var(--font-scale, 1));
+    }
+    
+    /* Show all features on desktop */
+    .chess-strength-bars,
+    .chess-board-coordinates,
+    .chess-move-list {
+        display: block;
+    }
+    
+    .chess-move-list {
+        max-height: 200px;
+    }
+    
+    /* Enhanced interactions */
+    .chess-square:hover {
+        filter: brightness(1.1);
+    }
+    
+    .chess-piece:hover {
+        transform: scale(1.05);
+    }
+    
+    .chess-action-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* ===== LARGE DESKTOP (1200px and up) ===== */
+@media (min-width: 1200px) {
+    :root {
+        --chess-board-size: min(50vw, 75vh);
+        --player-info-width: 280px;
+    }
+    
+    .layout-side-by-side .chess-chat-area {
+        flex: 0 0 35%;
+        min-width: 350px;
+    }
+    
+    .chess-move-list {
+        max-height: 250px;
+    }
+}
+
+/* ===== ORIENTATION HANDLING ===== */
+@media (orientation: landscape) and (max-width: 1024px) {
+    :root {
+        --chess-board-size: min(60vh, 80vw);
+    }
+    
+    .layout-compact .chess-layout-container,
+    .layout-side-by-side .chess-game-area {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .layout-compact .chess-player-top,
+    .layout-compact .chess-player-bottom {
+        flex: 0 0 120px;
+        height: auto;
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+    }
+    
+    .layout-compact .chess-board-wrapper {
+        flex: 1;
+        order: 2;
+    }
+    
+    .layout-compact .chess-player-top {
+        order: 1;
+    }
+    
+    .layout-compact .chess-player-bottom {
+        order: 3;
+    }
+}
+
+/* ===== HIGH DPI DISPLAYS ===== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .chess-board {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    
+    .chess-piece {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+    .chess-layout-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .chess-player-section,
+    .chess-action-buttons,
+    .chess-strength-bars {
+        display: none;
+    }
+    
+    .chess-board {
+        box-shadow: none;
+        border: 2px solid #000;
+    }
+    
+    .chess-player-top,
+    .chess-player-bottom {
+        display: flex;
+        border: 1px solid #000;
+        background: white;
+    }
+}

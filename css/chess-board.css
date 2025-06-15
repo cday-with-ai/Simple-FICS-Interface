@@ -1,0 +1,301 @@
+/**
+ * Chess Board Styling - Pure board appearance and behavior
+ * No layout concerns - only visual styling
+ */
+
+/* ===== CHESS BOARD CONTAINER ===== */
+.chess-board-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+.chess-board {
+    /* Dynamic sizing controlled by JavaScript */
+    width: var(--chess-board-size, 400px);
+    height: var(--chess-board-size, 400px);
+    max-width: min(90vw, 90vh);
+    max-height: min(90vw, 90vh);
+    min-width: 200px;
+    min-height: 200px;
+
+    /* Visual styling */
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    /* Grid layout for squares - FIXED */
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+    gap: 0;
+
+    /* Ensure square aspect ratio */
+    aspect-ratio: 1 / 1;
+
+    /* Prevent overflow and ensure proper sizing */
+    overflow: hidden;
+    box-sizing: border-box;
+
+    /* Positioning */
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== CHESS SQUARES ===== */
+.chess-square {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    /* Ensure squares are perfectly square */
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Light squares */
+.chess-square.light {
+    background-color: #f0d9b5;
+}
+
+/* Dark squares */
+.chess-square.dark {
+    background-color: #b58863;
+}
+
+/* Square hover effects */
+.chess-square:hover {
+    filter: brightness(1.1);
+}
+
+/* ===== CHESS PIECES ===== */
+.chess-piece {
+    font-size: calc(var(--chess-board-size, 400px) / 10);
+    line-height: 1;
+    user-select: none;
+    cursor: grab;
+    transition: transform 0.2s ease;
+    z-index: 2;
+    position: relative;
+}
+
+.chess-piece:active {
+    cursor: grabbing;
+    transform: scale(1.1);
+}
+
+.chess-piece.dragging {
+    z-index: 1000;
+    pointer-events: none;
+    transform: scale(1.2);
+}
+
+/* ===== MOVE INDICATORS ===== */
+.chess-square.valid-move::after {
+    content: '';
+    position: absolute;
+    width: 30%;
+    height: 30%;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.chess-square.valid-capture::after {
+    content: '';
+    position: absolute;
+    width: 90%;
+    height: 90%;
+    border: 3px solid rgba(255, 0, 0, 0.6);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* ===== LAST MOVE HIGHLIGHT ===== */
+.chess-square.last-move {
+    background-color: rgba(255, 255, 0, 0.4);
+    animation: fadeHighlight 3s ease-out;
+}
+
+@keyframes fadeHighlight {
+    0% { background-color: rgba(255, 255, 0, 0.8); }
+    100% { background-color: rgba(255, 255, 0, 0.1); }
+}
+
+/* ===== CHECK INDICATOR ===== */
+.chess-square.in-check {
+    background-color: rgba(255, 0, 0, 0.5);
+    animation: checkPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes checkPulse {
+    0% { background-color: rgba(255, 0, 0, 0.3); }
+    100% { background-color: rgba(255, 0, 0, 0.7); }
+}
+
+/* ===== BOARD COORDINATES ===== */
+.chess-board-coordinates {
+    position: absolute;
+    pointer-events: none;
+    font-size: 12px;
+    font-weight: bold;
+    color: #666;
+}
+
+.chess-rank-label {
+    position: absolute;
+    left: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.chess-file-label {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* ===== PROMOTION DIALOG ===== */
+.chess-promotion-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    display: flex;
+    gap: 10px;
+}
+
+.chess-promotion-piece {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.chess-promotion-piece:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+    transform: scale(1.1);
+}
+
+/* ===== ANALYSIS ELEMENTS ===== */
+.chess-strength-bars {
+    position: absolute;
+    right: -40px;
+    top: 0;
+    bottom: 0;
+    width: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    z-index: 0;
+}
+
+.chess-strength-bar {
+    width: 100%;
+    background: #ddd;
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+}
+
+.chess-strength-fill {
+    width: 100%;
+    transition: height 0.5s ease;
+    border-radius: 15px;
+}
+
+.chess-strength-positive {
+    background: linear-gradient(to top, #4CAF50, #8BC34A);
+    align-self: flex-end;
+}
+
+.chess-strength-negative {
+    background: linear-gradient(to bottom, #f44336, #FF5722);
+    align-self: flex-start;
+}
+
+.chess-evaluation-text {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+}
+
+/* ===== LAYOUT-SPECIFIC BOARD SIZING ===== */
+.layout-standard .chess-board {
+    /* In standard mode, maximize board size with room for player info */
+    width: min(calc(100vw - 350px), calc(100vh - 100px));
+    height: min(calc(100vw - 350px), calc(100vh - 100px));
+    max-width: min(calc(100vw - 350px), calc(100vh - 100px));
+    max-height: min(calc(100vw - 350px), calc(100vh - 100px));
+    min-width: 400px;
+    min-height: 400px;
+}
+
+.layout-side-by-side .chess-board {
+    /* In side-by-side, limit board size to available space */
+    max-width: min(60vw, 80vh);
+    max-height: min(60vw, 80vh);
+    width: auto;
+    height: auto;
+}
+
+.layout-compact .chess-board {
+    /* In compact mode, maximize available space */
+    max-width: min(95vw, 70vh);
+    max-height: min(95vw, 70vh);
+}
+
+/* ===== RESPONSIVE BOARD SIZING ===== */
+@media (max-width: 768px) {
+    .chess-board {
+        max-width: 95vw;
+        max-height: 95vw;
+    }
+
+    .chess-piece {
+        font-size: calc(var(--chess-board-size, 300px) / 12);
+    }
+
+    .chess-strength-bars {
+        display: none; /* Hide on mobile to save space */
+    }
+}
+
+@media (max-width: 480px) {
+    .chess-board {
+        border-radius: 5px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .chess-promotion-piece {
+        width: 50px;
+        height: 50px;
+        font-size: 32px;
+    }
+}

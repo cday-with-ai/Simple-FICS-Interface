@@ -1,0 +1,181 @@
+<!-- 
+HYBRID LAYOUT HTML STRUCTURE - Replace your existing layout HTML with this structure
+Keep your existing chess piece styles, clock functionality, etc.
+-->
+
+<div class="chess-layout-container layout-standard">
+    
+    <!-- Game Info (Standard Layout) -->
+    <div class="chess-game-info">
+        <span class="chess-game-number">Game 42</span>
+        <span class="chess-game-type">Blitz 5+0</span>
+    </div>
+    
+    <!-- Chess Board Wrapper - Keep your existing board/piece code inside this -->
+    <div class="chess-board-wrapper">
+        <div id="chessBoard" class="chess-board">
+            <!-- Your existing chess board and pieces go here -->
+            <!-- Keep all your piece styles, animations, drag/drop, etc. -->
+        </div>
+    </div>
+    
+    <!-- Player Section (Standard Layout - Right Panel) -->
+    <div class="chess-player-section">
+        <div class="chess-player-info">
+            <!-- Keep your existing clock styling -->
+            <div class="chess-player-clock active">05:00</div>
+            <div class="chess-player-name-rating">
+                <div class="chess-player-name">GrandMaster2024</div>
+                <div class="chess-player-rating">(2156)</div>
+            </div>
+        </div>
+
+        <!-- Action buttons between players -->
+        <div class="chess-action-buttons">
+            <button class="chess-action-button">Resign</button>
+            <button class="chess-action-button secondary">Draw</button>
+            <button class="chess-action-button secondary">Abort</button>
+            <button class="chess-action-button secondary">Analysis</button>
+        </div>
+
+        <!-- Move List (Standard Layout) -->
+        <div class="chess-move-list">
+            <div class="move-list-header">Moves</div>
+            <div class="move-list-content">
+                <!-- Your existing move list content -->
+            </div>
+        </div>
+
+        <!-- Auto Promotion Settings (Standard Layout) -->
+        <div class="chess-auto-promotion">
+            <div class="auto-promotion-header">Auto Promotion</div>
+            <div class="auto-promotion-options">
+                <label class="auto-promotion-option">
+                    <input type="checkbox" checked>
+                    <span class="checkmark"></span>
+                    <span class="piece-symbol">♕</span>
+                </label>
+                <label class="auto-promotion-option">
+                    <input type="checkbox">
+                    <span class="checkmark"></span>
+                    <span class="piece-symbol">♖</span>
+                </label>
+                <label class="auto-promotion-option">
+                    <input type="checkbox">
+                    <span class="checkmark"></span>
+                    <span class="piece-symbol">♗</span>
+                </label>
+                <label class="auto-promotion-option">
+                    <input type="checkbox">
+                    <span class="checkmark"></span>
+                    <span class="piece-symbol">♘</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="chess-player-info">
+            <!-- Keep your existing clock styling -->
+            <div class="chess-player-clock">04:30</div>
+            <div class="chess-player-name-rating">
+                <div class="chess-player-name">You</div>
+                <div class="chess-player-rating">(1847)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Move & Opening Info (Standard Layout - below board) -->
+    <div class="chess-move-opening-info-standard">
+        <div class="chess-last-move">Last: Nf3</div>
+        <div class="chess-opening">Ruy Lopez</div>
+    </div>
+    
+    <!-- COMPACT MODE ELEMENTS (Hidden in standard mode) -->
+    
+    <!-- Player Top (Compact Layout) -->
+    <div class="chess-player-top">
+        <div>
+            <div class="chess-player-name">GrandMaster2024</div>
+            <div class="chess-player-rating">(2156)</div>
+        </div>
+        <!-- Keep your existing clock styling -->
+        <div class="chess-player-clock active">05:00</div>
+    </div>
+
+    <!-- Game Info (Compact Layout - between top player and board) -->
+    <div class="chess-game-info-compact">
+        <span class="chess-game-number">Game 42</span>
+        <span class="chess-game-type">Blitz 5+0</span>
+    </div>
+
+    <!-- Move & Opening Info (Compact Layout - between board and bottom player) -->
+    <div class="chess-move-opening-info">
+        <span class="chess-last-move">Last: Nf3</span>
+        <span class="chess-opening">Ruy Lopez</span>
+    </div>
+
+    <!-- Player Bottom (Compact Layout) -->
+    <div class="chess-player-bottom">
+        <div>
+            <div class="chess-player-name">You</div>
+            <div class="chess-player-rating">(1847)</div>
+        </div>
+        <!-- Keep your existing clock styling -->
+        <div class="chess-player-clock">04:30</div>
+    </div>
+
+    <!-- ANALYSIS COMPONENTS (Both modes) -->
+    
+    <!-- Analysis Controls -->
+    <div class="chess-analysis-controls">
+        <button class="chess-action-button">Analysis</button>
+    </div>
+
+    <!-- Strength Bar -->
+    <div class="chess-strength-bar">
+        <div class="strength-bar-container">
+            <div class="strength-bar-positive"></div>
+            <div class="strength-bar-negative"></div>
+        </div>
+        <div class="strength-evaluation">+0.3</div>
+    </div>
+
+    <!-- Analysis Line (Standard Layout) -->
+    <div class="chess-analysis-line">
+        <span class="analysis-label">Best:</span>
+        <span class="analysis-moves">♘f3 ♞c6 ♗b5 a6 ♗a4 ♞f6</span>
+    </div>
+
+    <!-- Analysis Line (Compact Layout) -->
+    <div class="chess-analysis-line-compact">
+        <span class="analysis-label">Best:</span>
+        <span class="analysis-moves">♘f3 ♞c6 ♗b5 a6 ♗a4 ♞f6</span>
+    </div>
+
+</div>
+
+<!-- 
+INTEGRATION NOTES:
+
+1. Replace your main layout container with this structure
+2. Keep ALL your existing:
+   - Chess piece styles and animations
+   - Clock functionality and styling
+   - Board interaction code
+   - Drag/drop functionality
+   - Any custom themes or fonts
+
+3. The layout manager handles:
+   - Mode switching (.layout-standard vs .layout-compact classes)
+   - Positioning via CSS variables
+   - Responsive behavior
+
+4. Key integration points:
+   - Wire up your existing clock updates to both standard and compact clock elements
+   - Connect your move list data to the .move-list-content
+   - Connect your analysis engine to the strength bar and analysis line
+   - Wire up action buttons to your existing game functions
+   - Connect auto promotion checkboxes to your promotion logic
+
+5. To switch modes:
+   layoutManager.setMode('standard'); // or 'compact'
+-->

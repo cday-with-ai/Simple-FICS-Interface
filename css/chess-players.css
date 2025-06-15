@@ -1,0 +1,322 @@
+/**
+ * Chess Player Info & Clocks - Clean styling for player information
+ * Supports both standard and compact layouts
+ */
+
+/* ===== FONT IMPORTS ===== */
+@font-face {
+    font-family: 'Digital';
+    src: url('../fonts/digitalFont.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* ===== PLAYER INFO CONTAINERS ===== */
+.chess-player-info {
+    background: var(--player-info-bg);
+    border: 1px solid var(--player-info-border);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+    box-sizing: border-box;
+}
+
+.chess-player-top,
+.chess-player-bottom {
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* ===== PLAYER CLOCKS ===== */
+.chess-player-clock {
+    background: var(--clock-bg);
+    color: var(--clock-text);
+    font-family: 'Digital', monospace;
+    font-size: calc(24px * var(--font-scale, 1));
+    font-weight: bold;
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 2px solid #ccc;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-width: 80px;
+    width: fit-content;
+    margin: 0 auto;
+    transition: all 0.3s ease;
+}
+
+.chess-player-clock.active {
+    border-color: #007bff;
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+    animation: clockPulse 2s ease-in-out infinite;
+}
+
+.chess-player-clock.finished {
+    background: #f8f9fa;
+    color: #6c757d;
+    border-color: #dee2e6;
+}
+
+.chess-player-clock.low-time {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.chess-player-clock.critical-time {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+    animation: criticalPulse 1s ease-in-out infinite;
+}
+
+@keyframes clockPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+@keyframes criticalPulse {
+    0%, 100% { background: #f8d7da; }
+    50% { background: #f5c6cb; }
+}
+
+/* ===== PLAYER NAMES ===== */
+.chess-player-name {
+    font-size: calc(18px * var(--font-scale, 1));
+    font-weight: bold;
+    text-align: center;
+    color: #333;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chess-player-rating {
+    font-size: calc(14px * var(--font-scale, 1));
+    color: #666;
+    text-align: center;
+    margin: 0;
+}
+
+/* ===== GAME INFO ===== */
+.chess-game-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-top: 1px solid #eee;
+    margin-top: 8px;
+    font-size: calc(14px * var(--font-scale, 1));
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Standard layout game info positioning */
+.layout-standard .chess-game-info {
+    border-top: none;
+    margin-top: 0;
+    margin-bottom: 8px;
+    text-align: left;
+    width: fit-content;
+    align-self: flex-start;
+    justify-content: flex-start;
+}
+
+.chess-game-number {
+    font-weight: bold;
+    color: #333;
+}
+
+.chess-game-type {
+    color: #666;
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60%;
+}
+
+/* ===== MOVE LIST ===== */
+.chess-move-list {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: calc(12px * var(--font-scale, 1));
+    line-height: 1.4;
+}
+
+.chess-move-item {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 2px;
+    transition: background-color 0.2s ease;
+}
+
+.chess-move-item:hover {
+    background-color: #e9ecef;
+}
+
+.chess-move-item.current {
+    background-color: #007bff;
+    color: white;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.chess-action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.chess-action-button {
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: calc(12px * var(--font-scale, 1));
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+}
+
+.chess-action-button:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.chess-action-button:active {
+    transform: translateY(0);
+}
+
+.chess-action-button.secondary {
+    background: #6c757d;
+}
+
+.chess-action-button.secondary:hover {
+    background: #545b62;
+}
+
+.chess-action-button.danger {
+    background: #dc3545;
+}
+
+.chess-action-button.danger:hover {
+    background: #c82333;
+}
+
+/* ===== LAYOUT-SPECIFIC STYLES ===== */
+
+/* Standard layout - side player info */
+.layout-standard .chess-player-info {
+    width: 100%;
+    height: fit-content;
+    margin: 10px 0;
+    justify-content: flex-start; /* Prevent drift to right */
+    align-items: flex-start;
+}
+
+/* Compact layout - top/bottom player info */
+.layout-compact .chess-player-info,
+.layout-side-by-side .chess-player-info {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start; /* Changed from space-between to flex-start */
+    padding: 8px 16px;
+    gap: 16px;
+}
+
+.layout-compact .chess-player-clock,
+.layout-side-by-side .chess-player-clock {
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.layout-compact .chess-player-name,
+.layout-side-by-side .chess-player-name {
+    flex: 1;
+    text-align: left;
+    margin-left: 12px;
+}
+
+.layout-compact .chess-player-rating,
+.layout-side-by-side .chess-player-rating {
+    text-align: left;
+    margin-left: 12px;
+}
+
+/* ===== RESPONSIVE STYLES ===== */
+@media (max-width: 768px) {
+    :root {
+        --font-scale: 0.9;
+    }
+    
+    .chess-player-info {
+        padding: 8px;
+        gap: 6px;
+        min-width: 150px;
+    }
+    
+    .chess-player-clock {
+        font-size: calc(20px * var(--font-scale, 0.9));
+        padding: 6px 12px;
+    }
+    
+    .chess-action-buttons {
+        gap: 6px;
+    }
+    
+    .chess-action-button {
+        padding: 4px 8px;
+        font-size: calc(11px * var(--font-scale, 0.9));
+    }
+}
+
+@media (max-width: 480px) {
+    :root {
+        --font-scale: 0.8;
+    }
+    
+    .chess-player-info {
+        padding: 6px;
+        gap: 4px;
+    }
+    
+    .chess-player-clock {
+        font-size: calc(18px * var(--font-scale, 0.8));
+        padding: 4px 8px;
+    }
+    
+    .layout-compact .chess-player-info,
+    .layout-side-by-side .chess-player-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 4px;
+    }
+    
+    .layout-compact .chess-player-name,
+    .layout-side-by-side .chess-player-name {
+        text-align: center;
+        margin-left: 0;
+    }
+    
+    .layout-compact .chess-player-rating,
+    .layout-side-by-side .chess-player-rating {
+        text-align: center;
+        margin-left: 0;
+    }
+}

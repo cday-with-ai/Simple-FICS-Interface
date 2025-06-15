@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Perspectives & Layout Test</title>
+    <link rel="stylesheet" href="css/chess-layouts.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        /* Basic chess board styling for testing */
+        .chess-board {
+            background: #f0d9b5;
+            border: 2px solid #8b4513;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+        }
+        
+        .chess-square {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .chess-square.dark {
+            background: #b58863;
+        }
+        
+        .chess-square.light {
+            background: #f0d9b5;
+        }
+        
+        /* Test controls */
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            max-width: 300px;
+        }
+        
+        .test-controls h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .test-controls button, .test-controls select {
+            margin: 3px;
+            padding: 8px 12px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 12px;
+        }
+        
+        .test-controls button:hover {
+            background: #f0f0f0;
+        }
+        
+        .test-controls button.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .status-display {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .status-display strong {
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-controls">
+        <h4>Chess Layout & Perspective Test</h4>
+        
+        <div class="control-group">
+            <label>Layout Mode:</label>
+            <button onclick="setLayoutMode('standard')" id="standardBtn" class="active">Standard</button>
+            <button onclick="setLayoutMode('compact')" id="compactBtn">Compact</button>
+        </div>
+        
+        <div class="control-group">
+            <label>Perspective:</label>
+            <select id="perspectiveSelect" onchange="setPerspectiveFromSelect()">
+                <option value="PLAYING">Playing</option>
+                <option value="OBSERVING">Observing</option>
+                <option value="EXAMINING">Examining</option>
+                <option value="FREESTYLE">Freestyle</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Player Color (when playing):</label>
+            <button onclick="setPlayerColor('white')" id="whiteBtn" class="active">White</button>
+            <button onclick="setPlayerColor('black')" id="blackBtn">Black</button>
+        </div>
+        
+        <div class="control-group">
+            <button onclick="debugLayout()">Debug Layout</button>
+            <button onclick="testGameStates()">Test Game States</button>
+            <button onclick="testFlipBoard()">Test Flip Board</button>
+            <button onclick="testHamburgerMenu()">Test Hamburger Menu</button>
+        </div>
+        
+        <div class="status-display" id="statusDisplay">
+            <strong>Current State:</strong><br>
+            Mode: Standard<br>
+            Perspective: Playing<br>
+            Color: White
+        </div>
+    </div>
+
+    <div class="chess-board-area">
+        <!-- The hybrid layout will be created here -->
+    </div>
+
+    <script src="scripts/LayoutManager.js"></script>
+    <script>
+        // Initialize layout manager
+        let layoutManager;
+        let currentPerspective = 'PLAYING';
+        let currentPlayerColor = 'white';
+        
+        function initializeTest() {
+            console.log('Initializing perspective test...');
+            
+            // Initialize layout manager
+            layoutManager = new LayoutManager();
+            
+            // Create test chess board structure
+            createTestLayout();
+            
+            // Update status display
+            updateStatusDisplay();
+            
+            console.log('Perspective test initialized successfully');
+        }
+        
+        function createTestLayout() {
+            const boardArea = document.querySelector('.chess-board-area');
+            
+            // Sample game state for testing
+            const testGameState = {
+                gameNumber: 42,
+                gameType: 'Blitz 5+0',
+                topPlayer: {
+                    name: 'GrandMaster2024',
+                    rating: '2156',
+                    time: '05:00'
+                },
+                bottomPlayer: {
+                    name: 'You',
+                    rating: '1847',
+                    time: '04:30'
+                }
+            };
+
+            // Create layout using the layout manager
+            layoutManager.createLayout(boardArea, testGameState);
+            
+            // Set initial perspective
+            layoutManager.setPerspective(currentPerspective, currentPlayerColor);
+            
+            // Create test chess board squares
+            const board = document.getElementById('chessBoard');
+            if (board) {
+                createTestChessBoard(board);
+            }
+        }
+        
+        function createTestChessBoard(board) {
+            board.innerHTML = '';
+            
+            // Create 64 squares for testing
+            for (let i = 0; i < 64; i++) {
+                const square = document.createElement('div');
+                square.className = `chess-square ${(Math.floor(i/8) + i) % 2 === 0 ? 'light' : 'dark'}`;
+                
+                // Add some test pieces
+                if (i >= 8 && i < 16) {
+                    square.textContent = '♟'; // Black pawns
+                } else if (i >= 48 && i < 56) {
+                    square.textContent = '♙'; // White pawns
+                } else if (i === 0 || i === 7) {
+                    square.textContent = '♜'; // Black rooks
+                } else if (i === 56 || i === 63) {
+                    square.textContent = '♖'; // White rooks
+                } else if (i === 4) {
+                    square.textContent = '♚'; // Black king
+                } else if (i === 60) {
+                    square.textContent = '♔'; // White king
+                }
+                
+                board.appendChild(square);
+            }
+        }
+        
+        function setLayoutMode(mode) {
+            if (layoutManager) {
+                layoutManager.setMode(mode);
+                
+                // Update button states
+                document.getElementById('standardBtn').classList.toggle('active', mode === 'standard');
+                document.getElementById('compactBtn').classList.toggle('active', mode === 'compact');
+                
+                updateStatusDisplay();
+                console.log('Layout mode set to:', mode);
+            }
+        }
+        
+        function setPerspectiveFromSelect() {
+            const select = document.getElementById('perspectiveSelect');
+            currentPerspective = select.value;
+            
+            if (layoutManager) {
+                layoutManager.setPerspective(currentPerspective, currentPlayerColor);
+                updateStatusDisplay();
+                console.log('Perspective set to:', currentPerspective);
+            }
+        }
+        
+        function setPlayerColor(color) {
+            currentPlayerColor = color;
+            
+            // Update button states
+            document.getElementById('whiteBtn').classList.toggle('active', color === 'white');
+            document.getElementById('blackBtn').classList.toggle('active', color === 'black');
+            
+            if (layoutManager) {
+                layoutManager.setPerspective(currentPerspective, currentPlayerColor);
+                updateStatusDisplay();
+                console.log('Player color set to:', color);
+            }
+        }
+        
+        function updateStatusDisplay() {
+            const statusDisplay = document.getElementById('statusDisplay');
+            const currentMode = layoutManager ? layoutManager.getCurrentMode() : 'Unknown';
+            const boardFlipped = layoutManager ? layoutManager.isBoardFlipped() : false;
+
+            statusDisplay.innerHTML = `
+                <strong>Current State:</strong><br>
+                Mode: ${currentMode}<br>
+                Perspective: ${currentPerspective}<br>
+                Color: ${currentPlayerColor}<br>
+                Board Flipped: ${boardFlipped}
+            `;
+        }
+        
+        function debugLayout() {
+            if (layoutManager) {
+                console.log('=== LAYOUT DEBUG INFO ===');
+                console.log('Layout Manager State:', {
+                    mode: layoutManager.getCurrentMode(),
+                    perspective: layoutManager.getPerspective(),
+                    dimensions: layoutManager.getDimensions()
+                });
+                
+                console.log('Action Buttons:', document.querySelectorAll('.chess-action-button'));
+                console.log('Move Lists:', document.querySelectorAll('.chess-move-list'));
+                console.log('Auto Promotion:', document.querySelectorAll('.chess-auto-promotion'));
+                console.log('========================');
+            }
+        }
+        
+        function testGameStates() {
+            console.log('Testing different game states...');
+
+            const states = [
+                { perspective: 'PLAYING', color: 'white' },
+                { perspective: 'PLAYING', color: 'black' },
+                { perspective: 'OBSERVING', color: 'white' },
+                { perspective: 'EXAMINING', color: 'white' },
+                { perspective: 'FREESTYLE', color: 'white' }
+            ];
+
+            let index = 0;
+            const testInterval = setInterval(() => {
+                if (index >= states.length) {
+                    clearInterval(testInterval);
+                    console.log('Game state testing complete');
+                    return;
+                }
+
+                const state = states[index];
+                console.log(`Testing state ${index + 1}:`, state);
+
+                // Update UI
+                document.getElementById('perspectiveSelect').value = state.perspective;
+                currentPerspective = state.perspective;
+                currentPlayerColor = state.color;
+
+                // Update layout manager
+                if (layoutManager) {
+                    layoutManager.setPerspective(state.perspective, state.color);
+                }
+
+                updateStatusDisplay();
+                index++;
+            }, 2000); // Change every 2 seconds
+        }
+
+        function testFlipBoard() {
+            console.log('Testing flip board functionality...');
+
+            // Simulate clicking the flip button
+            const flipButton = document.querySelector('[data-action="flip"]');
+            if (flipButton) {
+                flipButton.click();
+                console.log('Flip button clicked');
+            } else {
+                console.warn('Flip button not found');
+            }
+        }
+
+        // Add action button event handling for test page
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('[data-action]')) {
+                const action = e.target.dataset.action;
+                const isHamburgerItem = e.target.classList.contains('chess-hamburger-item');
+                console.log(`Action ${isHamburgerItem ? '(hamburger)' : '(button)'} clicked:`, action);
+
+                switch (action) {
+                    case 'flip':
+                        console.log('Flip board action triggered');
+                        // In a real implementation, this would call flipBoard()
+                        // For testing, we'll just log and update the board visually
+                        flipTestBoard();
+                        break;
+                    case 'resign':
+                        console.log('Resign action triggered');
+                        alert('Resign action (test mode)');
+                        break;
+                    case 'draw':
+                        console.log('Draw action triggered');
+                        alert('Draw action (test mode)');
+                        break;
+                    case 'abort':
+                        console.log('Abort action triggered');
+                        alert('Abort action (test mode)');
+                        break;
+                    case 'analysis':
+                        console.log('Analysis action triggered');
+                        alert('Analysis action (test mode)');
+                        break;
+                    case 'rematch':
+                        console.log('Rematch action triggered');
+                        alert('Rematch action (test mode)');
+                        break;
+                    case 'setupfen':
+                        console.log('Setup FEN action triggered');
+                        alert('Setup FEN action (test mode)');
+                        break;
+                    case 'clear':
+                        console.log('Clear board action triggered');
+                        clearTestBoard();
+                        break;
+                    default:
+                        console.warn('Unknown action:', action);
+                }
+            }
+        });
+
+        function flipTestBoard() {
+            const board = document.getElementById('chessBoard');
+            if (board) {
+                // Simple visual flip - reverse the order of squares
+                const squares = Array.from(board.children);
+                squares.reverse().forEach(square => board.appendChild(square));
+                console.log('Test board flipped');
+
+                // Update layout manager flip state
+                if (layoutManager) {
+                    layoutManager.toggleBoardFlip();
+                    updateStatusDisplay();
+                }
+            }
+        }
+
+        function clearTestBoard() {
+            const board = document.getElementById('chessBoard');
+            if (board) {
+                // Clear all pieces from test board
+                const squares = board.querySelectorAll('.chess-square');
+                squares.forEach(square => {
+                    square.textContent = '';
+                });
+                console.log('Test board cleared');
+            }
+        }
+
+        function testHamburgerMenu() {
+            console.log('Testing hamburger menu...');
+
+            // First switch to compact mode
+            setLayoutMode('compact');
+
+            setTimeout(() => {
+                const hamburgerButton = document.querySelector('.chess-hamburger-button');
+                const hamburgerDropdown = document.querySelector('.chess-hamburger-dropdown');
+
+                if (hamburgerButton && hamburgerDropdown) {
+                    console.log('Hamburger menu found, testing click...');
+
+                    // Test opening menu
+                    hamburgerButton.click();
+
+                    setTimeout(() => {
+                        if (hamburgerDropdown.classList.contains('show')) {
+                            console.log('✓ Hamburger menu opened successfully');
+
+                            // Test menu items
+                            const menuItems = hamburgerDropdown.querySelectorAll('.chess-hamburger-item');
+                            console.log(`✓ Found ${menuItems.length} menu items:`,
+                                Array.from(menuItems).map(item => item.textContent));
+
+                            // Test closing menu
+                            document.body.click();
+
+                            setTimeout(() => {
+                                if (!hamburgerDropdown.classList.contains('show')) {
+                                    console.log('✓ Hamburger menu closed successfully');
+                                } else {
+                                    console.warn('✗ Hamburger menu did not close');
+                                }
+                            }, 100);
+
+                        } else {
+                            console.warn('✗ Hamburger menu did not open');
+                        }
+                    }, 100);
+
+                } else {
+                    console.warn('✗ Hamburger menu not found');
+                    console.log('Available elements:', {
+                        hamburgerButton: !!hamburgerButton,
+                        hamburgerDropdown: !!hamburgerDropdown,
+                        gameInfoCompact: !!document.querySelector('.chess-game-info-compact')
+                    });
+                }
+            }, 200); // Wait for layout to update
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeTest);
+    </script>
+</body>
+</html>

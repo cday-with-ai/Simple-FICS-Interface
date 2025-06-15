@@ -1,0 +1,214 @@
+/* ========================================
+   HYBRID LAYOUT INTEGRATION - CSS TO REPLACE
+   ======================================== */
+
+/* 1. CSS VARIABLES - Replace your existing positioning variables */
+:root {
+    --board-size: 400px;
+    --board-x: 10px;
+    --board-y: 50px;
+    --player-x: 425px;
+    --player-y: 50px;
+    --player-panel-width: 200px;
+    --font-scale: 1;
+}
+
+/* 2. MAIN LAYOUT CONTAINER - Replace your main container */
+.chess-layout-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    /* Keep your existing font-family, background, etc. */
+}
+
+/* 3. CHESS BOARD WRAPPER - Replace board positioning */
+.chess-board-wrapper {
+    position: absolute;
+    left: var(--board-x);
+    top: var(--board-y);
+    width: var(--board-size);
+    height: var(--board-size);
+    z-index: 5;
+}
+
+/* 4. PLAYER SECTIONS - Replace your player info positioning */
+
+/* Standard Mode Player Panel (Right Side) */
+.chess-player-section {
+    position: absolute;
+    left: var(--player-x);
+    top: calc(var(--board-y) + var(--board-size) / 2);
+    transform: translateY(-50%);
+    width: var(--player-panel-width);
+    display: flex;
+    flex-direction: column;
+    gap: calc(12px * var(--font-scale));
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    padding: calc(12px * var(--font-scale));
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+/* Compact Mode Player Sections (Above/Below Board) */
+.chess-player-top, .chess-player-bottom {
+    position: absolute;
+    left: var(--player-x);
+    width: var(--board-size);
+    height: calc(50px * var(--font-scale));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 6px;
+    padding: calc(8px * var(--font-scale)) calc(12px * var(--font-scale));
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.chess-player-top { top: calc(10px + 35px * var(--font-scale)); }
+.chess-player-bottom { top: calc(var(--board-y) + var(--board-size) + 10px); }
+
+/* 5. GAME INFO POSITIONING */
+.chess-game-info {
+    position: absolute;
+    left: var(--board-x);
+    top: 10px;
+    width: var(--board-size);
+    height: calc(30px * var(--font-scale));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 6px;
+    padding: calc(6px * var(--font-scale)) calc(12px * var(--font-scale));
+    font-weight: bold;
+    font-size: calc(14px * var(--font-scale));
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.chess-game-info-compact {
+    position: absolute;
+    left: var(--player-x);
+    top: 10px;
+    width: var(--board-size);
+    height: calc(25px * var(--font-scale));
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    padding: calc(4px * var(--font-scale)) calc(8px * var(--font-scale));
+    font-weight: bold;
+    font-size: calc(12px * var(--font-scale));
+    color: #333;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+/* 6. ANALYSIS COMPONENTS */
+
+/* Strength Bar */
+.chess-strength-bar {
+    position: absolute;
+    left: calc(var(--board-x) - 35px);
+    top: var(--board-y);
+    width: 25px;
+    height: var(--board-size);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+}
+
+/* Analysis Controls */
+.chess-analysis-controls {
+    position: absolute;
+    right: 10px;
+    top: calc(var(--board-y) + 10px);
+    display: flex;
+    flex-direction: column;
+    gap: calc(8px * var(--font-scale));
+    z-index: 10;
+}
+
+/* Analysis Line - Standard Mode */
+.chess-analysis-line {
+    position: absolute;
+    left: var(--board-x);
+    top: calc(var(--board-y) + var(--board-size) + 50px);
+    width: var(--board-size);
+    height: calc(30px * var(--font-scale));
+    background: rgba(248, 249, 250, 0.95);
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: calc(6px * var(--font-scale)) calc(10px * var(--font-scale));
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--font-scale));
+    font-size: calc(13px * var(--font-scale));
+    z-index: 10;
+}
+
+/* Analysis Line - Compact Mode */
+.chess-analysis-line-compact {
+    position: absolute;
+    left: var(--player-x);
+    top: calc(var(--board-y) + var(--board-size) + 100px * var(--font-scale));
+    width: var(--board-size);
+    height: calc(30px * var(--font-scale));
+    background: rgba(248, 249, 250, 0.95);
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: calc(6px * var(--font-scale)) calc(10px * var(--font-scale));
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--font-scale));
+    font-size: calc(13px * var(--font-scale));
+    z-index: 10;
+}
+
+/* 7. LAYOUT MODE VISIBILITY RULES - CRITICAL FOR SWITCHING */
+.layout-standard .chess-player-top,
+.layout-standard .chess-player-bottom,
+.layout-standard .chess-game-info-compact,
+.layout-standard .chess-move-opening-info,
+.layout-standard .chess-analysis-line-compact,
+.layout-standard .chess-move-list-compact,
+.layout-standard .chess-auto-promotion-compact { display: none !important; }
+
+.layout-compact .chess-player-section,
+.layout-compact .chess-game-info,
+.layout-compact .chess-move-opening-info-standard,
+.layout-compact .chess-analysis-line,
+.layout-compact .chess-move-list,
+.layout-compact .chess-move-list-compact,
+.layout-compact .chess-auto-promotion,
+.layout-compact .chess-auto-promotion-compact { display: none !important; }
+
+.layout-compact .chess-player-top,
+.layout-compact .chess-player-bottom,
+.layout-compact .chess-game-info-compact,
+.layout-compact .chess-move-opening-info,
+.layout-compact .chess-analysis-line-compact { display: flex !important; }
+
+/* 8. STANDARD MODE: NAME AND RATING SIDE BY SIDE */
+.layout-standard .chess-player-info .chess-player-name-rating {
+    display: flex;
+    align-items: center;
+    gap: calc(8px * var(--font-scale));
+    justify-content: center;
+}
+
+.layout-standard .chess-player-info .chess-player-name {
+    text-align: left;
+    margin: 0;
+}
+
+.layout-standard .chess-player-info .chess-player-rating {
+    text-align: left;
+    margin: 0;
+}

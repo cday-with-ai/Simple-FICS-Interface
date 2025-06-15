@@ -2101,6 +2101,19 @@ function updatePlayerInfoAndClockUI() {
     const bottomPlayerNameEl = document.getElementById('bottomPlayerName');
     const bottomPlayerClockEl = document.getElementById('bottomPlayerClock');
 
+    // Also get compact mode elements
+    const compactBottomPlayerNameEl = document.getElementById('compactBottomPlayerName');
+    const compactBottomPlayerClockEl = document.getElementById('compactBottomPlayerClock');
+
+    console.log('updatePlayerInfoAndClockUI called - Elements found:', {
+        topPlayerName: !!topPlayerNameEl,
+        topPlayerClock: !!topPlayerClockEl,
+        bottomPlayerName: !!bottomPlayerNameEl,
+        bottomPlayerClock: !!bottomPlayerClockEl,
+        compactBottomPlayerName: !!compactBottomPlayerNameEl,
+        compactBottomPlayerClock: !!compactBottomPlayerClockEl
+    });
+
     // Check if we have ratings from the current game info or moves list
     let whiteNameWithRating = gameState.whitePlayer.name + ' ' + (gameState.whitePlayer.rating ? `(${gameState.whitePlayer.rating})` : '');
     let blackNameWithRating = gameState.blackPlayer.name + ' ' + (gameState.blackPlayer.rating ? `(${gameState.blackPlayer.rating})` : '');
@@ -2133,6 +2146,10 @@ function updatePlayerInfoAndClockUI() {
         bottomPlayerNameEl.innerText = blackNameWithRating;
         bottomPlayerClockEl.innerText = gameState.blackClockDisplay || '00:00';
 
+        // Also update compact mode elements
+        if (compactBottomPlayerNameEl) compactBottomPlayerNameEl.innerText = blackNameWithRating;
+        if (compactBottomPlayerClockEl) compactBottomPlayerClockEl.innerText = gameState.blackClockDisplay || '00:00';
+
         // Update clock styles using CSS classes
         topPlayerClockEl.classList.remove('clock-active', 'clock-inactive', 'clock-finished');
         bottomPlayerClockEl.classList.remove('clock-active', 'clock-inactive', 'clock-finished');
@@ -2160,6 +2177,10 @@ function updatePlayerInfoAndClockUI() {
         topPlayerClockEl.innerText = gameState.blackClockDisplay || '00:00';
         bottomPlayerNameEl.innerText = whiteNameWithRating;
         bottomPlayerClockEl.innerText = gameState.whiteClockDisplay || '00:00';
+
+        // Also update compact mode elements
+        if (compactBottomPlayerNameEl) compactBottomPlayerNameEl.innerText = whiteNameWithRating;
+        if (compactBottomPlayerClockEl) compactBottomPlayerClockEl.innerText = gameState.whiteClockDisplay || '00:00';
 
         // Update clock styles using CSS classes
         topPlayerClockEl.classList.remove('clock-active', 'clock-inactive', 'clock-finished');
@@ -3706,292 +3727,91 @@ function setupMainChessBoardDisplay() {
 
     boardArea.innerHTML = ''; // Clear previous content
 
-    const boardMainContainer = document.createElement('div');
-    boardMainContainer.classList.add('grid-row', 'board-main-container');
+    // Initialize layout manager if not already done
+    if (!window.layoutManager) {
+        window.layoutManager = new LayoutManager();
+    }
 
-    const boardContainer = document.createElement('div');
-    boardContainer.classList.add('board-container');
+    // Prepare game state for layout creation
+    const layoutGameState = {
+        gameNumber: gameState.gameNumber || 'N/A',
+        gameType: gameState.type || 'Unknown',
+        topPlayer: {
+            name: gameState.opponentName || 'Opponent',
+            rating: gameState.opponentRating || '----',
+            time: formatTime(gameState.whiteTimeSecs || 300)
+        },
+        bottomPlayer: {
+            name: gameState.playerName || 'You',
+            rating: gameState.playerRating || '----',
+            time: formatTime(gameState.blackTimeSecs || 300)
+        }
+    };
 
-    const boardOnlyContainer = document.createElement('div');
-    boardOnlyContainer.classList.add('board-only-container');
+    // Create layout using the layout manager
+    const layoutContainer = window.layoutManager.createLayout(boardArea, layoutGameState);
 
-    // Create the playerInfoContainer element
-    const playerInfoContainer = document.createElement('div');
-    playerInfoContainer.classList.add('player-info-container');
+    // Get the chess board element that was created
+    const board = document.getElementById('chessBoard');
 
-    const topPlayerInfo = document.createElement('div');
-    topPlayerInfo.classList.add('player-info', 'top-player');
+    // Set initial perspective based on game state
+    if (gameState.isPlayerPlaying) {
+        const playerColor = gameState.isPlayerWhite ? 'white' : 'black';
+        window.layoutManager.setPerspective('PLAYING', playerColor);
+    } else if (gameState.perspective === 'EXAMINING') {
+        window.layoutManager.setPerspective('EXAMINING');
+    } else if (gameState.perspective === 'FREESTYLE') {
+        window.layoutManager.setPerspective('FREESTYLE');
+    } else {
+        window.layoutManager.setPerspective('OBSERVING');
+    }
 
-    const topPlayerNameWrapper = document.createElement('div');
-    topPlayerNameWrapper.classList.add('player-name-wrapper');
-    const topPlayerName = document.createElement('div');
-    topPlayerName.classList.add('player-name');
-    topPlayerName.id = 'topPlayerName';
-    topPlayerName.innerText = 'Opponent';
-    // Move indicator removed
-    topPlayerNameWrapper.appendChild(topPlayerName);
-
-    const topPlayerClock = document.createElement('div');
-    topPlayerClock.classList.add('player-clock', 'top-player-clock', 'player-clock-display','clock-finished');
-    topPlayerClock.id = 'topPlayerClock';
-    topPlayerClock.innerText = '00:00';
-    topPlayerInfo.appendChild(topPlayerClock);
-    topPlayerInfo.appendChild(topPlayerNameWrapper);
-
-    const board = document.createElement('div');
-    board.id = 'chessBoard';
-    board.classList.add('chess-board');
-
-    const bottomPlayerInfo = document.createElement('div');
-    bottomPlayerInfo.classList.add('player-info', 'bottom-player');
-
-    const bottomPlayerNameWrapper = document.createElement('div');
-    bottomPlayerNameWrapper.classList.add('player-name-wrapper');
-    const bottomPlayerName = document.createElement('div');
-    bottomPlayerName.classList.add('player-name');
-    bottomPlayerName.id = 'bottomPlayerName';
-    bottomPlayerName.innerText = 'You';
-    // Move indicator removed
-    bottomPlayerNameWrapper.appendChild(bottomPlayerName);
+    // Layout creation is now handled by the layout manager
 
     const bottomPlayerClock = document.createElement('div');
     bottomPlayerClock.classList.add('player-clock', 'bottom-player-clock', 'player-clock-display','clock-finished');
     bottomPlayerClock.id = 'bottomPlayerClock';
     bottomPlayerClock.innerText = '00:00';
-    bottomPlayerInfo.appendChild(bottomPlayerNameWrapper);
     bottomPlayerInfo.appendChild(bottomPlayerClock);
+    bottomPlayerInfo.appendChild(bottomPlayerNameWrapper);
 
-    // Last move display removed
+    // IMPORTANT: Create compact mode elements BEFORE adding to container
+    // These will be updated by updatePlayerInfoAndClockUI()
+    const compactBottomPlayerClock = document.createElement('div');
+    compactBottomPlayerClock.classList.add('player-clock', 'bottom-player-clock', 'player-clock-display', 'clock-finished');
+    compactBottomPlayerClock.id = 'compactBottomPlayerClock';
+    compactBottomPlayerClock.innerText = '00:00';
 
-    const boardMenuButton = document.createElement('button');
-    boardMenuButton.classList.add('board-menu-button');
-    boardMenuButton.innerHTML = '⋮';
-    boardMenuButton.title = 'Board Menu';
+    const compactBottomPlayerName = document.createElement('div');
+    compactBottomPlayerName.classList.add('player-name');
+    compactBottomPlayerName.id = 'compactBottomPlayerName';
+    compactBottomPlayerName.innerText = 'You';
 
-    const boardMenu = document.createElement('div');
-    boardMenu.classList.add('board-menu');
-
-    const flipBtn = document.createElement('button');
-    flipBtn.title = 'Flip Board';
-    flipBtn.innerHTML = 'Flip Board <i class="material-icons">swap_vert</i>';
-    flipBtn.onclick = () => {
-        flipBoard();
-        boardMenu.classList.remove('show');
-    };
-    boardMenu.appendChild(flipBtn);
-
-    // Setup from FEN button (only visible in FREESTYLE mode)
-    const setupFenBtn = document.createElement('button');
-    setupFenBtn.id = 'setupFenBtn';
-    setupFenBtn.title = 'Setup Position from FEN';
-    setupFenBtn.innerHTML = 'Setup from FEN <i class="material-icons">edit</i>';
-    setupFenBtn.onclick = () => {
-        showSetupFenDialog();
-        boardMenu.classList.remove('show');
-    };
-    setupFenBtn.style.display = 'none'; // Hidden by default
-    boardMenu.appendChild(setupFenBtn);
-
-    // Abort Game button (only visible when playing and move 2+)
-    const abortGameBtn = document.createElement('button');
-    abortGameBtn.id = 'abortGameBtn';
-    abortGameBtn.title = 'Abort Game';
-    abortGameBtn.innerHTML = 'Abort Game <i class="material-icons">cancel</i>';
-    abortGameBtn.onclick = () => {
-        onAbort();
-        boardMenu.classList.remove('show');
-    };
-    abortGameBtn.style.display = 'none'; // Hidden by default
-    boardMenu.appendChild(abortGameBtn);
-
-    boardMenuButton.addEventListener('click', (event) => {
-        boardMenu.classList.toggle('show');
-        event.stopPropagation();
-    });
-    document.addEventListener('click', (event) => {
-        if (!boardMenuButton.contains(event.target) && !boardMenu.contains(event.target)) {
-            boardMenu.classList.remove('show');
-        }
-    });
-
-    // Create game number element (left-aligned)
-    const gameNumber = document.createElement('div');
-    gameNumber.id = 'gameNumber';
-    gameNumber.classList.add('game-number');
-    gameNumber.innerText = '';
-
-    // Create game type info element (right-aligned)
-    const gameTypeInfo = document.createElement('div');
-    gameTypeInfo.id = 'gameTypeInfo';
-    gameTypeInfo.classList.add('game-type-info');
-    gameTypeInfo.innerText = '';
-
-    // Create a container for the board and top labels
-    const boardAndLabelsContainer = document.createElement('div');
-    boardAndLabelsContainer.classList.add('board-and-labels-container');
-
-    // Create a container for the top labels
-    const topLabelsContainer = document.createElement('div');
-    topLabelsContainer.classList.add('top-labels-container');
-
-    // Add game number to the top left and game type info to the top right
-    topLabelsContainer.appendChild(gameNumber);
-    topLabelsContainer.appendChild(gameTypeInfo);
-
-    // Add the top labels container and chess board to the main container
-    boardAndLabelsContainer.appendChild(topLabelsContainer);
-    boardAndLabelsContainer.appendChild(board);
-    boardOnlyContainer.appendChild(boardAndLabelsContainer);
-
-    // Create a container for the bottom labels
-    const bottomLabelsContainer = document.createElement('div');
-    bottomLabelsContainer.classList.add('bottom-labels-container');
-    bottomLabelsContainer.style.display = 'flex';
-    bottomLabelsContainer.style.width = '100%';
-    bottomLabelsContainer.style.justifyContent = 'space-between';
-
-    // Add last move label (left side)
-    const lastMoveLabel = document.createElement('div');
-    lastMoveLabel.id = 'lastMoveLabel';
-    lastMoveLabel.classList.add('last-move-label');
-    lastMoveLabel.innerText = gameState.lastMovePretty || '';
-    bottomLabelsContainer.appendChild(lastMoveLabel);
-
-    // Add ECO opening label (right side)
-    const ecoOpeningLabel = document.createElement('div');
-    ecoOpeningLabel.id = 'ecoOpeningLabel';
-    ecoOpeningLabel.classList.add('eco-opening-label');
-    ecoOpeningLabel.innerText = gameState.openingDescription || '';
-    bottomLabelsContainer.appendChild(ecoOpeningLabel);
-
-    // Add the bottom labels container to the board container
-    boardOnlyContainer.appendChild(bottomLabelsContainer);
-
-    const playerDivider = document.createElement('div');
-    playerDivider.classList.add('player-divider');
-    const topPlayerNameContainer = document.createElement('div');
-    topPlayerNameContainer.classList.add('top-name-container');
-    const bottomPlayerNameContainer = document.createElement('div');
-    bottomPlayerNameContainer.classList.add('bottom-name-container');
-    topPlayerNameContainer.appendChild(topPlayerNameWrapper);
-    topPlayerNameContainer.appendChild(boardMenuButton);
-    bottomPlayerNameContainer.appendChild(bottomPlayerNameWrapper);
-
-
-
-    // Create promotion options container
-    const promotionOptionsContainer = document.createElement('div');
-    promotionOptionsContainer.id = 'promotionOptionsContainer';
-    promotionOptionsContainer.classList.add('promotion-options-container');
-
-    // Add a title to the container
-    const promotionTitle = document.createElement('div');
-    promotionTitle.classList.add('promotion-title');
-    promotionTitle.textContent = 'Auto Promotion:';
-    promotionOptionsContainer.appendChild(promotionTitle);
-
-    // Create a row for the promotion options
-    const promotionOptionsRow = document.createElement('div');
-    promotionOptionsRow.classList.add('promotion-options-row');
-    promotionOptionsContainer.appendChild(promotionOptionsRow);
-
-    // Create options for Queen, Rook, Bishop, Knight
-    const pieceTypes = [
-        {value: 'q', name: 'Queen'},
-        {value: 'r', name: 'Rook'},
-        {value: 'b', name: 'Bishop'},
-        {value: 'n', name: 'Knight'}
-    ];
-
-    pieceTypes.forEach(piece => {
-        const optionDiv = document.createElement('div');
-        optionDiv.classList.add('promotion-option');
-
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'promotion-piece';
-        radio.value = piece.value;
-        radio.id = `promotion-${piece.value}`;
-        if (piece.value === 'q') radio.checked = true; // Queen is default
-
-        const label = document.createElement('label');
-        label.htmlFor = `promotion-${piece.value}`;
-        label.title = piece.name;
-
-        // We'll set the actual piece image in updateBoardGraphicsAndSquareListeners
-        // based on the current piece set and player color
-
-        optionDiv.appendChild(radio);
-        optionDiv.appendChild(label);
-        promotionOptionsRow.appendChild(optionDiv); // Add to row instead of directly to container
-    });
-
-    // Create game action links container (initially empty)
-    const gameActionLinksContainer = document.createElement('div');
-    gameActionLinksContainer.id = 'gameActionLinksContainer';
-    gameActionLinksContainer.classList.add('game-action-links-container');
-    // Links will be dynamically created by updateUIForPerspective()
-
-    // Board menu and player divider setup
-    playerDivider.appendChild(boardMenu);
-    playerDivider.style.position = 'relative';
-    playerDivider.appendChild(topPlayerNameContainer);
-    playerDivider.appendChild(gameActionLinksContainer); // Add game action links between player names
-    playerDivider.appendChild(promotionOptionsContainer); // Add promotion container above bottom player name
-    playerDivider.appendChild(bottomPlayerNameContainer);
-
-    // Populate playerInfoContainer
-    playerInfoContainer.appendChild(topPlayerClock);
-    playerInfoContainer.appendChild(playerDivider);
-    playerInfoContainer.appendChild(bottomPlayerClock);
-
-    // Assemble the main board structure
-    boardContainer.appendChild(boardOnlyContainer);
-    boardContainer.appendChild(playerInfoContainer); // playerInfoContainer is added here
-    boardMainContainer.appendChild(boardContainer);
-    boardArea.appendChild(boardMainContainer); // And finally to the DOM
+    // Add compact elements to the bottom player info div
+    bottomPlayerInfo.appendChild(compactBottomPlayerClock);
+    bottomPlayerInfo.appendChild(compactBottomPlayerName);
 
     // Create chess board squares
     createBoardSquares(board);
 
-    //Move list.
-    movesListContainer = document.createElement('div'); // Assign to global
-    movesListContainer.id = 'movesListContainer';
-    movesListContainer.classList.add('moves-list-container');
-    movesListContainer.style.display = 'block'; // Show by default
-    // The movesListDisplayElement will be created by initializeEmptyMoveListInternal
-    playerDivider.appendChild(movesListContainer); // Add moves list to the player divider between names
-    // Initialize an empty move list with navigation buttons
+    // Set up action button event listeners
+    setupActionButtonListeners();
+
+    // OLD LAYOUT CODE REMOVED - Now using hybrid layout system
+    // The hybrid layout handles all UI elements through CSS positioning
+
+    // Initialize move list display
     refreshMoveListDisplay();
 
 
-    // Resize observer for the main board area
+    // Resize observer for hybrid layout system
     const mainBoardResizeObserver = new ResizeObserver(() => {
-        const chessBoardArea = document.querySelector('.chess-board-area');
-        if (!chessBoardArea || !board) return;
+        if (window.layoutManager) {
+            window.layoutManager.recalculate();
+        }
 
-        const availableWidth = chessBoardArea.clientWidth - 302 - 30; // Adjusted for player info width + strength bars
-        const availableHeight = chessBoardArea.clientHeight - 40; // Adjusted for potential margins/padding
-        const maxWidth = Math.max(100, availableWidth);
-        const maxSize = Math.min(maxWidth, availableHeight, 1500);
-
-        board.style.width = maxSize + 'px';
-        board.style.height = maxSize + 'px';
-
-        // Updated font scaling with higher base value for consistency with live site
-        const fontScale = Math.max(0.75, Math.min(1.5, maxSize / 800 * 1.0));
-        console.log('Chess font scaling - Board size:', maxSize, 'Font scale:', fontScale, 'Available dimensions:', availableWidth, 'x', availableHeight);
-        document.documentElement.style.setProperty('--font-scale', fontScale);
-        chessBoardArea.dataset.maxSize = maxSize;
-        chessBoardArea.dataset.fontScale = fontScale;
-
-
-
-        // Ensure playerInfoContainer and boardOnlyContainer also respond
-        if (playerInfoContainer) playerInfoContainer.style.height = maxSize + 'px';
-        if (boardOnlyContainer) boardOnlyContainer.style.width = maxSize + 'px';
-
-        updateBoardGraphicsAndSquareListeners(); // Redraw board graphics which includes piece sizes
+        // Update board graphics after layout recalculation
+        updateBoardGraphicsAndSquareListeners();
 
         // Reposition strength bars if they exist
         positionStrengthBars();
@@ -4000,8 +3820,9 @@ function setupMainChessBoardDisplay() {
     if (boardArea) mainBoardResizeObserver.observe(boardArea);
 
     window.addEventListener('resize', () => {
-        mainBoardResizeObserver.disconnect();
-        if (boardArea) mainBoardResizeObserver.observe(boardArea);
+        if (window.layoutManager) {
+            window.layoutManager.recalculate();
+        }
 
         // Reposition strength bars on window resize
         setTimeout(() => positionStrengthBars(), 100);
@@ -4025,6 +3846,198 @@ function setupMainChessBoardDisplay() {
 
     // Update UI elements based on initial perspective
     updateUIForPerspective();
+
+    // Force a resize check after a short delay to ensure proper sizing
+    setTimeout(() => {
+        if (mainBoardResizeObserver && boardArea) {
+            console.log('Forcing chess board resize check...');
+            mainBoardResizeObserver.disconnect();
+            mainBoardResizeObserver.observe(boardArea);
+        }
+        // Also manually trigger the force resize function
+        forceChessBoardResize();
+    }, 500);
+
+    // Make forceChessBoardResize available globally
+    window.forceChessBoardResize = forceChessBoardResize;
+
+    // Make functions available for debugging
+    window.updatePlayerInfoAndClockUI = updatePlayerInfoAndClockUI;
+
+    // Make layout manager functions available
+    window.setPerspective = function(perspective, playerColor) {
+        if (window.layoutManager) {
+            window.layoutManager.setPerspective(perspective, playerColor);
+        }
+    };
+
+    window.setLayoutMode = function(mode) {
+        if (window.layoutManager) {
+            window.layoutManager.setMode(mode);
+        }
+    };
+
+    window.toggleBoardFlip = function() {
+        if (window.layoutManager) {
+            const flipped = window.layoutManager.toggleBoardFlip();
+            console.log('Board flip toggled:', flipped);
+            return flipped;
+        }
+        return false;
+    };
+
+    // Also make a debug function available
+    window.debugChessBoard = function() {
+        try {
+        const chessBoardArea = document.querySelector('.chess-board-area');
+        const board = document.getElementById('chessBoard');
+        const currentViewMode = getCurrentViewMode();
+        const topPlayerInfo = document.querySelector('.top-player-info');
+        const bottomPlayerInfo = document.querySelector('.bottom-player-info');
+        const boardContainer = document.querySelector('.board-container');
+
+        // Check radio button states
+        const chessRadio = document.getElementById('view-chess');
+        const chessCompactRadio = document.getElementById('view-chess-compact');
+        const chessAndChatRadio = document.getElementById('view-chess-and-chat');
+        const chessCompactAndChatRadio = document.getElementById('view-chess-compact-and-chat');
+        const chatRadio = document.getElementById('view-chat');
+
+        console.log('=== CHESS BOARD DEBUG INFO ===');
+        console.log('Current view mode:', currentViewMode);
+        console.log('Radio button states:');
+        console.log('  Chess:', chessRadio ? chessRadio.checked : 'NOT FOUND');
+        console.log('  ChessCompact:', chessCompactRadio ? chessCompactRadio.checked : 'NOT FOUND');
+        console.log('  ChessAndChat:', chessAndChatRadio ? chessAndChatRadio.checked : 'NOT FOUND');
+        console.log('  ChessCompactAndChat:', chessCompactAndChatRadio ? chessCompactAndChatRadio.checked : 'NOT FOUND');
+        console.log('  Chat:', chatRadio ? chatRadio.checked : 'NOT FOUND');
+        console.log('Chess board area dimensions:', chessBoardArea ? `${chessBoardArea.clientWidth}x${chessBoardArea.clientHeight}` : 'NOT FOUND');
+        console.log('Chess board element dimensions:', board ? `${board.offsetWidth}x${board.offsetHeight}` : 'NOT FOUND');
+        console.log('Chess board computed style:', board ? window.getComputedStyle(board).width + ' x ' + window.getComputedStyle(board).height : 'NOT FOUND');
+        console.log('Chess board visibility:', board ? window.getComputedStyle(board).display : 'NOT FOUND');
+        console.log('Top player info:', topPlayerInfo ? 'FOUND' : 'NOT FOUND');
+        if (topPlayerInfo) {
+            console.log('  Top player info classes:', topPlayerInfo.className);
+            console.log('  Top player info computed display:', window.getComputedStyle(topPlayerInfo).display);
+        }
+        console.log('Bottom player info:', bottomPlayerInfo ? 'FOUND' : 'NOT FOUND');
+        if (bottomPlayerInfo) {
+            console.log('  Bottom player info classes:', bottomPlayerInfo.className);
+            console.log('  Bottom player info computed display:', window.getComputedStyle(bottomPlayerInfo).display);
+        }
+        console.log('Board container:', boardContainer ? 'FOUND' : 'NOT FOUND');
+        console.log('Body classes:', document.body.className);
+        console.log('Window getCurrentView:', window.getCurrentView ? window.getCurrentView() : 'NOT AVAILABLE');
+        console.log('================================');
+
+        if (board && chessBoardArea) {
+            forceChessBoardResize();
+        }
+
+        return "Debug completed successfully";
+        } catch (error) {
+            console.error('Error in debugChessBoard:', error);
+            return "Debug failed: " + error.message;
+        }
+    };
+}
+
+/**
+ * Helper function to format time in MM:SS format
+ */
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+/**
+ * Set up action button event listeners
+ */
+function setupActionButtonListeners() {
+    // Use event delegation to handle dynamically created buttons
+    document.addEventListener('click', (e) => {
+        if (e.target.matches('[data-action]')) {
+            const action = e.target.dataset.action;
+
+            switch (action) {
+                case 'resign':
+                    onResign();
+                    break;
+                case 'draw':
+                    onDraw();
+                    break;
+                case 'abort':
+                    onAbort();
+                    break;
+                case 'analysis':
+                    onAnalysis();
+                    break;
+                case 'flip':
+                    // Update layout manager flip state
+                    if (window.layoutManager) {
+                        window.layoutManager.toggleBoardFlip();
+                    }
+                    // Call the existing flip board function
+                    flipBoard();
+                    break;
+                case 'rematch':
+                    onRematch();
+                    break;
+                case 'setupfen':
+                    showSetupFenDialog();
+                    break;
+                case 'clear':
+                    // Clear board for freestyle mode
+                    if (gameState.perspective === 'FREESTYLE') {
+                        gameState.chessBoard.loadFen('8/8/8/8/8/8/8/8 w - - 0 1');
+                        updateBoardGraphicsAndSquareListeners();
+                    }
+                    break;
+                default:
+                    console.warn('Unknown action:', action);
+            }
+        }
+    });
+}
+
+/**
+ * Get current view mode from chat.js
+ */
+function getCurrentViewMode() {
+    // Use body classes as the source of truth since they reflect the actual applied layout
+    if (document.body.classList.contains('layout-chesscompact')) return 'chesscompact';
+    if (document.body.classList.contains('layout-chesscompactandchat')) return 'chesscompactandchat';
+    if (document.body.classList.contains('layout-chessandchat')) return 'chessandchat';
+    if (document.body.classList.contains('layout-chat')) return 'chat';
+    if (document.body.classList.contains('layout-chess')) return 'chess';
+
+    // Fallback: try to get from chat.js if body classes aren't set
+    if (window.getCurrentView) {
+        return window.getCurrentView();
+    }
+
+    // Default to chess
+    return 'chess';
+}
+
+/**
+ * Force chess board resize - can be called externally
+ */
+export function forceChessBoardResize() {
+    console.log('Forcing chess board resize with hybrid layout...');
+
+    if (window.layoutManager) {
+        window.layoutManager.recalculate();
+    }
+
+    // Trigger a resize event
+    window.dispatchEvent(new Event('resize'));
+
+    // Update board graphics
+    setTimeout(() => {
+        updateBoardGraphicsAndSquareListeners();
+    }, 100);
 }
 
 export function flipBoard() {

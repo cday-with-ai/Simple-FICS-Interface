@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absolute Layout Test - Chess Interface</title>
+    
+    <!-- CSS Files -->
+    <link rel="stylesheet" href="css/chess-absolute.css">
+    
+    <style>
+        /* Test controls */
+        .test-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            z-index: 1000;
+            font-size: 12px;
+        }
+        
+        .test-controls button {
+            display: block;
+            width: 100%;
+            margin: 2px 0;
+            padding: 4px 8px;
+            font-size: 11px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .test-controls button.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .debug-info {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 10px;
+            z-index: 1000;
+            max-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main Chess Layout Container -->
+    <div class="chess-layout-container layout-standard">
+        
+        <!-- Game Info -->
+        <div class="chess-game-info">
+            <span class="chess-game-number">Game 42</span>
+            <span class="chess-game-type">Blitz 5+0</span>
+        </div>
+        
+        <!-- Chess Board Wrapper -->
+        <div class="chess-board-wrapper">
+            <div id="chessBoard" class="chess-board">
+                <!-- Chess board will be generated here -->
+            </div>
+        </div>
+        
+        <!-- Player Section (Standard Layout) -->
+        <div class="chess-player-section">
+            <div class="chess-player-info">
+                <div class="chess-player-clock active">05:00</div>
+                <div class="chess-player-name">GrandMaster2024</div>
+                <div class="chess-player-rating">(2156)</div>
+            </div>
+            
+            <div class="chess-player-info">
+                <div class="chess-player-clock">04:30</div>
+                <div class="chess-player-name">You</div>
+                <div class="chess-player-rating">(1847)</div>
+            </div>
+            
+            <div class="chess-action-buttons">
+                <button class="chess-action-button">Resign</button>
+                <button class="chess-action-button secondary">Draw</button>
+                <button class="chess-action-button secondary">Abort</button>
+                <button class="chess-action-button secondary">Analysis</button>
+            </div>
+        </div>
+        
+        <!-- Player Top (Compact Layout) -->
+        <div class="chess-player-top">
+            <div class="chess-player-clock active">05:00</div>
+            <div>
+                <div class="chess-player-name">GrandMaster2024</div>
+                <div class="chess-player-rating">(2156)</div>
+            </div>
+        </div>
+        
+        <!-- Player Bottom (Compact Layout) -->
+        <div class="chess-player-bottom">
+            <div class="chess-player-clock">04:30</div>
+            <div>
+                <div class="chess-player-name">You</div>
+                <div class="chess-player-rating">(1847)</div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- Test Controls -->
+    <div class="test-controls">
+        <strong>Layout Test</strong>
+        <button id="btnStandard" class="active" onclick="setLayout('standard')">Standard</button>
+        <button id="btnCompact" onclick="setLayout('compact')">Compact</button>
+        <hr style="margin: 8px 0;">
+        <button onclick="testResize()">Test Resize</button>
+        <button onclick="showDebug()">Debug Info</button>
+        <button onclick="toggleDebug()">Toggle Debug</button>
+    </div>
+    
+    <!-- Debug Info -->
+    <div class="debug-info" id="debugInfo" style="display: none;">
+        <div id="debugContent">Debug info will appear here</div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="scripts/AbsoluteLayoutManager.js"></script>
+    
+    <script>
+        // Global variables
+        let layoutManager;
+        let debugVisible = false;
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing Absolute Layout Test');
+            
+            // Create chess board
+            createChessBoard();
+            
+            // Initialize layout manager
+            layoutManager = new AbsoluteLayoutManager();
+            
+            // Update debug info
+            updateDebugInfo();
+            
+            console.log('Absolute Layout Test initialized');
+        });
+        
+        /**
+         * Create a simple chess board for testing
+         */
+        function createChessBoard() {
+            const board = document.getElementById('chessBoard');
+            if (!board) return;
+            
+            // Create 8x8 grid
+            board.innerHTML = '';
+            board.style.display = 'grid';
+            board.style.gridTemplateColumns = 'repeat(8, 1fr)';
+            board.style.gridTemplateRows = 'repeat(8, 1fr)';
+            
+            // Starting position pieces
+            const startingPosition = [
+                ['♜','♞','♝','♛','♚','♝','♞','♜'],
+                ['♟','♟','♟','♟','♟','♟','♟','♟'],
+                ['','','','','','','',''],
+                ['','','','','','','',''],
+                ['','','','','','','',''],
+                ['','','','','','','',''],
+                ['♙','♙','♙','♙','♙','♙','♙','♙'],
+                ['♖','♘','♗','♕','♔','♗','♘','♖']
+            ];
+            
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = `chess-square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                    
+                    const piece = startingPosition[row][col];
+                    if (piece) {
+                        const pieceEl = document.createElement('span');
+                        pieceEl.className = 'chess-piece';
+                        pieceEl.textContent = piece;
+                        square.appendChild(pieceEl);
+                    }
+                    
+                    board.appendChild(square);
+                }
+            }
+        }
+        
+        /**
+         * Set layout mode
+         */
+        function setLayout(mode) {
+            if (!layoutManager) return;
+            
+            // Update button states
+            document.querySelectorAll('.test-controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`btn${mode.charAt(0).toUpperCase() + mode.slice(1)}`).classList.add('active');
+            
+            // Update container class
+            const container = document.querySelector('.chess-layout-container');
+            container.className = `chess-layout-container layout-${mode}`;
+            
+            // Set layout manager mode
+            layoutManager.setMode(mode);
+            
+            // Update debug info
+            updateDebugInfo();
+            
+            console.log(`Layout changed to: ${mode}`);
+        }
+        
+        /**
+         * Test resize functionality
+         */
+        function testResize() {
+            if (!layoutManager) return;
+            
+            console.log('=== RESIZE TEST ===');
+            console.log('Window size:', window.innerWidth + 'x' + window.innerHeight);
+            
+            layoutManager.recalculate();
+            updateDebugInfo();
+            
+            console.log('Resize test completed');
+        }
+        
+        /**
+         * Show debug information
+         */
+        function showDebug() {
+            if (!layoutManager) return;
+            
+            const dimensions = layoutManager.getDimensions();
+            const info = {
+                mode: layoutManager.getCurrentMode(),
+                windowSize: `${dimensions.window.width}x${dimensions.window.height}`,
+                boardSize: `${dimensions.board.size}px`,
+                boardPosition: `${dimensions.board.x},${dimensions.board.y}`,
+                playerPanelWidth: `${dimensions.playerPanel.width}px`,
+                fontScale: layoutManager.currentFontScale || 'N/A'
+            };
+            
+            console.log('=== DEBUG INFO ===', info);
+            alert(`Mode: ${info.mode}\nWindow: ${info.windowSize}\nBoard: ${info.boardSize} at ${info.boardPosition}\nPlayer Panel: ${info.playerPanelWidth}\nFont Scale: ${info.fontScale}`);
+        }
+        
+        /**
+         * Toggle debug info display
+         */
+        function toggleDebug() {
+            debugVisible = !debugVisible;
+            const debugEl = document.getElementById('debugInfo');
+            debugEl.style.display = debugVisible ? 'block' : 'none';
+            
+            if (debugVisible) {
+                updateDebugInfo();
+                // Auto-update debug info
+                setInterval(updateDebugInfo, 1000);
+            }
+        }
+        
+        /**
+         * Update debug info display
+         */
+        function updateDebugInfo() {
+            if (!debugVisible || !layoutManager) return;
+            
+            const dimensions = layoutManager.getDimensions();
+            const debugContent = document.getElementById('debugContent');
+            
+            debugContent.innerHTML = `
+                <strong>Layout Debug</strong><br>
+                Mode: ${layoutManager.getCurrentMode()}<br>
+                Window: ${dimensions.window.width}x${dimensions.window.height}<br>
+                Board: ${dimensions.board.size}px<br>
+                Position: ${dimensions.board.x},${dimensions.board.y}<br>
+                Player: ${dimensions.playerPanel.width}px<br>
+                Scale: ${(layoutManager.currentFontScale || 1).toFixed(2)}x
+            `;
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            updateDebugInfo();
+        });
+    </script>
+</body>
+</html>

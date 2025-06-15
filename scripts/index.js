@@ -1,6 +1,7 @@
 // Import from refactored modules
 import { initFics } from './fics.js';
 import { initChat } from './chat.js';
+import { initResponsive, toggleDebugOverlay } from './responsive.js';
 
 const sounds = new Map(Object.entries({
     abort: new Audio('sounds/abort.wav'),
@@ -57,11 +58,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Initialize the application when the window loads
 window.onload = function () {
+    // Initialize responsive system first
+    initResponsive();
+
     // Initialize FICS connection and preferences
     initFics();
-    
+
     // Initialize chat system
     initChat();
+
+    // Add debug overlay toggle (Ctrl+Shift+D)
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+            e.preventDefault();
+            toggleDebugOverlay();
+        }
+    });
 };
 
 /**
