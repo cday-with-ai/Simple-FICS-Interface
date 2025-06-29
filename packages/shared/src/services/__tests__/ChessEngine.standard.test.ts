@@ -200,19 +200,20 @@ describe('ChessEngine - Standard Chess', () => {
     });
 
     it('should allow promotion with capture', () => {
-      board.loadFen('r7/P7/8/8/8/8/8/8 w - - 0 1');
-      const promotion = board.makeMove('axb8=Q');
+      board.loadFen('r7/1P6/8/8/8/8/8/8 w - - 0 1');
+      const promotion = board.makeMove('bxa8=Q');
       expect(promotion).not.toBeNull();
       expect(promotion!.isCapture()).toBe(true);
       expect(promotion!.isPromotion()).toBe(true);
-      expect(board.getPiece('b8')).toEqual({ type: PieceType.QUEEN, color: Color.WHITE });
+      expect(board.getPiece('a8')).toEqual({ type: PieceType.QUEEN, color: Color.WHITE });
     });
   });
 
   describe('Check and Checkmate', () => {
     it('should detect check', () => {
-      board.loadFen('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 0 2');
-      expect(board['_isCheck']()).toBe(true);
+      board.loadFen('rnbqk1nr/pppp1ppp/8/2b1p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 4');
+      board.makeMove('Bxf7+'); // Bishop takes f7 with check
+      expect(board.isInCheck()).toBe(true);
     });
 
     it('should detect checkmate', () => {
@@ -231,15 +232,19 @@ describe('ChessEngine - Standard Chess', () => {
     });
 
     it('should not allow moves that leave king in check', () => {
-      board.loadFen('rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 0 2');
-      const illegalMove = board.makeMove('Nc6'); // Doesn't address check
+      // Black king on e8 is in check from white bishop on a4
+      board.loadFen('rnbqk1nr/pppp1ppp/8/2b1p3/B3P3/8/PPPP1PPP/RNBQK1NR b KQkq - 0 4');
+      const illegalMove = board.makeMove('Nf6'); // Doesn't address check
       expect(illegalMove).toBeNull();
+      // Should allow blocking the check
+      const blockingMove = board.makeMove('c6');
+      expect(blockingMove).not.toBeNull();
     });
   });
 
   describe('Stalemate', () => {
     it('should detect stalemate', () => {
-      board.loadFen('k7/8/K7/8/8/8/8/R7 b - - 0 1');
+      board.loadFen('5k2/5P2/5K2/8/8/8/8/8 b - - 0 1'); // Black king trapped, not in check
       expect(board.isGameOver()).toBe(true);
       expect(board.getGameResult()).toBe(GameResult.DRAW);
     });

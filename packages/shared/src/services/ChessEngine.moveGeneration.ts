@@ -72,6 +72,7 @@ export class MoveGenerator {
     const direction = piece.color === Color.WHITE ? 1 : -1;
     const startRank = piece.color === Color.WHITE ? 1 : 6;
     const promotionRank = piece.color === Color.WHITE ? 7 : 0;
+    const currentRank = from.row;
 
     // Forward moves
     const oneSquareForward = { row: from.row + direction, col: from.col };

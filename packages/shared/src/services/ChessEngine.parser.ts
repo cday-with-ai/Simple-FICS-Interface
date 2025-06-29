@@ -37,7 +37,8 @@ export class SANParser {
   static parseSAN(
     san: string,
     board: Board,
-    activeColor: Color
+    activeColor: Color,
+    enPassantTarget?: string | null
   ): Move | null {
     // Clean the input
     san = san.trim().replace(/[!?]+/g, '');
@@ -61,7 +62,7 @@ export class SANParser {
     }
 
     // Find the actual move
-    return this.resolveMove(parsed, board, activeColor);
+    return this.resolveMove(parsed, board, activeColor, enPassantTarget);
   }
 
   /**
@@ -174,12 +175,14 @@ export class SANParser {
   private static resolveMove(
     parsed: ParsedMove,
     board: Board,
-    activeColor: Color
+    activeColor: Color,
+    enPassantTarget?: string | null
   ): Move | null {
     const possibleMoves = this.findPossibleMoves(
       parsed,
       board,
-      activeColor
+      activeColor,
+      enPassantTarget
     );
 
     if (possibleMoves.length === 0) {
@@ -222,7 +225,8 @@ export class SANParser {
   private static findPossibleMoves(
     parsed: ParsedMove,
     board: Board,
-    activeColor: Color
+    activeColor: Color,
+    enPassantTarget?: string | null
   ): Move[] {
     const moves: Move[] = [];
     const toCoords = this.algebraicToCoords(parsed.to);
@@ -244,7 +248,8 @@ export class SANParser {
           { row, col },
           toCoords,
           piece,
-          parsed.capture || false
+          parsed.capture || false,
+          enPassantTarget
         )) {
           const capturedPiece = board[toCoords.row][toCoords.col];
           
@@ -252,13 +257,9 @@ export class SANParser {
           let isEnPassant = false;
           if (piece.type === PieceType.PAWN && parsed.capture && !capturedPiece) {
             // Check if this is en passant by verifying the en passant target
-            const targetCoords = this.algebraicToCoords(parsed.to);
-            if (targetCoords) {
-              // For en passant, the pawn moves diagonally to an empty square
-              const fromCoords = this.algebraicToCoords(from);
-              if (fromCoords && Math.abs(fromCoords.col - targetCoords.col) === 1) {
-                isEnPassant = true;
-              }
+            // For en passant, the pawn moves diagonally to an empty square that is the en passant target
+            if (enPassantTarget && parsed.to === enPassantTarget) {
+              isEnPassant = true;
             }
           }
 
@@ -289,14 +290,15 @@ export class SANParser {
     from: Coordinates,
     to: Coordinates,
     piece: Piece,
-    isCapture: boolean
+    isCapture: boolean,
+    enPassantTarget?: string | null
   ): boolean {
     // Generate all possible moves for the piece
     const context = {
       board,
       activeColor: piece.color,
       castlingRights: { K: false, Q: false, k: false, q: false },
-      enPassantTarget: null,
+      enPassantTarget: enPassantTarget || null,
       variant: 'classic' as any
     };
 
@@ -308,6 +310,11 @@ export class SANParser {
       
       const targetPiece = board[to.row][to.col];
       const moveIsCapture = targetPiece !== null;
+      
+      // For capture moves, we need to check if the target square has an enemy piece
+      if (isCapture) {
+        return moveIsCapture && targetPiece?.color !== piece.color;
+      }
       
       return moveIsCapture === isCapture;
     });

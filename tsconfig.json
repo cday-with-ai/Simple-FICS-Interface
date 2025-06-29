@@ -17,9 +17,9 @@
       "@fics/shared/*": ["packages/shared/src/*"]
     }
   },
-  "references": [
-    { "path": "./packages/shared" },
-    { "path": "./packages/web" },
-    { "path": "./packages/mobile" }
+  "exclude": [
+    "**/node_modules",
+    "**/dist",
+    "**/*.d.ts"
   ]
 }

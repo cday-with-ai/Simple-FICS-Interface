@@ -22,11 +22,23 @@ export class MoveValidator {
     board: Board,
     move: Move,
     activeColor: Color,
-    variant: Variant
+    variant: Variant,
+    castlingRights?: CastlingRights
   ): boolean {
     // In freestyle variant, all moves are legal
     if (variant === Variant.FREESTYLE) {
       return true;
+    }
+
+    // For castling moves, use special validation
+    if (move.isCastling && castlingRights) {
+      return this.canCastle(
+        board,
+        activeColor,
+        move.castlingSide!,
+        castlingRights,
+        variant
+      );
     }
 
     // Create a copy of the board to test the move
@@ -130,7 +142,8 @@ export class MoveValidator {
           );
           return distance > 1;
         }
-        return this.canKingMove(from, to);
+        // Kings can't directly attack each other in regular chess either
+        return false;
       
       default:
         return false;
@@ -256,6 +269,27 @@ export class MoveValidator {
    * Executes a move on a test board (simplified version)
    */
   private static executeTestMove(board: Board, move: Move): void {
+    // Handle castling moves specially
+    if (move.isCastling) {
+      const from = this.algebraicToCoords(move.from);
+      const to = this.algebraicToCoords(move.to);
+      if (!from || !to) return;
+      
+      // Move the king
+      board[to.row][to.col] = board[from.row][from.col];
+      board[from.row][from.col] = null;
+      
+      // Move the rook
+      if (move.castlingSide === 'kingside') {
+        board[to.row][to.col - 1] = board[to.row][7]; // Rook from h-file
+        board[to.row][7] = null;
+      } else {
+        board[to.row][to.col + 1] = board[to.row][0]; // Rook from a-file
+        board[to.row][0] = null;
+      }
+      return;
+    }
+    
     const from = this.algebraicToCoords(move.from);
     const to = this.algebraicToCoords(move.to);
     

@@ -74,4 +74,19 @@ describe('ChessEngine - Basic Functionality', () => {
     expect(board.getPiece('e4')).toEqual({ type: PieceType.PAWN, color: Color.WHITE });
     expect(board.getPiece('e5')).toEqual({ type: PieceType.PAWN, color: Color.BLACK });
   });
+
+  it('should detect check correctly', () => {
+    const board = new ChessBoard();
+    board.loadFen('rnbqk1nr/pppp1ppp/8/2b1p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 0 4');
+    board.makeMove('Bxf7+'); // Bishop takes f7 with check
+    expect(board.isInCheck()).toBe(true);
+  });
+
+  it('should detect no legal moves in stalemate position', () => {
+    const board = new ChessBoard();
+    board.loadFen('5k2/5P2/5K2/8/8/8/8/8 b - - 0 1'); // Black king trapped, not in check
+    const moves = board.getLegalMoves();
+    expect(moves.length).toBe(0);
+    expect(board.isInCheck()).toBe(false);
+  });
 });

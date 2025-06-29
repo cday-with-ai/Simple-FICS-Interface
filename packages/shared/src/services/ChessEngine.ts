@@ -496,6 +496,13 @@ export class ChessBoard {
     }
 
     /**
+     * Checks if the current player is in check
+     */
+    isInCheck(): boolean {
+        return this._isCheck();
+    }
+
+    /**
      * Checks if the game is over
      */
     isGameOver(): boolean {
@@ -546,14 +553,14 @@ export class ChessBoard {
      * Parses flexible SAN notation
      */
     private _parseFlexibleSan(san: string): Move | null {
-        return SANParser.parseSAN(san, this.board, this.activeColor);
+        return SANParser.parseSAN(san, this.board, this.activeColor, this.enPassantTarget);
     }
 
     /**
      * Validates if a move is legal
      */
     private _isLegalMove(move: Move): boolean {
-        return MoveValidator.isLegalMove(this.board, move, this.activeColor, this.variant);
+        return MoveValidator.isLegalMove(this.board, move, this.activeColor, this.variant, this.castlingRights);
     }
 
     /**
@@ -618,8 +625,41 @@ export class ChessBoard {
      * Generates SAN for a move object
      */
     private _generateSan(moveObj: MoveObject): string {
-        // This would need full implementation
-        return `${moveObj.from}${moveObj.to}${moveObj.promotion || ''}`;
+        // Handle castling
+        if (moveObj.castling) {
+            return moveObj.castling === 'kingside' ? 'O-O' : 'O-O-O';
+        }
+        
+        const from = this._algebraicToCoords(moveObj.from);
+        const to = this._algebraicToCoords(moveObj.to);
+        if (!from || !to) return '';
+        
+        const piece = this.board[from.row][from.col];
+        if (!piece) return '';
+        
+        const targetPiece = this.board[to.row][to.col];
+        const isCapture = targetPiece !== null || moveObj.isEnPassant;
+        
+        let san = '';
+        
+        if (piece.type === PieceType.PAWN) {
+            if (isCapture) {
+                san = moveObj.from[0] + 'x';
+            }
+            san += moveObj.to;
+            if (moveObj.promotion) {
+                san += '=' + moveObj.promotion.toUpperCase();
+            }
+        } else {
+            san = piece.type.toUpperCase();
+            // TODO: Add disambiguation if needed
+            if (isCapture) {
+                san += 'x';
+            }
+            san += moveObj.to;
+        }
+        
+        return san;
     }
 
     /**
