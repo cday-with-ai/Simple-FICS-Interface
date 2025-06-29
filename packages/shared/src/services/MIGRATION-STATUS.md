@@ -7,13 +7,21 @@
 - Basic board setup and FEN handling
 - Move generation framework and types
 - Piece movement patterns for all pieces
+- SAN parsing with full notation support
+- Move validation logic with legal move checking
+- Move execution with state updates
+- Check/checkmate/stalemate detection
+- Game termination conditions (draw, insufficient material, repetition)
+- Castling validation and execution
+- En passant handling
+- Pawn promotion
+- Basic Crazyhouse support (drops, captured pieces)
 
 ## In Progress 🚧
-- Complete move validation logic
 - Variant-specific rules implementation
-- Check/checkmate/stalemate detection
-- Game termination conditions
-- Move execution with proper state updates
+- Full move disambiguation for SAN generation
+- Chess960 castling rules
+- Atomic variant explosion logic
 
 ## Todo 📋
 1. **Core Engine Logic** (from original ChessBoard.js)

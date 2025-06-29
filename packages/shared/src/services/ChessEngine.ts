@@ -6,6 +6,13 @@
  * @version 2.0.0 - TypeScript migration
  */
 
+// Import required modules
+import { SANParser } from './ChessEngine.parser';
+import { MoveValidator } from './ChessEngine.validation';
+import { MoveExecutor } from './ChessEngine.execution';
+import { MoveGenerator } from './ChessEngine.moveGeneration';
+import { Coordinates } from './ChessEngine.types';
+
 // Enums for type safety
 export enum PieceType {
   KING = 'k',
@@ -407,9 +414,83 @@ export class ChessBoard {
    * Gets all legal moves from a position or for the current player
    */
   getLegalMoves(square?: Square): Move[] {
-    // Implementation would generate all legal moves
-    // This is a simplified version
-    return [];
+    const moves: Move[] = [];
+    
+    if (square) {
+      // Get moves for a specific piece
+      const coords = this._algebraicToCoords(square);
+      if (!coords) return moves;
+      
+      const piece = this.board[coords.row][coords.col];
+      if (!piece || piece.color !== this.activeColor) return moves;
+      
+      const context = {
+        board: this.board,
+        activeColor: this.activeColor,
+        castlingRights: this.castlingRights,
+        enPassantTarget: this.enPassantTarget,
+        variant: this.variant
+      };
+      
+      const possibleMoves = MoveGenerator.generatePieceMoves(context, coords, piece);
+      
+      // Convert to Move objects and validate
+      for (const moveObj of possibleMoves) {
+        const capturedPiece = this.getPiece(moveObj.to);
+        const move = Move.fromMoveObject(moveObj, this._generateSan(moveObj), capturedPiece);
+        
+        if (this._isLegalMove(move)) {
+          moves.push(move);
+        }
+      }
+    } else {
+      // Get all moves for the current player
+      for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+          const piece = this.board[row][col];
+          if (piece && piece.color === this.activeColor) {
+            const squareMoves = this.getLegalMoves(this._coordsToAlgebraic({ row, col }));
+            moves.push(...squareMoves);
+          }
+        }
+      }
+      
+      // Add drop moves for Crazyhouse
+      if (this.variant === Variant.CRAZYHOUSE) {
+        const pieces = this.capturedPieces[this.activeColor];
+        const uniquePieces = [...new Set(pieces)];
+        
+        for (const pieceType of uniquePieces) {
+          for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+              if (!this.board[row][col]) {
+                const dropSquare = this._coordsToAlgebraic({ row, col });
+                const dropMove = new Move(
+                  `${pieceType.toUpperCase()}@${dropSquare}`,
+                  '@',
+                  dropSquare,
+                  null,
+                  null,
+                  false,
+                  false,
+                  null
+                );
+                moves.push(dropMove);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    return moves;
+  }
+
+  /**
+   * Converts coordinates to algebraic notation
+   */
+  private _coordsToAlgebraic(coords: Coordinates): string {
+    return String.fromCharCode('a'.charCodeAt(0) + coords.col) + (coords.row + 1);
   }
 
   /**
@@ -434,30 +515,87 @@ export class ChessBoard {
     return GameResult.DRAW;
   }
 
-  // Private helper methods would continue here...
+  /**
+   * Parses flexible SAN notation
+   */
   private _parseFlexibleSan(san: string): Move | null {
-    // Parsing implementation
-    return null;
+    return SANParser.parseSAN(san, this.board, this.activeColor);
   }
 
+  /**
+   * Validates if a move is legal
+   */
   private _isLegalMove(move: Move): boolean {
-    // Move validation implementation
-    return true;
+    return MoveValidator.isLegalMove(this.board, move, this.activeColor, this.variant);
   }
 
+  /**
+   * Executes a validated move
+   */
   private _executeMove(move: Move): Move {
-    // Move execution implementation
+    const result = MoveExecutor.executeMove(
+      this.board,
+      move,
+      this.activeColor,
+      this.variant,
+      this.castlingRights
+    );
+
+    if (!result.success) {
+      throw new Error('Move execution failed');
+    }
+
+    // Update board state
+    this.board = result.updatedBoard;
+    
+    // Update castling rights
+    if (result.castlingRightsUpdate) {
+      Object.assign(this.castlingRights, result.castlingRightsUpdate);
+    }
+
+    // Update en passant target
+    this.enPassantTarget = result.enPassantTarget || null;
+
+    // Update move counters
+    if (move.capturedPiece || move.from[1] === 'p') {
+      this.halfMoveClock = 0;
+    } else {
+      this.halfMoveClock++;
+    }
+
+    if (this.activeColor === Color.BLACK) {
+      this.fullMoveNumber++;
+    }
+
+    // Switch active color
+    this.activeColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;
+
+    // Update history
     this.moveHistory.push(move);
     this.positionHistory.push(this.getFen());
+
+    // Handle captured pieces for Crazyhouse
+    if (this.variant === Variant.CRAZYHOUSE && result.capturedPiece) {
+      const capturedType = result.capturedPiece.type;
+      const captureForColor = result.capturedPiece.color === Color.WHITE ? Color.BLACK : Color.WHITE;
+      this.capturedPieces[captureForColor].push(capturedType);
+    }
+
     return move;
   }
 
+  /**
+   * Generates SAN for a move object
+   */
   private _generateSan(moveObj: MoveObject): string {
-    // SAN generation implementation
-    return `${moveObj.from}${moveObj.to}`;
+    // This would need full implementation
+    return `${moveObj.from}${moveObj.to}${moveObj.promotion || ''}`;
   }
 
-  private _algebraicToCoords(square: Square): { row: number; col: number } | null {
+  /**
+   * Converts algebraic notation to coordinates
+   */
+  private _algebraicToCoords(square: Square): Coordinates | null {
     if (square.length !== 2) return null;
     const col = square.charCodeAt(0) - 'a'.charCodeAt(0);
     const row = parseInt(square[1]) - 1;
@@ -465,23 +603,104 @@ export class ChessBoard {
     return { row, col };
   }
 
+  /**
+   * Checks if the current player's king is in check
+   */
   private _isCheck(): boolean {
-    // Check detection implementation
-    return false;
+    return MoveValidator.isKingInCheck(this.board, this.activeColor, this.variant);
   }
 
+  /**
+   * Checks if the current position is checkmate
+   */
   private _isCheckmate(): boolean {
-    // Checkmate detection implementation
-    return false;
+    if (!this._isCheck()) return false;
+    return this.getLegalMoves().length === 0;
   }
 
+  /**
+   * Checks if the current position is stalemate
+   */
   private _isStalemate(): boolean {
-    // Stalemate detection implementation
+    if (this._isCheck()) return false;
+    return this.getLegalMoves().length === 0;
+  }
+
+  /**
+   * Checks if the game is a draw
+   */
+  private _isDraw(): boolean {
+    // 50-move rule
+    if (this.halfMoveClock >= 100) return true;
+    
+    // Insufficient material
+    if (MoveExecutor.hasInsufficientMaterial(this.board)) return true;
+    
+    // Threefold repetition
+    if (MoveExecutor.isThreefoldRepetition(this.positionHistory)) return true;
+    
     return false;
   }
 
-  private _isDraw(): boolean {
-    // Draw detection implementation
-    return false;
+  /**
+   * Gets captured pieces for a color (Crazyhouse variant)
+   */
+  getCapturedPieces(color: Color): PieceType[] {
+    return [...this.capturedPieces[color]];
   }
+
+  /**
+   * Makes a drop move (Crazyhouse variant)
+   */
+  makeDropMove(piece: PieceType, square: Square): Move | null {
+    if (this.variant !== Variant.CRAZYHOUSE) return null;
+    
+    // Check if we have the piece
+    const capturedIndex = this.capturedPieces[this.activeColor].indexOf(piece);
+    if (capturedIndex === -1) return null;
+    
+    // Execute the drop
+    const result = MoveExecutor.executeDrop(this.board, piece, square, this.activeColor);
+    if (!result.success) return null;
+    
+    // Update state
+    this.board = result.updatedBoard;
+    this.capturedPieces[this.activeColor].splice(capturedIndex, 1);
+    this.activeColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;
+    this.halfMoveClock++;
+    if (this.activeColor === Color.WHITE) {
+      this.fullMoveNumber++;
+    }
+    
+    const move = new Move(
+      `${piece.toUpperCase()}@${square}`,
+      '@',
+      square,
+      null,
+      null,
+      false,
+      false,
+      null
+    );
+    
+    this.moveHistory.push(move);
+    this.positionHistory.push(this.getFen());
+    
+    return move;
+  }
+
+  /**
+   * Validates a premove
+   */
+  isValidPremove(from: Square, to: Square): boolean {
+    const piece = this.getPiece(from);
+    if (!piece) return false;
+    
+    // For now, just check if it's a valid square
+    const fromCoords = this._algebraicToCoords(from);
+    const toCoords = this._algebraicToCoords(to);
+    
+    return fromCoords !== null && toCoords !== null;
+  }
+}
 }
