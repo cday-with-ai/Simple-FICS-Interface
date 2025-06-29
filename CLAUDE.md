@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Simple-FICS-Interface** - A modern chess client for the Free Internet Chess Server (FICS) built as a React/TypeScript monorepo.
 
-- **Current Branch**: `react-native` (main development branch)
+- **Current Branch**: `main` (main development branch)
 - **Architecture**: Monorepo using Yarn workspaces
 - **Deployment**: Cloudflare Pages (simple-fics-interface.pages.dev)
 - **Main Packages**:
