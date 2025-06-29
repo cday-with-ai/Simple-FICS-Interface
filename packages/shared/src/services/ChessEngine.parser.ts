@@ -239,6 +239,16 @@ export class SANParser {
         if (!piece || piece.color !== activeColor || piece.type !== parsed.pieceType) {
           continue;
         }
+        
+        // Check disambiguation
+        if (parsed.from) {
+          if (parsed.from.file !== undefined && col !== parsed.from.file) {
+            continue;
+          }
+          if (parsed.from.rank !== undefined && row !== parsed.from.rank) {
+            continue;
+          }
+        }
 
         const from = this.coordsToAlgebraic({ row, col });
         
