@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {useStockfish} from '../hooks/useStockfish';
+import type {AnalysisResult} from '@fics/shared';
 
 /**
  * Test component to verify Stockfish integration in React
@@ -19,7 +20,7 @@ export const StockfishTest: React.FC = () => {
         stopAnalysis
     } = useStockfish({
         autoInitialize: true,
-        onAnalysis: (result) => {
+        onAnalysis: (result: AnalysisResult) => {
             if (result.type === 'info') {
                 setAnalysisResult(prev => prev + '\n' + result.line);
             } else if (result.type === 'bestmove') {

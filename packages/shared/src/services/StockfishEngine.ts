@@ -68,6 +68,7 @@ class StockfishEngine {
     private loadStockfishScript(src: string): Promise<void> {
         return new Promise((resolve, reject) => {
             // Check if Stockfish is already loaded
+            // @ts-expect-error - We're intentionally checking if the function exists, not calling it
             if (typeof window !== 'undefined' && window.Stockfish) {
                 resolve();
                 return;

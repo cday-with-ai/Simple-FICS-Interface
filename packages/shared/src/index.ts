@@ -6,12 +6,12 @@ export {PreferencesStore} from './models/PreferencesStore';
 export {RootStore, createRootStore} from './models/RootStore';
 
 // Services
-export {ChessAPI, Move, PieceType, Color, Variant, GameResult} from '@fics/chessapi';
-export type {Piece, CastlingRights, MoveObject, Square, Board} from '@fics/chessapi';
+export {ChessAPI, Move, PieceType, Color, Variant, GameResult} from './services/chessapi';
+export type {Piece, CastlingRights, MoveObject, Square, Board} from './services/chessapi';
 export {FicsProtocol} from './services/FicsProtocol';
 export type {
     FicsMessage,
-    GameStartInfo,
+    GameStart,
     Style12,
     ChannelTell,
     DirectTell,
@@ -19,6 +19,8 @@ export type {
     MovesList,
     TimesealConfig
 } from './services/FicsProtocol';
+export {default as StockfishEngine} from './services/StockfishEngine';
+export type {AnalysisResult, AnalysisOptions, AnalysisCallback} from './services/StockfishEngine';
 
 // Contexts (React integration)
 export {

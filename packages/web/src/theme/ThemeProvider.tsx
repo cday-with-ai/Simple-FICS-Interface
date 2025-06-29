@@ -9,7 +9,8 @@ import {themes, ThemeName, defaultTheme} from './themes';
 interface ThemeContextType {
     theme: Theme;
     themeName: ThemeName;
-    setTheme: (themeName: ThemeName) => void;
+    themePreference: 'light' | 'dark' | 'system';
+    setTheme: (themeName: 'light' | 'dark' | 'system') => void;
     toggleTheme: () => void;
     isDarkMode: boolean;
 }
@@ -59,7 +60,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = observer(({children})
     const contextValue: ThemeContextType = {
         theme: activeTheme,
         themeName: activeThemeName,
-        setTheme: (themeName: ThemeName) => {
+        themePreference: themePreference as 'light' | 'dark' | 'system',
+        setTheme: (themeName: 'light' | 'dark' | 'system') => {
             preferencesStore.updatePreference('theme', themeName);
         },
         toggleTheme: () => {

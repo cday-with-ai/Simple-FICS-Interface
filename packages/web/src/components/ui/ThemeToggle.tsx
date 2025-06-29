@@ -36,7 +36,7 @@ const Label = styled.span`
 `;
 
 export const ThemeToggle: React.FC = () => {
-    const {themeName, setTheme, isDarkMode} = useTheme();
+    const {themePreference, setTheme, isDarkMode} = useTheme();
 
     const getThemeIcon = (theme: string) => {
         switch (theme) {
@@ -69,7 +69,7 @@ export const ThemeToggle: React.FC = () => {
             <Label>Theme:</Label>
 
             <ToggleButton
-                isActive={themeName === 'light'}
+                isActive={themePreference === 'light'}
                 onClick={() => setTheme('light')}
                 title="Light theme"
             >
@@ -77,7 +77,7 @@ export const ThemeToggle: React.FC = () => {
             </ToggleButton>
 
             <ToggleButton
-                isActive={themeName === 'dark'}
+                isActive={themePreference === 'dark'}
                 onClick={() => setTheme('dark')}
                 title="Dark theme"
             >
@@ -85,7 +85,7 @@ export const ThemeToggle: React.FC = () => {
             </ToggleButton>
 
             <ToggleButton
-                isActive={themeName === 'system'}
+                isActive={themePreference === 'system'}
                 onClick={() => setTheme('system')}
                 title="Follow system theme"
             >
