@@ -18,10 +18,16 @@
 - Basic Crazyhouse support (drops, captured pieces)
 
 ## In Progress 🚧
-- Variant-specific rules implementation
 - Full move disambiguation for SAN generation
-- Chess960 castling rules
-- Atomic variant explosion logic
+- Complete Chess960 random position generation
+- Performance optimizations
+
+## Completed Variant Support ✅
+- **Losers/Suicide**: Forced captures, alternate win conditions
+- **Atomic**: Explosion mechanics, king adjacency rules, special win conditions
+- **Crazyhouse**: Piece drops, drop validation, captured piece tracking
+- **Chess960**: Basic setup and castling framework
+- **Variant-specific game termination**: Each variant has proper end conditions
 
 ## Todo 📋
 1. **Core Engine Logic** (from original ChessBoard.js)

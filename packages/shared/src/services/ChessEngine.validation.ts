@@ -38,11 +38,23 @@ export class MoveValidator {
     // Check if the king is in check after the move
     const kingInCheck = this.isKingInCheck(testBoard, activeColor, variant);
     
-    // In atomic variant, king can be in check if opponent king was captured
-    if (variant === Variant.ATOMIC && move.isCapture()) {
-      const opponentKingCaptured = this.wasKingCaptured(board, move, variant);
-      if (opponentKingCaptured) {
-        return true;
+    // In atomic variant, special rules apply
+    if (variant === Variant.ATOMIC) {
+      // Check if kings would be adjacent after move (illegal)
+      const testBoardAfterMove = this.copyBoard(testBoard);
+      const from = this.algebraicToCoords(move.from);
+      const to = this.algebraicToCoords(move.to);
+      
+      if (from && to && testBoardAfterMove[to.row][to.col]?.type === PieceType.KING) {
+        // Check if this would make kings adjacent
+        if (this.areKingsAdjacent(testBoardAfterMove)) {
+          return false;
+        }
+      }
+      
+      // If capturing, check if opponent king would be destroyed
+      if (move.isCapture() && move.capturedPiece?.type === PieceType.KING) {
+        return true; // Win by exploding opponent king
       }
     }
     
@@ -349,5 +361,37 @@ export class MoveValidator {
     }
     
     return true;
+  }
+
+  /**
+   * Checks if kings are adjacent (for atomic variant)
+   */
+  private static areKingsAdjacent(board: Board): boolean {
+    let whiteKingPos: Coordinates | null = null;
+    let blackKingPos: Coordinates | null = null;
+
+    // Find both kings
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const piece = board[row][col];
+        if (piece && piece.type === PieceType.KING) {
+          if (piece.color === Color.WHITE) {
+            whiteKingPos = { row, col };
+          } else {
+            blackKingPos = { row, col };
+          }
+        }
+      }
+    }
+
+    if (!whiteKingPos || !blackKingPos) {
+      return false;
+    }
+
+    // Check if kings are adjacent
+    const rowDiff = Math.abs(whiteKingPos.row - blackKingPos.row);
+    const colDiff = Math.abs(whiteKingPos.col - blackKingPos.col);
+
+    return rowDiff <= 1 && colDiff <= 1;
   }
 }

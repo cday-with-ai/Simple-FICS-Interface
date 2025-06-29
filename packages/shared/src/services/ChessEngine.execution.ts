@@ -14,6 +14,7 @@ import {
   Square
 } from './ChessEngine';
 import { Coordinates } from './ChessEngine.types';
+import { VariantRules } from './ChessEngine.variants';
 
 export interface ExecutionResult {
   success: boolean;
@@ -85,7 +86,8 @@ export class MoveExecutor {
 
     // Handle variant-specific effects
     if (variant === Variant.ATOMIC && result.capturedPiece) {
-      this.handleAtomicExplosion(result.updatedBoard, to);
+      // Import VariantRules at the top of file
+      VariantRules.handleAtomicExplosion(result.updatedBoard, to, variant);
     }
 
     // Update castling rights
@@ -149,26 +151,6 @@ export class MoveExecutor {
     return result;
   }
 
-  /**
-   * Handles atomic explosion after capture
-   */
-  private static handleAtomicExplosion(board: Board, center: Coordinates): void {
-    // Explosion affects all adjacent squares
-    for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
-      for (let colOffset = -1; colOffset <= 1; colOffset++) {
-        const row = center.row + rowOffset;
-        const col = center.col + colOffset;
-
-        if (row >= 0 && row < 8 && col >= 0 && col < 8) {
-          const piece = board[row][col];
-          // Pawns and the capturing piece survive explosions
-          if (piece && piece.type !== PieceType.PAWN) {
-            board[row][col] = null;
-          }
-        }
-      }
-    }
-  }
 
   /**
    * Updates castling rights based on piece movement

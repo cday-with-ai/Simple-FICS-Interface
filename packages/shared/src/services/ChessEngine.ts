@@ -11,6 +11,7 @@ import { SANParser } from './ChessEngine.parser';
 import { MoveValidator } from './ChessEngine.validation';
 import { MoveExecutor } from './ChessEngine.execution';
 import { MoveGenerator } from './ChessEngine.moveGeneration';
+import { VariantRules } from './ChessEngine.variants';
 import { Coordinates } from './ChessEngine.types';
 
 // Enums for type safety
@@ -235,9 +236,8 @@ export class ChessBoard {
    * Sets up a Chess960 starting position
    */
   private _setupChess960Position(): void {
-    // Chess960 implementation would go here
-    // For now, use standard position
-    this._setupStartingPosition();
+    const fen = VariantRules.generateChess960Position();
+    this.loadFen(fen);
   }
 
   /**
@@ -483,7 +483,8 @@ export class ChessBoard {
       }
     }
     
-    return moves;
+    // Apply variant-specific filtering
+    return VariantRules.filterMovesByVariant(moves, this.board, this.activeColor, this.variant);
   }
 
   /**
@@ -497,6 +498,19 @@ export class ChessBoard {
    * Checks if the game is over
    */
   isGameOver(): boolean {
+    // Check variant-specific termination first
+    const variantResult = VariantRules.checkVariantGameOver(
+      this.board,
+      this.activeColor,
+      this.variant,
+      this.getLegalMoves().length === 0
+    );
+    
+    if (variantResult.isOver) {
+      return true;
+    }
+    
+    // Standard termination conditions
     return this._isCheckmate() || this._isStalemate() || this._isDraw();
   }
 
@@ -505,6 +519,18 @@ export class ChessBoard {
    */
   getGameResult(): GameResult {
     if (!this.isGameOver()) return GameResult.IN_PROGRESS;
+    
+    // Check variant-specific result first
+    const variantResult = VariantRules.checkVariantGameOver(
+      this.board,
+      this.activeColor,
+      this.variant,
+      this.getLegalMoves().length === 0
+    );
+    
+    if (variantResult.isOver && variantResult.result) {
+      return variantResult.result;
+    }
     
     if (this._isCheckmate()) {
       return this.activeColor === Color.WHITE 
@@ -658,6 +684,12 @@ export class ChessBoard {
     // Check if we have the piece
     const capturedIndex = this.capturedPieces[this.activeColor].indexOf(piece);
     if (capturedIndex === -1) return null;
+    
+    // Validate the drop
+    const coords = this._algebraicToCoords(square);
+    if (!coords || !VariantRules.isValidDrop(this.board, piece, coords, this.activeColor)) {
+      return null;
+    }
     
     // Execute the drop
     const result = MoveExecutor.executeDrop(this.board, piece, square, this.activeColor);
