@@ -127,14 +127,16 @@ export class MoveGenerator {
           }
         }
 
-        // En passant
-        const enPassantSquare = this.coordsToAlgebraic(captureSquare);
-        if (context.enPassantTarget === enPassantSquare) {
-          moves.push({
-            from: this.coordsToAlgebraic(from),
-            to: enPassantSquare,
-            isEnPassant: true
-          });
+        // En passant - check if the capture square matches the en passant target
+        if (context.enPassantTarget) {
+          const enPassantSquare = this.coordsToAlgebraic(captureSquare);
+          if (context.enPassantTarget === enPassantSquare) {
+            moves.push({
+              from: this.coordsToAlgebraic(from),
+              to: enPassantSquare,
+              isEnPassant: true
+            });
+          }
         }
       }
     });

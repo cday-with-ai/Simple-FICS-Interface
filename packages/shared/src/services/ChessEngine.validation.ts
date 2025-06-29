@@ -337,11 +337,9 @@ export class MoveValidator {
       if (board[row][5] || board[row][6]) return false;
       
       // Check if squares are not under attack
+      // King must not pass through check (e1, f1, g1 for white)
       for (let col = 4; col <= 6; col++) {
-        const testBoard = this.copyBoard(board);
-        testBoard[row][col] = { type: PieceType.KING, color };
-        testBoard[row][4] = null;
-        if (this.isKingInCheck(testBoard, color, variant)) {
+        if (this.isSquareAttacked(board, { row, col }, color === Color.WHITE ? Color.BLACK : Color.WHITE, variant)) {
           return false;
         }
       }
@@ -350,11 +348,9 @@ export class MoveValidator {
       if (board[row][1] || board[row][2] || board[row][3]) return false;
       
       // Check if squares are not under attack
+      // King must not pass through check (e1, d1, c1 for white)
       for (let col = 2; col <= 4; col++) {
-        const testBoard = this.copyBoard(board);
-        testBoard[row][col] = { type: PieceType.KING, color };
-        testBoard[row][4] = null;
-        if (this.isKingInCheck(testBoard, color, variant)) {
+        if (this.isSquareAttacked(board, { row, col }, color === Color.WHITE ? Color.BLACK : Color.WHITE, variant)) {
           return false;
         }
       }
@@ -393,5 +389,28 @@ export class MoveValidator {
     const colDiff = Math.abs(whiteKingPos.col - blackKingPos.col);
 
     return rowDiff <= 1 && colDiff <= 1;
+  }
+
+  /**
+   * Checks if a square is under attack by the specified color
+   */
+  private static isSquareAttacked(
+    board: Board,
+    square: Coordinates,
+    byColor: Color,
+    variant: Variant
+  ): boolean {
+    // Check all pieces of the attacking color
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const piece = board[row][col];
+        if (piece && piece.color === byColor) {
+          if (this.canPieceAttackSquare(board, { row, col }, square, piece, variant)) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 }

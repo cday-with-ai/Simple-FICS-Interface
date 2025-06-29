@@ -28,8 +28,8 @@ export class SANParser {
   // Regex patterns for different move formats
   private static readonly CASTLING_PATTERN = /^(O-O-O|O-O|0-0-0|0-0)([+#])?$/;
   private static readonly DROP_PATTERN = /^([PNBRQK])@([a-h][1-8])([+#])?$/;
-  private static readonly STANDARD_MOVE_PATTERN = /^([NBRQK])?([a-h])?([1-8])?([a-h][1-8])?x?([a-h][1-8])(?:=([NBRQK]))?([+#])?$/;
-  private static readonly PAWN_MOVE_PATTERN = /^([a-h])?([1-8])?x?([a-h][1-8])(?:=([NBRQK]))?([+#])?$/;
+  private static readonly STANDARD_MOVE_PATTERN = /^([NBRQK])([a-h])?([1-8])?x?([a-h][1-8])(?:=([NBRQK]))?([+#])?$/;
+  private static readonly PAWN_MOVE_PATTERN = /^([a-h])?x?([a-h][1-8])(?:=([NBRQK]))?([+#])?$/;
 
   /**
    * Parses a SAN string into a Move object
@@ -119,13 +119,13 @@ export class SANParser {
 
     // Try piece move first
     const pieceMatch = san.match(this.STANDARD_MOVE_PATTERN);
-    if (pieceMatch && pieceMatch[1]) {
+    if (pieceMatch) {
       return {
         pieceType: pieceMatch[1].toLowerCase() as PieceType,
         from: this.parseDisambiguation(pieceMatch[2], pieceMatch[3]),
-        to: pieceMatch[5] as Square,
+        to: pieceMatch[4] as Square,
         capture: san.includes('x'),
-        promotion: pieceMatch[6]?.toLowerCase() as PieceType | undefined,
+        promotion: pieceMatch[5]?.toLowerCase() as PieceType | undefined,
         checkSymbol
       };
     }
@@ -135,10 +135,10 @@ export class SANParser {
     if (pawnMatch) {
       return {
         pieceType: PieceType.PAWN,
-        from: this.parseDisambiguation(pawnMatch[1], pawnMatch[2]),
-        to: pawnMatch[3] as Square,
+        from: pawnMatch[1] ? { file: pawnMatch[1].charCodeAt(0) - 'a'.charCodeAt(0) } : undefined,
+        to: pawnMatch[2] as Square,
         capture: san.includes('x'),
-        promotion: pawnMatch[4]?.toLowerCase() as PieceType | undefined,
+        promotion: pawnMatch[3]?.toLowerCase() as PieceType | undefined,
         checkSymbol
       };
     }
@@ -251,8 +251,15 @@ export class SANParser {
           // Handle special pawn moves
           let isEnPassant = false;
           if (piece.type === PieceType.PAWN && parsed.capture && !capturedPiece) {
-            // This might be en passant
-            isEnPassant = true;
+            // Check if this is en passant by verifying the en passant target
+            const targetCoords = this.algebraicToCoords(parsed.to);
+            if (targetCoords) {
+              // For en passant, the pawn moves diagonally to an empty square
+              const fromCoords = this.algebraicToCoords(from);
+              if (fromCoords && Math.abs(fromCoords.col - targetCoords.col) === 1) {
+                isEnPassant = true;
+              }
+            }
           }
 
           const move = new Move(
