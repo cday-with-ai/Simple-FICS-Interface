@@ -21,14 +21,14 @@ const ClockContainer = styled.div<{ size?: 'small' | 'medium' | 'large' }>`
 }}
 `;
 
-const TimeDisplay = styled.span<{ isLowTime?: boolean; isActive?: boolean }>`
+const TimeDisplay = styled.span<{ $isLowTime?: boolean; $isActive?: boolean }>`
   padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
-  background: ${({theme, isActive}) =>
-    isActive ? theme.colors.backgroundTertiary : theme.colors.backgroundSecondary};
+  background: ${({theme, $isActive}) =>
+    $isActive ? theme.colors.backgroundTertiary : theme.colors.backgroundSecondary};
   border: 1px solid ${({theme}) => theme.colors.border};
   border-radius: 4px;
   
-  ${({isLowTime, theme}) => isLowTime && `
+  ${({$isLowTime, theme}) => $isLowTime && `
     color: ${theme.colors.error};
     animation: blink 1s infinite;
   `}
@@ -78,7 +78,7 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
 
     return (
         <ClockContainer size={size} className={className}>
-            <TimeDisplay isLowTime={isLowTime} isActive={isActive}>
+            <TimeDisplay $isLowTime={isLowTime} $isActive={isActive}>
                 {formatTime(time)}
             </TimeDisplay>
         </ClockContainer>

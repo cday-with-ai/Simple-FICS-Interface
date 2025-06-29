@@ -1,5 +1,4 @@
-import React, {createContext, useContext, ReactNode, useState, useEffect} from 'react';
-import {observer} from 'mobx-react-lite';
+import React, {createContext, useContext, ReactNode, useState, useEffect, useMemo} from 'react';
 import {usePreferencesStore} from '@fics/shared';
 import {useLayout, LayoutState, OrientationType} from '../../theme/hooks';
 
@@ -41,7 +40,7 @@ interface LayoutProviderProps {
     children: ReactNode;
 }
 
-export const LayoutProvider: React.FC<LayoutProviderProps> = observer(({children}) => {
+export const LayoutProvider: React.FC<LayoutProviderProps> = ({children}) => {
     const preferencesStore = usePreferencesStore();
     const deviceLayout = useLayout();
 
@@ -54,17 +53,17 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = observer(({children
     const layoutPreference = preferencesStore.preferences.layout;
 
     // Determine active layout based on preference and device capabilities
-    const getActiveLayout = (): OrientationType => {
+    const activeLayout = useMemo(() => {
         if (layoutPreference === 'auto') {
             return deviceLayout.orientation;
         }
         return layoutPreference as OrientationType;
-    };
-
-    const activeLayout = getActiveLayout();
+    }, [layoutPreference, deviceLayout.orientation]);
 
     // Determine if we should be in compact mode
-    const isCompactMode = deviceLayout.isMobile || deviceLayout.dimensions.width < 768;
+    const isCompactMode = useMemo(() => {
+        return deviceLayout.isMobile || deviceLayout.dimensions.width < 768;
+    }, [deviceLayout.isMobile, deviceLayout.dimensions.width]);
 
     // Handle layout preference changes
     const setLayoutPreference = (preference: 'auto' | 'landscape' | 'portrait') => {
@@ -87,20 +86,24 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = observer(({children
         setIsTransitioning(true);
 
         // Adjust sidebar visibility based on layout and screen size
-        if (isCompactMode) {
-            setSidebarVisible(false);
-        } else {
-            setSidebarVisible(true);
-        }
+        setSidebarVisible(prevVisible => {
+            const newVisible = !isCompactMode;
+            return prevVisible !== newVisible ? newVisible : prevVisible;
+        });
 
         // Auto-adjust panel visibility for compact layouts
-        if (isCompactMode && activeLayout === 'portrait') {
-            // In portrait compact mode, minimize panels
-            setActivePanels(['chat']);
-        } else if (activeLayout === 'landscape' && !isCompactMode) {
-            // In landscape desktop mode, show more panels
-            setActivePanels(['chat', 'moves', 'analysis']);
-        }
+        setActivePanels(prevPanels => {
+            if (isCompactMode && activeLayout === 'portrait') {
+                // In portrait compact mode, minimize panels
+                const newPanels = ['chat'];
+                return JSON.stringify(prevPanels) !== JSON.stringify(newPanels) ? newPanels : prevPanels;
+            } else if (activeLayout === 'landscape' && !isCompactMode) {
+                // In landscape desktop mode, show more panels
+                const newPanels = ['chat', 'moves', 'analysis'];
+                return JSON.stringify(prevPanels) !== JSON.stringify(newPanels) ? newPanels : prevPanels;
+            }
+            return prevPanels;
+        });
 
         // End transition after animation duration
         const transitionTimeout = setTimeout(() => {
@@ -108,7 +111,7 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = observer(({children
         }, 300); // Match this with CSS transition duration
 
         return () => clearTimeout(transitionTimeout);
-    }, [activeLayout, isCompactMode, deviceLayout.dimensions]);
+    }, [activeLayout, isCompactMode]);
 
     // Context value
     const contextValue: LayoutContextType = {
@@ -140,6 +143,4 @@ export const LayoutProvider: React.FC<LayoutProviderProps> = observer(({children
             {children}
         </LayoutContext.Provider>
     );
-});
-
-LayoutProvider.displayName = 'LayoutProvider';
+};

@@ -1,5 +1,5 @@
 import {makeAutoObservable, runInAction} from 'mobx';
-import {ChessAPI, Color, Variant, GameResult, Move} from '../services/chessapi';
+import {ChessAPI, Color, Variant, GameResult, Move} from '../services/ChessAPI';
 
 // Forward declaration to avoid circular dependency
 interface RootStore {

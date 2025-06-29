@@ -42,8 +42,8 @@ const ChessBoardContainer = styled.div`
 `;
 
 // Resizable sidebar for landscape mode
-const Sidebar = styled.aside<{ width: number; isCollapsed: boolean }>`
-    width: ${({width, isCollapsed}) => isCollapsed ? '0px' : `${width}px`};
+const Sidebar = styled.aside<{ width: number; $isCollapsed: boolean }>`
+    width: ${({width, $isCollapsed}) => $isCollapsed ? '0px' : `${width}px`};
     height: 100vh;
     background: ${({theme}) => theme.colors.backgroundSecondary};
     border-left: 1px solid ${({theme}) => theme.colors.border};
@@ -66,21 +66,21 @@ const SidebarHeader = styled.div`
 `;
 
 // Tab button for sidebar sections
-const TabButton = styled.button<{ isActive: boolean }>`
+const TabButton = styled.button<{ $isActive: boolean }>`
     padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
     border: 1px solid ${({theme}) => theme.colors.border};
     border-radius: 4px;
-    background: ${({theme, isActive}) =>
-            isActive ? theme.colors.primary : theme.colors.surface};
-    color: ${({theme, isActive}) =>
-            isActive ? theme.colors.textInverse : theme.colors.text};
+    background: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.primary : theme.colors.surface};
+    color: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.textInverse : theme.colors.text};
     font-size: ${({theme}) => theme.typography.fontSize.sm};
     cursor: pointer;
     transition: ${({theme}) => `all ${theme.transitions.fast}`};
 
     &:hover {
-        background: ${({theme, isActive}) =>
-                isActive ? theme.colors.primaryHover : theme.colors.surfaceHover};
+        background: ${({theme, $isActive}) =>
+                $isActive ? theme.colors.primaryHover : theme.colors.surfaceHover};
     }
 `;
 
@@ -185,7 +185,7 @@ export const LandscapeLayout: React.FC<LandscapeLayoutProps> = ({
 
             <Sidebar
                 width={sidebarWidth}
-                isCollapsed={!showSidebar}
+                $isCollapsed={!showSidebar}
                 style={{position: 'relative'}}
             >
                 {showSidebar && (
@@ -196,7 +196,7 @@ export const LandscapeLayout: React.FC<LandscapeLayoutProps> = ({
                             {availableTabs.map(tab => (
                                 <TabButton
                                     key={tab}
-                                    isActive={activeTab === tab}
+                                    $isActive={activeTab === tab}
                                     onClick={() => setActiveTab(tab)}
                                 >
                                     {tab.charAt(0).toUpperCase() + tab.slice(1)}

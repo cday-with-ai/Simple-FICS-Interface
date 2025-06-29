@@ -21,7 +21,7 @@ const ScoreContainer = styled.div<{ size?: 'small' | 'medium' | 'large' }>`
 }}
 `;
 
-const ScoreDisplay = styled.span<{ isPositive?: boolean; isNegative?: boolean }>`
+const ScoreDisplay = styled.span<{ $isPositive?: boolean; $isNegative?: boolean }>`
   padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
   background: ${({theme}) => theme.colors.backgroundSecondary};
   border: 1px solid ${({theme}) => theme.colors.border};
@@ -30,12 +30,12 @@ const ScoreDisplay = styled.span<{ isPositive?: boolean; isNegative?: boolean }>
   text-align: center;
   display: inline-block;
   
-  ${({isPositive, theme}) => isPositive && `
+  ${({$isPositive, theme}) => $isPositive && `
     color: ${theme.colors.success};
     border-color: ${theme.colors.success};
   `}
   
-  ${({isNegative, theme}) => isNegative && `
+  ${({$isNegative, theme}) => $isNegative && `
     color: ${theme.colors.error};
     border-color: ${theme.colors.error};
   `}
@@ -93,7 +93,7 @@ export const DigitalScore: React.FC<DigitalScoreProps> = ({
 
     return (
         <ScoreContainer size={size} className={className}>
-            <ScoreDisplay isPositive={isPositive} isNegative={isNegative}>
+            <ScoreDisplay $isPositive={isPositive} $isNegative={isNegative}>
                 {getDisplayValue()}
             </ScoreDisplay>
         </ScoreContainer>
@@ -113,11 +113,11 @@ const EvaluationBarContainer = styled.div`
   align-items: center;
 `;
 
-const EvaluationFill = styled.div<{ percentage: number }>`
+const EvaluationFill = styled.div<{ $percentage: number }>`
   height: 100%;
-  background: ${({theme, percentage}) =>
-    percentage > 50 ? theme.colors.success : theme.colors.error};
-  width: ${({percentage}) => percentage}%;
+  background: ${({theme, $percentage}) =>
+    $percentage > 50 ? theme.colors.success : theme.colors.error};
+  width: ${({$percentage}) => $percentage}%;
   transition: ${({theme}) => `width ${theme.transitions.normal}`};
 `;
 
@@ -160,7 +160,7 @@ export const EvaluationBar: React.FC<EvaluationBarProps> = ({
 
     return (
         <EvaluationBarContainer className={className}>
-            <EvaluationFill percentage={percentage}/>
+            <EvaluationFill $percentage={percentage}/>
             <EvaluationText>
                 {formatScore(score)}
             </EvaluationText>

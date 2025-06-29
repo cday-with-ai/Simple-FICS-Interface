@@ -2,14 +2,14 @@ import React from 'react';
 import styled from 'styled-components';
 import {useTheme} from '../../theme';
 
-const ToggleButton = styled.button<{ isActive: boolean }>`
+const ToggleButton = styled.button<{ $isActive: boolean }>`
     padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
     border: 1px solid ${({theme}) => theme.colors.border};
     border-radius: 6px;
-    background: ${({theme, isActive}) =>
-            isActive ? theme.colors.primary : theme.colors.surface};
-    color: ${({theme, isActive}) =>
-            isActive ? theme.colors.textInverse : theme.colors.text};
+    background: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.primary : theme.colors.surface};
+    color: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.textInverse : theme.colors.text};
     font-size: ${({theme}) => theme.typography.fontSize.sm};
     cursor: pointer;
     transition: ${({theme}) => `all ${theme.transitions.fast}`};
@@ -18,8 +18,8 @@ const ToggleButton = styled.button<{ isActive: boolean }>`
     gap: ${({theme}) => theme.spacing.xs};
 
     &:hover {
-        background: ${({theme, isActive}) =>
-                isActive ? theme.colors.primaryHover : theme.colors.surfaceHover};
+        background: ${({theme, $isActive}) =>
+                $isActive ? theme.colors.primaryHover : theme.colors.surfaceHover};
     }
 `;
 
@@ -69,7 +69,7 @@ export const ThemeToggle: React.FC = () => {
             <Label>Theme:</Label>
 
             <ToggleButton
-                isActive={themePreference === 'light'}
+                $isActive={themePreference === 'light'}
                 onClick={() => setTheme('light')}
                 title="Light theme"
             >
@@ -77,7 +77,7 @@ export const ThemeToggle: React.FC = () => {
             </ToggleButton>
 
             <ToggleButton
-                isActive={themePreference === 'dark'}
+                $isActive={themePreference === 'dark'}
                 onClick={() => setTheme('dark')}
                 title="Dark theme"
             >
@@ -85,7 +85,7 @@ export const ThemeToggle: React.FC = () => {
             </ToggleButton>
 
             <ToggleButton
-                isActive={themePreference === 'system'}
+                $isActive={themePreference === 'system'}
                 onClick={() => setTheme('system')}
                 title="Follow system theme"
             >

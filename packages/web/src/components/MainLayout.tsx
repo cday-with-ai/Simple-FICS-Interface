@@ -20,9 +20,9 @@ export const MainLayout: React.FC = () => {
 
             {/* Demo game clocks with digital font */}
             <div style={{display: 'flex', gap: '0.5rem', alignItems: 'center'}}>
-                <div style={{fontSize: '12px', color: 'var(--color-textSecondary)'}}>White:</div>
+                <div style={{fontSize: '12px', color: 'var(--color-textSecondary)'}}>White(1600):</div>
                 <GameClock time={900} isActive={true}/>
-                <div style={{fontSize: '12px', color: 'var(--color-textSecondary)'}}>Black:</div>
+                <div style={{fontSize: '12px', color: 'var(--color-textSecondary)'}}>Black(1600):</div>
                 <GameClock time={847}/>
             </div>
 

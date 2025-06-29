@@ -1,9 +1,9 @@
 import {GameStore, GameState} from '../GameStore';
 import {runInAction} from 'mobx';
-import {ChessAPI, Move, Color, Variant} from '../../services/chessapi';
+import {ChessAPI, Move, Color, Variant} from '../../services/ChessAPI';
 
 // Mock ChessAPI
-jest.mock('../../services/chessapi', () => {
+jest.mock('../../services/ChessAPI', () => {
     const mockMove = {
         san: 'e4',
         from: 'e2',

@@ -10,6 +10,8 @@ export const StockfishTest: React.FC = () => {
     const [analysisResult, setAnalysisResult] = useState<string>('');
     const [currentFen, setCurrentFen] = useState('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
 
+    console.log('StockfishTest component rendering');
+
     const {
         engine,
         isLoading,
@@ -21,6 +23,7 @@ export const StockfishTest: React.FC = () => {
     } = useStockfish({
         autoInitialize: true,
         onAnalysis: (result: AnalysisResult) => {
+            console.log('Analysis result received:', result);
             if (result.type === 'info') {
                 setAnalysisResult(prev => prev + '\n' + result.line);
             } else if (result.type === 'bestmove') {
@@ -29,9 +32,16 @@ export const StockfishTest: React.FC = () => {
         }
     });
 
+    console.log('Stockfish hook state:', { isLoading, isReady, error, hasEngine: !!engine });
+
     const handleAnalyze = () => {
-        if (!isReady) return;
+        console.log('Analyze button clicked', { isReady, currentFen });
+        if (!isReady) {
+            console.log('Engine not ready, returning');
+            return;
+        }
         setAnalysisResult('Starting analysis...\n');
+        console.log('Calling analyzePosition with FEN:', currentFen);
         analyzePosition(currentFen);
     };
 
@@ -73,15 +83,33 @@ export const StockfishTest: React.FC = () => {
                 <button
                     onClick={handleManualInit}
                     disabled={isLoading || isReady}
-                    style={{marginRight: '10px', padding: '8px 16px'}}
+                    style={{
+                        marginRight: '10px', 
+                        padding: '8px 16px',
+                        cursor: (isLoading || isReady) ? 'not-allowed' : 'pointer',
+                        opacity: (isLoading || isReady) ? 0.5 : 1,
+                        backgroundColor: (isLoading || isReady) ? '#ccc' : '#2196F3',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px'
+                    }}
                 >
-                    Initialize Engine
+                    {isLoading ? 'Initializing...' : 'Initialize Engine'}
                 </button>
 
                 <button
                     onClick={handleAnalyze}
                     disabled={!isReady}
-                    style={{marginRight: '10px', padding: '8px 16px'}}
+                    style={{
+                        marginRight: '10px', 
+                        padding: '8px 16px',
+                        cursor: isReady ? 'pointer' : 'not-allowed',
+                        opacity: isReady ? 1 : 0.5,
+                        backgroundColor: isReady ? '#4CAF50' : '#ccc',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px'
+                    }}
                 >
                     Analyze Position
                 </button>
@@ -89,7 +117,15 @@ export const StockfishTest: React.FC = () => {
                 <button
                     onClick={handleStop}
                     disabled={!isReady}
-                    style={{padding: '8px 16px'}}
+                    style={{
+                        padding: '8px 16px',
+                        cursor: isReady ? 'pointer' : 'not-allowed',
+                        opacity: isReady ? 1 : 0.5,
+                        backgroundColor: isReady ? '#f44336' : '#ccc',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px'
+                    }}
                 >
                     Stop Analysis
                 </button>

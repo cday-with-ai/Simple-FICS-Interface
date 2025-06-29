@@ -44,9 +44,10 @@ export const useStockfish = (options: StockfishHookOptions = {}): StockfishHookR
     const {autoInitialize = true, onAnalysis} = options;
 
     const [engine, setEngine] = useState<StockfishEngine | null>(null);
-    const [isLoading, setIsLoading] = useState(autoInitialize);
+    const [isLoading, setIsLoading] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [hasInitialized, setHasInitialized] = useState(false);
 
     // Use ref to avoid stale closure issues with callbacks
     const analysisCallbackRef = useRef<AnalysisCallback | undefined>(onAnalysis);
@@ -63,6 +64,7 @@ export const useStockfish = (options: StockfishHookOptions = {}): StockfishHookR
 
         setIsLoading(true);
         setError(null);
+        setHasInitialized(true);
 
         try {
             console.log('useStockfish: Initializing Stockfish engine...');
@@ -130,10 +132,11 @@ export const useStockfish = (options: StockfishHookOptions = {}): StockfishHookR
 
     // Auto-initialize if requested
     useEffect(() => {
-        if (autoInitialize && !engine && !isLoading) {
+        if (autoInitialize && !hasInitialized) {
+            console.log('useStockfish: Auto-initializing engine...');
             initialize();
         }
-    }, [autoInitialize, engine, isLoading, initialize]);
+    }, [autoInitialize, hasInitialized, initialize]);
 
     // Update engine callback when it changes
     useEffect(() => {

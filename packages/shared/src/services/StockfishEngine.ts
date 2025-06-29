@@ -36,6 +36,7 @@ type AnalysisCallback = (result: AnalysisResult) => void;
 declare global {
     interface Window {
         Stockfish: (config: StockfishConfig) => Promise<StockfishWasmEngine>;
+        Sf167Web?: (config: StockfishConfig) => Promise<StockfishWasmEngine>;
         stockfishReady?: boolean;
         stockfishError?: { message: string };
         StockfishEngine: typeof StockfishEngine;
@@ -68,8 +69,7 @@ class StockfishEngine {
     private loadStockfishScript(src: string): Promise<void> {
         return new Promise((resolve, reject) => {
             // Check if Stockfish is already loaded
-            // @ts-expect-error - We're intentionally checking if the function exists, not calling it
-            if (typeof window !== 'undefined' && window.Stockfish) {
+            if (typeof window !== 'undefined' && (window.Stockfish || window.Sf167Web)) {
                 resolve();
                 return;
             }
@@ -77,10 +77,19 @@ class StockfishEngine {
             const script = document.createElement('script');
             script.src = src;
             script.async = true;
+            script.type = 'module'; // Important: sf16-7.js uses ES modules
 
             script.onload = () => {
                 console.log('Stockfish script loaded successfully');
-                resolve();
+                // Give it a moment to initialize
+                setTimeout(() => {
+                    console.log('Checking for Sf167Web after load...');
+                    if (window.Sf167Web) {
+                        console.log('Sf167Web found!');
+                        window.Stockfish = window.Sf167Web;
+                    }
+                    resolve();
+                }, 100);
             };
 
             script.onerror = () => {
@@ -100,12 +109,19 @@ class StockfishEngine {
 
             // Handle React environment - load from public directory
             if (this.isReactEnvironment) {
-                if (typeof window.Stockfish !== 'function') {
+                if (typeof window.Stockfish !== 'function' && typeof window.Sf167Web !== 'function') {
                     console.log('Loading Stockfish from public assets...');
-                    await this.loadStockfishScript('/sf16-7.js');
+                    // Load the wrapper that properly imports the ES module
+                    await this.loadStockfishScript('/stockfish-loader.js');
 
                     // Wait a bit for the script to fully initialize
                     await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                    // Check if Sf167Web is available (the actual export name)
+                    if (typeof window.Sf167Web === 'function') {
+                        console.log('Found Sf167Web, assigning to window.Stockfish');
+                        window.Stockfish = window.Sf167Web;
+                    }
                 }
             }
 
@@ -114,13 +130,17 @@ class StockfishEngine {
                 throw new Error('Stockfish module failed to load: ' + window.stockfishError.message);
             }
 
-            // Check for sf16-7 Stockfish function
+            // Check for sf16-7 Stockfish function (may be named Sf167Web)
             if (typeof window.Stockfish !== 'function') {
-                console.log('Stockfish not found globally, waiting for load...');
-                console.log('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('stock')));
+                if (typeof window.Sf167Web === 'function') {
+                    console.log('Found Sf167Web, using it as Stockfish');
+                    window.Stockfish = window.Sf167Web;
+                } else {
+                    console.log('Stockfish not found globally, waiting for load...');
+                    console.log('Available globals:', Object.keys(window).filter(k => k.toLowerCase().includes('sf') || k.toLowerCase().includes('stock')));
 
-                // Wait for the stockfishReady event or timeout (for non-React environments)
-                await new Promise<void>((resolve, reject) => {
+                    // Wait for the stockfishReady event or timeout (for non-React environments)
+                    await new Promise<void>((resolve, reject) => {
                     const timeout = setTimeout(() => {
                         reject(new Error('Stockfish loading timeout. Make sure sf16-7.js is loaded correctly.'));
                     }, 10000);
@@ -154,10 +174,11 @@ class StockfishEngine {
 
                     window.addEventListener('stockfishReady', handleStockfishReady);
                     window.addEventListener('stockfishError', handleStockfishError);
-                });
+                    });
 
-                if (typeof window.Stockfish !== 'function') {
-                    throw new Error('Stockfish function not found after loading event.');
+                    if (typeof window.Stockfish !== 'function') {
+                        throw new Error('Stockfish function not found after loading event.');
+                    }
                 }
             }
 
@@ -218,8 +239,11 @@ class StockfishEngine {
      * Handle messages from the engine
      */
     private handleMessage(line: string): void {
+        console.log('Stockfish message:', line);
+        
         // Handle UCI handshake
         if (line === 'uciok') {
+            console.log('Received uciok, setting uciReady = true');
             this.uciReady = true;
             if (this.engine) {
                 this.engine.uci('isready');
@@ -228,10 +252,13 @@ class StockfishEngine {
         }
 
         if (line === 'readyok') {
+            console.log('Received readyok, setting isReady = true');
             this.isReady = true;
+            this.uciReady = true; // Ensure both flags are set
 
             // If there's a pending analysis request, execute it now
             if (this.pendingAnalysis) {
+                console.log('Executing pending analysis...');
                 const {fen, options} = this.pendingAnalysis;
                 this.pendingAnalysis = null;
                 this.analyzePosition(fen, options);
@@ -290,14 +317,20 @@ class StockfishEngine {
      */
     analyzePosition(fen: string, options: AnalysisOptions = {}): void {
         console.log("Call to analyzePosition with fen:", fen);
-        if (!this.isReady) {
+        console.log("Engine ready state:", { isReady: this.isReady, uciReady: this.uciReady, hasEngine: !!this.engine });
+        
+        if (!this.isReady || !this.uciReady) {
+            console.log('Engine not ready, storing pending analysis');
             this.pendingAnalysis = {fen, options};
             return;
         }
         if (this.engine) {
+            console.log('Sending UCI commands for analysis...');
             this.engine.uci('stop');
             this.engine.uci(`position fen ${fen}`);
             this.engine.uci(`go infinite`);
+        } else {
+            console.error('Engine is null, cannot analyze position');
         }
     }
 

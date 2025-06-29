@@ -2,14 +2,14 @@ import React from 'react';
 import styled from 'styled-components';
 import {useLayoutContext} from '../layout';
 
-const ToggleButton = styled.button<{ isActive: boolean }>`
+const ToggleButton = styled.button<{ $isActive: boolean }>`
     padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
     border: 1px solid ${({theme}) => theme.colors.border};
     border-radius: 6px;
-    background: ${({theme, isActive}) =>
-            isActive ? theme.colors.secondary : theme.colors.surface};
-    color: ${({theme, isActive}) =>
-            isActive ? theme.colors.textInverse : theme.colors.text};
+    background: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.secondary : theme.colors.surface};
+    color: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.textInverse : theme.colors.text};
     font-size: ${({theme}) => theme.typography.fontSize.sm};
     cursor: pointer;
     transition: ${({theme}) => `all ${theme.transitions.fast}`};
@@ -18,8 +18,8 @@ const ToggleButton = styled.button<{ isActive: boolean }>`
     gap: ${({theme}) => theme.spacing.xs};
 
     &:hover {
-        background: ${({theme, isActive}) =>
-                isActive ? theme.colors.secondaryHover : theme.colors.surfaceHover};
+        background: ${({theme, $isActive}) =>
+                $isActive ? theme.colors.secondaryHover : theme.colors.surfaceHover};
     }
 `;
 
@@ -85,7 +85,7 @@ export const LayoutToggle: React.FC = () => {
             <Label>Layout:</Label>
 
             <ToggleButton
-                isActive={layoutPreference === 'auto'}
+                $isActive={layoutPreference === 'auto'}
                 onClick={() => setLayoutPreference('auto')}
                 title="Automatic layout based on device orientation"
             >
@@ -93,7 +93,7 @@ export const LayoutToggle: React.FC = () => {
             </ToggleButton>
 
             <ToggleButton
-                isActive={layoutPreference === 'landscape'}
+                $isActive={layoutPreference === 'landscape'}
                 onClick={() => setLayoutPreference('landscape')}
                 title="Force landscape layout"
             >
@@ -101,7 +101,7 @@ export const LayoutToggle: React.FC = () => {
             </ToggleButton>
 
             <ToggleButton
-                isActive={layoutPreference === 'portrait'}
+                $isActive={layoutPreference === 'portrait'}
                 onClick={() => setLayoutPreference('portrait')}
                 title="Force portrait layout"
             >

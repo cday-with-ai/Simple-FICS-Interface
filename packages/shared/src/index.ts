@@ -6,8 +6,8 @@ export {PreferencesStore} from './models/PreferencesStore';
 export {RootStore, createRootStore} from './models/RootStore';
 
 // Services
-export {ChessAPI, Move, PieceType, Color, Variant, GameResult} from './services/chessapi';
-export type {Piece, CastlingRights, MoveObject, Square, Board} from './services/chessapi';
+export {ChessAPI, Move, PieceType, Color, Variant, GameResult} from './services/ChessAPI';
+export type {Piece, CastlingRights, MoveObject, Square, Board} from './services/ChessAPI';
 export {FicsProtocol} from './services/FicsProtocol';
 export type {
     FicsMessage,
