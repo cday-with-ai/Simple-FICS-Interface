@@ -951,7 +951,7 @@
     pointer-events: none;
 }
 
-.board-strength-evaluation-label{
+.board-strength-evaluation-label {
     position: absolute;
     font-weight: bold;
     top: -15px;

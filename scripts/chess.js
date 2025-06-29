@@ -1,7 +1,7 @@
 // C:/Users/carso/IdeaProjects/Simple-FICS-Interface/chess.js
 
 // Import ECO lookup functions
-import {initECO, lookupFromMoveList} from './eco.js';
+import {initECO, lookupFromMoveList} from './Eco.ts';
 import {
     convertToUnicodeChessPieces,
     ficsMoveToStartEndArray,
@@ -12,7 +12,7 @@ import {
     style12ToFen,
     toAlgebraicSquare,
     toRankFile
-} from './utils.js';
+} from './utils.ts';
 import {playSound} from './index.js';
 import {getFollowedPlayer, getObservedPlayer} from "./fics.js"
 import {ChessBoard, Variant} from "./ChessBoard.js";
@@ -123,7 +123,7 @@ export function onStyle12(msg) {
     console.log("Processing Style12 message:", msg);
 
     // Store previous board state before updating
-    const previousBoardState = gameState.fen ? { ...gameState } : null;
+    const previousBoardState = gameState.fen ? {...gameState} : null;
 
     // First premove if its set.
     if (gameState.premove) {
@@ -135,21 +135,21 @@ export function onStyle12(msg) {
     // Use requestAnimationFrame for smoother transitions
     requestAnimationFrame(() => {
 
-    handleAutoDraw(); //Send draw if pressed.
+        handleAutoDraw(); //Send draw if pressed.
 
-    updateBoardFromStyle12(msg);
-    updateMoveListWithLastMove();
-    updatePlayerInfoAndClockUI();
+        updateBoardFromStyle12(msg);
+        updateMoveListWithLastMove();
+        updatePlayerInfoAndClockUI();
 
-    // If we're observing a played game, request the moves list
-    if (!gameState.requestedMovesForGame &&
-        gameState.relation === GameRelation.OBSERVING_PLAYED &&
-        gameState.gameNumber > 0) {
-        const movesCommand = `moves ${gameState.gameNumber}`;
-        console.log("Sending moves command:", movesCommand);
-        ws.send(movesCommand);
-        gameState.requestedMovesForGame = true;
-    }
+        // If we're observing a played game, request the moves list
+        if (!gameState.requestedMovesForGame &&
+            gameState.relation === GameRelation.OBSERVING_PLAYED &&
+            gameState.gameNumber > 0) {
+            const movesCommand = `moves ${gameState.gameNumber}`;
+            console.log("Sending moves command:", movesCommand);
+            ws.send(movesCommand);
+            gameState.requestedMovesForGame = true;
+        }
     }); // Close requestAnimationFrame
 }
 
@@ -1178,7 +1178,6 @@ function examineGoToEnd() {
 }
 
 
-
 /**
  * Handles analysis mode activation
  */
@@ -1765,7 +1764,7 @@ function updateUIForPerspective() {
                 const totalMoves = moveHistory.length;
                 const canAbort = totalMoves === 0 &&
                     (gameState.relation === GameRelation.PLAYING_MY_MOVE ||
-                     gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
+                        gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
 
                 if (canAbort) {
                     // Show Abort only when no moves have been made yet (move 1)
@@ -1894,7 +1893,7 @@ function updateUIForPerspective() {
         // Refresh navigation buttons if perspective changed to/from EXAMINING
         if (shouldShowMoveList &&
             (gameState.perspective === Perspective.EXAMINING ||
-             gameState.lastPerspective === Perspective.EXAMINING)) {
+                gameState.lastPerspective === Perspective.EXAMINING)) {
             refreshMoveListDisplay();
         }
     }
@@ -1914,7 +1913,7 @@ function updateUIForPerspective() {
         const shouldShowAbortGame = gameState.perspective === Perspective.PLAYING &&
             totalMoves === 0 &&
             (gameState.relation === GameRelation.PLAYING_MY_MOVE ||
-             gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
+                gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE);
         abortGameBtn.style.display = shouldShowAbortGame ? 'block' : 'none';
     }
 
@@ -2139,8 +2138,8 @@ function updatePlayerInfoAndClockUI() {
 
         // Check if game is finished
         const isFinishedGame = gameState.perspective === Perspective.FINISHED_PLAYING ||
-                              gameState.perspective === Perspective.FINISHED_OBSERVING ||
-                              gameState.perspective === Perspective.FINISHED_EXAMINING;
+            gameState.perspective === Perspective.FINISHED_OBSERVING ||
+            gameState.perspective === Perspective.FINISHED_EXAMINING;
 
         if (isFinishedGame) {
             // For finished games, both clocks are grayed out
@@ -2167,8 +2166,8 @@ function updatePlayerInfoAndClockUI() {
 
         // Check if game is finished
         const isFinishedGame = gameState.perspective === Perspective.FINISHED_PLAYING ||
-                              gameState.perspective === Perspective.FINISHED_OBSERVING ||
-                              gameState.perspective === Perspective.FINISHED_EXAMINING;
+            gameState.perspective === Perspective.FINISHED_OBSERVING ||
+            gameState.perspective === Perspective.FINISHED_EXAMINING;
 
         if (isFinishedGame) {
             // For finished games, both clocks are grayed out
@@ -2208,7 +2207,7 @@ function style12DoublePawnPushToFile(style12Value) {
  */
 function setPlayerOrientationGameState() {
     gameState.isPlayerPlaying = gameState.relation === GameRelation.PLAYING_MY_MOVE ||
-                                gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
+        gameState.relation === GameRelation.PLAYING_OPPONENT_MOVE;
 
     /**
      * When playing, the user can only move his pieces. Currently, he can only move them when it is his turn, but when
@@ -2670,10 +2669,10 @@ function showPromotionDialog(startSquareAlgebraic, endSquareAlgebraic, isDraggin
 
     console.log(`Promotion dialog: piece at ${startSquareAlgebraic}:`, piece, 'detected color:', pieceColor);
     const pieceTypes = [
-        { value: 'q', name: 'Queen' },
-        { value: 'r', name: 'Rook' },
-        { value: 'b', name: 'Bishop' },
-        { value: 'n', name: 'Knight' }
+        {value: 'q', name: 'Queen'},
+        {value: 'r', name: 'Rook'},
+        {value: 'b', name: 'Bishop'},
+        {value: 'n', name: 'Knight'}
     ];
 
     modal.innerHTML = `
@@ -3732,7 +3731,7 @@ function setupMainChessBoardDisplay() {
     topPlayerNameWrapper.appendChild(topPlayerName);
 
     const topPlayerClock = document.createElement('div');
-    topPlayerClock.classList.add('player-clock', 'top-player-clock', 'player-clock-display','clock-finished');
+    topPlayerClock.classList.add('player-clock', 'top-player-clock', 'player-clock-display', 'clock-finished');
     topPlayerClock.id = 'topPlayerClock';
     topPlayerClock.innerText = '00:00';
     topPlayerInfo.appendChild(topPlayerClock);
@@ -3755,7 +3754,7 @@ function setupMainChessBoardDisplay() {
     bottomPlayerNameWrapper.appendChild(bottomPlayerName);
 
     const bottomPlayerClock = document.createElement('div');
-    bottomPlayerClock.classList.add('player-clock', 'bottom-player-clock', 'player-clock-display','clock-finished');
+    bottomPlayerClock.classList.add('player-clock', 'bottom-player-clock', 'player-clock-display', 'clock-finished');
     bottomPlayerClock.id = 'bottomPlayerClock';
     bottomPlayerClock.innerText = '00:00';
     bottomPlayerInfo.appendChild(bottomPlayerNameWrapper);
@@ -3878,7 +3877,6 @@ function setupMainChessBoardDisplay() {
     bottomPlayerNameContainer.appendChild(bottomPlayerNameWrapper);
 
 
-
     // Create promotion options container
     const promotionOptionsContainer = document.createElement('div');
     promotionOptionsContainer.id = 'promotionOptionsContainer';
@@ -3984,7 +3982,6 @@ function setupMainChessBoardDisplay() {
         document.documentElement.style.setProperty('--font-scale', fontScale);
         chessBoardArea.dataset.maxSize = maxSize;
         chessBoardArea.dataset.fontScale = fontScale;
-
 
 
         // Ensure playerInfoContainer and boardOnlyContainer also respond

@@ -1,58 +1,58 @@
-
 <!doctype html>
 <html lang="en">
 
 <head>
     <title>Code coverage report for services/ChessEngine.ts</title>
-    <meta charset="utf-8" />
-    <link rel="stylesheet" href="../prettify.css" />
-    <link rel="stylesheet" href="../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="../prettify.css"/>
+    <link rel="stylesheet" href="../base.css"/>
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <style type='text/css'>
         .coverage-summary .sorter {
             background-image: url(../sort-arrow-sprite.png);
         }
     </style>
 </head>
-    
+
 <body>
 <div class='wrapper'>
     <div class='pad1'>
         <h1><a href="../index.html">All files</a> / <a href="index.html">services</a> ChessEngine.ts</h1>
         <div class='clearfix'>
-            
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">61.9% </span>
                 <span class="quiet">Statements</span>
                 <span class='fraction'>182/294</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">49.26% </span>
                 <span class="quiet">Branches</span>
                 <span class='fraction'>67/136</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">64.1% </span>
                 <span class="quiet">Functions</span>
                 <span class='fraction'>25/39</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">65.75% </span>
                 <span class="quiet">Lines</span>
                 <span class='fraction'>169/257</span>
             </div>
-        
-            
+
+
         </div>
         <p class="quiet">
-            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for
+            the previous block.
         </p>
         <template id="filterTemplate">
             <div class="quiet">
@@ -1626,9 +1626,11 @@ export class Move {
         public readonly san: string,
         public readonly from: string,
         public readonly to: string,
-        public readonly capturedPiece: Piece | null = <span class="branch-0 cbranch-no" title="branch not covered" >null,</span>
+        public readonly capturedPiece: Piece | null = <span class="branch-0 cbranch-no"
+                                                            title="branch not covered">null,</span>
         public readonly promotion: PieceType | null = null,
-        public readonly isEnPassant: boolean = <span class="branch-0 cbranch-no" title="branch not covered" >false,</span>
+        public readonly isEnPassant: boolean = <span class="branch-0 cbranch-no"
+                                                     title="branch not covered">false,</span>
         public readonly isCastling: boolean = false,
         public readonly castlingSide: 'kingside' | 'queenside' | null = null
     ) {
@@ -1638,46 +1640,51 @@ export class Move {
      * Returns whether this move is a capture
      */
     isCapture(): boolean {
-        return this.capturedPiece !== null || <span class="branch-1 cbranch-no" title="branch not covered" >this.isEnPassant;</span>
+        return this.capturedPiece !== null || <span class="branch-1 cbranch-no" title="branch not covered">this.isEnPassant;</span>
     }
 &nbsp;
     /**
      * Returns whether this move is a promotion
      */
-<span class="fstat-no" title="function not covered" >    isPromotion(</span>): boolean {
-<span class="cstat-no" title="statement not covered" >        return this.promotion !== null;</span>
+<span class="fstat-no" title="function not covered">    isPromotion(</span>): boolean {
+<span class="cstat-no" title="statement not covered">        return this.promotion !== null;</span>
     }
 &nbsp;
     /**
      * Returns a string representation of the move
      */
-<span class="fstat-no" title="function not covered" >    toString(</span>): string {
-<span class="cstat-no" title="statement not covered" >        return this.san;</span>
+<span class="fstat-no" title="function not covered">    toString(</span>): string {
+<span class="cstat-no" title="statement not covered">        return this.san;</span>
     }
 &nbsp;
     /**
      * Returns a detailed string representation of the move
      */
-<span class="fstat-no" title="function not covered" >    toDetailedString(</span>): string {
-        let details = <span class="cstat-no" title="statement not covered" >`${this.san} (${this.from}-${this.to})`;</span>
+<span class="fstat-no" title="function not covered">    toDetailedString(</span>): string {
+        let details = <span class="cstat-no"
+                            title="statement not covered">`${this.san} (${this.from}-${this.to})`;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.isCapture()) {</span>
-<span class="cstat-no" title="statement not covered" >            if (this.isEnPassant) {</span>
-<span class="cstat-no" title="statement not covered" >                details += ' [en passant]';</span>
-            } else <span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span>if (this.capturedPiece) {</span>
-<span class="cstat-no" title="statement not covered" >                details += ` [captures ${this.capturedPiece.type}]`;</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this.isCapture()) {</span>
+<span class="cstat-no" title="statement not covered">            if (this.isEnPassant) {</span>
+<span class="cstat-no" title="statement not covered">                details += ' [en passant]';</span>
+            } else <span class="cstat-no" title="statement not covered"><span class="missing-if-branch"
+                                                                              title="if path not taken">I</span>if (this.capturedPiece) {</span>
+<span class="cstat-no" title="statement not covered">                details += ` [captures ${this.capturedPiece.type}]`;</span>
             }
         }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.isPromotion()) {</span>
-<span class="cstat-no" title="statement not covered" >            details += ` [promotes to ${this.promotion}]`;</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this.isPromotion()) {</span>
+<span class="cstat-no" title="statement not covered">            details += ` [promotes to ${this.promotion}]`;</span>
         }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.isCastling) {</span>
-<span class="cstat-no" title="statement not covered" >            details += ` [${this.castlingSide} castling]`;</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this.isCastling) {</span>
+<span class="cstat-no" title="statement not covered">            details += ` [${this.castlingSide} castling]`;</span>
         }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        return details;</span>
+<span class="cstat-no" title="statement not covered">        return details;</span>
     }
 &nbsp;
     /**
@@ -1686,7 +1693,7 @@ export class Move {
     static fromMoveObject(
         moveObj: MoveObject,
         san: string,
-        capturedPiece: Piece | null = <span class="branch-0 cbranch-no" title="branch not covered" >null</span>
+        capturedPiece: Piece | null = <span class="branch-0 cbranch-no" title="branch not covered">null</span>
     ): Move {
         return new Move(
             san,
@@ -1729,8 +1736,8 @@ export class ChessBoard {
         this.halfMoveClock = 0;
         this.fullMoveNumber = 1;
 &nbsp;
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (fen) {
-<span class="cstat-no" title="statement not covered" >            this.loadFen(fen);</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (fen) {
+<span class="cstat-no" title="statement not covered">            this.loadFen(fen);</span>
         } else {
             this._setupStartingPosition();
         }
@@ -1749,9 +1756,9 @@ export class ChessBoard {
      * Sets up the starting position based on variant
      */
     private _setupStartingPosition(): void {
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.variant === Variant.CHESS960) {
-<span class="cstat-no" title="statement not covered" >            this._setupChess960Position();</span>
-<span class="cstat-no" title="statement not covered" >            return;</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (this.variant === Variant.CHESS960) {
+<span class="cstat-no" title="statement not covered">            this._setupChess960Position();</span>
+<span class="cstat-no" title="statement not covered">            return;</span>
         }
 &nbsp;
         // Standard starting position
@@ -1781,9 +1788,9 @@ export class ChessBoard {
     /**
      * Sets up a Chess960 starting position
      */
-    private <span class="fstat-no" title="function not covered" >_setupChess960Position(</span>): void {
-        const fen = <span class="cstat-no" title="statement not covered" >VariantRules.generateChess960Position();</span>
-<span class="cstat-no" title="statement not covered" >        this.loadFen(fen);</span>
+    private <span class="fstat-no" title="function not covered">_setupChess960Position(</span>): void {
+        const fen = <span class="cstat-no" title="statement not covered">VariantRules.generateChess960Position();</span>
+<span class="cstat-no" title="statement not covered">        this.loadFen(fen);</span>
     }
 &nbsp;
     /**
@@ -1792,16 +1799,20 @@ export class ChessBoard {
     loadFen(fen: string): boolean {
         try {
             const parts = fen.split(' ');
-            <span class="missing-if-branch" title="if path not taken" >I</span>if (parts.length &lt; 4) <span class="cstat-no" title="statement not covered" >return false;</span>
+            <span class="missing-if-branch" title="if path not taken">I</span>if (parts.length &lt; 4) <span
+            class="cstat-no" title="statement not covered">return false;</span>
 &nbsp;
-            const [position, active, castling, enPassant, halfMove = <span class="branch-0 cbranch-no" title="branch not covered" >'0',</span> fullMove = <span class="branch-0 cbranch-no" title="branch not covered" >'1']</span> = parts;
+            const [position, active, castling, enPassant, halfMove = <span class="branch-0 cbranch-no"
+                                                                           title="branch not covered">'0',</span> fullMove = <span
+            class="branch-0 cbranch-no" title="branch not covered">'1']</span> = parts;
 &nbsp;
             // Clear board
             this.board = this._createEmptyBoard();
 &nbsp;
             // Parse position
             const rows = position.split('/');
-            <span class="missing-if-branch" title="if path not taken" >I</span>if (rows.length !== 8) <span class="cstat-no" title="statement not covered" >return false;</span>
+            <span class="missing-if-branch" title="if path not taken">I</span>if (rows.length !== 8) <span
+            class="cstat-no" title="statement not covered">return false;</span>
 &nbsp;
             for (let row = 0; row &lt; 8; row++) {
                 let col = 0;
@@ -1810,16 +1821,19 @@ export class ChessBoard {
                         col += parseInt(char);
                     } else {
                         const piece = this._charToPiece(char);
-                        <span class="missing-if-branch" title="if path not taken" >I</span>if (!piece) <span class="cstat-no" title="statement not covered" >return false;</span>
+                        <span class="missing-if-branch" title="if path not taken">I</span>if (!piece) <span
+            class="cstat-no" title="statement not covered">return false;</span>
                         this.board[row][col] = piece;
                         col++;
                     }
                 }
-                <span class="missing-if-branch" title="if path not taken" >I</span>if (col !== 8) <span class="cstat-no" title="statement not covered" >return false;</span>
+                <span class="missing-if-branch" title="if path not taken">I</span>if (col !== 8) <span class="cstat-no"
+                                                                                                       title="statement not covered">return false;</span>
             }
 &nbsp;
             // Parse active color
-            this.activeColor = active.toLowerCase() === 'w' ? Color.WHITE : <span class="branch-1 cbranch-no" title="branch not covered" >Color.BLACK;</span>
+            this.activeColor = active.toLowerCase() === 'w' ? Color.WHITE : <span class="branch-1 cbranch-no"
+                                                                                  title="branch not covered">Color.BLACK;</span>
 &nbsp;
             // Parse castling rights
             this.castlingRights = {
@@ -1830,7 +1844,8 @@ export class ChessBoard {
             };
 &nbsp;
             // Parse en passant
-            this.enPassantTarget = enPassant === '-' ? null : <span class="branch-1 cbranch-no" title="branch not covered" >enPassant;</span>
+            this.enPassantTarget = enPassant === '-' ? null : <span class="branch-1 cbranch-no"
+                                                                    title="branch not covered">enPassant;</span>
 &nbsp;
             // Parse move counters
             this.halfMoveClock = parseInt(halfMove);
@@ -1839,7 +1854,7 @@ export class ChessBoard {
             this.positionHistory = [this.getFen()];
             return true;
         } catch {
-<span class="cstat-no" title="statement not covered" >            return false;</span>
+<span class="cstat-no" title="statement not covered">            return false;</span>
         }
     }
 &nbsp;
@@ -1877,7 +1892,7 @@ export class ChessBoard {
         if (this.castlingRights.Q) castling += 'Q';
         if (this.castlingRights.k) castling += 'k';
         if (this.castlingRights.q) castling += 'q';
-        fen += ` ${castling || <span class="branch-1 cbranch-no" title="branch not covered" >'-'}</span>`;
+        fen += ` ${castling || <span class="branch-1 cbranch-no" title="branch not covered">'-'}</span>`;
 &nbsp;
         // En passant
         fen += ` ${this.enPassantTarget || '-'}`;
@@ -1893,7 +1908,8 @@ export class ChessBoard {
      */
     private _charToPiece(char: string): Piece | null {
         const type = char.toLowerCase() as PieceType;
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (!Object.values(PieceType).includes(type)) <span class="cstat-no" title="statement not covered" >return null;</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (!Object.values(PieceType).includes(type)) <span
+            class="cstat-no" title="statement not covered">return null;</span>
 &nbsp;
         const color = char === char.toUpperCase() ? Color.WHITE : Color.BLACK;
         return {type, color};
@@ -1913,31 +1929,35 @@ export class ChessBoard {
      */
     makeMove(san: string): Move | null {
         const move = this._parseFlexibleSan(san);
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (!move) <span class="cstat-no" title="statement not covered" >return null;</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (!move) <span class="cstat-no"
+                                                                                           title="statement not covered">return null;</span>
 &nbsp;
         if (this._isLegalMove(move)) {
             return this._executeMove(move);
         }
-<span class="cstat-no" title="statement not covered" >        return null;</span>
+<span class="cstat-no" title="statement not covered">        return null;</span>
     }
 &nbsp;
     /**
      * Makes a move using long algebraic notation
      */
-<span class="fstat-no" title="function not covered" >    makeLongAlgebraicMove(</span>from: string, to: string, promotion?: PieceType): Move | null {
-        const piece = <span class="cstat-no" title="statement not covered" >this.getPiece(from);</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!piece || piece.color !== this.activeColor) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+<span class="fstat-no" title="function not covered">    makeLongAlgebraicMove(</span>from: string, to: string, promotion?: PieceType): Move | null {
+        const piece = <span class="cstat-no" title="statement not covered">this.getPiece(from);</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!piece || piece.color !== this.activeColor) <span
+        class="cstat-no" title="statement not covered">return null;</span></span>
 &nbsp;
-        const moveObj: MoveObject = <span class="cstat-no" title="statement not covered" >{from, to, promotion};</span>
-        const san = <span class="cstat-no" title="statement not covered" >this._generateSan(moveObj);</span>
-        const capturedPiece = <span class="cstat-no" title="statement not covered" >this.getPiece(to);</span>
+        const moveObj: MoveObject = <span class="cstat-no" title="statement not covered">{from, to, promotion};</span>
+        const san = <span class="cstat-no" title="statement not covered">this._generateSan(moveObj);</span>
+        const capturedPiece = <span class="cstat-no" title="statement not covered">this.getPiece(to);</span>
 &nbsp;
-        const move = <span class="cstat-no" title="statement not covered" >Move.fromMoveObject(moveObj, san, capturedPiece);</span>
+        const move = <span class="cstat-no" title="statement not covered">Move.fromMoveObject(moveObj, san, capturedPiece);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this._isLegalMove(move)) {</span>
-<span class="cstat-no" title="statement not covered" >            return this._executeMove(move);</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this._isLegalMove(move)) {</span>
+<span class="cstat-no" title="statement not covered">            return this._executeMove(move);</span>
         }
-<span class="cstat-no" title="statement not covered" >        return null;</span>
+<span class="cstat-no" title="statement not covered">        return null;</span>
     }
 &nbsp;
     /**
@@ -1945,7 +1965,8 @@ export class ChessBoard {
      */
     getPiece(square: Square): Piece | null {
         const coords = this._algebraicToCoords(square);
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (!coords) <span class="cstat-no" title="statement not covered" >return null;</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (!coords) <span class="cstat-no"
+                                                                                             title="statement not covered">return null;</span>
         return this.board[coords.row][coords.col];
     }
 &nbsp;
@@ -1965,10 +1986,12 @@ export class ChessBoard {
         if (square) {
             // Get moves for a specific piece
             const coords = this._algebraicToCoords(square);
-            <span class="missing-if-branch" title="if path not taken" >I</span>if (!coords) <span class="cstat-no" title="statement not covered" >return moves;</span>
+            <span class="missing-if-branch" title="if path not taken">I</span>if (!coords) <span class="cstat-no"
+                                                                                                 title="statement not covered">return moves;</span>
 &nbsp;
             const piece = this.board[coords.row][coords.col];
-            <span class="missing-if-branch" title="if path not taken" >I</span>if (!piece || piece.color !== this.activeColor) <span class="cstat-no" title="statement not covered" >return moves;</span>
+            <span class="missing-if-branch" title="if path not taken">I</span>if (!piece || piece.color !== this.activeColor) <span
+            class="cstat-no" title="statement not covered">return moves;</span>
 &nbsp;
             const context = {
                 board: this.board,
@@ -2002,16 +2025,19 @@ export class ChessBoard {
             }
 &nbsp;
             // Add drop moves for Crazyhouse
-            <span class="missing-if-branch" title="if path not taken" >I</span>if (this.variant === Variant.CRAZYHOUSE) {
-                const pieces = <span class="cstat-no" title="statement not covered" >this.capturedPieces[this.activeColor];</span>
-                const uniquePieces = <span class="cstat-no" title="statement not covered" >[...new Set(pieces)];</span>
+            <span class="missing-if-branch" title="if path not taken">I</span>if (this.variant === Variant.CRAZYHOUSE) {
+                const pieces = <span class="cstat-no" title="statement not covered">this.capturedPieces[this.activeColor];</span>
+                const uniquePieces = <span class="cstat-no" title="statement not covered">[...new Set(pieces)];</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >                for (const pieceType of uniquePieces) {</span>
-<span class="cstat-no" title="statement not covered" >                    for (let row = <span class="cstat-no" title="statement not covered" >0;</span> row &lt; 8; row++) {</span>
-<span class="cstat-no" title="statement not covered" >                        for (let col = <span class="cstat-no" title="statement not covered" >0;</span> col &lt; 8; col++) {</span>
-<span class="cstat-no" title="statement not covered" >                            <span class="missing-if-branch" title="if path not taken" >I</span>if (!this.board[row][col]) {</span>
-                                const dropSquare = <span class="cstat-no" title="statement not covered" >this._coordsToAlgebraic({row, col});</span>
-                                const dropMove = <span class="cstat-no" title="statement not covered" >new Move(</span>
+<span class="cstat-no" title="statement not covered">                for (const pieceType of uniquePieces) {</span>
+<span class="cstat-no" title="statement not covered">                    for (let row = <span class="cstat-no"
+                                                                                              title="statement not covered">0;</span> row &lt; 8; row++) {</span>
+<span class="cstat-no" title="statement not covered">                        for (let col = <span class="cstat-no"
+                                                                                                  title="statement not covered">0;</span> col &lt; 8; col++) {</span>
+<span class="cstat-no" title="statement not covered">                            <span class="missing-if-branch"
+                                                                                       title="if path not taken">I</span>if (!this.board[row][col]) {</span>
+                                const dropSquare = <span class="cstat-no" title="statement not covered">this._coordsToAlgebraic({row, col});</span>
+                                const dropMove = <span class="cstat-no" title="statement not covered">new Move(</span>
                                     `${pieceType.toUpperCase()}@${dropSquare}`,
                                     '@',
                                     dropSquare,
@@ -2021,7 +2047,7 @@ export class ChessBoard {
                                     false,
                                     null
                                 );
-<span class="cstat-no" title="statement not covered" >                                moves.push(dropMove);</span>
+<span class="cstat-no" title="statement not covered">                                moves.push(dropMove);</span>
                             }
                         }
                     }
@@ -2043,48 +2069,55 @@ export class ChessBoard {
     /**
      * Checks if the game is over
      */
-<span class="fstat-no" title="function not covered" >    isGameOver(</span>): boolean {
+<span class="fstat-no" title="function not covered">    isGameOver(</span>): boolean {
         // Check variant-specific termination first
-        const variantResult = <span class="cstat-no" title="statement not covered" >VariantRules.checkVariantGameOver(</span>
+        const variantResult = <span class="cstat-no"
+                                    title="statement not covered">VariantRules.checkVariantGameOver(</span>
             this.board,
             this.activeColor,
             this.variant,
             this.getLegalMoves().length === 0
         );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (variantResult.isOver) {</span>
-<span class="cstat-no" title="statement not covered" >            return true;</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (variantResult.isOver) {</span>
+<span class="cstat-no" title="statement not covered">            return true;</span>
         }
 &nbsp;
         // Standard termination conditions
-<span class="cstat-no" title="statement not covered" >        return this._isCheckmate() || this._isStalemate() || this._isDraw();</span>
+<span class="cstat-no" title="statement not covered">        return this._isCheckmate() || this._isStalemate() || this._isDraw();</span>
     }
 &nbsp;
     /**
      * Gets the game result
      */
-<span class="fstat-no" title="function not covered" >    getGameResult(</span>): GameResult {
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!this.isGameOver()) <span class="cstat-no" title="statement not covered" >return GameResult.IN_PROGRESS;</span></span>
+<span class="fstat-no" title="function not covered">    getGameResult(</span>): GameResult {
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!this.isGameOver()) <span
+        class="cstat-no" title="statement not covered">return GameResult.IN_PROGRESS;</span></span>
 &nbsp;
         // Check variant-specific result first
-        const variantResult = <span class="cstat-no" title="statement not covered" >VariantRules.checkVariantGameOver(</span>
+        const variantResult = <span class="cstat-no"
+                                    title="statement not covered">VariantRules.checkVariantGameOver(</span>
             this.board,
             this.activeColor,
             this.variant,
             this.getLegalMoves().length === 0
         );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (variantResult.isOver &amp;&amp; variantResult.result) {</span>
-<span class="cstat-no" title="statement not covered" >            return variantResult.result;</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (variantResult.isOver &amp;&amp; variantResult.result) {</span>
+<span class="cstat-no" title="statement not covered">            return variantResult.result;</span>
         }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this._isCheckmate()) {</span>
-<span class="cstat-no" title="statement not covered" >            return this.activeColor === Color.WHITE</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this._isCheckmate()) {</span>
+<span class="cstat-no" title="statement not covered">            return this.activeColor === Color.WHITE</span>
                 ? GameResult.BLACK_WINS
                 : GameResult.WHITE_WINS;
         }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        return GameResult.DRAW;</span>
+<span class="cstat-no" title="statement not covered">        return GameResult.DRAW;</span>
     }
 &nbsp;
     /**
@@ -2113,16 +2146,16 @@ export class ChessBoard {
             this.castlingRights
         );
 &nbsp;
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (!result.success) {
-<span class="cstat-no" title="statement not covered" >            throw new Error('Move execution failed');</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (!result.success) {
+<span class="cstat-no" title="statement not covered">            throw new Error('Move execution failed');</span>
         }
 &nbsp;
         // Update board state
         this.board = result.updatedBoard;
 &nbsp;
         // Update castling rights
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (result.castlingRightsUpdate) {
-<span class="cstat-no" title="statement not covered" >            Object.assign(this.castlingRights, result.castlingRightsUpdate);</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (result.castlingRightsUpdate) {
+<span class="cstat-no" title="statement not covered">            Object.assign(this.castlingRights, result.castlingRightsUpdate);</span>
         }
 &nbsp;
         // Update en passant target
@@ -2134,8 +2167,8 @@ export class ChessBoard {
         
         if (move.capturedPiece || isPawnMove) {
             this.halfMoveClock = 0;
-        } else <span class="missing-if-branch" title="else path not taken" >E</span>{
-<span class="cstat-no" title="statement not covered" >            this.halfMoveClock++;</span>
+        } else <span class="missing-if-branch" title="else path not taken">E</span>{
+<span class="cstat-no" title="statement not covered">            this.halfMoveClock++;</span>
         }
 &nbsp;
         if (this.activeColor === Color.BLACK) {
@@ -2150,10 +2183,11 @@ export class ChessBoard {
         this.positionHistory.push(this.getFen());
 &nbsp;
         // Handle captured pieces for Crazyhouse
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.variant === Variant.CRAZYHOUSE &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >result.capturedPiece)</span> {
-            const capturedType = <span class="cstat-no" title="statement not covered" >result.capturedPiece.type;</span>
-            const captureForColor = <span class="cstat-no" title="statement not covered" >result.capturedPiece.color === Color.WHITE ? Color.BLACK : Color.WHITE;</span>
-<span class="cstat-no" title="statement not covered" >            this.capturedPieces[captureForColor].push(capturedType);</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (this.variant === Variant.CRAZYHOUSE &amp;&amp; <span
+            class="branch-1 cbranch-no" title="branch not covered">result.capturedPiece)</span> {
+            const capturedType = <span class="cstat-no" title="statement not covered">result.capturedPiece.type;</span>
+            const captureForColor = <span class="cstat-no" title="statement not covered">result.capturedPiece.color === Color.WHITE ? Color.BLACK : Color.WHITE;</span>
+<span class="cstat-no" title="statement not covered">            this.capturedPieces[captureForColor].push(capturedType);</span>
         }
 &nbsp;
         return move;
@@ -2171,89 +2205,109 @@ export class ChessBoard {
      * Converts algebraic notation to coordinates
      */
     private _algebraicToCoords(square: Square): Coordinates | null {
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (square.length !== 2) <span class="cstat-no" title="statement not covered" >return null;</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (square.length !== 2) <span
+            class="cstat-no" title="statement not covered">return null;</span>
         const col = square.charCodeAt(0) - 'a'.charCodeAt(0);
         const row = parseInt(square[1]) - 1;
-        <span class="missing-if-branch" title="if path not taken" >I</span>if (col &lt; 0 || col &gt; 7 || row &lt; 0 || row &gt; 7) <span class="cstat-no" title="statement not covered" >return null;</span>
+        <span class="missing-if-branch" title="if path not taken">I</span>if (col &lt; 0 || col &gt; 7 || row &lt; 0 || row &gt; 7) <span
+            class="cstat-no" title="statement not covered">return null;</span>
         return {row, col};
     }
 &nbsp;
     /**
      * Checks if the current player's king is in check
      */
-    private <span class="fstat-no" title="function not covered" >_isCheck(</span>): boolean {
-<span class="cstat-no" title="statement not covered" >        return MoveValidator.isKingInCheck(this.board, this.activeColor, this.variant);</span>
+    private <span class="fstat-no" title="function not covered">_isCheck(</span>): boolean {
+<span class="cstat-no" title="statement not covered">        return MoveValidator.isKingInCheck(this.board, this.activeColor, this.variant);</span>
     }
 &nbsp;
     /**
      * Checks if the current position is checkmate
      */
-    private <span class="fstat-no" title="function not covered" >_isCheckmate(</span>): boolean {
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!this._isCheck()) <span class="cstat-no" title="statement not covered" >return false;</span></span>
-<span class="cstat-no" title="statement not covered" >        return this.getLegalMoves().length === 0;</span>
+    private <span class="fstat-no" title="function not covered">_isCheckmate(</span>): boolean {
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!this._isCheck()) <span
+        class="cstat-no" title="statement not covered">return false;</span></span>
+<span class="cstat-no" title="statement not covered">        return this.getLegalMoves().length === 0;</span>
     }
 &nbsp;
     /**
      * Checks if the current position is stalemate
      */
-    private <span class="fstat-no" title="function not covered" >_isStalemate(</span>): boolean {
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this._isCheck()) <span class="cstat-no" title="statement not covered" >return false;</span></span>
-<span class="cstat-no" title="statement not covered" >        return this.getLegalMoves().length === 0;</span>
+    private <span class="fstat-no" title="function not covered">_isStalemate(</span>): boolean {
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this._isCheck()) <span
+        class="cstat-no" title="statement not covered">return false;</span></span>
+<span class="cstat-no" title="statement not covered">        return this.getLegalMoves().length === 0;</span>
     }
 &nbsp;
     /**
      * Checks if the game is a draw
      */
-    private <span class="fstat-no" title="function not covered" >_isDraw(</span>): boolean {
+    private <span class="fstat-no" title="function not covered">_isDraw(</span>): boolean {
         // 50-move rule
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.halfMoveClock &gt;= 100) <span class="cstat-no" title="statement not covered" >return true;</span></span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this.halfMoveClock &gt;= 100) <span
+        class="cstat-no" title="statement not covered">return true;</span></span>
 &nbsp;
         // Insufficient material
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (MoveExecutor.hasInsufficientMaterial(this.board)) <span class="cstat-no" title="statement not covered" >return true;</span></span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (MoveExecutor.hasInsufficientMaterial(this.board)) <span
+        class="cstat-no" title="statement not covered">return true;</span></span>
 &nbsp;
         // Threefold repetition
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (MoveExecutor.isThreefoldRepetition(this.positionHistory)) <span class="cstat-no" title="statement not covered" >return true;</span></span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (MoveExecutor.isThreefoldRepetition(this.positionHistory)) <span
+        class="cstat-no" title="statement not covered">return true;</span></span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        return false;</span>
+<span class="cstat-no" title="statement not covered">        return false;</span>
     }
 &nbsp;
     /**
      * Gets captured pieces for a color (Crazyhouse variant)
      */
-<span class="fstat-no" title="function not covered" >    getCapturedPieces(</span>color: Color): PieceType[] {
-<span class="cstat-no" title="statement not covered" >        return [...this.capturedPieces[color]];</span>
+<span class="fstat-no" title="function not covered">    getCapturedPieces(</span>color: Color): PieceType[] {
+<span class="cstat-no" title="statement not covered">        return [...this.capturedPieces[color]];</span>
     }
 &nbsp;
     /**
      * Makes a drop move (Crazyhouse variant)
      */
-<span class="fstat-no" title="function not covered" >    makeDropMove(</span>piece: PieceType, square: Square): Move | null {
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.variant !== Variant.CRAZYHOUSE) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+<span class="fstat-no" title="function not covered">    makeDropMove(</span>piece: PieceType, square: Square): Move | null {
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this.variant !== Variant.CRAZYHOUSE) <span
+        class="cstat-no" title="statement not covered">return null;</span></span>
 &nbsp;
         // Check if we have the piece
-        const capturedIndex = <span class="cstat-no" title="statement not covered" >this.capturedPieces[this.activeColor].indexOf(piece);</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (capturedIndex === -1) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+        const capturedIndex = <span class="cstat-no" title="statement not covered">this.capturedPieces[this.activeColor].indexOf(piece);</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (capturedIndex === -1) <span
+        class="cstat-no" title="statement not covered">return null;</span></span>
 &nbsp;
         // Validate the drop
-        const coords = <span class="cstat-no" title="statement not covered" >this._algebraicToCoords(square);</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!coords || !VariantRules.isValidDrop(this.board, piece, coords, this.activeColor)) {</span>
-<span class="cstat-no" title="statement not covered" >            return null;</span>
+        const coords = <span class="cstat-no" title="statement not covered">this._algebraicToCoords(square);</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!coords || !VariantRules.isValidDrop(this.board, piece, coords, this.activeColor)) {</span>
+<span class="cstat-no" title="statement not covered">            return null;</span>
         }
 &nbsp;
         // Execute the drop
-        const result = <span class="cstat-no" title="statement not covered" >MoveExecutor.executeDrop(this.board, piece, square, this.activeColor);</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!result.success) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+        const result = <span class="cstat-no" title="statement not covered">MoveExecutor.executeDrop(this.board, piece, square, this.activeColor);</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!result.success) <span
+        class="cstat-no" title="statement not covered">return null;</span></span>
 &nbsp;
         // Update state
-<span class="cstat-no" title="statement not covered" >        this.board = result.updatedBoard;</span>
-<span class="cstat-no" title="statement not covered" >        this.capturedPieces[this.activeColor].splice(capturedIndex, 1);</span>
-<span class="cstat-no" title="statement not covered" >        this.activeColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;</span>
-<span class="cstat-no" title="statement not covered" >        this.halfMoveClock++;</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.activeColor === Color.WHITE) {</span>
-<span class="cstat-no" title="statement not covered" >            this.fullMoveNumber++;</span>
+<span class="cstat-no" title="statement not covered">        this.board = result.updatedBoard;</span>
+<span class="cstat-no" title="statement not covered">        this.capturedPieces[this.activeColor].splice(capturedIndex, 1);</span>
+<span class="cstat-no" title="statement not covered">        this.activeColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;</span>
+<span class="cstat-no" title="statement not covered">        this.halfMoveClock++;</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this.activeColor === Color.WHITE) {</span>
+<span class="cstat-no" title="statement not covered">            this.fullMoveNumber++;</span>
         }
 &nbsp;
-        const move = <span class="cstat-no" title="statement not covered" >new Move(</span>
+        const move = <span class="cstat-no" title="statement not covered">new Move(</span>
             `${piece.toUpperCase()}@${square}`,
             '@',
             square,
@@ -2264,42 +2318,45 @@ export class ChessBoard {
             null
         );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        this.moveHistory.push(move);</span>
-<span class="cstat-no" title="statement not covered" >        this.positionHistory.push(this.getFen());</span>
+<span class="cstat-no" title="statement not covered">        this.moveHistory.push(move);</span>
+<span class="cstat-no" title="statement not covered">        this.positionHistory.push(this.getFen());</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        return move;</span>
+<span class="cstat-no" title="statement not covered">        return move;</span>
     }
 &nbsp;
     /**
      * Validates a premove
      */
-<span class="fstat-no" title="function not covered" >    isValidPremove(</span>from: Square, to: Square): boolean {
-        const piece = <span class="cstat-no" title="statement not covered" >this.getPiece(from);</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!piece) <span class="cstat-no" title="statement not covered" >return false;</span></span>
+<span class="fstat-no" title="function not covered">    isValidPremove(</span>from: Square, to: Square): boolean {
+        const piece = <span class="cstat-no" title="statement not covered">this.getPiece(from);</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!piece) <span
+        class="cstat-no" title="statement not covered">return false;</span></span>
 &nbsp;
         // For now, just check if it's a valid square
-        const fromCoords = <span class="cstat-no" title="statement not covered" >this._algebraicToCoords(from);</span>
-        const toCoords = <span class="cstat-no" title="statement not covered" >this._algebraicToCoords(to);</span>
+        const fromCoords = <span class="cstat-no" title="statement not covered">this._algebraicToCoords(from);</span>
+        const toCoords = <span class="cstat-no" title="statement not covered">this._algebraicToCoords(to);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        return fromCoords !== null &amp;&amp; toCoords !== null;</span>
+<span class="cstat-no"
+      title="statement not covered">        return fromCoords !== null &amp;&amp; toCoords !== null;</span>
     }
 }</pre></td></tr></table></pre>
 
-                <div class='push'></div><!-- for sticky footer -->
-            </div><!-- /wrapper -->
-            <div class='footer quiet pad2 space-top1 center small'>
-                Code coverage generated by
-                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-29T18:52:25.247Z
-            </div>
-        <script src="../prettify.js"></script>
-        <script>
-            window.onload = function () {
-                prettyPrint();
-            };
-        </script>
-        <script src="../sorter.js"></script>
-        <script src="../block-navigation.js"></script>
-    </body>
+    <div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+    Code coverage generated by
+    <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+    at 2025-06-29T18:52:25.247Z
+</div>
+<script src="../prettify.js"></script>
+<script>
+    window.onload = function () {
+        prettyPrint();
+    };
+</script>
+<script src="../sorter.js"></script>
+<script src="../block-navigation.js"></script>
+</body>
 </html>
     

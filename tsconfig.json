@@ -1,8 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2021",
     "module": "esnext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2021",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "jsx": "react-jsx",
     "strict": true,
     "esModuleInterop": true,
@@ -14,12 +18,15 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@fics/shared/*": ["packages/shared/src/*"]
+      "@fics/shared/*": [
+        "packages/shared/src/*"
+      ]
     }
   },
   "exclude": [
     "**/node_modules",
     "**/dist",
-    "**/*.d.ts"
+    "**/*.d.ts",
+    "scripts/**/*"
   ]
 }

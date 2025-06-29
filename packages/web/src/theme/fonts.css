@@ -1,0 +1,32 @@
+/* Digital Font Definition */
+@font-face {
+    font-family: 'DigitalFont';
+    src: url('/fonts/digitalFont.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap; /* Better loading performance */
+}
+
+/* CSS Custom Properties for Font */
+:root {
+    --font-digital: 'DigitalFont', 'Courier New', 'Monaco', monospace;
+}
+
+/* Utility classes for digital font usage */
+.digital-font {
+    font-family: var(--font-digital);
+}
+
+.digital-time {
+    font-family: var(--font-digital);
+    font-weight: normal;
+    letter-spacing: 0.1em;
+    font-variant-numeric: tabular-nums;
+}
+
+.digital-score {
+    font-family: var(--font-digital);
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    font-variant-numeric: tabular-nums;
+}

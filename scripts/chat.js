@@ -1,4 +1,4 @@
-import { addToMessageHistory, handleArrowKeys, processTextToHTML, getWebSocket } from './fics.js';
+import {addToMessageHistory, handleArrowKeys, processTextToHTML, getWebSocket} from './fics.js';
 
 // DOM elements
 const mainTextArea = document.getElementById('mainTextArea');

@@ -13,7 +13,7 @@ import {createTab, routeMessageToTab} from './chat.js';
 
 import {playSound} from './index.js';
 
-import {regexIndexOf} from './utils.js';
+import {regexIndexOf} from './utils.ts';
 
 // WebSocket and connection
 const wsUrl = 'wss://www.freechess.org:5001';
@@ -146,10 +146,10 @@ function connectWebSocket() {
 function cleanupSentMessage(msg) {
     //“If there’s anything I learned about how deep the deep state is … it’s deeper than we could ever imagine.”
     msg = msg.trim();
-    msg = msg.replaceAll("“","\"");
-    msg = msg.replaceAll("”","\"");
-    msg = msg.replaceAll("’","'");
-    msg = msg.replaceAll("…","...");
+    msg = msg.replaceAll("“", "\"");
+    msg = msg.replaceAll("”", "\"");
+    msg = msg.replaceAll("’", "'");
+    msg = msg.replaceAll("…", "...");
     return msg;
 }
 
@@ -462,9 +462,9 @@ function handleStyle12Message(msg) {
     let style12Start = msg.indexOf("<12>");
     while (style12Start === 0 || msg.charAt(style12Start - 1) === '\n') {
         const end = msg.indexOf("\n", style12Start + 5);
-        const style12Block = end >= 0 ? msg.substring(style12Start, end) :  msg.substring(style12Start);
+        const style12Block = end >= 0 ? msg.substring(style12Start, end) : msg.substring(style12Start);
         onStyle12(style12Block);
-        msg = msg.substring(0,style12Start) + msg.substring(end);
+        msg = msg.substring(0, style12Start) + msg.substring(end);
         style12Start = msg.indexOf("<12>");
     }
     return msg;

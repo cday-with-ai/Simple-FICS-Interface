@@ -124,299 +124,299 @@ document.body.innerHTML = `
 `;
 
 // Add event listeners to DOM elements
-document.getElementById('preferencesMenu').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('preferencesMenu').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('hamburgerMenu').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('hamburgerMenu').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('mainInput').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('mainInput').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInput').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInput').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputSubmit').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputSubmit').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputCancel').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputCancel').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputClear').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputClear').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelp').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelp').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelpClose').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelpClose').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelpSubmit').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelpSubmit').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelpCancel').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelpCancel').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelpClear').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelpClear').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelpText').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelpText').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelpTextSubmit').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelpTextSubmit').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelpTextCancel').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelpTextCancel').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('channelTabsInputHelpTextClear').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('channelTabsInputHelpTextClear').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
 // Add event listeners for preferences panel elements
-document.getElementById('preferencesPanel').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('preferencesPanel').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('savePreferences').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('savePreferences').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('prefPieceSet').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('prefPieceSet').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('prefLightSquare').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('prefLightSquare').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('prefDarkSquare').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('prefDarkSquare').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('lightSquarePreview').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('lightSquarePreview').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
-document.getElementById('darkSquarePreview').addEventListener = function(event, callback) {
-  this['on' + event] = callback;
+document.getElementById('darkSquarePreview').addEventListener = function (event, callback) {
+    this['on' + event] = callback;
 };
 
 // Add classList methods to all elements
 const elements = document.querySelectorAll('*');
 elements.forEach(element => {
-  if (!element.classList) {
-    element.classList = {
-      add: function(className) {
-        const classNames = (element.className || '').split(' ');
-        if (classNames.indexOf(className) === -1) {
-          classNames.push(className);
-          element.className = classNames.join(' ').trim();
-        }
-      },
-      remove: function(className) {
-        const classNames = (element.className || '').split(' ');
-        const index = classNames.indexOf(className);
-        if (index !== -1) {
-          classNames.splice(index, 1);
-          element.className = classNames.join(' ').trim();
-        }
-      },
-      toggle: function(className) {
-        const classNames = (element.className || '').split(' ');
-        const index = classNames.indexOf(className);
-        if (index === -1) {
-          classNames.push(className);
-        } else {
-          classNames.splice(index, 1);
-        }
-        element.className = classNames.join(' ').trim();
-      },
-      contains: function(className) {
-        const classNames = (element.className || '').split(' ');
-        return classNames.indexOf(className) !== -1;
-      }
-    };
-  }
+    if (!element.classList) {
+        element.classList = {
+            add: function (className) {
+                const classNames = (element.className || '').split(' ');
+                if (classNames.indexOf(className) === -1) {
+                    classNames.push(className);
+                    element.className = classNames.join(' ').trim();
+                }
+            },
+            remove: function (className) {
+                const classNames = (element.className || '').split(' ');
+                const index = classNames.indexOf(className);
+                if (index !== -1) {
+                    classNames.splice(index, 1);
+                    element.className = classNames.join(' ').trim();
+                }
+            },
+            toggle: function (className) {
+                const classNames = (element.className || '').split(' ');
+                const index = classNames.indexOf(className);
+                if (index === -1) {
+                    classNames.push(className);
+                } else {
+                    classNames.splice(index, 1);
+                }
+                element.className = classNames.join(' ').trim();
+            },
+            contains: function (className) {
+                const classNames = (element.className || '').split(' ');
+                return classNames.indexOf(className) !== -1;
+            }
+        };
+    }
 });
 
 // Add querySelectorAll method to elements
 const originalQuerySelectorAll = document.querySelectorAll;
-document.querySelectorAll = function(selector) {
-  return originalQuerySelectorAll.call(document, selector);
+document.querySelectorAll = function (selector) {
+    return originalQuerySelectorAll.call(document, selector);
 };
 
-Element.prototype.querySelectorAll = function(selector) {
-  return originalQuerySelectorAll.call(document, selector);
+Element.prototype.querySelectorAll = function (selector) {
+    return originalQuerySelectorAll.call(document, selector);
 };
 
 // Add querySelector method to elements
 const originalQuerySelector = document.querySelector;
-document.querySelector = function(selector) {
-  return originalQuerySelector.call(document, selector);
+document.querySelector = function (selector) {
+    return originalQuerySelector.call(document, selector);
 };
 
-Element.prototype.querySelector = function(selector) {
-  return originalQuerySelector.call(document, selector);
+Element.prototype.querySelector = function (selector) {
+    return originalQuerySelector.call(document, selector);
 };
 
 // Mock ResizeObserver
 class MockResizeObserver {
-  constructor(callback) {
-    this.callback = callback;
-    this.observables = [];
-  }
+    constructor(callback) {
+        this.callback = callback;
+        this.observables = [];
+    }
 
-  observe(element) {
-    this.observables.push(element);
-  }
+    observe(element) {
+        this.observables.push(element);
+    }
 
-  unobserve(element) {
-    this.observables = this.observables.filter(el => el !== element);
-  }
+    unobserve(element) {
+        this.observables = this.observables.filter(el => el !== element);
+    }
 
-  disconnect() {
-    this.observables = [];
-  }
+    disconnect() {
+        this.observables = [];
+    }
 }
 
 window.ResizeObserver = MockResizeObserver;
 
 // Mock WebSocket
 class MockWebSocket {
-  constructor(url) {
-    this.url = url;
-    this.readyState = 1; // OPEN
-    this._sentMessages = [];
-    this.onopen = null;
-    this.onmessage = null;
-    this.onclose = null;
-    this.onerror = null;
-    this._eventListeners = {};
+    constructor(url) {
+        this.url = url;
+        this.readyState = 1; // OPEN
+        this._sentMessages = [];
+        this.onopen = null;
+        this.onmessage = null;
+        this.onclose = null;
+        this.onerror = null;
+        this._eventListeners = {};
 
-    // Simulate connection
-    setTimeout(() => {
-      if (this.onopen) {
-        this.onopen({ target: this });
-      }
-      // Also dispatch open event for addEventListener
-      this._dispatchEvent('open', { target: this });
-    }, 0);
-  }
-
-  send(message) {
-    this._sentMessages.push(message);
-    return true;
-  }
-
-  close() {
-    this.readyState = 3; // CLOSED
-    if (this.onclose) {
-      this.onclose({ target: this });
+        // Simulate connection
+        setTimeout(() => {
+            if (this.onopen) {
+                this.onopen({target: this});
+            }
+            // Also dispatch open event for addEventListener
+            this._dispatchEvent('open', {target: this});
+        }, 0);
     }
-    // Also dispatch close event for addEventListener
-    this._dispatchEvent('close', { target: this });
-    return true;
-  }
 
-  // Add event listener support
-  addEventListener(eventName, callback) {
-    if (!this._eventListeners[eventName]) {
-      this._eventListeners[eventName] = [];
+    send(message) {
+        this._sentMessages.push(message);
+        return true;
     }
-    this._eventListeners[eventName].push(callback);
-  }
 
-  // Remove event listener support
-  removeEventListener(eventName, callback) {
-    if (this._eventListeners[eventName]) {
-      this._eventListeners[eventName] = this._eventListeners[eventName].filter(cb => cb !== callback);
+    close() {
+        this.readyState = 3; // CLOSED
+        if (this.onclose) {
+            this.onclose({target: this});
+        }
+        // Also dispatch close event for addEventListener
+        this._dispatchEvent('close', {target: this});
+        return true;
     }
-  }
 
-  // Dispatch event to listeners
-  _dispatchEvent(eventName, event) {
-    if (this._eventListeners[eventName]) {
-      this._eventListeners[eventName].forEach(callback => {
-        callback(event);
-      });
+    // Add event listener support
+    addEventListener(eventName, callback) {
+        if (!this._eventListeners[eventName]) {
+            this._eventListeners[eventName] = [];
+        }
+        this._eventListeners[eventName].push(callback);
     }
-  }
 
-  // Helper method for tests to simulate receiving a message
-  mockReceiveMessage(message) {
-    const event = { data: message, target: this };
-    if (this.onmessage) {
-      this.onmessage(event);
+    // Remove event listener support
+    removeEventListener(eventName, callback) {
+        if (this._eventListeners[eventName]) {
+            this._eventListeners[eventName] = this._eventListeners[eventName].filter(cb => cb !== callback);
+        }
     }
-    // Also dispatch message event for addEventListener
-    this._dispatchEvent('message', event);
-    return true;
-  }
+
+    // Dispatch event to listeners
+    _dispatchEvent(eventName, event) {
+        if (this._eventListeners[eventName]) {
+            this._eventListeners[eventName].forEach(callback => {
+                callback(event);
+            });
+        }
+    }
+
+    // Helper method for tests to simulate receiving a message
+    mockReceiveMessage(message) {
+        const event = {data: message, target: this};
+        if (this.onmessage) {
+            this.onmessage(event);
+        }
+        // Also dispatch message event for addEventListener
+        this._dispatchEvent('message', event);
+        return true;
+    }
 }
 
 // Mock localStorage
 class MockLocalStorage {
-  constructor() {
-    this.store = {};
-  }
+    constructor() {
+        this.store = {};
+    }
 
-  getItem(key) {
-    return this.store[key] || null;
-  }
+    getItem(key) {
+        return this.store[key] || null;
+    }
 
-  setItem(key, value) {
-    this.store[key] = String(value);
-  }
+    setItem(key, value) {
+        this.store[key] = String(value);
+    }
 
-  removeItem(key) {
-    delete this.store[key];
-  }
+    removeItem(key) {
+        delete this.store[key];
+    }
 
-  clear() {
-    this.store = {};
-  }
+    clear() {
+        this.store = {};
+    }
 }
 
 // Mock Audio
 class MockAudio {
-  constructor(src) {
-    this.src = src;
-    this.paused = true;
-    this.currentTime = 0;
-    this.volume = 1;
-    this.muted = false;
-    this.playCount = 0;
-  }
+    constructor(src) {
+        this.src = src;
+        this.paused = true;
+        this.currentTime = 0;
+        this.volume = 1;
+        this.muted = false;
+        this.playCount = 0;
+    }
 
-  play() {
-    this.paused = false;
-    this.playCount++;
-    return Promise.resolve();
-  }
+    play() {
+        this.paused = false;
+        this.playCount++;
+        return Promise.resolve();
+    }
 
-  pause() {
-    this.paused = true;
-  }
+    pause() {
+        this.paused = true;
+    }
 
-  load() {
-    // Do nothing
-  }
+    load() {
+        // Do nothing
+    }
 }
 
 // Set up global mocks
@@ -425,20 +425,22 @@ window.WebSocket = MockWebSocket;
 // Create a mock localStorage and define it as a property on window
 const mockLocalStorage = new MockLocalStorage();
 Object.defineProperty(window, 'localStorage', {
-  get: function() {
-    return mockLocalStorage;
-  }
+    get: function () {
+        return mockLocalStorage;
+    }
 });
 
 window.Audio = MockAudio;
 
 // Mock other browser APIs as needed
 if (!HTMLElement.prototype.scrollIntoView) {
-  HTMLElement.prototype.scrollIntoView = function() {};
+    HTMLElement.prototype.scrollIntoView = function () {
+    };
 }
 
 if (!HTMLElement.prototype.scrollTo) {
-  HTMLElement.prototype.scrollTo = function() {};
+    HTMLElement.prototype.scrollTo = function () {
+    };
 }
 
 // Chess.js is mocked in chess-mock.js

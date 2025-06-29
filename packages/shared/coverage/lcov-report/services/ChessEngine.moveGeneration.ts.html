@@ -1,58 +1,58 @@
-
 <!doctype html>
 <html lang="en">
 
 <head>
     <title>Code coverage report for services/ChessEngine.moveGeneration.ts</title>
-    <meta charset="utf-8" />
-    <link rel="stylesheet" href="../prettify.css" />
-    <link rel="stylesheet" href="../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="../prettify.css"/>
+    <link rel="stylesheet" href="../base.css"/>
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <style type='text/css'>
         .coverage-summary .sorter {
             background-image: url(../sort-arrow-sprite.png);
         }
     </style>
 </head>
-    
+
 <body>
 <div class='wrapper'>
     <div class='pad1'>
         <h1><a href="../index.html">All files</a> / <a href="index.html">services</a> ChessEngine.moveGeneration.ts</h1>
         <div class='clearfix'>
-            
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
                 <span class='fraction'>0/83</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
                 <span class='fraction'>0/72</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
                 <span class='fraction'>0/16</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
                 <span class='fraction'>0/82</span>
             </div>
-        
-            
+
+
         </div>
         <p class="quiet">
-            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for
+            the previous block.
         </p>
         <template id="filterTemplate">
             <div class="quiet">
@@ -771,7 +771,7 @@
  * Move generation logic for the Chess Engine
  */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import {</span>
+<span class="cstat-no" title="statement not covered">import {</span>
   ChessBoard,
   Move,
   Piece,
@@ -786,9 +786,9 @@ import {
   MoveGenerationContext
 } from './ChessEngine.types';
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export class M</span>oveGenerator {
+<span class="cstat-no" title="statement not covered">export class M</span>oveGenerator {
   // Knight movement offsets
-  private static readonly <span class="cstat-no" title="statement not covered" >KNIGHT_MOVES: MovementVector[] = [</span>
+  private static readonly <span class="cstat-no" title="statement not covered">KNIGHT_MOVES: MovementVector[] = [</span>
     { row: 2, col: 1 }, { row: 2, col: -1 },
     { row: -2, col: 1 }, { row: -2, col: -1 },
     { row: 1, col: 2 }, { row: 1, col: -2 },
@@ -796,7 +796,7 @@ import {
   ];
 &nbsp;
   // King movement offsets
-  private static readonly <span class="cstat-no" title="statement not covered" >KING_MOVES: MovementVector[] = [</span>
+  private static readonly <span class="cstat-no" title="statement not covered">KING_MOVES: MovementVector[] = [</span>
     { row: 1, col: 0 }, { row: -1, col: 0 },
     { row: 0, col: 1 }, { row: 0, col: -1 },
     { row: 1, col: 1 }, { row: 1, col: -1 },
@@ -806,65 +806,73 @@ import {
   /**
    * Generates all pseudo-legal moves for a piece
    */
-<span class="fstat-no" title="function not covered" >  static </span>generatePieceMoves(
+<span class="fstat-no" title="function not covered">  static </span>generatePieceMoves(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece
   ): MoveObject[] {
-<span class="cstat-no" title="statement not covered" >    switch (piece.type) {</span>
+<span class="cstat-no" title="statement not covered">    switch (piece.type) {</span>
       case PieceType.PAWN:
-<span class="cstat-no" title="statement not covered" >        return this.generatePawnMoves(context, from, piece);</span>
+<span class="cstat-no" title="statement not covered">        return this.generatePawnMoves(context, from, piece);</span>
       case PieceType.KNIGHT:
-<span class="cstat-no" title="statement not covered" >        return this.generateKnightMoves(context, from, piece);</span>
+<span class="cstat-no"
+      title="statement not covered">        return this.generateKnightMoves(context, from, piece);</span>
       case PieceType.BISHOP:
-<span class="cstat-no" title="statement not covered" >        return this.generateBishopMoves(context, from, piece);</span>
+<span class="cstat-no"
+      title="statement not covered">        return this.generateBishopMoves(context, from, piece);</span>
       case PieceType.ROOK:
-<span class="cstat-no" title="statement not covered" >        return this.generateRookMoves(context, from, piece);</span>
+<span class="cstat-no" title="statement not covered">        return this.generateRookMoves(context, from, piece);</span>
       case PieceType.QUEEN:
-<span class="cstat-no" title="statement not covered" >        return this.generateQueenMoves(context, from, piece);</span>
+<span class="cstat-no"
+      title="statement not covered">        return this.generateQueenMoves(context, from, piece);</span>
       case PieceType.KING:
-<span class="cstat-no" title="statement not covered" >        return this.generateKingMoves(context, from, piece);</span>
+<span class="cstat-no" title="statement not covered">        return this.generateKingMoves(context, from, piece);</span>
       default:
-<span class="cstat-no" title="statement not covered" >        return [];</span>
+<span class="cstat-no" title="statement not covered">        return [];</span>
     }
   }
 &nbsp;
   /**
    * Generates pawn moves
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generatePawnMoves(
+  private <span class="fstat-no" title="function not covered">static </span>generatePawnMoves(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece
   ): MoveObject[] {
-    const moves: MoveObject[] = <span class="cstat-no" title="statement not covered" >[];</span>
-    const direction = <span class="cstat-no" title="statement not covered" >piece.color === Color.WHITE ? 1 : -1;</span>
-    const startRank = <span class="cstat-no" title="statement not covered" >piece.color === Color.WHITE ? 1 : 6;</span>
-    const promotionRank = <span class="cstat-no" title="statement not covered" >piece.color === Color.WHITE ? 7 : 0;</span>
+    const moves: MoveObject[] = <span class="cstat-no" title="statement not covered">[];</span>
+    const direction = <span class="cstat-no" title="statement not covered">piece.color === Color.WHITE ? 1 : -1;</span>
+    const startRank = <span class="cstat-no" title="statement not covered">piece.color === Color.WHITE ? 1 : 6;</span>
+    const promotionRank = <span class="cstat-no"
+                                title="statement not covered">piece.color === Color.WHITE ? 7 : 0;</span>
 &nbsp;
     // Forward moves
-    const oneSquareForward = <span class="cstat-no" title="statement not covered" >{ row: from.row + direction, col: from.col };</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (this.isValidSquare(oneSquareForward) &amp;&amp; !context.board[oneSquareForward.row][oneSquareForward.col]) {</span>
-<span class="cstat-no" title="statement not covered" >      if (oneSquareForward.row === promotionRank) {</span>
+    const oneSquareForward = <span class="cstat-no" title="statement not covered">{ row: from.row + direction, col: from.col };</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (this.isValidSquare(oneSquareForward) &amp;&amp; !context.board[oneSquareForward.row][oneSquareForward.col]) {</span>
+<span class="cstat-no" title="statement not covered">      if (oneSquareForward.row === promotionRank) {</span>
         // Promotion moves
-<span class="cstat-no" title="statement not covered" >        [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT].forEach(<span class="fstat-no" title="function not covered" >promo </span>=&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          moves.push({</span>
+<span class="cstat-no" title="statement not covered">        [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT].forEach(<span
+        class="fstat-no" title="function not covered">promo </span>=&gt; {</span>
+<span class="cstat-no" title="statement not covered">          moves.push({</span>
             from: this.coordsToAlgebraic(from),
             to: this.coordsToAlgebraic(oneSquareForward),
             promotion: promo
           });
         });
       } else {
-<span class="cstat-no" title="statement not covered" >        moves.push({</span>
+<span class="cstat-no" title="statement not covered">        moves.push({</span>
           from: this.coordsToAlgebraic(from),
           to: this.coordsToAlgebraic(oneSquareForward)
         });
 &nbsp;
         // Two square forward from starting position
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (from.row === startRank) {</span>
-          const twoSquaresForward = <span class="cstat-no" title="statement not covered" >{ row: from.row + (2 * direction), col: from.col };</span>
-<span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (!context.board[twoSquaresForward.row][twoSquaresForward.col]) {</span>
-<span class="cstat-no" title="statement not covered" >            moves.push({</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (from.row === startRank) {</span>
+          const twoSquaresForward = <span class="cstat-no" title="statement not covered">{ row: from.row + (2 * direction), col: from.col };</span>
+<span class="cstat-no" title="statement not covered">          <span class="missing-if-branch"
+                                                                     title="if path not taken">I</span>if (!context.board[twoSquaresForward.row][twoSquaresForward.col]) {</span>
+<span class="cstat-no" title="statement not covered">            moves.push({</span>
               from: this.coordsToAlgebraic(from),
               to: this.coordsToAlgebraic(twoSquaresForward)
             });
@@ -874,22 +882,26 @@ import {
     }
 &nbsp;
     // Captures
-<span class="cstat-no" title="statement not covered" >    [-1, 1].forEach(<span class="fstat-no" title="function not covered" >colOffset </span>=&gt; {</span>
-      const captureSquare = <span class="cstat-no" title="statement not covered" >{ row: from.row + direction, col: from.col + colOffset };</span>
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (this.isValidSquare(captureSquare)) {</span>
-        const targetPiece = <span class="cstat-no" title="statement not covered" >context.board[captureSquare.row][captureSquare.col];</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (targetPiece &amp;&amp; targetPiece.color !== piece.color) {</span>
-<span class="cstat-no" title="statement not covered" >          if (captureSquare.row === promotionRank) {</span>
+<span class="cstat-no" title="statement not covered">    [-1, 1].forEach(<span class="fstat-no"
+                                                                               title="function not covered">colOffset </span>=&gt; {</span>
+      const captureSquare = <span class="cstat-no" title="statement not covered">{ row: from.row + direction, col: from.col + colOffset };</span>
+<span class="cstat-no" title="statement not covered">      <span class="missing-if-branch"
+                                                                 title="if path not taken">I</span>if (this.isValidSquare(captureSquare)) {</span>
+        const targetPiece = <span class="cstat-no" title="statement not covered">context.board[captureSquare.row][captureSquare.col];</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (targetPiece &amp;&amp; targetPiece.color !== piece.color) {</span>
+<span class="cstat-no" title="statement not covered">          if (captureSquare.row === promotionRank) {</span>
             // Promotion captures
-<span class="cstat-no" title="statement not covered" >            [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT].forEach(<span class="fstat-no" title="function not covered" >promo </span>=&gt; {</span>
-<span class="cstat-no" title="statement not covered" >              moves.push({</span>
+<span class="cstat-no" title="statement not covered">            [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT].forEach(<span
+        class="fstat-no" title="function not covered">promo </span>=&gt; {</span>
+<span class="cstat-no" title="statement not covered">              moves.push({</span>
                 from: this.coordsToAlgebraic(from),
                 to: this.coordsToAlgebraic(captureSquare),
                 promotion: promo
               });
             });
           } else {
-<span class="cstat-no" title="statement not covered" >            moves.push({</span>
+<span class="cstat-no" title="statement not covered">            moves.push({</span>
               from: this.coordsToAlgebraic(from),
               to: this.coordsToAlgebraic(captureSquare)
             });
@@ -897,10 +909,12 @@ import {
         }
 &nbsp;
         // En passant - check if the capture square matches the en passant target
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (context.enPassantTarget) {</span>
-          const enPassantSquare = <span class="cstat-no" title="statement not covered" >this.coordsToAlgebraic(captureSquare);</span>
-<span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (context.enPassantTarget === enPassantSquare) {</span>
-<span class="cstat-no" title="statement not covered" >            moves.push({</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (context.enPassantTarget) {</span>
+          const enPassantSquare = <span class="cstat-no" title="statement not covered">this.coordsToAlgebraic(captureSquare);</span>
+<span class="cstat-no" title="statement not covered">          <span class="missing-if-branch"
+                                                                     title="if path not taken">I</span>if (context.enPassantTarget === enPassantSquare) {</span>
+<span class="cstat-no" title="statement not covered">            moves.push({</span>
               from: this.coordsToAlgebraic(from),
               to: enPassantSquare,
               isEnPassant: true
@@ -910,60 +924,60 @@ import {
       }
     });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return moves;</span>
+<span class="cstat-no" title="statement not covered">    return moves;</span>
   }
 &nbsp;
   /**
    * Generates knight moves
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generateKnightMoves(
+  private <span class="fstat-no" title="function not covered">static </span>generateKnightMoves(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece
   ): MoveObject[] {
-<span class="cstat-no" title="statement not covered" >    return this.generateMovesFromVectors(context, from, piece, this.KNIGHT_MOVES, false);</span>
+<span class="cstat-no" title="statement not covered">    return this.generateMovesFromVectors(context, from, piece, this.KNIGHT_MOVES, false);</span>
   }
 &nbsp;
   /**
    * Generates bishop moves
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generateBishopMoves(
+  private <span class="fstat-no" title="function not covered">static </span>generateBishopMoves(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece
   ): MoveObject[] {
-    const diagonalVectors: MovementVector[] = <span class="cstat-no" title="statement not covered" >[</span>
+    const diagonalVectors: MovementVector[] = <span class="cstat-no" title="statement not covered">[</span>
       { row: 1, col: 1 }, { row: 1, col: -1 },
       { row: -1, col: 1 }, { row: -1, col: -1 }
     ];
-<span class="cstat-no" title="statement not covered" >    return this.generateMovesFromVectors(context, from, piece, diagonalVectors, true);</span>
+<span class="cstat-no" title="statement not covered">    return this.generateMovesFromVectors(context, from, piece, diagonalVectors, true);</span>
   }
 &nbsp;
   /**
    * Generates rook moves
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generateRookMoves(
+  private <span class="fstat-no" title="function not covered">static </span>generateRookMoves(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece
   ): MoveObject[] {
-    const straightVectors: MovementVector[] = <span class="cstat-no" title="statement not covered" >[</span>
+    const straightVectors: MovementVector[] = <span class="cstat-no" title="statement not covered">[</span>
       { row: 1, col: 0 }, { row: -1, col: 0 },
       { row: 0, col: 1 }, { row: 0, col: -1 }
     ];
-<span class="cstat-no" title="statement not covered" >    return this.generateMovesFromVectors(context, from, piece, straightVectors, true);</span>
+<span class="cstat-no" title="statement not covered">    return this.generateMovesFromVectors(context, from, piece, straightVectors, true);</span>
   }
 &nbsp;
   /**
    * Generates queen moves
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generateQueenMoves(
+  private <span class="fstat-no" title="function not covered">static </span>generateQueenMoves(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece
   ): MoveObject[] {
     // Queen moves like both bishop and rook
-<span class="cstat-no" title="statement not covered" >    return [</span>
+<span class="cstat-no" title="statement not covered">    return [</span>
       ...this.generateBishopMoves(context, from, piece),
       ...this.generateRookMoves(context, from, piece)
     ];
@@ -972,59 +986,65 @@ import {
   /**
    * Generates king moves including castling
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generateKingMoves(
+  private <span class="fstat-no" title="function not covered">static </span>generateKingMoves(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece
   ): MoveObject[] {
-    const moves = <span class="cstat-no" title="statement not covered" >this.generateMovesFromVectors(context, from, piece, this.KING_MOVES, false);</span>
+    const moves = <span class="cstat-no" title="statement not covered">this.generateMovesFromVectors(context, from, piece, this.KING_MOVES, false);</span>
 &nbsp;
     // Add castling moves
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (context.variant !== Variant.ATOMIC) {</span>
-<span class="cstat-no" title="statement not covered" >      moves.push(...this.generateCastlingMoves(context, from, piece));</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (context.variant !== Variant.ATOMIC) {</span>
+<span class="cstat-no" title="statement not covered">      moves.push(...this.generateCastlingMoves(context, from, piece));</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return moves;</span>
+<span class="cstat-no" title="statement not covered">    return moves;</span>
   }
 &nbsp;
   /**
    * Generates castling moves
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generateCastlingMoves(
+  private <span class="fstat-no" title="function not covered">static </span>generateCastlingMoves(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece
   ): MoveObject[] {
-    const moves: MoveObject[] = <span class="cstat-no" title="statement not covered" >[];</span>
+    const moves: MoveObject[] = <span class="cstat-no" title="statement not covered">[];</span>
     
     // Check if king hasn't moved (simplified - full implementation would check move history)
-<span class="cstat-no" title="statement not covered" >    if (piece.color === Color.WHITE &amp;&amp; from.row === 0 &amp;&amp; from.col === 4) {</span>
+<span class="cstat-no" title="statement not covered">    if (piece.color === Color.WHITE &amp;&amp; from.row === 0 &amp;&amp; from.col === 4) {</span>
       // White castling
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (context.castlingRights.K &amp;&amp; this.canCastleKingside(context, Color.WHITE)) {</span>
-<span class="cstat-no" title="statement not covered" >        moves.push({</span>
+<span class="cstat-no" title="statement not covered">      <span class="missing-if-branch"
+                                                                 title="if path not taken">I</span>if (context.castlingRights.K &amp;&amp; this.canCastleKingside(context, Color.WHITE)) {</span>
+<span class="cstat-no" title="statement not covered">        moves.push({</span>
           from: 'e1',
           to: 'g1',
           castling: 'kingside'
         });
       }
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (context.castlingRights.Q &amp;&amp; this.canCastleQueenside(context, Color.WHITE)) {</span>
-<span class="cstat-no" title="statement not covered" >        moves.push({</span>
+<span class="cstat-no" title="statement not covered">      <span class="missing-if-branch"
+                                                                 title="if path not taken">I</span>if (context.castlingRights.Q &amp;&amp; this.canCastleQueenside(context, Color.WHITE)) {</span>
+<span class="cstat-no" title="statement not covered">        moves.push({</span>
           from: 'e1',
           to: 'c1',
           castling: 'queenside'
         });
       }
-    } else <span class="cstat-no" title="statement not covered" ><span class="missing-if-branch" title="if path not taken" >I</span>if (piece.color === Color.BLACK &amp;&amp; from.row === 7 &amp;&amp; from.col === 4) {</span>
+    } else <span class="cstat-no" title="statement not covered"><span class="missing-if-branch"
+                                                                      title="if path not taken">I</span>if (piece.color === Color.BLACK &amp;&amp; from.row === 7 &amp;&amp; from.col === 4) {</span>
       // Black castling
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (context.castlingRights.k &amp;&amp; this.canCastleKingside(context, Color.BLACK)) {</span>
-<span class="cstat-no" title="statement not covered" >        moves.push({</span>
+<span class="cstat-no" title="statement not covered">      <span class="missing-if-branch"
+                                                                 title="if path not taken">I</span>if (context.castlingRights.k &amp;&amp; this.canCastleKingside(context, Color.BLACK)) {</span>
+<span class="cstat-no" title="statement not covered">        moves.push({</span>
           from: 'e8',
           to: 'g8',
           castling: 'kingside'
         });
       }
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (context.castlingRights.q &amp;&amp; this.canCastleQueenside(context, Color.BLACK)) {</span>
-<span class="cstat-no" title="statement not covered" >        moves.push({</span>
+<span class="cstat-no" title="statement not covered">      <span class="missing-if-branch"
+                                                                 title="if path not taken">I</span>if (context.castlingRights.q &amp;&amp; this.canCastleQueenside(context, Color.BLACK)) {</span>
+<span class="cstat-no" title="statement not covered">        moves.push({</span>
           from: 'e8',
           to: 'c8',
           castling: 'queenside'
@@ -1032,17 +1052,17 @@ import {
       }
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return moves;</span>
+<span class="cstat-no" title="statement not covered">    return moves;</span>
   }
 &nbsp;
   /**
    * Checks if kingside castling is possible
    */
-  private <span class="fstat-no" title="function not covered" >static </span>canCastleKingside(context: MoveGenerationContext, color: Color): boolean {
-    const row = <span class="cstat-no" title="statement not covered" >color === Color.WHITE ? 0 : 7;</span>
+  private <span class="fstat-no" title="function not covered">static </span>canCastleKingside(context: MoveGenerationContext, color: Color): boolean {
+    const row = <span class="cstat-no" title="statement not covered">color === Color.WHITE ? 0 : 7;</span>
     
     // Check if squares between king and rook are empty
-<span class="cstat-no" title="statement not covered" >    return !context.board[row][5] &amp;&amp; !context.board[row][6] &amp;&amp;</span>
+<span class="cstat-no" title="statement not covered">    return !context.board[row][5] &amp;&amp; !context.board[row][6] &amp;&amp;</span>
            // Check if rook is in position
            context.board[row][7]?.type === PieceType.ROOK &amp;&amp;
            context.board[row][7]?.color === color;
@@ -1051,11 +1071,11 @@ import {
   /**
    * Checks if queenside castling is possible
    */
-  private <span class="fstat-no" title="function not covered" >static </span>canCastleQueenside(context: MoveGenerationContext, color: Color): boolean {
-    const row = <span class="cstat-no" title="statement not covered" >color === Color.WHITE ? 0 : 7;</span>
+  private <span class="fstat-no" title="function not covered">static </span>canCastleQueenside(context: MoveGenerationContext, color: Color): boolean {
+    const row = <span class="cstat-no" title="statement not covered">color === Color.WHITE ? 0 : 7;</span>
     
     // Check if squares between king and rook are empty
-<span class="cstat-no" title="statement not covered" >    return !context.board[row][1] &amp;&amp; !context.board[row][2] &amp;&amp; !context.board[row][3] &amp;&amp;</span>
+<span class="cstat-no" title="statement not covered">    return !context.board[row][1] &amp;&amp; !context.board[row][2] &amp;&amp; !context.board[row][3] &amp;&amp;</span>
            // Check if rook is in position
            context.board[row][0]?.type === PieceType.ROOK &amp;&amp;
            context.board[row][0]?.color === color;
@@ -1064,78 +1084,80 @@ import {
   /**
    * Generates moves from movement vectors
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generateMovesFromVectors(
+  private <span class="fstat-no" title="function not covered">static </span>generateMovesFromVectors(
     context: MoveGenerationContext,
     from: Coordinates,
     piece: Piece,
     vectors: MovementVector[],
     sliding: boolean
   ): MoveObject[] {
-    const moves: MoveObject[] = <span class="cstat-no" title="statement not covered" >[];</span>
+    const moves: MoveObject[] = <span class="cstat-no" title="statement not covered">[];</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    for (const vector of vectors) {</span>
-      let current = <span class="cstat-no" title="statement not covered" >{ row: from.row + vector.row, col: from.col + vector.col };</span>
+<span class="cstat-no" title="statement not covered">    for (const vector of vectors) {</span>
+      let current = <span class="cstat-no" title="statement not covered">{ row: from.row + vector.row, col: from.col + vector.col };</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      while (this.isValidSquare(current)) {</span>
-        const targetPiece = <span class="cstat-no" title="statement not covered" >context.board[current.row][current.col];</span>
+<span class="cstat-no" title="statement not covered">      while (this.isValidSquare(current)) {</span>
+        const targetPiece = <span class="cstat-no" title="statement not covered">context.board[current.row][current.col];</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        if (!targetPiece) {</span>
+<span class="cstat-no" title="statement not covered">        if (!targetPiece) {</span>
           // Empty square
-<span class="cstat-no" title="statement not covered" >          moves.push({</span>
+<span class="cstat-no" title="statement not covered">          moves.push({</span>
             from: this.coordsToAlgebraic(from),
             to: this.coordsToAlgebraic(current)
           });
-        } else <span class="cstat-no" title="statement not covered" >if (targetPiece.color !== piece.color) {</span>
+        } else <span class="cstat-no" title="statement not covered">if (targetPiece.color !== piece.color) {</span>
           // Enemy piece - can capture
-<span class="cstat-no" title="statement not covered" >          moves.push({</span>
+<span class="cstat-no" title="statement not covered">          moves.push({</span>
             from: this.coordsToAlgebraic(from),
             to: this.coordsToAlgebraic(current)
           });
-<span class="cstat-no" title="statement not covered" >          break; </span>// Can't move past enemy piece
+<span class="cstat-no" title="statement not covered">          break; </span>// Can't move past enemy piece
         } else {
           // Friendly piece - can't move here
-<span class="cstat-no" title="statement not covered" >          break;</span>
+<span class="cstat-no" title="statement not covered">          break;</span>
         }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!sliding) <span class="cstat-no" title="statement not covered" >break; </span></span>// Non-sliding pieces only move once
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!sliding) <span
+        class="cstat-no" title="statement not covered">break; </span></span>// Non-sliding pieces only move once
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        current = { row: current.row + vector.row, col: current.col + vector.col };</span>
+<span class="cstat-no" title="statement not covered">        current = { row: current.row + vector.row, col: current.col + vector.col };</span>
       }
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return moves;</span>
+<span class="cstat-no" title="statement not covered">    return moves;</span>
   }
 &nbsp;
   /**
    * Checks if coordinates are valid
    */
-  private <span class="fstat-no" title="function not covered" >static </span>isValidSquare(coords: Coordinates): boolean {
-<span class="cstat-no" title="statement not covered" >    return coords.row &gt;= 0 &amp;&amp; coords.row &lt; 8 &amp;&amp; coords.col &gt;= 0 &amp;&amp; coords.col &lt; 8;</span>
+  private <span class="fstat-no" title="function not covered">static </span>isValidSquare(coords: Coordinates): boolean {
+<span class="cstat-no" title="statement not covered">    return coords.row &gt;= 0 &amp;&amp; coords.row &lt; 8 &amp;&amp; coords.col &gt;= 0 &amp;&amp; coords.col &lt; 8;</span>
   }
 &nbsp;
   /**
    * Converts coordinates to algebraic notation
    */
-  private <span class="fstat-no" title="function not covered" >static </span>coordsToAlgebraic(coords: Coordinates): string {
-<span class="cstat-no" title="statement not covered" >    return String.fromCharCode('a'.charCodeAt(0) + coords.col) + (coords.row + 1);</span>
+  private <span class="fstat-no" title="function not covered">static </span>coordsToAlgebraic(coords: Coordinates): string {
+<span class="cstat-no" title="statement not covered">    return String.fromCharCode('a'.charCodeAt(0) + coords.col) + (coords.row + 1);</span>
   }
 }</pre></td></tr></table></pre>
 
-                <div class='push'></div><!-- for sticky footer -->
-            </div><!-- /wrapper -->
-            <div class='footer quiet pad2 space-top1 center small'>
-                Code coverage generated by
-                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-29T18:52:43.591Z
-            </div>
-        <script src="../prettify.js"></script>
-        <script>
-            window.onload = function () {
-                prettyPrint();
-            };
-        </script>
-        <script src="../sorter.js"></script>
-        <script src="../block-navigation.js"></script>
-    </body>
+    <div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+    Code coverage generated by
+    <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+    at 2025-06-29T18:52:43.591Z
+</div>
+<script src="../prettify.js"></script>
+<script>
+    window.onload = function () {
+        prettyPrint();
+    };
+</script>
+<script src="../sorter.js"></script>
+<script src="../block-navigation.js"></script>
+</body>
 </html>
     

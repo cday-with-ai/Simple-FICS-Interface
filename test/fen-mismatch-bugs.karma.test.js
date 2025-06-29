@@ -3,7 +3,7 @@
  * These tests reproduce the specific scenarios where makeMoveFromSan fails
  */
 
-import { ChessBoard, Variant } from '../scripts/ChessBoard.js';
+import {ChessBoard, Variant} from '../scripts/ChessBoard.js';
 
 describe('FEN Mismatch Bug Fixes', () => {
     let chessBoard;

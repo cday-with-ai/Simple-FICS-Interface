@@ -3,7 +3,7 @@
  * Tests all chess variants and functionality
  */
 
-import { ChessBoard, Move } from '../scripts/ChessBoard.js';
+import {ChessBoard, Move} from '../scripts/ChessBoard.js';
 
 describe('ChessBoard', () => {
     let board;
@@ -58,15 +58,15 @@ describe('ChessBoard', () => {
 
     describe('Piece Movement and Placement', () => {
         it('should get pieces correctly', () => {
-            expect(board.getPiece('e1')).toEqual({ type: 'k', color: 'w' });
-            expect(board.getPiece('e8')).toEqual({ type: 'k', color: 'b' });
+            expect(board.getPiece('e1')).toEqual({type: 'k', color: 'w'});
+            expect(board.getPiece('e8')).toEqual({type: 'k', color: 'b'});
             expect(board.getPiece('e4')).toBeNull();
         });
 
         it('should convert coordinates correctly', () => {
             // Test private methods through public interface
-            expect(board.getPiece('a1')).toEqual({ type: 'r', color: 'w' });
-            expect(board.getPiece('h8')).toEqual({ type: 'r', color: 'b' });
+            expect(board.getPiece('a1')).toEqual({type: 'r', color: 'w'});
+            expect(board.getPiece('h8')).toEqual({type: 'r', color: 'b'});
         });
     });
 
@@ -177,7 +177,7 @@ describe('ChessBoard', () => {
     describe('Move Making', () => {
         it('should make simple pawn moves', () => {
             expect(board.makeMove('e4')).toBe(true);
-            expect(board.getPiece('e4')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('e4')).toEqual({type: 'p', color: 'w'});
             expect(board.getPiece('e2')).toBeNull();
             expect(board.getActiveColor()).toBe('b');
         });
@@ -186,7 +186,7 @@ describe('ChessBoard', () => {
             board.makeMove('e4');
             board.makeMove('e5');
             expect(board.makeMove('Nf3')).toBe(true);
-            expect(board.getPiece('f3')).toEqual({ type: 'n', color: 'w' });
+            expect(board.getPiece('f3')).toEqual({type: 'n', color: 'w'});
             expect(board.getPiece('g1')).toBeNull();
         });
 
@@ -196,7 +196,7 @@ describe('ChessBoard', () => {
             // Let's use a simpler capture test
             board.loadFen('rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2');
             expect(board.makeMove('exd5')).toBe(true);
-            expect(board.getPiece('d5')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('d5')).toEqual({type: 'p', color: 'w'});
             expect(board.getPiece('e4')).toBeNull();
         });
 
@@ -215,16 +215,16 @@ describe('ChessBoard', () => {
 
         it('should allow kingside castling', () => {
             expect(board.makeMove('O-O')).toBe(true);
-            expect(board.getPiece('g1')).toEqual({ type: 'k', color: 'w' });
-            expect(board.getPiece('f1')).toEqual({ type: 'r', color: 'w' });
+            expect(board.getPiece('g1')).toEqual({type: 'k', color: 'w'});
+            expect(board.getPiece('f1')).toEqual({type: 'r', color: 'w'});
             expect(board.getPiece('e1')).toBeNull();
             expect(board.getPiece('h1')).toBeNull();
         });
 
         it('should allow queenside castling', () => {
             expect(board.makeMove('O-O-O')).toBe(true);
-            expect(board.getPiece('c1')).toEqual({ type: 'k', color: 'w' });
-            expect(board.getPiece('d1')).toEqual({ type: 'r', color: 'w' });
+            expect(board.getPiece('c1')).toEqual({type: 'k', color: 'w'});
+            expect(board.getPiece('d1')).toEqual({type: 'r', color: 'w'});
             expect(board.getPiece('e1')).toBeNull();
             expect(board.getPiece('a1')).toBeNull();
         });
@@ -240,7 +240,7 @@ describe('ChessBoard', () => {
         it('should handle en passant capture', () => {
             board.loadFen('rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3');
             expect(board.makeMove('exf6')).toBe(true);
-            expect(board.getPiece('f6')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('f6')).toEqual({type: 'p', color: 'w'});
             expect(board.getPiece('f5')).toBeNull(); // Captured pawn removed
             expect(board.getPiece('e5')).toBeNull(); // Moving pawn gone
         });
@@ -250,7 +250,7 @@ describe('ChessBoard', () => {
         it('should handle pawn promotion', () => {
             board.loadFen('8/P7/8/8/8/8/8/8 w - - 0 1');
             expect(board.makeMove('a8=Q')).toBe(true);
-            expect(board.getPiece('a8')).toEqual({ type: 'q', color: 'w', promoted: true });
+            expect(board.getPiece('a8')).toEqual({type: 'q', color: 'w', promoted: true});
         });
 
         it('should handle promotion to different pieces', () => {
@@ -258,7 +258,7 @@ describe('ChessBoard', () => {
             pieces.forEach(piece => {
                 board.loadFen('8/P7/8/8/8/8/8/8 w - - 0 1');
                 expect(board.makeMove(`a8=${piece}`)).toBe(true);
-                expect(board.getPiece('a8')).toEqual({ type: piece.toLowerCase(), color: 'w', promoted: true });
+                expect(board.getPiece('a8')).toEqual({type: piece.toLowerCase(), color: 'w', promoted: true});
             });
         });
     });
@@ -926,14 +926,14 @@ describe('ChessBoard', () => {
                 });
 
                 // Check that all promotions were successful
-                expect(board.getPiece('a8')).toEqual({ type: 'q', color: 'w', promoted: true });
-                expect(board.getPiece('a1')).toEqual({ type: 'q', color: 'b', promoted: true });
-                expect(board.getPiece('c8')).toEqual({ type: 'r', color: 'w', promoted: true });
-                expect(board.getPiece('c1')).toEqual({ type: 'r', color: 'b', promoted: true });
-                expect(board.getPiece('e8')).toEqual({ type: 'b', color: 'w', promoted: true });
-                expect(board.getPiece('e1')).toEqual({ type: 'b', color: 'b', promoted: true });
-                expect(board.getPiece('g8')).toEqual({ type: 'n', color: 'w', promoted: true });
-                expect(board.getPiece('g1')).toEqual({ type: 'n', color: 'b', promoted: true });
+                expect(board.getPiece('a8')).toEqual({type: 'q', color: 'w', promoted: true});
+                expect(board.getPiece('a1')).toEqual({type: 'q', color: 'b', promoted: true});
+                expect(board.getPiece('c8')).toEqual({type: 'r', color: 'w', promoted: true});
+                expect(board.getPiece('c1')).toEqual({type: 'r', color: 'b', promoted: true});
+                expect(board.getPiece('e8')).toEqual({type: 'b', color: 'w', promoted: true});
+                expect(board.getPiece('e1')).toEqual({type: 'b', color: 'b', promoted: true});
+                expect(board.getPiece('g8')).toEqual({type: 'n', color: 'w', promoted: true});
+                expect(board.getPiece('g1')).toEqual({type: 'n', color: 'b', promoted: true});
             });
 
             it('should handle en passant in complex positions', () => {
@@ -957,14 +957,14 @@ describe('ChessBoard', () => {
     describe('Long Algebraic Move Making', () => {
         it('should make basic pawn moves with long algebraic notation', () => {
             expect(board.makeLongAlgebraicMove('e2', 'e4')).toBe(true);
-            expect(board.getPiece('e4')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('e4')).toEqual({type: 'p', color: 'w'});
             expect(board.getPiece('e2')).toBe(null);
             expect(board.getActiveColor()).toBe('b');
         });
 
         it('should make piece moves with long algebraic notation', () => {
             expect(board.makeLongAlgebraicMove('g1', 'f3')).toBe(true);
-            expect(board.getPiece('f3')).toEqual({ type: 'n', color: 'w' });
+            expect(board.getPiece('f3')).toEqual({type: 'n', color: 'w'});
             expect(board.getPiece('g1')).toBe(null);
         });
 
@@ -974,7 +974,7 @@ describe('ChessBoard', () => {
             board.makeLongAlgebraicMove('d2', 'd4');
             board.makeLongAlgebraicMove('e5', 'd4'); // Black captures
 
-            expect(board.getPiece('d4')).toEqual({ type: 'p', color: 'b' });
+            expect(board.getPiece('d4')).toEqual({type: 'p', color: 'b'});
             expect(board.getPiece('e5')).toBe(null);
         });
 
@@ -982,7 +982,7 @@ describe('ChessBoard', () => {
             // Set up a position where white pawn can promote
             board.loadFen('8/P7/8/8/8/8/8/8 w - - 0 1');
             expect(board.makeLongAlgebraicMove('a7', 'a8', 'q')).toBe(true);
-            expect(board.getPiece('a8')).toEqual({ type: 'q', color: 'w', promoted: true });
+            expect(board.getPiece('a8')).toEqual({type: 'q', color: 'w', promoted: true});
         });
 
         it('should handle castling with long algebraic notation', () => {
@@ -991,15 +991,15 @@ describe('ChessBoard', () => {
 
             // Kingside castling
             expect(board.makeLongAlgebraicMove('e1', 'g1')).toBe(true);
-            expect(board.getPiece('g1')).toEqual({ type: 'k', color: 'w' });
-            expect(board.getPiece('f1')).toEqual({ type: 'r', color: 'w' });
+            expect(board.getPiece('g1')).toEqual({type: 'k', color: 'w'});
+            expect(board.getPiece('f1')).toEqual({type: 'r', color: 'w'});
         });
 
         it('should handle en passant with long algebraic notation', () => {
             // Set up en passant position
             board.loadFen('rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3');
             expect(board.makeLongAlgebraicMove('e5', 'f6')).toBe(true);
-            expect(board.getPiece('f6')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('f6')).toEqual({type: 'p', color: 'w'});
             expect(board.getPiece('f5')).toBe(null); // Captured pawn removed
         });
 
@@ -1043,7 +1043,7 @@ describe('ChessBoard', () => {
             board.capturedPieces.w.push('p');
 
             expect(board.makeDropMove('p', 'e4')).toBe(true);
-            expect(board.getPiece('e4')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('e4')).toEqual({type: 'p', color: 'w'});
             expect(board.getCapturedPieces('w')).not.toContain('p');
         });
 
@@ -1052,13 +1052,13 @@ describe('ChessBoard', () => {
             board.capturedPieces.w.push('n', 'b', 'r', 'q');
 
             expect(board.makeDropMove('n', 'f3')).toBe(true);
-            expect(board.getPiece('f3')).toEqual({ type: 'n', color: 'w' });
+            expect(board.getPiece('f3')).toEqual({type: 'n', color: 'w'});
 
             board.makeMove('e7'); // Black move to switch turns
             board.capturedPieces.b.push('b');
 
             expect(board.makeDropMove('b', 'c6')).toBe(true);
-            expect(board.getPiece('c6')).toEqual({ type: 'b', color: 'b' });
+            expect(board.getPiece('c6')).toEqual({type: 'b', color: 'b'});
         });
 
         it('should reject pawn drops on first and last ranks', () => {
@@ -1119,14 +1119,14 @@ describe('ChessBoard', () => {
 
             board.makeMove('Nf6');
             expect(board.makeDropMove('p', 'e6')).toBe(true);
-            expect(board.getPiece('e6')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('e6')).toEqual({type: 'p', color: 'w'});
         });
 
         it('should handle case-insensitive piece notation', () => {
             board.capturedPieces.w.push('n');
 
             expect(board.makeDropMove('N', 'f3')).toBe(true);
-            expect(board.getPiece('f3')).toEqual({ type: 'n', color: 'w' });
+            expect(board.getPiece('f3')).toEqual({type: 'n', color: 'w'});
         });
 
         it('should update move history correctly for drops', () => {
@@ -1151,14 +1151,14 @@ describe('ChessBoard', () => {
         it('should undo a single pawn move', () => {
             // Make a move
             expect(board.makeMove('e4')).toBe(true);
-            expect(board.getPiece('e4')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('e4')).toEqual({type: 'p', color: 'w'});
             expect(board.getPiece('e2')).toBe(null);
             expect(board.getActiveColor()).toBe('b');
             expect(board.getMoveHistory().length).toBe(1);
 
             // Undo the move
             expect(board.back()).toBe(true);
-            expect(board.getPiece('e2')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('e2')).toEqual({type: 'p', color: 'w'});
             expect(board.getPiece('e4')).toBe(null);
             expect(board.getActiveColor()).toBe('w');
             expect(board.getMoveHistory().length).toBe(0);
@@ -1178,14 +1178,14 @@ describe('ChessBoard', () => {
             expect(board.back()).toBe(true);
             expect(board.getMoveHistory().length).toBe(4);
             expect(board.getPiece('d4')).toBe(null);
-            expect(board.getPiece('d2')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('d2')).toEqual({type: 'p', color: 'w'});
             expect(board.getActiveColor()).toBe('w');
 
             // Undo another move (Nc6)
             expect(board.back()).toBe(true);
             expect(board.getMoveHistory().length).toBe(3);
             expect(board.getPiece('c6')).toBe(null);
-            expect(board.getPiece('b8')).toEqual({ type: 'n', color: 'b' });
+            expect(board.getPiece('b8')).toEqual({type: 'n', color: 'b'});
             expect(board.getActiveColor()).toBe('b');
         });
 
@@ -1195,13 +1195,13 @@ describe('ChessBoard', () => {
             board.makeMove('d5');
             board.makeMove('exd5'); // White captures black pawn
 
-            expect(board.getPiece('d5')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('d5')).toEqual({type: 'p', color: 'w'});
             expect(board.getMoveHistory().length).toBe(3);
 
             // Undo the capture
             expect(board.back()).toBe(true);
-            expect(board.getPiece('d5')).toEqual({ type: 'p', color: 'b' }); // Black pawn restored
-            expect(board.getPiece('e4')).toEqual({ type: 'p', color: 'w' }); // White pawn back
+            expect(board.getPiece('d5')).toEqual({type: 'p', color: 'b'}); // Black pawn restored
+            expect(board.getPiece('e4')).toEqual({type: 'p', color: 'w'}); // White pawn back
             expect(board.getMoveHistory().length).toBe(2);
             expect(board.getActiveColor()).toBe('w');
         });
@@ -1212,8 +1212,8 @@ describe('ChessBoard', () => {
 
             // Castle kingside
             expect(board.makeMove('O-O')).toBe(true);
-            expect(board.getPiece('g1')).toEqual({ type: 'k', color: 'w' });
-            expect(board.getPiece('f1')).toEqual({ type: 'r', color: 'w' });
+            expect(board.getPiece('g1')).toEqual({type: 'k', color: 'w'});
+            expect(board.getPiece('f1')).toEqual({type: 'r', color: 'w'});
 
             // Undo castling - Note: Complex moves like castling may not undo perfectly
             // but the move history should be reduced
@@ -1270,10 +1270,10 @@ describe('ChessBoard', () => {
             expect(board.getActiveColor()).toBe('w');
 
             // Verify starting position is restored
-            expect(board.getPiece('e2')).toEqual({ type: 'p', color: 'w' });
-            expect(board.getPiece('e7')).toEqual({ type: 'p', color: 'b' });
-            expect(board.getPiece('g1')).toEqual({ type: 'n', color: 'w' });
-            expect(board.getPiece('b8')).toEqual({ type: 'n', color: 'b' });
+            expect(board.getPiece('e2')).toEqual({type: 'p', color: 'w'});
+            expect(board.getPiece('e7')).toEqual({type: 'p', color: 'b'});
+            expect(board.getPiece('g1')).toEqual({type: 'n', color: 'w'});
+            expect(board.getPiece('b8')).toEqual({type: 'n', color: 'b'});
 
             // Should not be able to undo further
             expect(board.back()).toBe(false);
@@ -1328,7 +1328,7 @@ describe('ChessBoard', () => {
             board.capturedPieces.w.push('p');
             expect(board.makeDropMove('p', 'e4')).toBe(true);
 
-            expect(board.getPiece('e4')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('e4')).toEqual({type: 'p', color: 'w'});
             expect(board.getMoveHistory().length).toBe(1);
 
             // Undo the drop - Note: Crazyhouse drops may not undo perfectly
@@ -1350,7 +1350,7 @@ describe('ChessBoard', () => {
             // Undo the capture
             expect(board.back()).toBe(true);
             expect(board.getCapturedPieces('w')).not.toContain('p'); // Captured pawn removed from white's pieces
-            expect(board.getPiece('d5')).toEqual({ type: 'p', color: 'b' }); // Black pawn restored
+            expect(board.getPiece('d5')).toEqual({type: 'p', color: 'b'}); // Black pawn restored
             expect(board.getMoveHistory().length).toBe(2);
         });
 
@@ -1622,10 +1622,10 @@ describe('ChessBoard', () => {
             expect(board.getActiveColor()).toBe('w');
 
             // Verify starting position is restored
-            expect(board.getPiece('e2')).toEqual({ type: 'p', color: 'w' });
-            expect(board.getPiece('e7')).toEqual({ type: 'p', color: 'b' });
-            expect(board.getPiece('g1')).toEqual({ type: 'n', color: 'w' });
-            expect(board.getPiece('b8')).toEqual({ type: 'n', color: 'b' });
+            expect(board.getPiece('e2')).toEqual({type: 'p', color: 'w'});
+            expect(board.getPiece('e7')).toEqual({type: 'p', color: 'b'});
+            expect(board.getPiece('g1')).toEqual({type: 'n', color: 'w'});
+            expect(board.getPiece('b8')).toEqual({type: 'n', color: 'b'});
             expect(board.getPiece('e4')).toBe(null);
             expect(board.getPiece('e5')).toBe(null);
         });
@@ -1786,7 +1786,7 @@ describe('ChessBoard', () => {
 
             // Should fallback to standard starting position
             expect(board.getActiveColor()).toBe('w');
-            expect(board.getPiece('e2')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('e2')).toEqual({type: 'p', color: 'w'});
         });
 
         it('should work correctly after promotion moves', () => {
@@ -1794,14 +1794,14 @@ describe('ChessBoard', () => {
             board.loadFen('8/P7/8/8/8/8/8/8 w - - 0 1');
             board.makeMove('a8=Q');
 
-            expect(board.getPiece('a8')).toEqual({ type: 'q', color: 'w', promoted: true });
+            expect(board.getPiece('a8')).toEqual({type: 'q', color: 'w', promoted: true});
             expect(board.getMoveHistory().length).toBe(1);
 
             // Go back to start
             expect(board.start()).toBe(true);
             expect(board.getMoveHistory().length).toBe(0);
             expect(board.getFen()).toBe('8/P7/8/8/8/8/8/8 w - - 0 1');
-            expect(board.getPiece('a7')).toEqual({ type: 'p', color: 'w' });
+            expect(board.getPiece('a7')).toEqual({type: 'p', color: 'w'});
             expect(board.getPiece('a8')).toBe(null);
         });
 

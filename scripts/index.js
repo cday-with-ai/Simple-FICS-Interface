@@ -1,6 +1,6 @@
 // Import from refactored modules
-import { initFics } from './fics.js';
-import { initChat } from './chat.js';
+import {initFics} from './fics.js';
+import {initChat} from './chat.js';
 
 const sounds = new Map(Object.entries({
     abort: new Audio('sounds/abort.wav'),
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
 window.onload = function () {
     // Initialize FICS connection and preferences
     initFics();
-    
+
     // Initialize chat system
     initChat();
 };

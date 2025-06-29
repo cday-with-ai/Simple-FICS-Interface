@@ -193,13 +193,13 @@ export class ChessBoard {
         this.variant = variant;
         this.board = this._createEmptyBoard();
         this.activeColor = Color.WHITE;
-        this.castlingRights = { K: true, Q: true, k: true, q: true };
+        this.castlingRights = {K: true, Q: true, k: true, q: true};
         this.enPassantSquare = null;
         this.halfmoveClock = 0;
         this.fullmoveNumber = 1;
         this.moveHistory = [];
         this.positionHistory = [];
-        this.capturedPieces = { w: [], b: [] }; // For crazyhouse
+        this.capturedPieces = {w: [], b: []}; // For crazyhouse
         this.chess960StartPosition = null; // For chess960
         this.originalLoadedPosition = null; // Track the original position that was loaded
 
@@ -250,7 +250,7 @@ export class ChessBoard {
                         // Piece
                         const color = char === char.toUpperCase() ? Color.WHITE : Color.BLACK;
                         const type = char.toLowerCase();
-                        this.board[7 - rankIndex][fileIndex] = { type, color };
+                        this.board[7 - rankIndex][fileIndex] = {type, color};
                         fileIndex++;
                     }
                 }
@@ -363,7 +363,7 @@ export class ChessBoard {
      * @returns {Object|null} Piece object or null if square is empty
      */
     getPiece(square) {
-        const { rank, file } = this._algebraicToCoords(square);
+        const {rank, file} = this._algebraicToCoords(square);
         return this.board[rank][file];
     }
 
@@ -435,6 +435,7 @@ export class ChessBoard {
             return false;
         }
     }
+
     /**
      * Makes a freestyle move - simple piece movement with no validation
      * @param {string} from - Source square (e.g., "e2")
@@ -445,8 +446,8 @@ export class ChessBoard {
      */
     _makeFreestyleMove(from, to, promotion = null) {
         try {
-            const { rank: fromRank, file: fromFile } = this._algebraicToCoords(from);
-            const { rank: toRank, file: toFile } = this._algebraicToCoords(to);
+            const {rank: fromRank, file: fromFile} = this._algebraicToCoords(from);
+            const {rank: toRank, file: toFile} = this._algebraicToCoords(to);
 
             // Get the piece to move
             const piece = this.board[fromRank][fromFile];
@@ -582,7 +583,7 @@ export class ChessBoard {
 
             // Special validation for pawn drops
             if (piece.toLowerCase() === 'p') {
-                const { rank } = this._algebraicToCoords(algebraic);
+                const {rank} = this._algebraicToCoords(algebraic);
                 // Pawns cannot be dropped on first or last rank
                 if (rank === 0 || rank === 7) {
                     return false;
@@ -670,7 +671,7 @@ export class ChessBoard {
      * @returns {boolean} True if insufficient material
      */
     isInsufficientMaterial() {
-        const pieces = { w: [], b: [] };
+        const pieces = {w: [], b: []};
 
         // Count pieces for each side
         for (let rank = 0; rank < 8; rank++) {
@@ -901,7 +902,7 @@ export class ChessBoard {
             const dropMatch = san.match(/^([QRBNP])@([a-h][1-8])$/i);
             if (dropMatch) {
                 move.drop = true;
-                move.piece = { type: dropMatch[1].toLowerCase(), color: 'w' }; // Color will be determined by context
+                move.piece = {type: dropMatch[1].toLowerCase(), color: 'w'}; // Color will be determined by context
                 move.to = dropMatch[2].toLowerCase();
             }
 
@@ -960,7 +961,6 @@ export class ChessBoard {
         // So: moves 0,1 = fullmove 1; moves 2,3 = fullmove 2; etc.
         this.fullmoveNumber = Math.floor(this.moveHistory.length / 2) + 1;
     }
-
 
 
     /**
@@ -1118,12 +1118,12 @@ export class ChessBoard {
         // Set up pieces
         for (let file = 0; file < 8; file++) {
             // White pieces
-            this.board[0][file] = { type: backRank[file], color: Color.WHITE };
-            this.board[1][file] = { type: PieceType.PAWN, color: Color.WHITE };
+            this.board[0][file] = {type: backRank[file], color: Color.WHITE};
+            this.board[1][file] = {type: PieceType.PAWN, color: Color.WHITE};
 
             // Black pieces
-            this.board[7][file] = { type: backRank[file], color: Color.BLACK };
-            this.board[6][file] = { type: PieceType.PAWN, color: Color.BLACK };
+            this.board[7][file] = {type: backRank[file], color: Color.BLACK};
+            this.board[6][file] = {type: PieceType.PAWN, color: Color.BLACK};
         }
 
         // Update castling rights based on king and rook positions
@@ -1177,7 +1177,7 @@ export class ChessBoard {
     _algebraicToCoords(square) {
         const file = square.charCodeAt(0) - 97; // 'a' = 0, 'b' = 1, etc.
         const rank = parseInt(square[1]) - 1;   // '1' = 0, '2' = 1, etc.
-        return { rank, file };
+        return {rank, file};
     }
 
     /**
@@ -1199,7 +1199,7 @@ export class ChessBoard {
      * @private
      */
     _generatePieceMoves(square, piece) {
-        const { rank, file } = this._algebraicToCoords(square);
+        const {rank, file} = this._algebraicToCoords(square);
 
         switch (piece.type) {
             case PieceType.PAWN:
@@ -1227,7 +1227,7 @@ export class ChessBoard {
      * @private
      */
     _generatePieceMoveObjects(square, piece) {
-        const { rank, file } = this._algebraicToCoords(square);
+        const {rank, file} = this._algebraicToCoords(square);
 
         switch (piece.type) {
             case PieceType.PAWN:
@@ -1375,7 +1375,10 @@ export class ChessBoard {
                     // En passant capture
                     if (!targetPiece && this.enPassantSquare === toSquare) {
                         const san = this._moveToSan(rank, file, captureRank, captureFile);
-                        const capturedPawn = { type: PieceType.PAWN, color: color === Color.WHITE ? Color.BLACK : Color.WHITE };
+                        const capturedPawn = {
+                            type: PieceType.PAWN,
+                            color: color === Color.WHITE ? Color.BLACK : Color.WHITE
+                        };
                         moves.push(new Move(san, fromSquare, toSquare, capturedPawn, null, true));
                     }
                 }
@@ -1530,8 +1533,8 @@ export class ChessBoard {
         const moves = [];
         const kingMoves = [
             [-1, -1], [-1, 0], [-1, 1],
-            [0, -1],           [0, 1],
-            [1, -1],  [1, 0],  [1, 1]
+            [0, -1], [0, 1],
+            [1, -1], [1, 0], [1, 1]
         ];
 
         for (const [rankOffset, fileOffset] of kingMoves) {
@@ -1730,8 +1733,8 @@ export class ChessBoard {
         const moves = [];
         const kingMoves = [
             [-1, -1], [-1, 0], [-1, 1],
-            [0, -1],           [0, 1],
-            [1, -1],  [1, 0],  [1, 1]
+            [0, -1], [0, 1],
+            [1, -1], [1, 0], [1, 1]
         ];
         const fromSquare = this._coordsToAlgebraic(rank, file);
 
@@ -2086,7 +2089,7 @@ export class ChessBoard {
         const pieceType = pieceChar ? pieceChar.toLowerCase() : PieceType.PAWN;
 
         // Parse destination
-        const { rank: toRank, file: toFile } = this._algebraicToCoords(toSquare);
+        const {rank: toRank, file: toFile} = this._algebraicToCoords(toSquare);
 
         // Determine if this is a capture
         const isCapture = !!captureChar;
@@ -2143,7 +2146,7 @@ export class ChessBoard {
                             const square = this._coordsToAlgebraic(rank, file);
                             // Verify the move doesn't leave king in check
                             if (this._wouldMoveBeValid(square, this._coordsToAlgebraic(toRank, toFile))) {
-                                candidates.push({ square, rank, file });
+                                candidates.push({square, rank, file});
                             }
                         }
                     }
@@ -2219,7 +2222,7 @@ export class ChessBoard {
 
                     // Check if this piece can move to the target square
                     if (this._canPieceMoveTo(rank, file, toRank, toFile, isCapture)) {
-                        candidates.push({ square, rank, file });
+                        candidates.push({square, rank, file});
                     }
                 }
             }
@@ -2270,7 +2273,7 @@ export class ChessBoard {
 
                     // Check if this piece can potentially move to the target square
                     if (this._canPieceMoveTo(rank, file, toRank, toFile, hasCapture)) {
-                        candidates.push({ square, rank, file });
+                        candidates.push({square, rank, file});
                     }
                 }
             }
@@ -2336,7 +2339,7 @@ export class ChessBoard {
                     }
 
                     if (canMove) {
-                        candidates.push({ square, rank, file });
+                        candidates.push({square, rank, file});
                     }
                 }
             }
@@ -2443,7 +2446,7 @@ export class ChessBoard {
 
         // Handle piece drops for crazyhouse
         if (move.type === 'drop') {
-            const { rank: toRank, file: toFile } = this._algebraicToCoords(move.to);
+            const {rank: toRank, file: toFile} = this._algebraicToCoords(move.to);
             return this.board[toRank][toFile] === null;
         }
 
@@ -2453,8 +2456,8 @@ export class ChessBoard {
         }
 
         // Validate regular moves
-        const { rank: fromRank, file: fromFile } = this._algebraicToCoords(move.from);
-        const { rank: toRank, file: toFile } = this._algebraicToCoords(move.to);
+        const {rank: fromRank, file: fromFile} = this._algebraicToCoords(move.from);
+        const {rank: toRank, file: toFile} = this._algebraicToCoords(move.to);
 
         const piece = this.board[fromRank][fromFile];
         if (!piece || piece.color !== this.activeColor) {
@@ -2780,8 +2783,8 @@ export class ChessBoard {
             return this._executeDrop(move);
         }
 
-        const { rank: fromRank, file: fromFile } = this._algebraicToCoords(move.from);
-        const { rank: toRank, file: toFile } = this._algebraicToCoords(move.to);
+        const {rank: fromRank, file: fromFile} = this._algebraicToCoords(move.from);
+        const {rank: toRank, file: toFile} = this._algebraicToCoords(move.to);
 
         const movingPiece = this.board[fromRank][fromFile];
         const capturedPiece = this.board[toRank][toFile];
@@ -2865,8 +2868,8 @@ export class ChessBoard {
      * @private
      */
     _executeDrop(move) {
-        const { piece, to } = move;
-        const { rank: toRank, file: toFile } = this._algebraicToCoords(to);
+        const {piece, to} = move;
+        const {rank: toRank, file: toFile} = this._algebraicToCoords(to);
 
         // Check if the target square is empty
         if (this.board[toRank][toFile] !== null) {
@@ -2891,7 +2894,7 @@ export class ChessBoard {
         this.moveHistory.push({
             from: null,
             to: to,
-            piece: { type: piece, color: this.activeColor },
+            piece: {type: piece, color: this.activeColor},
             captured: null,
             san: `${piece.toUpperCase()}@${to}`,
             fen: this.getFen(),
@@ -3134,7 +3137,7 @@ export class ChessBoard {
             return false;
         }
 
-        const { rank, file } = this._algebraicToCoords(kingSquare);
+        const {rank, file} = this._algebraicToCoords(kingSquare);
         const oppositeColor = color === Color.WHITE ? Color.BLACK : Color.WHITE;
 
         return this._isSquareAttacked(rank, file, oppositeColor);
@@ -3236,8 +3239,8 @@ export class ChessBoard {
         // Check for king attacks
         const kingMoves = [
             [-1, -1], [-1, 0], [-1, 1],
-            [0, -1],           [0, 1],
-            [1, -1],  [1, 0],  [1, 1]
+            [0, -1], [0, 1],
+            [1, -1], [1, 0], [1, 1]
         ];
 
         for (const [rankOffset, fileOffset] of kingMoves) {
@@ -3254,7 +3257,6 @@ export class ChessBoard {
 
         return false;
     }
-
 
 
     /**
@@ -3477,12 +3479,12 @@ export class ChessBoard {
             // Handle castling
             if (cleanSan === 'O-O' || cleanSan === 'o-o') {
                 move.castling = 'kingside';
-                move.piece = { type: PieceType.KING, color: null }; // Color unknown from SAN alone
+                move.piece = {type: PieceType.KING, color: null}; // Color unknown from SAN alone
                 return move;
             }
             if (cleanSan === 'O-O-O' || cleanSan === 'o-o-o') {
                 move.castling = 'queenside';
-                move.piece = { type: PieceType.KING, color: null };
+                move.piece = {type: PieceType.KING, color: null};
                 return move;
             }
 
@@ -3491,7 +3493,7 @@ export class ChessBoard {
                 const dropMatch = cleanSan.match(/^([PNBRQK])@([a-h][1-8])$/);
                 if (dropMatch) {
                     move.drop = true;
-                    move.piece = { type: dropMatch[1].toLowerCase(), color: null };
+                    move.piece = {type: dropMatch[1].toLowerCase(), color: null};
                     move.to = dropMatch[2];
                     return move;
                 }
@@ -3513,9 +3515,9 @@ export class ChessBoard {
                 const disambiguation = moveMatch[2];
                 const targetSquare = moveMatch[3];
 
-                move.piece = { type: pieceChar.toLowerCase(), color: null };
+                move.piece = {type: pieceChar.toLowerCase(), color: null};
                 move.to = targetSquare;
-                move.captured = cleanSan.includes('x') ? { type: null, color: null } : null;
+                move.captured = cleanSan.includes('x') ? {type: null, color: null} : null;
 
                 // Try to determine from square from disambiguation
                 if (disambiguation) {
@@ -3707,4 +3709,4 @@ export class ChessBoard {
 }
 
 // Export the Move class along with ChessBoard
-export { Move };
+export {Move};

@@ -1,58 +1,58 @@
-
 <!doctype html>
 <html lang="en">
 
 <head>
     <title>Code coverage report for services/ChessEngine.parser.ts</title>
-    <meta charset="utf-8" />
-    <link rel="stylesheet" href="../prettify.css" />
-    <link rel="stylesheet" href="../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="../prettify.css"/>
+    <link rel="stylesheet" href="../base.css"/>
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <style type='text/css'>
         .coverage-summary .sorter {
             background-image: url(../sort-arrow-sprite.png);
         }
     </style>
 </head>
-    
+
 <body>
 <div class='wrapper'>
     <div class='pad1'>
         <h1><a href="../index.html">All files</a> / <a href="index.html">services</a> ChessEngine.parser.ts</h1>
         <div class='clearfix'>
-            
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
                 <span class='fraction'>0/113</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
                 <span class='fraction'>0/59</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
                 <span class='fraction'>0/14</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
                 <span class='fraction'>0/106</span>
             </div>
-        
-            
+
+
         </div>
         <p class="quiet">
-            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for
+            the previous block.
         </p>
         <template id="filterTemplate">
             <div class="quiet">
@@ -833,7 +833,7 @@
  * SAN (Standard Algebraic Notation) parser for the Chess Engine
  */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import {</span>
+<span class="cstat-no" title="statement not covered">import {</span>
   Move,
   Piece,
   PieceType,
@@ -842,7 +842,8 @@
   Square
 } from './ChessEngine';
 import { Coordinates } from './ChessEngine.types';
-<span class="cstat-no" title="statement not covered" >import { MoveGenerator } from './ChessEngine.moveGeneration';</span>
+<span class="cstat-no"
+      title="statement not covered">import { MoveGenerator } from './ChessEngine.moveGeneration';</span>
 &nbsp;
 export interface ParsedMove {
   pieceType: PieceType;
@@ -855,57 +856,62 @@ export interface ParsedMove {
   checkSymbol?: '+' | '#';
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export class S</span>ANParser {
+<span class="cstat-no" title="statement not covered">export class S</span>ANParser {
   // Regex patterns for different move formats
-  private static readonly <span class="cstat-no" title="statement not covered" >CASTLING_PATTERN = /^(O-O-O|O-O|0-0-0|0-0)([+#])?$/;</span>
-  private static readonly <span class="cstat-no" title="statement not covered" >DROP_PATTERN = /^([PNBRQK])@([a-h][1-8])([+#])?$/;</span>
-  private static readonly <span class="cstat-no" title="statement not covered" >STANDARD_MOVE_PATTERN = /^([NBRQK])([a-h])?([1-8])?x?([a-h][1-8])(?:=([NBRQK]))?([+#])?$/;</span>
-  private static readonly <span class="cstat-no" title="statement not covered" >PAWN_MOVE_PATTERN = /^([a-h])?x?([a-h][1-8])(?:=([NBRQK]))?([+#])?$/;</span>
+  private static readonly <span class="cstat-no" title="statement not covered">CASTLING_PATTERN = /^(O-O-O|O-O|0-0-0|0-0)([+#])?$/;</span>
+  private static readonly <span class="cstat-no" title="statement not covered">DROP_PATTERN = /^([PNBRQK])@([a-h][1-8])([+#])?$/;</span>
+  private static readonly <span class="cstat-no" title="statement not covered">STANDARD_MOVE_PATTERN = /^([NBRQK])([a-h])?([1-8])?x?([a-h][1-8])(?:=([NBRQK]))?([+#])?$/;</span>
+  private static readonly <span class="cstat-no" title="statement not covered">PAWN_MOVE_PATTERN = /^([a-h])?x?([a-h][1-8])(?:=([NBRQK]))?([+#])?$/;</span>
 &nbsp;
   /**
    * Parses a SAN string into a Move object
    */
-<span class="fstat-no" title="function not covered" >  static </span>parseSAN(
+<span class="fstat-no" title="function not covered">  static </span>parseSAN(
     san: string,
     board: Board,
     activeColor: Color
   ): Move | null {
     // Clean the input
-<span class="cstat-no" title="statement not covered" >    san = san.trim().replace(/[!?]+/g, '');</span>
+<span class="cstat-no" title="statement not covered">    san = san.trim().replace(/[!?]+/g, '');</span>
 &nbsp;
     // Try castling
-    const castlingMatch = <span class="cstat-no" title="statement not covered" >san.match(this.CASTLING_PATTERN);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (castlingMatch) {</span>
-<span class="cstat-no" title="statement not covered" >      return this.parseCastling(castlingMatch[1], activeColor);</span>
+    const castlingMatch = <span class="cstat-no" title="statement not covered">san.match(this.CASTLING_PATTERN);</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (castlingMatch) {</span>
+<span class="cstat-no"
+      title="statement not covered">      return this.parseCastling(castlingMatch[1], activeColor);</span>
     }
 &nbsp;
     // Try drop move (Crazyhouse)
-    const dropMatch = <span class="cstat-no" title="statement not covered" >san.match(this.DROP_PATTERN);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (dropMatch) {</span>
-<span class="cstat-no" title="statement not covered" >      return this.parseDrop(dropMatch, activeColor);</span>
+    const dropMatch = <span class="cstat-no" title="statement not covered">san.match(this.DROP_PATTERN);</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (dropMatch) {</span>
+<span class="cstat-no" title="statement not covered">      return this.parseDrop(dropMatch, activeColor);</span>
     }
 &nbsp;
     // Try standard move
-    const parsed = <span class="cstat-no" title="statement not covered" >this.parseStandardNotation(san);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!parsed) {</span>
-<span class="cstat-no" title="statement not covered" >      return null;</span>
+    const parsed = <span class="cstat-no" title="statement not covered">this.parseStandardNotation(san);</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (!parsed) {</span>
+<span class="cstat-no" title="statement not covered">      return null;</span>
     }
 &nbsp;
     // Find the actual move
-<span class="cstat-no" title="statement not covered" >    return this.resolveMove(parsed, board, activeColor);</span>
+<span class="cstat-no" title="statement not covered">    return this.resolveMove(parsed, board, activeColor);</span>
   }
 &nbsp;
   /**
    * Parses castling notation
    */
-  private <span class="fstat-no" title="function not covered" >static </span>parseCastling(
+  private <span class="fstat-no" title="function not covered">static </span>parseCastling(
     notation: string,
     color: Color
   ): Move {
-    const isKingside = <span class="cstat-no" title="statement not covered" >notation === 'O-O' || notation === '0-0';</span>
-    const row = <span class="cstat-no" title="statement not covered" >color === Color.WHITE ? '1' : '8';</span>
+    const isKingside = <span class="cstat-no"
+                             title="statement not covered">notation === 'O-O' || notation === '0-0';</span>
+    const row = <span class="cstat-no" title="statement not covered">color === Color.WHITE ? '1' : '8';</span>
     
-<span class="cstat-no" title="statement not covered" >    return new Move(</span>
+<span class="cstat-no" title="statement not covered">    return new Move(</span>
       notation,
       `e${row}`,
       isKingside ? `g${row}` : `c${row}`,
@@ -920,15 +926,15 @@ export interface ParsedMove {
   /**
    * Parses drop notation (Crazyhouse)
    */
-  private <span class="fstat-no" title="function not covered" >static </span>parseDrop(
+  private <span class="fstat-no" title="function not covered">static </span>parseDrop(
     match: RegExpMatchArray,
     color: Color
   ): Move {
-    const pieceChar = <span class="cstat-no" title="statement not covered" >match[1];</span>
-    const square = <span class="cstat-no" title="statement not covered" >match[2];</span>
-    const pieceType = <span class="cstat-no" title="statement not covered" >pieceChar.toLowerCase() as PieceType;</span>
+    const pieceChar = <span class="cstat-no" title="statement not covered">match[1];</span>
+    const square = <span class="cstat-no" title="statement not covered">match[2];</span>
+    const pieceType = <span class="cstat-no" title="statement not covered">pieceChar.toLowerCase() as PieceType;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return new Move(</span>
+<span class="cstat-no" title="statement not covered">    return new Move(</span>
       match[0],
       '@',
       square,
@@ -943,15 +949,17 @@ export interface ParsedMove {
   /**
    * Parses standard move notation
    */
-  private <span class="fstat-no" title="function not covered" >static </span>parseStandardNotation(san: string): ParsedMove | null {
+  private <span class="fstat-no" title="function not covered">static </span>parseStandardNotation(san: string): ParsedMove | null {
     // Remove check/checkmate symbols for parsing
-    const checkSymbol = <span class="cstat-no" title="statement not covered" >san.match(/([+#])$/)?.[1] as '+' | '#' | undefined;</span>
-<span class="cstat-no" title="statement not covered" >    san = san.replace(/[+#]$/, '');</span>
+    const checkSymbol = <span class="cstat-no" title="statement not covered">san.match(/([+#])$/)?.[1] as '+' | '#' | undefined;</span>
+<span class="cstat-no" title="statement not covered">    san = san.replace(/[+#]$/, '');</span>
 &nbsp;
     // Try piece move first
-    const pieceMatch = <span class="cstat-no" title="statement not covered" >san.match(this.STANDARD_MOVE_PATTERN);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (pieceMatch) {</span>
-<span class="cstat-no" title="statement not covered" >      return {</span>
+    const pieceMatch = <span class="cstat-no"
+                             title="statement not covered">san.match(this.STANDARD_MOVE_PATTERN);</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (pieceMatch) {</span>
+<span class="cstat-no" title="statement not covered">      return {</span>
         pieceType: pieceMatch[1].toLowerCase() as PieceType,
         from: this.parseDisambiguation(pieceMatch[2], pieceMatch[3]),
         to: pieceMatch[4] as Square,
@@ -962,9 +970,10 @@ export interface ParsedMove {
     }
 &nbsp;
     // Try pawn move
-    const pawnMatch = <span class="cstat-no" title="statement not covered" >san.match(this.PAWN_MOVE_PATTERN);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (pawnMatch) {</span>
-<span class="cstat-no" title="statement not covered" >      return {</span>
+    const pawnMatch = <span class="cstat-no" title="statement not covered">san.match(this.PAWN_MOVE_PATTERN);</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (pawnMatch) {</span>
+<span class="cstat-no" title="statement not covered">      return {</span>
         pieceType: PieceType.PAWN,
         from: pawnMatch[1] ? { file: pawnMatch[1].charCodeAt(0) - 'a'.charCodeAt(0) } : undefined,
         to: pawnMatch[2] as Square,
@@ -974,126 +983,151 @@ export interface ParsedMove {
       };
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return null;</span>
+<span class="cstat-no" title="statement not covered">    return null;</span>
   }
 &nbsp;
   /**
    * Parses disambiguation (file/rank hints)
    */
-  private <span class="fstat-no" title="function not covered" >static </span>parseDisambiguation(
+  private <span class="fstat-no" title="function not covered">static </span>parseDisambiguation(
     file?: string,
     rank?: string
   ): { file?: number; rank?: number } | undefined {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!file &amp;&amp; !rank) <span class="cstat-no" title="statement not covered" >return undefined;</span></span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (!file &amp;&amp; !rank) <span
+        class="cstat-no" title="statement not covered">return undefined;</span></span>
 &nbsp;
-    const result: { file?: number; rank?: number } = <span class="cstat-no" title="statement not covered" >{};</span>
+    const result: { file?: number; rank?: number } = <span class="cstat-no" title="statement not covered">{};</span>
     
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (file) {</span>
-<span class="cstat-no" title="statement not covered" >      result.file = file.charCodeAt(0) - 'a'.charCodeAt(0);</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (file) {</span>
+<span class="cstat-no" title="statement not covered">      result.file = file.charCodeAt(0) - 'a'.charCodeAt(0);</span>
     }
     
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (rank) {</span>
-<span class="cstat-no" title="statement not covered" >      result.rank = parseInt(rank) - 1;</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (rank) {</span>
+<span class="cstat-no" title="statement not covered">      result.rank = parseInt(rank) - 1;</span>
     }
     
-<span class="cstat-no" title="statement not covered" >    return result;</span>
+<span class="cstat-no" title="statement not covered">    return result;</span>
   }
 &nbsp;
   /**
    * Resolves the actual move from parsed notation
    */
-  private <span class="fstat-no" title="function not covered" >static </span>resolveMove(
+  private <span class="fstat-no" title="function not covered">static </span>resolveMove(
     parsed: ParsedMove,
     board: Board,
     activeColor: Color
   ): Move | null {
-    const possibleMoves = <span class="cstat-no" title="statement not covered" >this.findPossibleMoves(</span>
+    const possibleMoves = <span class="cstat-no" title="statement not covered">this.findPossibleMoves(</span>
       parsed,
       board,
       activeColor
     );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (possibleMoves.length === 0) {</span>
-<span class="cstat-no" title="statement not covered" >      return null;</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (possibleMoves.length === 0) {</span>
+<span class="cstat-no" title="statement not covered">      return null;</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (possibleMoves.length === 1) {</span>
-<span class="cstat-no" title="statement not covered" >      return possibleMoves[0];</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (possibleMoves.length === 1) {</span>
+<span class="cstat-no" title="statement not covered">      return possibleMoves[0];</span>
     }
 &nbsp;
     // Multiple moves possible - use disambiguation
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (parsed.from) {</span>
-      const filtered = <span class="cstat-no" title="statement not covered" >possibleMoves.filter(<span class="fstat-no" title="function not covered" >move </span>=&gt; {</span>
-        const from = <span class="cstat-no" title="statement not covered" >this.algebraicToCoords(move.from);</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!from) <span class="cstat-no" title="statement not covered" >return false;</span></span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (parsed.from) {</span>
+      const filtered = <span class="cstat-no" title="statement not covered">possibleMoves.filter(<span class="fstat-no"
+                                                                                                       title="function not covered">move </span>=&gt; {</span>
+        const from = <span class="cstat-no" title="statement not covered">this.algebraicToCoords(move.from);</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!from) <span
+        class="cstat-no" title="statement not covered">return false;</span></span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (parsed.from!.file !== undefined &amp;&amp; from.col !== parsed.from!.file) {</span>
-<span class="cstat-no" title="statement not covered" >          return false;</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (parsed.from!.file !== undefined &amp;&amp; from.col !== parsed.from!.file) {</span>
+<span class="cstat-no" title="statement not covered">          return false;</span>
         }
         
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (parsed.from!.rank !== undefined &amp;&amp; from.row !== parsed.from!.rank) {</span>
-<span class="cstat-no" title="statement not covered" >          return false;</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (parsed.from!.rank !== undefined &amp;&amp; from.row !== parsed.from!.rank) {</span>
+<span class="cstat-no" title="statement not covered">          return false;</span>
         }
         
-<span class="cstat-no" title="statement not covered" >        return true;</span>
+<span class="cstat-no" title="statement not covered">        return true;</span>
       });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (filtered.length === 1) {</span>
-<span class="cstat-no" title="statement not covered" >        return filtered[0];</span>
+<span class="cstat-no" title="statement not covered">      <span class="missing-if-branch"
+                                                                 title="if path not taken">I</span>if (filtered.length === 1) {</span>
+<span class="cstat-no" title="statement not covered">        return filtered[0];</span>
       }
     }
 &nbsp;
     // Still ambiguous
-<span class="cstat-no" title="statement not covered" >    return null;</span>
+<span class="cstat-no" title="statement not covered">    return null;</span>
   }
 &nbsp;
   /**
    * Finds all possible moves matching the parsed notation
    */
-  private <span class="fstat-no" title="function not covered" >static </span>findPossibleMoves(
+  private <span class="fstat-no" title="function not covered">static </span>findPossibleMoves(
     parsed: ParsedMove,
     board: Board,
     activeColor: Color
   ): Move[] {
-    const moves: Move[] = <span class="cstat-no" title="statement not covered" >[];</span>
-    const toCoords = <span class="cstat-no" title="statement not covered" >this.algebraicToCoords(parsed.to);</span>
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (!toCoords) <span class="cstat-no" title="statement not covered" >return moves;</span></span>
+    const moves: Move[] = <span class="cstat-no" title="statement not covered">[];</span>
+    const toCoords = <span class="cstat-no" title="statement not covered">this.algebraicToCoords(parsed.to);</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (!toCoords) <span
+        class="cstat-no" title="statement not covered">return moves;</span></span>
 &nbsp;
     // Search all squares for pieces that could make this move
-<span class="cstat-no" title="statement not covered" >    for (let row = <span class="cstat-no" title="statement not covered" >0;</span> row &lt; 8; row++) {</span>
-<span class="cstat-no" title="statement not covered" >      for (let col = <span class="cstat-no" title="statement not covered" >0;</span> col &lt; 8; col++) {</span>
-        const piece = <span class="cstat-no" title="statement not covered" >board[row][col];</span>
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (!piece || piece.color !== activeColor || piece.type !== parsed.pieceType) {</span>
-<span class="cstat-no" title="statement not covered" >          continue;</span>
+<span class="cstat-no" title="statement not covered">    for (let row = <span class="cstat-no"
+                                                                              title="statement not covered">0;</span> row &lt; 8; row++) {</span>
+<span class="cstat-no" title="statement not covered">      for (let col = <span class="cstat-no"
+                                                                                title="statement not covered">0;</span> col &lt; 8; col++) {</span>
+        const piece = <span class="cstat-no" title="statement not covered">board[row][col];</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (!piece || piece.color !== activeColor || piece.type !== parsed.pieceType) {</span>
+<span class="cstat-no" title="statement not covered">          continue;</span>
         }
 &nbsp;
-        const from = <span class="cstat-no" title="statement not covered" >this.coordsToAlgebraic({ row, col });</span>
+        const from = <span class="cstat-no" title="statement not covered">this.coordsToAlgebraic({ row, col });</span>
         
         // Check if this piece can move to the target square
-<span class="cstat-no" title="statement not covered" >        <span class="missing-if-branch" title="if path not taken" >I</span>if (this.canPieceMoveToSquare(</span>
+<span class="cstat-no" title="statement not covered">        <span class="missing-if-branch"
+                                                                   title="if path not taken">I</span>if (this.canPieceMoveToSquare(</span>
           board,
           { row, col },
           toCoords,
           piece,
           parsed.capture || false
         )) {
-          const capturedPiece = <span class="cstat-no" title="statement not covered" >board[toCoords.row][toCoords.col];</span>
+          const capturedPiece = <span class="cstat-no"
+                                      title="statement not covered">board[toCoords.row][toCoords.col];</span>
           
           // Handle special pawn moves
-          let isEnPassant = <span class="cstat-no" title="statement not covered" >false;</span>
-<span class="cstat-no" title="statement not covered" >          <span class="missing-if-branch" title="if path not taken" >I</span>if (piece.type === PieceType.PAWN &amp;&amp; parsed.capture &amp;&amp; !capturedPiece) {</span>
+          let isEnPassant = <span class="cstat-no" title="statement not covered">false;</span>
+<span class="cstat-no" title="statement not covered">          <span class="missing-if-branch"
+                                                                     title="if path not taken">I</span>if (piece.type === PieceType.PAWN &amp;&amp; parsed.capture &amp;&amp; !capturedPiece) {</span>
             // Check if this is en passant by verifying the en passant target
-            const targetCoords = <span class="cstat-no" title="statement not covered" >this.algebraicToCoords(parsed.to);</span>
-<span class="cstat-no" title="statement not covered" >            <span class="missing-if-branch" title="if path not taken" >I</span>if (targetCoords) {</span>
+            const targetCoords = <span class="cstat-no"
+                                       title="statement not covered">this.algebraicToCoords(parsed.to);</span>
+<span class="cstat-no" title="statement not covered">            <span class="missing-if-branch"
+                                                                       title="if path not taken">I</span>if (targetCoords) {</span>
               // For en passant, the pawn moves diagonally to an empty square
-              const fromCoords = <span class="cstat-no" title="statement not covered" >this.algebraicToCoords(from);</span>
-<span class="cstat-no" title="statement not covered" >              <span class="missing-if-branch" title="if path not taken" >I</span>if (fromCoords &amp;&amp; Math.abs(fromCoords.col - targetCoords.col) === 1) {</span>
-<span class="cstat-no" title="statement not covered" >                isEnPassant = true;</span>
+              const fromCoords = <span class="cstat-no"
+                                       title="statement not covered">this.algebraicToCoords(from);</span>
+<span class="cstat-no" title="statement not covered">              <span class="missing-if-branch"
+                                                                         title="if path not taken">I</span>if (fromCoords &amp;&amp; Math.abs(fromCoords.col - targetCoords.col) === 1) {</span>
+<span class="cstat-no" title="statement not covered">                isEnPassant = true;</span>
               }
             }
           }
 &nbsp;
-          const move = <span class="cstat-no" title="statement not covered" >new Move(</span>
+          const move = <span class="cstat-no" title="statement not covered">new Move(</span>
             parsed.pieceType === PieceType.PAWN 
               ? this.generatePawnSAN(from, parsed.to, parsed.capture, parsed.promotion)
               : this.generatePieceSAN(parsed.pieceType, from, parsed.to, parsed.capture),
@@ -1104,18 +1138,18 @@ export interface ParsedMove {
             isEnPassant
           );
           
-<span class="cstat-no" title="statement not covered" >          moves.push(move);</span>
+<span class="cstat-no" title="statement not covered">          moves.push(move);</span>
         }
       }
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return moves;</span>
+<span class="cstat-no" title="statement not covered">    return moves;</span>
   }
 &nbsp;
   /**
    * Checks if a piece can move to a square
    */
-  private <span class="fstat-no" title="function not covered" >static </span>canPieceMoveToSquare(
+  private <span class="fstat-no" title="function not covered">static </span>canPieceMoveToSquare(
     board: Board,
     from: Coordinates,
     to: Coordinates,
@@ -1123,7 +1157,7 @@ export interface ParsedMove {
     isCapture: boolean
   ): boolean {
     // Generate all possible moves for the piece
-    const context = <span class="cstat-no" title="statement not covered" >{</span>
+    const context = <span class="cstat-no" title="statement not covered">{</span>
       board,
       activeColor: piece.color,
       castlingRights: { K: false, Q: false, k: false, q: false },
@@ -1131,104 +1165,113 @@ export interface ParsedMove {
       variant: 'classic' as any
     };
 &nbsp;
-    const possibleMoves = <span class="cstat-no" title="statement not covered" >MoveGenerator.generatePieceMoves(context, from, piece);</span>
-    const toSquare = <span class="cstat-no" title="statement not covered" >this.coordsToAlgebraic(to);</span>
+    const possibleMoves = <span class="cstat-no" title="statement not covered">MoveGenerator.generatePieceMoves(context, from, piece);</span>
+    const toSquare = <span class="cstat-no" title="statement not covered">this.coordsToAlgebraic(to);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return possibleMoves.some(<span class="fstat-no" title="function not covered" >move </span>=&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      <span class="missing-if-branch" title="if path not taken" >I</span>if (move.to !== toSquare) <span class="cstat-no" title="statement not covered" >return false;</span></span>
+<span class="cstat-no" title="statement not covered">    return possibleMoves.some(<span class="fstat-no"
+                                                                                         title="function not covered">move </span>=&gt; {</span>
+<span class="cstat-no" title="statement not covered">      <span class="missing-if-branch"
+                                                                 title="if path not taken">I</span>if (move.to !== toSquare) <span
+        class="cstat-no" title="statement not covered">return false;</span></span>
       
-      const targetPiece = <span class="cstat-no" title="statement not covered" >board[to.row][to.col];</span>
-      const moveIsCapture = <span class="cstat-no" title="statement not covered" >targetPiece !== null;</span>
+      const targetPiece = <span class="cstat-no" title="statement not covered">board[to.row][to.col];</span>
+      const moveIsCapture = <span class="cstat-no" title="statement not covered">targetPiece !== null;</span>
       
-<span class="cstat-no" title="statement not covered" >      return moveIsCapture === isCapture;</span>
+<span class="cstat-no" title="statement not covered">      return moveIsCapture === isCapture;</span>
     });
   }
 &nbsp;
   /**
    * Generates SAN for a pawn move
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generatePawnSAN(
+  private <span class="fstat-no" title="function not covered">static </span>generatePawnSAN(
     from: string,
     to: string,
     capture?: boolean,
     promotion?: PieceType
   ): string {
-    let san = <span class="cstat-no" title="statement not covered" >'';</span>
+    let san = <span class="cstat-no" title="statement not covered">'';</span>
     
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (capture) {</span>
-<span class="cstat-no" title="statement not covered" >      san += from[0] + 'x';</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (capture) {</span>
+<span class="cstat-no" title="statement not covered">      san += from[0] + 'x';</span>
     }
     
-<span class="cstat-no" title="statement not covered" >    san += to;</span>
+<span class="cstat-no" title="statement not covered">    san += to;</span>
     
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (promotion) {</span>
-<span class="cstat-no" title="statement not covered" >      san += '=' + promotion.toUpperCase();</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (promotion) {</span>
+<span class="cstat-no" title="statement not covered">      san += '=' + promotion.toUpperCase();</span>
     }
     
-<span class="cstat-no" title="statement not covered" >    return san;</span>
+<span class="cstat-no" title="statement not covered">    return san;</span>
   }
 &nbsp;
   /**
    * Generates SAN for a piece move
    */
-  private <span class="fstat-no" title="function not covered" >static </span>generatePieceSAN(
+  private <span class="fstat-no" title="function not covered">static </span>generatePieceSAN(
     pieceType: PieceType,
     from: string,
     to: string,
     capture?: boolean
   ): string {
-    let san = <span class="cstat-no" title="statement not covered" >pieceType.toUpperCase();</span>
+    let san = <span class="cstat-no" title="statement not covered">pieceType.toUpperCase();</span>
     
     // TODO: Add disambiguation if needed
     
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (capture) {</span>
-<span class="cstat-no" title="statement not covered" >      san += 'x';</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (capture) {</span>
+<span class="cstat-no" title="statement not covered">      san += 'x';</span>
     }
     
-<span class="cstat-no" title="statement not covered" >    san += to;</span>
+<span class="cstat-no" title="statement not covered">    san += to;</span>
     
-<span class="cstat-no" title="statement not covered" >    return san;</span>
+<span class="cstat-no" title="statement not covered">    return san;</span>
   }
 &nbsp;
   /**
    * Converts algebraic notation to coordinates
    */
-  private <span class="fstat-no" title="function not covered" >static </span>algebraicToCoords(square: string): Coordinates | null {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (square.length !== 2) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+  private <span class="fstat-no" title="function not covered">static </span>algebraicToCoords(square: string): Coordinates | null {
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (square.length !== 2) <span
+        class="cstat-no" title="statement not covered">return null;</span></span>
     
-    const col = <span class="cstat-no" title="statement not covered" >square.charCodeAt(0) - 'a'.charCodeAt(0);</span>
-    const row = <span class="cstat-no" title="statement not covered" >parseInt(square[1]) - 1;</span>
+    const col = <span class="cstat-no" title="statement not covered">square.charCodeAt(0) - 'a'.charCodeAt(0);</span>
+    const row = <span class="cstat-no" title="statement not covered">parseInt(square[1]) - 1;</span>
     
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (col &lt; 0 || col &gt; 7 || row &lt; 0 || row &gt; 7) {</span>
-<span class="cstat-no" title="statement not covered" >      return null;</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (col &lt; 0 || col &gt; 7 || row &lt; 0 || row &gt; 7) {</span>
+<span class="cstat-no" title="statement not covered">      return null;</span>
     }
     
-<span class="cstat-no" title="statement not covered" >    return { row, col };</span>
+<span class="cstat-no" title="statement not covered">    return { row, col };</span>
   }
 &nbsp;
   /**
    * Converts coordinates to algebraic notation
    */
-  private <span class="fstat-no" title="function not covered" >static </span>coordsToAlgebraic(coords: Coordinates): string {
-<span class="cstat-no" title="statement not covered" >    return String.fromCharCode('a'.charCodeAt(0) + coords.col) + (coords.row + 1);</span>
+  private <span class="fstat-no" title="function not covered">static </span>coordsToAlgebraic(coords: Coordinates): string {
+<span class="cstat-no" title="statement not covered">    return String.fromCharCode('a'.charCodeAt(0) + coords.col) + (coords.row + 1);</span>
   }
 }</pre></td></tr></table></pre>
 
-                <div class='push'></div><!-- for sticky footer -->
-            </div><!-- /wrapper -->
-            <div class='footer quiet pad2 space-top1 center small'>
-                Code coverage generated by
-                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-29T18:52:43.591Z
-            </div>
-        <script src="../prettify.js"></script>
-        <script>
-            window.onload = function () {
-                prettyPrint();
-            };
-        </script>
-        <script src="../sorter.js"></script>
-        <script src="../block-navigation.js"></script>
-    </body>
+    <div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+    Code coverage generated by
+    <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+    at 2025-06-29T18:52:43.591Z
+</div>
+<script src="../prettify.js"></script>
+<script>
+    window.onload = function () {
+        prettyPrint();
+    };
+</script>
+<script src="../sorter.js"></script>
+<script src="../block-navigation.js"></script>
+</body>
 </html>
     

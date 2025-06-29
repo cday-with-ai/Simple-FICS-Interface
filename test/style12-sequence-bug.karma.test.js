@@ -3,9 +3,9 @@
  * Based on the logs provided by the user
  */
 
-import { onStyle12, gameState, Perspective } from '../scripts/chess.js';
-import { ChessBoard, Variant } from '../scripts/ChessBoard.js';
-import { style12ToFen } from '../scripts/utils.js';
+import {onStyle12, gameState, Perspective} from '../scripts/chess.js';
+import {ChessBoard, Variant} from '../scripts/ChessBoard.js';
+import {style12ToFen} from '../scripts/utils.js';
 
 // Try to import updateBoardFromStyle12 directly if possible
 // Note: This might not work if it's not exported, but let's try
@@ -18,8 +18,8 @@ describe('Style12 Sequence Bug Reproduction', () => {
         gameState.fen = '';
         gameState.lastMovePretty = '';
         gameState.gameNumber = 0;
-        gameState.whitePlayer = { name: '', rating: '' };
-        gameState.blackPlayer = { name: '', rating: '' };
+        gameState.whitePlayer = {name: '', rating: ''};
+        gameState.blackPlayer = {name: '', rating: ''};
         gameState.relation = 0;
         gameState.perspective = null;
         gameState.isWhitesMove = true;

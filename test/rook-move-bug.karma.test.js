@@ -1,4 +1,4 @@
-import { ChessBoard, Variant } from '../scripts/ChessBoard.js';
+import {ChessBoard, Variant} from '../scripts/ChessBoard.js';
 
 describe('Rook Movement Bug - Classical Chess', () => {
     let board;

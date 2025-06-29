@@ -1,58 +1,58 @@
-
 <!doctype html>
 <html lang="en">
 
 <head>
     <title>Code coverage report for models/FICSStore.ts</title>
-    <meta charset="utf-8" />
-    <link rel="stylesheet" href="../prettify.css" />
-    <link rel="stylesheet" href="../base.css" />
-    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="../prettify.css"/>
+    <link rel="stylesheet" href="../base.css"/>
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <style type='text/css'>
         .coverage-summary .sorter {
             background-image: url(../sort-arrow-sprite.png);
         }
     </style>
 </head>
-    
+
 <body>
 <div class='wrapper'>
     <div class='pad1'>
         <h1><a href="../index.html">All files</a> / <a href="index.html">models</a> FICSStore.ts</h1>
         <div class='clearfix'>
-            
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
                 <span class='fraction'>0/52</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
                 <span class='fraction'>0/7</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
                 <span class='fraction'>0/17</span>
             </div>
-        
-            
+
+
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
                 <span class='fraction'>0/52</span>
             </div>
-        
-            
+
+
         </div>
         <p class="quiet">
-            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for
+            the previous block.
         </p>
         <template id="filterTemplate">
             <div class="quiet">
@@ -172,7 +172,8 @@
 <a name='L107'></a><a href='#L107'>107</a>
 <a name='L108'></a><a href='#L108'>108</a>
 <a name='L109'></a><a href='#L109'>109</a>
-<a name='L110'></a><a href='#L110'>110</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L110'></a><a href='#L110'>110</a></td><td class="line-coverage quiet"><span
+        class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -281,7 +282,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span class="cstat-no" title="statement not covered" >import { makeAutoObservable, runInAction } from 'mobx';</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js"><span
+        class="cstat-no" title="statement not covered">import { makeAutoObservable, runInAction } from 'mobx';</span>
 &nbsp;
 export interface FICSUser {
   handle: string;
@@ -289,124 +291,138 @@ export interface FICSUser {
   isGuest: boolean;
 }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >export class F</span>ICSStore {
-<span class="cstat-no" title="statement not covered" >  connected = false;</span>
-<span class="cstat-no" title="statement not covered" >  connecting = false;</span>
-<span class="cstat-no" title="statement not covered" >  user: FICSUser | null = null;</span>
-<span class="cstat-no" title="statement not covered" >  seekList: any[] = [];</span>
-<span class="cstat-no" title="statement not covered" >  gameList: any[] = [];</span>
-<span class="cstat-no" title="statement not covered" >  error: string | null = null;</span>
+<span class="cstat-no" title="statement not covered">export class F</span>ICSStore {
+<span class="cstat-no" title="statement not covered">  connected = false;</span>
+<span class="cstat-no" title="statement not covered">  connecting = false;</span>
+<span class="cstat-no" title="statement not covered">  user: FICSUser | null = null;</span>
+<span class="cstat-no" title="statement not covered">  seekList: any[] = [];</span>
+<span class="cstat-no" title="statement not covered">  gameList: any[] = [];</span>
+<span class="cstat-no" title="statement not covered">  error: string | null = null;</span>
 &nbsp;
-  private <span class="cstat-no" title="statement not covered" >ws: WebSocket | null = null;</span>
-  private <span class="cstat-no" title="statement not covered" >reconnectTimeout: NodeJS.Timeout | null = null;</span>
+  private <span class="cstat-no" title="statement not covered">ws: WebSocket | null = null;</span>
+  private <span class="cstat-no" title="statement not covered">reconnectTimeout: NodeJS.Timeout | null = null;</span>
 &nbsp;
-<span class="fstat-no" title="function not covered" >  constructor() {</span>
-<span class="cstat-no" title="statement not covered" >    makeAutoObservable(this);</span>
+<span class="fstat-no" title="function not covered">  constructor() {</span>
+<span class="cstat-no" title="statement not covered">    makeAutoObservable(this);</span>
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  connect(</span>credentials?: { username: string; password: string }) {
-<span class="cstat-no" title="statement not covered" >    this.connecting = true;</span>
-<span class="cstat-no" title="statement not covered" >    this.error = null;</span>
+<span class="fstat-no" title="function not covered">  connect(</span>credentials?: { username: string; password: string }) {
+<span class="cstat-no" title="statement not covered">    this.connecting = true;</span>
+<span class="cstat-no" title="statement not covered">    this.error = null;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    try {</span>
-<span class="cstat-no" title="statement not covered" >      this.ws = new WebSocket('wss://www.freechess.org:5001');</span>
+<span class="cstat-no" title="statement not covered">    try {</span>
+<span class="cstat-no"
+      title="statement not covered">      this.ws = new WebSocket('wss://www.freechess.org:5001');</span>
       
-<span class="cstat-no" title="statement not covered" >      this.ws.onopen = <span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        runInAction(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          this.connected = true;</span>
-<span class="cstat-no" title="statement not covered" >          this.connecting = false;</span>
+<span class="cstat-no" title="statement not covered">      this.ws.onopen = <span class="fstat-no"
+                                                                                  title="function not covered">() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered">        runInAction(<span class="fstat-no"
+                                                                               title="function not covered">() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered">          this.connected = true;</span>
+<span class="cstat-no" title="statement not covered">          this.connecting = false;</span>
         });
         
-<span class="cstat-no" title="statement not covered" >        if (credentials) {</span>
-<span class="cstat-no" title="statement not covered" >          this.login(credentials.username, credentials.password);</span>
+<span class="cstat-no" title="statement not covered">        if (credentials) {</span>
+<span class="cstat-no"
+      title="statement not covered">          this.login(credentials.username, credentials.password);</span>
         } else {
-<span class="cstat-no" title="statement not covered" >          this.loginAsGuest();</span>
+<span class="cstat-no" title="statement not covered">          this.loginAsGuest();</span>
         }
       };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      this.ws.onmessage = <span class="fstat-no" title="function not covered" >(e</span>vent) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        this.handleMessage(event.data);</span>
+<span class="cstat-no" title="statement not covered">      this.ws.onmessage = <span class="fstat-no"
+                                                                                     title="function not covered">(e</span>vent) =&gt; {</span>
+<span class="cstat-no" title="statement not covered">        this.handleMessage(event.data);</span>
       };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      this.ws.onclose = <span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        runInAction(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          this.connected = false;</span>
-<span class="cstat-no" title="statement not covered" >          this.connecting = false;</span>
+<span class="cstat-no" title="statement not covered">      this.ws.onclose = <span class="fstat-no"
+                                                                                   title="function not covered">() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered">        runInAction(<span class="fstat-no"
+                                                                               title="function not covered">() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered">          this.connected = false;</span>
+<span class="cstat-no" title="statement not covered">          this.connecting = false;</span>
         });
-<span class="cstat-no" title="statement not covered" >        this.scheduleReconnect();</span>
+<span class="cstat-no" title="statement not covered">        this.scheduleReconnect();</span>
       };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      this.ws.onerror = <span class="fstat-no" title="function not covered" >(e</span>rror) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        runInAction(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          this.error = 'Connection error';</span>
-<span class="cstat-no" title="statement not covered" >          this.connecting = false;</span>
+<span class="cstat-no" title="statement not covered">      this.ws.onerror = <span class="fstat-no"
+                                                                                   title="function not covered">(e</span>rror) =&gt; {</span>
+<span class="cstat-no" title="statement not covered">        runInAction(<span class="fstat-no"
+                                                                               title="function not covered">() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered">          this.error = 'Connection error';</span>
+<span class="cstat-no" title="statement not covered">          this.connecting = false;</span>
         });
       };
     } catch (error) {
-<span class="cstat-no" title="statement not covered" >      runInAction(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        this.error = 'Failed to connect';</span>
-<span class="cstat-no" title="statement not covered" >        this.connecting = false;</span>
+<span class="cstat-no" title="statement not covered">      runInAction(<span class="fstat-no"
+                                                                             title="function not covered">() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered">        this.error = 'Failed to connect';</span>
+<span class="cstat-no" title="statement not covered">        this.connecting = false;</span>
       });
     }
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  disconnect(</span>) {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (this.reconnectTimeout) {</span>
-<span class="cstat-no" title="statement not covered" >      clearTimeout(this.reconnectTimeout);</span>
-<span class="cstat-no" title="statement not covered" >      this.reconnectTimeout = null;</span>
+<span class="fstat-no" title="function not covered">  disconnect(</span>) {
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (this.reconnectTimeout) {</span>
+<span class="cstat-no" title="statement not covered">      clearTimeout(this.reconnectTimeout);</span>
+<span class="cstat-no" title="statement not covered">      this.reconnectTimeout = null;</span>
     }
     
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (this.ws) {</span>
-<span class="cstat-no" title="statement not covered" >      this.ws.close();</span>
-<span class="cstat-no" title="statement not covered" >      this.ws = null;</span>
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (this.ws) {</span>
+<span class="cstat-no" title="statement not covered">      this.ws.close();</span>
+<span class="cstat-no" title="statement not covered">      this.ws = null;</span>
     }
     
-<span class="cstat-no" title="statement not covered" >    this.connected = false;</span>
-<span class="cstat-no" title="statement not covered" >    this.user = null;</span>
+<span class="cstat-no" title="statement not covered">    this.connected = false;</span>
+<span class="cstat-no" title="statement not covered">    this.user = null;</span>
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  sendCommand(</span>command: string) {
-<span class="cstat-no" title="statement not covered" >    <span class="missing-if-branch" title="if path not taken" >I</span>if (this.ws &amp;&amp; this.connected) {</span>
-<span class="cstat-no" title="statement not covered" >      this.ws.send(command + '\\n');</span>
+<span class="fstat-no" title="function not covered">  sendCommand(</span>command: string) {
+<span class="cstat-no" title="statement not covered">    <span class="missing-if-branch"
+                                                               title="if path not taken">I</span>if (this.ws &amp;&amp; this.connected) {</span>
+<span class="cstat-no" title="statement not covered">      this.ws.send(command + '\\n');</span>
     }
   }
 &nbsp;
-  private <span class="fstat-no" title="function not covered" >login(</span>username: string, password: string) {
-<span class="cstat-no" title="statement not covered" >    this.sendCommand(username);</span>
-<span class="cstat-no" title="statement not covered" >    this.sendCommand(password);</span>
+  private <span class="fstat-no" title="function not covered">login(</span>username: string, password: string) {
+<span class="cstat-no" title="statement not covered">    this.sendCommand(username);</span>
+<span class="cstat-no" title="statement not covered">    this.sendCommand(password);</span>
   }
 &nbsp;
-  private <span class="fstat-no" title="function not covered" >loginAsGuest(</span>) {
-<span class="cstat-no" title="statement not covered" >    this.sendCommand('guest');</span>
+  private <span class="fstat-no" title="function not covered">loginAsGuest(</span>) {
+<span class="cstat-no" title="statement not covered">    this.sendCommand('guest');</span>
   }
 &nbsp;
-  private <span class="fstat-no" title="function not covered" >handleMessage(</span>data: string) {
+  private <span class="fstat-no" title="function not covered">handleMessage(</span>data: string) {
     // Message parsing logic will be migrated from existing code
-<span class="cstat-no" title="statement not covered" >    console.log('FICS message:', data);</span>
+<span class="cstat-no" title="statement not covered">    console.log('FICS message:', data);</span>
   }
 &nbsp;
-  private <span class="fstat-no" title="function not covered" >scheduleReconnect(</span>) {
-<span class="cstat-no" title="statement not covered" >    this.reconnectTimeout = setTimeout(<span class="fstat-no" title="function not covered" >() =</span>&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      this.connect();</span>
+  private <span class="fstat-no" title="function not covered">scheduleReconnect(</span>) {
+<span class="cstat-no" title="statement not covered">    this.reconnectTimeout = setTimeout(<span class="fstat-no"
+                                                                                                  title="function not covered">() =</span>&gt; {</span>
+<span class="cstat-no" title="statement not covered">      this.connect();</span>
     }, 5000);
   }
 }</pre></td></tr></table></pre>
 
-                <div class='push'></div><!-- for sticky footer -->
-            </div><!-- /wrapper -->
-            <div class='footer quiet pad2 space-top1 center small'>
-                Code coverage generated by
-                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-06-29T18:52:43.591Z
-            </div>
-        <script src="../prettify.js"></script>
-        <script>
-            window.onload = function () {
-                prettyPrint();
-            };
-        </script>
-        <script src="../sorter.js"></script>
-        <script src="../block-navigation.js"></script>
-    </body>
+    <div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+    Code coverage generated by
+    <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+    at 2025-06-29T18:52:43.591Z
+</div>
+<script src="../prettify.js"></script>
+<script>
+    window.onload = function () {
+        prettyPrint();
+    };
+</script>
+<script src="../sorter.js"></script>
+<script src="../block-navigation.js"></script>
+</body>
 </html>
     
