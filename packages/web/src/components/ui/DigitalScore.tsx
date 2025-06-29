@@ -2,40 +2,40 @@ import React from 'react';
 import styled from 'styled-components';
 
 const ScoreContainer = styled.div<{ size?: 'small' | 'medium' | 'large' }>`
-  font-family: ${({theme}) => theme.typography.fontFamilyDigital};
-  font-weight: normal;
-  letter-spacing: 0.05em;
-  font-variant-numeric: tabular-nums;
-  color: ${({theme}) => theme.colors.text};
-  
-  ${({size}) => {
-    switch (size) {
-        case 'small':
-            return `font-size: 12px;`;
-        case 'large':
-            return `font-size: 20px;`;
-        case 'medium':
-        default:
-            return `font-size: 16px;`;
-    }
-}}
+    font-family: ${({theme}) => theme.typography.fontFamilyDigital};
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    font-variant-numeric: tabular-nums;
+    color: ${({theme}) => theme.colors.text};
+
+    ${({size}) => {
+        switch (size) {
+            case 'small':
+                return `font-size: 12px;`;
+            case 'large':
+                return `font-size: 20px;`;
+            case 'medium':
+            default:
+                return `font-size: 16px;`;
+        }
+    }}
 `;
 
 const ScoreDisplay = styled.span<{ $isPositive?: boolean; $isNegative?: boolean }>`
-  padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
-  background: ${({theme}) => theme.colors.backgroundSecondary};
-  border: 1px solid ${({theme}) => theme.colors.border};
-  border-radius: 4px;
-  min-width: 60px;
-  text-align: center;
-  display: inline-block;
-  
-  ${({$isPositive, theme}) => $isPositive && `
+    padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
+    background: ${({theme}) => theme.colors.backgroundSecondary};
+    border: 1px solid ${({theme}) => theme.colors.border};
+    border-radius: 4px;
+    min-width: 60px;
+    text-align: center;
+    display: inline-block;
+
+    ${({$isPositive, theme}) => $isPositive && `
     color: ${theme.colors.success};
     border-color: ${theme.colors.success};
   `}
-  
-  ${({$isNegative, theme}) => $isNegative && `
+
+    ${({$isNegative, theme}) => $isNegative && `
     color: ${theme.colors.error};
     border-color: ${theme.colors.error};
   `}
@@ -102,35 +102,35 @@ export const DigitalScore: React.FC<DigitalScoreProps> = ({
 
 // Evaluation bar that shows score visually
 const EvaluationBarContainer = styled.div`
-  width: 100%;
-  height: 20px;
-  background: ${({theme}) => theme.colors.backgroundSecondary};
-  border: 1px solid ${({theme}) => theme.colors.border};
-  border-radius: 10px;
-  overflow: hidden;
-  position: relative;
-  display: flex;
-  align-items: center;
+    width: 100%;
+    height: 20px;
+    background: ${({theme}) => theme.colors.backgroundSecondary};
+    border: 1px solid ${({theme}) => theme.colors.border};
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
 `;
 
 const EvaluationFill = styled.div<{ $percentage: number }>`
-  height: 100%;
-  background: ${({theme, $percentage}) =>
-    $percentage > 50 ? theme.colors.success : theme.colors.error};
-  width: ${({$percentage}) => $percentage}%;
-  transition: ${({theme}) => `width ${theme.transitions.normal}`};
+    height: 100%;
+    background: ${({theme, $percentage}) =>
+            $percentage > 50 ? theme.colors.success : theme.colors.error};
+    width: ${({$percentage}) => $percentage}%;
+    transition: ${({theme}) => `width ${theme.transitions.normal}`};
 `;
 
 const EvaluationText = styled.div`
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  font-family: ${({theme}) => theme.typography.fontFamilyDigital};
-  font-size: 12px;
-  color: ${({theme}) => theme.colors.text};
-  text-shadow: 0 0 2px ${({theme}) => theme.colors.background};
-  font-weight: bold;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-family: ${({theme}) => theme.typography.fontFamilyDigital};
+    font-size: 12px;
+    color: ${({theme}) => theme.colors.text};
+    text-shadow: 0 0 2px ${({theme}) => theme.colors.background};
+    font-weight: bold;
 `;
 
 interface EvaluationBarProps {

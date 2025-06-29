@@ -11,7 +11,7 @@ const AppContainer = styled.div<{ isTransitioning: boolean }>`
     flex-direction: column;
     overflow: hidden;
     transition: ${({isTransitioning, theme}) =>
-            isTransitioning ? `all ${theme.transitions.normal}` : 'none'};
+    isTransitioning ? `all ${theme.transitions.normal}` : 'none'};
 `;
 
 // Main content wrapper that switches between layouts
@@ -24,16 +24,16 @@ const MainContent = styled.main<{
     overflow: hidden;
 
     ${({activeLayout, isCompactMode}) => {
-        if (activeLayout === 'portrait' || isCompactMode) {
-            return css`
+    if (activeLayout === 'portrait' || isCompactMode) {
+        return css`
                 flex-direction: column;
             `;
-        } else {
-            return css`
+    } else {
+        return css`
                 flex-direction: row;
             `;
-        }
-    }}
+    }
+}}
 `;
 
 // Chess board area
@@ -47,20 +47,20 @@ const ChessBoardArea = styled.div<{
     background: ${({theme}) => theme.colors.background};
 
     ${({activeLayout, isCompactMode}) => {
-        if (activeLayout === 'portrait' || isCompactMode) {
-            return css`
+    if (activeLayout === 'portrait' || isCompactMode) {
+        return css`
                 flex: 1;
                 width: 100%;
                 max-height: 60vh;
             `;
-        } else {
-            return css`
+    } else {
+        return css`
                 flex: 1;
                 height: 100%;
                 min-width: 400px;
             `;
-        }
-    }}
+    }
+}}
 `;
 
 // Sidebar/panel area
@@ -75,17 +75,17 @@ const PanelArea = styled.aside<{
     overflow: hidden;
 
     ${({activeLayout, isCompactMode, showSidebar}) => {
-        if (!showSidebar) {
-            return css`
+    if (!showSidebar) {
+        return css`
                 width: 0;
                 height: 0;
                 opacity: 0;
                 border: none;
             `;
-        }
+    }
 
-        if (activeLayout === 'portrait' || isCompactMode) {
-            return css`
+    if (activeLayout === 'portrait' || isCompactMode) {
+        return css`
                 width: 100%;
                 height: 40vh;
                 border-top: 1px solid ${({theme}) => theme.colors.border};
@@ -93,8 +93,8 @@ const PanelArea = styled.aside<{
                 border-right: none;
                 border-bottom: none;
             `;
-        } else {
-            return css`
+    } else {
+        return css`
                 width: 350px;
                 height: 100%;
                 border-left: 1px solid ${({theme}) => theme.colors.border};
@@ -102,8 +102,8 @@ const PanelArea = styled.aside<{
                 border-right: none;
                 border-bottom: none;
             `;
-        }
-    }}
+    }
+}}
 `;
 
 // Responsive grid for layout primitives
@@ -195,60 +195,60 @@ export const BreakpointContainer = styled.div<{
     hideOn?: ('mobile' | 'tablet' | 'desktop')[];
 }>`
     ${({showOn, hideOn, theme}) => {
-        let styles = '';
+    let styles = '';
 
-        if (hideOn?.includes('mobile')) {
-            styles += `
+    if (hideOn?.includes('mobile')) {
+        styles += `
         @media (max-width: ${theme.breakpoints.tablet}) {
           display: none;
         }
       `;
-        }
+    }
 
-        if (hideOn?.includes('tablet')) {
-            styles += `
+    if (hideOn?.includes('tablet')) {
+        styles += `
         @media (min-width: ${theme.breakpoints.tablet}) and (max-width: ${theme.breakpoints.desktop}) {
           display: none;
         }
       `;
-        }
+    }
 
-        if (hideOn?.includes('desktop')) {
-            styles += `
+    if (hideOn?.includes('desktop')) {
+        styles += `
         @media (min-width: ${theme.breakpoints.desktop}) {
           display: none;
         }
       `;
-        }
+    }
 
-        if (showOn?.length) {
-            styles += 'display: none;';
+    if (showOn?.length) {
+        styles += 'display: none;';
 
-            if (showOn.includes('mobile')) {
-                styles += `
+        if (showOn.includes('mobile')) {
+            styles += `
           @media (max-width: ${theme.breakpoints.tablet}) {
             display: block;
           }
         `;
-            }
+        }
 
-            if (showOn.includes('tablet')) {
-                styles += `
+        if (showOn.includes('tablet')) {
+            styles += `
           @media (min-width: ${theme.breakpoints.tablet}) and (max-width: ${theme.breakpoints.desktop}) {
             display: block;
           }
         `;
-            }
+        }
 
-            if (showOn.includes('desktop')) {
-                styles += `
+        if (showOn.includes('desktop')) {
+            styles += `
           @media (min-width: ${theme.breakpoints.desktop}) {
             display: block;
           }
         `;
-            }
         }
+    }
 
-        return css`${styles}`;
-    }}
+    return css`${styles}`;
+}}
 `;

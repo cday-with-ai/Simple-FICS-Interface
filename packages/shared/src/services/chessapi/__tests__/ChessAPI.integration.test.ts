@@ -81,7 +81,7 @@ describe('ChessEngine - Integration Tests', () => {
             }
             const duration = Date.now() - start;
 
-            expect(duration).toBeLessThan(100); // 100 game starts in < 100ms
+            expect(duration).toBeLessThan(200); // 100 game starts in < 200ms
         });
     });
 

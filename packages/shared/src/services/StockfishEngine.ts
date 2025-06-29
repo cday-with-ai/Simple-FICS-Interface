@@ -116,7 +116,7 @@ class StockfishEngine {
 
                     // Wait a bit for the script to fully initialize
                     await new Promise(resolve => setTimeout(resolve, 100));
-                    
+
                     // Check if Sf167Web is available (the actual export name)
                     if (typeof window.Sf167Web === 'function') {
                         console.log('Found Sf167Web, assigning to window.Stockfish');
@@ -141,39 +141,39 @@ class StockfishEngine {
 
                     // Wait for the stockfishReady event or timeout (for non-React environments)
                     await new Promise<void>((resolve, reject) => {
-                    const timeout = setTimeout(() => {
-                        reject(new Error('Stockfish loading timeout. Make sure sf16-7.js is loaded correctly.'));
-                    }, 10000);
+                        const timeout = setTimeout(() => {
+                            reject(new Error('Stockfish loading timeout. Make sure sf16-7.js is loaded correctly.'));
+                        }, 10000);
 
-                    if (window.stockfishReady) {
-                        clearTimeout(timeout);
-                        resolve();
-                        return;
-                    }
+                        if (window.stockfishReady) {
+                            clearTimeout(timeout);
+                            resolve();
+                            return;
+                        }
 
-                    if (window.stockfishError) {
-                        clearTimeout(timeout);
-                        reject(new Error('Stockfish module failed to load: ' + window.stockfishError.message));
-                        return;
-                    }
+                        if (window.stockfishError) {
+                            clearTimeout(timeout);
+                            reject(new Error('Stockfish module failed to load: ' + window.stockfishError.message));
+                            return;
+                        }
 
-                    const handleStockfishReady = (): void => {
-                        clearTimeout(timeout);
-                        window.removeEventListener('stockfishReady', handleStockfishReady);
-                        window.removeEventListener('stockfishError', handleStockfishError);
-                        resolve();
-                    };
+                        const handleStockfishReady = (): void => {
+                            clearTimeout(timeout);
+                            window.removeEventListener('stockfishReady', handleStockfishReady);
+                            window.removeEventListener('stockfishError', handleStockfishError);
+                            resolve();
+                        };
 
-                    const handleStockfishError = (event: Event): void => {
-                        const customEvent = event as CustomEvent<{ error: Error }>;
-                        clearTimeout(timeout);
-                        window.removeEventListener('stockfishReady', handleStockfishReady);
-                        window.removeEventListener('stockfishError', handleStockfishError);
-                        reject(new Error('Stockfish module failed to load: ' + customEvent.detail.error.message));
-                    };
+                        const handleStockfishError = (event: Event): void => {
+                            const customEvent = event as CustomEvent<{ error: Error }>;
+                            clearTimeout(timeout);
+                            window.removeEventListener('stockfishReady', handleStockfishReady);
+                            window.removeEventListener('stockfishError', handleStockfishError);
+                            reject(new Error('Stockfish module failed to load: ' + customEvent.detail.error.message));
+                        };
 
-                    window.addEventListener('stockfishReady', handleStockfishReady);
-                    window.addEventListener('stockfishError', handleStockfishError);
+                        window.addEventListener('stockfishReady', handleStockfishReady);
+                        window.addEventListener('stockfishError', handleStockfishError);
                     });
 
                     if (typeof window.Stockfish !== 'function') {
@@ -240,7 +240,7 @@ class StockfishEngine {
      */
     private handleMessage(line: string): void {
         console.log('Stockfish message:', line);
-        
+
         // Handle UCI handshake
         if (line === 'uciok') {
             console.log('Received uciok, setting uciReady = true');
@@ -317,8 +317,8 @@ class StockfishEngine {
      */
     analyzePosition(fen: string, options: AnalysisOptions = {}): void {
         console.log("Call to analyzePosition with fen:", fen);
-        console.log("Engine ready state:", { isReady: this.isReady, uciReady: this.uciReady, hasEngine: !!this.engine });
-        
+        console.log("Engine ready state:", {isReady: this.isReady, uciReady: this.uciReady, hasEngine: !!this.engine});
+
         if (!this.isReady || !this.uciReady) {
             console.log('Engine not ready, storing pending analysis');
             this.pendingAnalysis = {fen, options};

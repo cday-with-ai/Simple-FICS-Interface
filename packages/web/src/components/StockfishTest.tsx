@@ -32,10 +32,10 @@ export const StockfishTest: React.FC = () => {
         }
     });
 
-    console.log('Stockfish hook state:', { isLoading, isReady, error, hasEngine: !!engine });
+    console.log('Stockfish hook state:', {isLoading, isReady, error, hasEngine: !!engine});
 
     const handleAnalyze = () => {
-        console.log('Analyze button clicked', { isReady, currentFen });
+        console.log('Analyze button clicked', {isReady, currentFen});
         if (!isReady) {
             console.log('Engine not ready, returning');
             return;
@@ -84,7 +84,7 @@ export const StockfishTest: React.FC = () => {
                     onClick={handleManualInit}
                     disabled={isLoading || isReady}
                     style={{
-                        marginRight: '10px', 
+                        marginRight: '10px',
                         padding: '8px 16px',
                         cursor: (isLoading || isReady) ? 'not-allowed' : 'pointer',
                         opacity: (isLoading || isReady) ? 0.5 : 1,
@@ -101,7 +101,7 @@ export const StockfishTest: React.FC = () => {
                     onClick={handleAnalyze}
                     disabled={!isReady}
                     style={{
-                        marginRight: '10px', 
+                        marginRight: '10px',
                         padding: '8px 16px',
                         cursor: isReady ? 'pointer' : 'not-allowed',
                         opacity: isReady ? 1 : 0.5,

@@ -50,18 +50,18 @@ server {
 
 ```javascript
 export default {
-  async fetch(request, env, ctx) {
-    const response = await env.ASSETS.fetch(request);
-    
-    // Clone the response to modify headers
-    const newResponse = new Response(response.body, response);
-    
-    // Add required CORS headers
-    newResponse.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
-    newResponse.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-    
-    return newResponse;
-  },
+    async fetch(request, env, ctx) {
+        const response = await env.ASSETS.fetch(request);
+
+        // Clone the response to modify headers
+        const newResponse = new Response(response.body, response);
+
+        // Add required CORS headers
+        newResponse.headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+        newResponse.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+
+        return newResponse;
+    },
 };
 ```
 
@@ -93,7 +93,7 @@ export default {
           "value": "require-corp"
         },
         {
-          "key": "Cross-Origin-Opener-Policy", 
+          "key": "Cross-Origin-Opener-Policy",
           "value": "same-origin"
         }
       ]

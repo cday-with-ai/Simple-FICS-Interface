@@ -2,41 +2,44 @@ import React from 'react';
 import styled from 'styled-components';
 
 const ClockContainer = styled.div<{ size?: 'small' | 'medium' | 'large' }>`
-  font-family: ${({theme}) => theme.typography.fontFamilyDigital};
-  font-weight: normal;
-  letter-spacing: 0.1em;
-  font-variant-numeric: tabular-nums;
-  color: ${({theme}) => theme.colors.text};
-  
-  ${({size}) => {
-    switch (size) {
-        case 'small':
-            return `font-size: 14px;`;
-        case 'large':
-            return `font-size: 24px;`;
-        case 'medium':
-        default:
-            return `font-size: 18px;`;
-    }
-}}
+    font-family: ${({theme}) => theme.typography.fontFamilyDigital};
+    font-weight: normal;
+    letter-spacing: 0.1em;
+    font-variant-numeric: tabular-nums;
+    color: ${({theme}) => theme.colors.text};
+
+    ${({size}) => {
+        switch (size) {
+            case 'small':
+                return `font-size: 14px;`;
+            case 'large':
+                return `font-size: 24px;`;
+            case 'medium':
+            default:
+                return `font-size: 18px;`;
+        }
+    }}
 `;
 
 const TimeDisplay = styled.span<{ $isLowTime?: boolean; $isActive?: boolean }>`
-  padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
-  background: ${({theme, $isActive}) =>
-    $isActive ? theme.colors.backgroundTertiary : theme.colors.backgroundSecondary};
-  border: 1px solid ${({theme}) => theme.colors.border};
-  border-radius: 4px;
-  
-  ${({$isLowTime, theme}) => $isLowTime && `
+    padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
+    background: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.backgroundTertiary : theme.colors.backgroundSecondary};
+    border: 1px solid ${({theme}) => theme.colors.border};
+    border-radius: 4px;
+
+    ${({$isLowTime, theme}) => $isLowTime && `
     color: ${theme.colors.error};
     animation: blink 1s infinite;
-  `}
-  
-  @keyframes blink {
-    0%, 50% { opacity: 1; }
-    51%, 100% { opacity: 0.3; }
-  }
+  `} @keyframes blink {
+    0%, 50% {
+        opacity: 1;
+    }
+
+    51%, 100% {
+        opacity: 0.3;
+    }
+}
 `;
 
 interface DigitalClockProps {
@@ -87,13 +90,13 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
 
 // Preset styled clocks for common use cases
 export const GameClock = styled(DigitalClock).attrs({size: 'large'})`
-  font-size: 20px;
+    font-size: 20px;
 `;
 
 export const CompactClock = styled(DigitalClock).attrs({size: 'small'})`
-  font-size: 12px;
+    font-size: 12px;
 `;
 
 export const HeaderClock = styled(DigitalClock).attrs({size: 'medium'})`
-  font-size: 16px;
+    font-size: 16px;
 `;
