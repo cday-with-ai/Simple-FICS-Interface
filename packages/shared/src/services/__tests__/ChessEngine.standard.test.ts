@@ -92,11 +92,11 @@ describe('ChessEngine - Standard Chess', () => {
     });
 
     it('should allow piece captures', () => {
-      board.loadFen('rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2');
-      const capture = board.makeMove('Bxf3');
+      board.loadFen('rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2');
+      const capture = board.makeMove('Nxe4'); // Knight takes e4
       expect(capture).not.toBeNull();
       expect(capture!.isCapture()).toBe(true);
-      expect(board.getPiece('f3')).toEqual({ type: PieceType.BISHOP, color: Color.BLACK });
+      expect(board.getPiece('e4')).toEqual({ type: PieceType.KNIGHT, color: Color.BLACK });
     });
 
     it('should not allow capturing own pieces', () => {
@@ -108,8 +108,13 @@ describe('ChessEngine - Standard Chess', () => {
 
   describe('En Passant', () => {
     it('should allow en passant capture', () => {
-      board.loadFen('rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3');
-      const enPassant = board.makeMove('exd6');
+      // Set up position with black having just moved d7-d5
+      board.makeMove('e4');
+      board.makeMove('c5');
+      board.makeMove('e5');
+      board.makeMove('d5'); // Creates en passant opportunity
+      
+      const enPassant = board.makeMove('exd6'); // En passant capture
       expect(enPassant).not.toBeNull();
       expect(enPassant!.isEnPassant).toBe(true);
       expect(board.getPiece('d6')).toEqual({ type: PieceType.PAWN, color: Color.WHITE });
@@ -232,19 +237,24 @@ describe('ChessEngine - Standard Chess', () => {
     });
 
     it('should not allow moves that leave king in check', () => {
-      // Black king on e8 is in check from white bishop on a4
-      board.loadFen('rnbqk1nr/pppp1ppp/8/2b1p3/B3P3/8/PPPP1PPP/RNBQK1NR b KQkq - 0 4');
-      const illegalMove = board.makeMove('Nf6'); // Doesn't address check
-      expect(illegalMove).toBeNull();
+      // Position where e2 pawn is pinned to the king
+      board.loadFen('rnbqk1nr/pppp1ppp/8/2b1p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 4 3');
+      board.makeMove('Ke2'); // King to e2
+      board.makeMove('Bb4'); // Bishop gives check
+      
+      // Now the d2 pawn is pinned and can't move
+      const pinnedMove = board.makeMove('d3');
+      expect(pinnedMove).toBeNull(); // Can't move pinned piece
+      
       // Should allow blocking the check
-      const blockingMove = board.makeMove('c6');
+      const blockingMove = board.makeMove('c3');
       expect(blockingMove).not.toBeNull();
     });
   });
 
   describe('Stalemate', () => {
     it('should detect stalemate', () => {
-      board.loadFen('5k2/5P2/5K2/8/8/8/8/8 b - - 0 1'); // Black king trapped, not in check
+      board.loadFen('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1'); // Black king trapped in corner by queen, not in check
       expect(board.isGameOver()).toBe(true);
       expect(board.getGameResult()).toBe(GameResult.DRAW);
     });

@@ -274,7 +274,8 @@ export class ChessBoard {
             }
 
             // Parse active color
-            this.activeColor = active.toLowerCase() === 'w' ? Color.WHITE : Color.BLACK;
+            if (active !== 'w' && active !== 'b') return false;
+            this.activeColor = active === 'w' ? Color.WHITE : Color.BLACK;
 
             // Parse castling rights
             this.castlingRights = {

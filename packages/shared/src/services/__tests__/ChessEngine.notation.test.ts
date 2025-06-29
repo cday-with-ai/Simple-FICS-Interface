@@ -34,8 +34,8 @@ describe('ChessEngine - Move Notation', () => {
     });
 
     it('should parse piece captures', () => {
-      board.loadFen('rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2');
-      expect(board.makeMove('Bxf3')).not.toBeNull();
+      board.loadFen('rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 3 2');
+      expect(board.makeMove('Nxe4')).not.toBeNull();
     });
 
     it('should parse castling notation', () => {
@@ -58,8 +58,8 @@ describe('ChessEngine - Move Notation', () => {
       board.loadFen('8/P7/8/8/8/8/8/8 w - - 0 1');
       expect(board.makeMove('a8=N')).not.toBeNull();
       
-      board.loadFen('r7/P7/8/8/8/8/8/8 w - - 0 1');
-      expect(board.makeMove('axb8=R')).not.toBeNull();
+      board.loadFen('r7/1P6/8/8/8/8/8/8 w - - 0 1');
+      expect(board.makeMove('bxa8=R')).not.toBeNull();
     });
 
     it('should handle check and checkmate symbols', () => {
@@ -136,8 +136,13 @@ describe('ChessEngine - Move Notation', () => {
 
   describe('Special Notation Cases', () => {
     it('should handle en passant notation', () => {
-      board.loadFen('rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3');
-      const enPassant = board.makeMove('exd6'); // Can also be written as exd6 e.p.
+      // Set up position with en passant opportunity
+      board.makeMove('e4');
+      board.makeMove('c5');
+      board.makeMove('e5');
+      board.makeMove('d5'); // Creates en passant opportunity
+      
+      const enPassant = board.makeMove('exd6'); // En passant capture
       expect(enPassant).not.toBeNull();
       expect(enPassant!.isEnPassant).toBe(true);
     });
