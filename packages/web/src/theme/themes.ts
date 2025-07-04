@@ -1,5 +1,8 @@
 import {Theme, ThemeColors, baseTokens} from './tokens';
 
+// Re-export Theme type for styled.d.ts
+export type {Theme};
+
 // Light theme colors
 const lightColors: ThemeColors = {
     // Primary colors (Chess-themed blue)
@@ -51,6 +54,21 @@ const lightColors: ThemeColors = {
     chatOwnMessage: '#dbeafe',
     chatMention: '#fef3c7',
     chatSystem: '#f3f4f6',
+    
+    // Chess board UI colors
+    board: {
+        light: '#f0d9b5',
+        dark: '#b58863',
+        border: '#8b7355',
+        lastMoveLight: '#cdd26a',
+        lastMoveDark: '#aaa23a',
+        selected: '#7fb876',
+        hoverLight: '#f6f8ca',
+        hoverDark: '#c3a562',
+        highlight: 'rgba(255, 255, 0, 0.4)',
+        coordinateLight: '#8b7355',
+        coordinateDark: '#f0d9b5',
+    },
 };
 
 // Dark theme colors
@@ -104,6 +122,21 @@ const darkColors: ThemeColors = {
     chatOwnMessage: '#1e3a8a',
     chatMention: '#92400e',
     chatSystem: '#374151',
+    
+    // Chess board UI colors (dark theme)
+    board: {
+        light: '#f0d9b5',
+        dark: '#b58863',
+        border: '#5e5248',
+        lastMoveLight: '#cdd26a',
+        lastMoveDark: '#aaa23a', 
+        selected: '#646f40',
+        hoverLight: '#f4e5c1',
+        hoverDark: '#a07a4a',
+        highlight: 'rgba(255, 235, 0, 0.5)',
+        coordinateLight: '#b58863',
+        coordinateDark: '#f0d9b5',
+    },
 };
 
 // Light theme

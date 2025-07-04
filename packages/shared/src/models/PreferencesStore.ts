@@ -5,17 +5,26 @@ interface RootStore {
     // No dependencies needed for PreferencesStore currently
 }
 
+export type ViewMode = 'chess-only' | 'chat-only' | 'chess-and-chat';
+export type ChessOrientation = 'landscape' | 'portrait';
+
 export interface Preferences {
     // Display preferences
     boardTheme: 'brown' | 'blue' | 'green' | 'purple';
     pieceSet: 'standard' | 'modern' | 'classic';
     showCoordinates: boolean;
+    boardFlipped: boolean;
     animateMoves: boolean;
     autoPromoteToQueen: boolean;
 
     // UI Theme preferences
     theme: 'light' | 'dark' | 'system';
     layout: 'auto' | 'landscape' | 'portrait';
+    
+    // View mode preferences
+    viewMode: ViewMode;
+    chessOrientation: ChessOrientation;
+    autoViewMode: boolean; // Whether to automatically select view mode based on screen size
 
     // Sound preferences
     enableSounds: boolean;
@@ -46,10 +55,14 @@ const DEFAULT_PREFERENCES: Preferences = {
     boardTheme: 'brown',
     pieceSet: 'standard',
     showCoordinates: true,
+    boardFlipped: false,
     animateMoves: true,
     autoPromoteToQueen: false,
     theme: 'system',
     layout: 'auto',
+    viewMode: 'chess-and-chat',
+    chessOrientation: 'landscape',
+    autoViewMode: true,
     enableSounds: true,
     moveSound: true,
     captureSound: true,
@@ -143,6 +156,10 @@ export class PreferencesStore {
                 return ['light', 'dark', 'system'].includes(value);
             case 'layout':
                 return ['auto', 'landscape', 'portrait'].includes(value);
+            case 'viewMode':
+                return ['chess-only', 'chat-only', 'chess-and-chat'].includes(value);
+            case 'chessOrientation':
+                return ['landscape', 'portrait'].includes(value);
             case 'lastSystemThemeCheck':
                 return typeof value === 'number';
             default:

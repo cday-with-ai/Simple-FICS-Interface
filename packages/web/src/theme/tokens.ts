@@ -45,6 +45,21 @@ export interface ThemeColors {
     chessLastMove: string;
     chessCheck: string;
     chessLegalMove: string;
+    
+    // Chess board UI colors
+    board: {
+        light: string;
+        dark: string;
+        border: string;
+        lastMoveLight: string;
+        lastMoveDark: string;
+        selected: string;
+        hoverLight: string;
+        hoverDark: string;
+        highlight: string;
+        coordinateLight: string;
+        coordinateDark: string;
+    };
 
     // Chat colors
     chatOwnMessage: string;
@@ -60,6 +75,18 @@ export interface ThemeSpacing {
     xl: string;    // 32px
     xxl: string;   // 48px
     xxxl: string;  // 64px
+    // Numeric indices for easier access
+    0: string;  // 0px
+    1: string;  // 4px
+    2: string;  // 8px
+    3: string;  // 12px
+    4: string;  // 16px
+    5: string;  // 20px
+    6: string;  // 24px
+    8: string;  // 32px
+    10: string; // 40px
+    12: string; // 48px
+    16: string; // 64px
 }
 
 export interface ThemeTypography {
@@ -76,6 +103,17 @@ export interface ThemeTypography {
         xl: string;    // 20px
         xxl: string;   // 24px
         xxxl: string;  // 32px
+    };
+    
+    // Alias for sizes (for backward compatibility)
+    sizes: {
+        xs: string;
+        sm: string;
+        md: string;
+        lg: string;
+        xl: string;
+        xxl: string;
+        xxxl: string;
     };
 
     // Font weights
@@ -101,6 +139,7 @@ export interface ThemeShadows {
     lg: string;
     xl: string;
     focus: string;
+    board: string;
 }
 
 export interface ThemeBreakpoints {
@@ -131,12 +170,21 @@ export interface ThemeZIndices {
     notification: number; // 400
 }
 
+export interface ThemeBorderRadius {
+    sm: string;
+    md: string;
+    lg: string;
+    xl: string;
+    full: string;
+}
+
 // Main theme interface
 export interface Theme {
     colors: ThemeColors;
     spacing: ThemeSpacing;
     typography: ThemeTypography;
     shadows: ThemeShadows;
+    borderRadius: ThemeBorderRadius;
     breakpoints: ThemeBreakpoints;
     transitions: ThemeTransitions;
     zIndices: ThemeZIndices;
@@ -152,6 +200,17 @@ export const baseTokens = {
         xl: '32px',
         xxl: '48px',
         xxxl: '64px',
+        0: '0px',
+        1: '4px',
+        2: '8px',
+        3: '12px',
+        4: '16px',
+        5: '20px',
+        6: '24px',
+        8: '32px',
+        10: '40px',
+        12: '48px',
+        16: '64px',
     } as ThemeSpacing,
 
     typography: {
@@ -160,6 +219,17 @@ export const baseTokens = {
         fontFamilyDigital: '"DigitalFont", "Courier New", "Monaco", monospace',
 
         fontSize: {
+            xs: '12px',
+            sm: '14px',
+            md: '16px',
+            lg: '18px',
+            xl: '20px',
+            xxl: '24px',
+            xxxl: '32px',
+        },
+        
+        // Alias for sizes
+        sizes: {
             xs: '12px',
             sm: '14px',
             md: '16px',
@@ -190,7 +260,16 @@ export const baseTokens = {
         lg: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
         xl: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
         focus: '0 0 0 3px rgba(66, 153, 225, 0.5)',
+        board: '0 4px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)',
     } as ThemeShadows,
+    
+    borderRadius: {
+        sm: '4px',
+        md: '6px',
+        lg: '8px',
+        xl: '12px',
+        full: '9999px',
+    } as ThemeBorderRadius,
 
     breakpoints: {
         mobilePortrait: '0px',      // iPhone SE minimum: 375px

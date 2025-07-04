@@ -3,7 +3,7 @@ import {BrowserRouter, Routes, Route, Link} from 'react-router-dom';
 import {RootStoreProvider} from '@fics/shared';
 import {ThemeProvider} from './theme';
 import {LayoutProvider} from './components/layout';
-import {MainLayout} from './components/MainLayout';
+import {AppLayout} from './components/layout/AppLayout';
 import {GlobalStyles} from './components/GlobalStyles';
 import {StockfishTestPage} from './pages/StockfishTestPage';
 
@@ -16,7 +16,7 @@ const App: React.FC = () => {
                     <Routes>
                         <Route path="/" element={
                             <LayoutProvider>
-                                <MainLayout/>
+                                <AppLayout/>
                             </LayoutProvider>
                         }/>
                         <Route path="/stockfish-test" element={<StockfishTestPage/>}/>

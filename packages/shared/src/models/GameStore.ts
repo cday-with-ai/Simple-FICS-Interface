@@ -21,6 +21,7 @@ export interface GameState {
     lastMove?: string;
     result?: string;
     variant: 'standard' | 'chess960' | 'losers' | 'suicide' | 'atomic' | 'crazyhouse' | 'wild';
+    timeControl?: string;
 }
 
 export class GameStore {
@@ -152,6 +153,20 @@ export class GameStore {
 
     get fen() {
         return this.chessBoard.getFen();
+    }
+    
+    get currentPosition() {
+        return this.chessBoard.getFen();
+    }
+    
+    get currentGameInfo() {
+        if (!this.currentGame) return null;
+        return {
+            white: this.currentGame.white,
+            black: this.currentGame.black,
+            timeControl: this.currentGame.timeControl || '?',
+            variant: this.currentGame.variant
+        };
     }
 
     get pgn() {

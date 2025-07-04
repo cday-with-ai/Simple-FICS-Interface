@@ -6,6 +6,7 @@ import {LayoutToggle} from './ui/LayoutToggle';
 import {DigitalClock, GameClock} from './ui/DigitalClock';
 import {DigitalScore, EvaluationBar} from './ui/DigitalScore';
 import {StockfishTest} from './StockfishTest';
+import {ChessGameLayout} from './chess';
 
 export const MainLayout: React.FC = () => {
     const {activeLayout, layoutPreference, isCompactMode} = useLayoutContext();
@@ -31,29 +32,8 @@ export const MainLayout: React.FC = () => {
         </div>
     );
 
-    // Common chess board placeholder
-    const chessBoardContent = (
-        <div style={{
-            width: isCompactMode ? '100%' : '400px',
-            height: isCompactMode ? '100%' : '400px',
-            maxWidth: '400px',
-            maxHeight: '400px',
-            aspectRatio: '1',
-            background: 'var(--color-chessBoardLight)',
-            border: '2px solid #8b4513',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            color: '#8b4513',
-        }}>
-            Chess Board
-            <br/>
-            <small>({activeLayout} layout)</small>
-        </div>
-    );
+    // Chess game view
+    const chessBoardContent = <ChessGameLayout />;
 
     // Common panel content
     const panelContent = (

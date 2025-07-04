@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 const ClockContainer = styled.div<{ size?: 'small' | 'medium' | 'large' }>`
+    display: inline-block;
     font-family: ${({theme}) => theme.typography.fontFamilyDigital};
     font-weight: normal;
     letter-spacing: 0.1em;
@@ -21,12 +22,16 @@ const ClockContainer = styled.div<{ size?: 'small' | 'medium' | 'large' }>`
     }}
 `;
 
-const TimeDisplay = styled.span<{ $isLowTime?: boolean; $isActive?: boolean }>`
-    padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
+const TimeDisplay = styled.span<{ $isLowTime?: boolean; $isActive?: boolean; $compact?: boolean }>`
+    display: inline-block;
+    padding: ${({theme, $compact}) => 
+            $compact ? `4px ${theme.spacing[2]}` : `${theme.spacing[1]} ${theme.spacing[2]}`};
     background: ${({theme, $isActive}) =>
-            $isActive ? theme.colors.backgroundTertiary : theme.colors.backgroundSecondary};
-    border: 1px solid ${({theme}) => theme.colors.border};
-    border-radius: 4px;
+            $isActive ? theme.colors.surface : theme.colors.backgroundSecondary};
+    border-radius: ${({theme}) => theme.borderRadius.md};
+    box-shadow: ${({theme, $isActive}) => 
+            $isActive ? theme.shadows.md : theme.shadows.sm};
+    transition: all ${({theme}) => theme.transitions.fast};
 
     ${({$isLowTime, theme}) => $isLowTime && `
     color: ${theme.colors.error};
@@ -49,6 +54,7 @@ interface DigitalClockProps {
     lowTimeThreshold?: number; // Seconds below which to show warning
     showTenths?: boolean; // Show tenths of seconds when time is low
     className?: string;
+    compact?: boolean;
 }
 
 export const DigitalClock: React.FC<DigitalClockProps> = ({
@@ -58,6 +64,7 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
                                                               lowTimeThreshold = 30,
                                                               showTenths = false,
                                                               className,
+                                                              compact = false,
                                                           }) => {
     const formatTime = (seconds: number): string => {
         const hours = Math.floor(seconds / 3600);
@@ -81,7 +88,7 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
 
     return (
         <ClockContainer size={size} className={className}>
-            <TimeDisplay $isLowTime={isLowTime} $isActive={isActive}>
+            <TimeDisplay $isLowTime={isLowTime} $isActive={isActive} $compact={compact}>
                 {formatTime(time)}
             </TimeDisplay>
         </ClockContainer>
@@ -90,7 +97,16 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
 
 // Preset styled clocks for common use cases
 export const GameClock = styled(DigitalClock).attrs({size: 'large'})`
-    font-size: 20px;
+    ${TimeDisplay} {
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+        background: ${({theme}) => theme.colors.surface};
+        font-size: 20px;
+        
+        &:hover {
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25), 0 2px 3px rgba(0, 0, 0, 0.15);
+        }
+    }
 `;
 
 export const CompactClock = styled(DigitalClock).attrs({size: 'small'})`
