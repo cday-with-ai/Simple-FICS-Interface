@@ -1,9 +1,95 @@
 # Responsive UI Design & Implementation Plan
 
+## Current Implementation Status (as of React Native branch)
+
+### ✅ Completed Features
+- **Theme System**: Full light/dark theme with chess-specific colors, digital fonts, system detection
+- **Responsive Hooks**: useViewport, useBreakpoint, useLayout, useResponsiveOrientation
+- **Layout Components**: LandscapeLayout, PortraitLayout, ResponsiveContainer with smooth transitions
+- **UI Components**: ThemeToggle, LayoutToggle, DigitalClock, EvaluationBar
+- **PreferencesStore**: Theme and layout preferences with persistence
+
+### 🚧 In Progress / Not Started
+- **Chess Board Component**: Currently placeholder only, needs full implementation
+- **View Mode System**: Chess Only/Chat Only/Chess & Chat modes not implemented
+- **Chess Area Orientation**: Landscape/Portrait toggle for chess area not built
+- **Game Perspectives**: Freestyle/Playing/Observing/Examining system not implemented
+- **Game UI Components**: Move list, player cards, game info, chat interface
+- **MobX Integration**: No connection to GameStore or FICSStore yet
+- **NativeWind Migration**: Not started (using styled-components for web)
+
 ## Overview
 
 Implement responsive design with orientation-aware layouts, comprehensive theming system, and device size support for
 the chess interface.
+
+**Phase 1: Foundation & Theme System** ✅ COMPLETE
+- Full styled-components theme system with light/dark themes
+- Theme tokens for colors, spacing, typography, shadows
+- Chess-specific colors (board squares, highlights, check indicators)
+- Digital font support for clocks
+- Theme persistence via PreferencesStore
+
+**Phase 2: Layout Infrastructure** ✅ COMPLETE
+- LayoutProvider context managing orientation and layout state
+- Responsive hooks (useViewport, useBreakpoint, useLayout, etc.)
+- LandscapeLayout component with resizable sidebar
+- PortraitLayout component with collapsible bottom panels
+- ResponsiveContainer for automatic layout switching
+- Smooth transitions between layouts (300ms animations)
+
+**Key Implemented Features:**
+1. **Layout System**
+   - Auto/Landscape/Portrait layout preferences
+   - Device-aware responsive breakpoints
+   - Panel management (chat, moves, analysis)
+   - Sidebar visibility controls
+   - Floating action button (FAB) for mobile
+
+2. **Theme System**
+   - Light/Dark theme switching
+   - System theme detection
+   - Chess-specific color palette
+   - Digital clock fonts
+   - Consistent spacing and typography
+
+3. **UI Components**
+   - LayoutToggle for switching between auto/landscape/portrait
+   - ThemeToggle for light/dark/system themes
+   - DigitalClock with multiple sizes and low-time warnings
+   - DigitalScore for evaluation display
+   - EvaluationBar for visual score representation
+   - MainLayout demo showcasing all components
+
+### What's NOT Yet Implemented
+
+1. **Chess Board Component**
+   - Currently using placeholder divs
+   - No actual chess board implementation
+   - No piece rendering or movement
+   - No square highlighting or legal move indicators
+
+2. **View Mode System (Chess Only/Chat Only/Chess & Chat)**
+   - Mode switching infrastructure not built
+   - No splitter implementation for Chess & Chat mode
+   - Orientation toggle for chess area not implemented
+
+3. **Game Perspectives (Freestyle/Playing/Observing/Examining)**
+   - No perspective management system
+   - No variant-specific rule enforcement UI
+   - No FICS communication integration
+
+4. **NativeWind Migration**
+   - Still using styled-components (not NativeWind)
+   - No shared styles between web and mobile
+   - Mobile package not yet started
+
+5. **Actual Game UI**
+   - No move list component
+   - No game info display
+   - No player info cards
+   - No analysis controls
+   - No chat interface implementation
 
 ## UPDATE: NativeWind Refactoring Strategy
 
@@ -126,6 +212,25 @@ export const boardSquareClass = (isLight: boolean) => cn(
 - Type-safe theme system
 - Familiar Tailwind syntax
 - Single source of truth for design
+
+### Important Implementation Notes
+
+#### SVG Chess Pieces
+The project uses SVG files for chess pieces located in the root `/pieces/` directory. The React app should:
+- Import these SVG files as React components or img sources
+- Scale pieces to 80-90% of square size for proper spacing
+- Support variant-specific pieces if needed (e.g., different icons for Crazyhouse)
+
+#### Digital Clock Font
+The digital clock font is already configured in the theme system. Use the `font-digital` class or styled-component theme token.
+
+#### WebAssembly Requirements
+Stockfish analysis requires specific CORS headers that are already set by the development server. Ensure these are maintained in production.
+
+#### Mobile Touch Considerations
+- Implement both click-to-move and drag-and-drop
+- Add touch feedback for better mobile UX
+- Consider larger touch targets on small screens
 
 ### Chess Board Layout Specifications
 
@@ -367,6 +472,184 @@ Based on the analysis-screenshot.png reference, all UI elements should have:
    - Consistent spacing and padding throughout
 
 This styling should be maintained across both web and mobile platforms using NativeWind utilities.
+
+### Game Perspectives
+
+The chess interface supports different perspectives that control game behavior, available buttons, rule enforcement, and clock management. The perspective is independent of view modes and orientations.
+
+#### Perspective Types
+
+**1. Freestyle Perspective**
+- **Purpose**: Non-live game viewing and analysis
+- **ChessAPI Variant**: Set to "freestyle" (no rule enforcement)
+- **Piece Movement**: Any piece can be moved to any position
+- **Clocks**: Do not run on moves
+- **Move List**: Frozen from the state when Freestyle was entered
+- **FICS Communication**: No moves sent to server
+- **Available Buttons**: 
+  - Analysis (toggle on/off)
+  - Setup from FEN
+  - Move navigation ([◀] [▶] [↺])
+- **Entry Points**: After game completion, or when no active game
+
+**2. Playing Perspective**
+- **Purpose**: Playing a live game on FICS
+- **ChessAPI Variant**: Matches the game variant (enforces all rules)
+- **Piece Movement**: Only legal moves allowed, premove supported
+- **Clocks**: Active and ticking for side to move
+- **Move List**: Active, auto-updates with each move
+- **FICS Communication**: 
+  - Moves sent to server immediately
+  - Premoves sent when it's user's turn
+  - Clock updates sent with moves
+- **Available Buttons**:
+  - Draw (offer/accept)
+  - Resign
+  - Abort (only on move 1)
+  - Move navigation ([◀] [▶] [↺])
+- **Board Updates**: From both style12 events and user moves
+- **Exit**: Automatically enters Freestyle when game completes
+
+**3. Observing Perspective**
+- **Purpose**: Watching a live game on FICS
+- **ChessAPI Variant**: Matches the observed game variant
+- **Piece Movement**: 
+  - User can make variant-legal moves locally
+  - Board resets to FICS position on each update
+- **Clocks**: Active, ticking for side to move (from FICS)
+- **Move List**: Active, auto-updates from FICS moves
+- **FICS Communication**: No user moves sent to server
+- **Available Buttons**:
+  - Unobserve
+  - Analysis (toggle on/off)
+  - Move navigation ([◀] [▶] [↺])
+- **Board Updates**: FICS style12 events override local changes
+- **Exit**: Enters Freestyle when observed game completes
+
+**4. Examining Perspective**
+- **Purpose**: Analyzing a position on FICS with others
+- **ChessAPI Variant**: Matches the examined game variant
+- **Piece Movement**: Only variant-legal moves allowed
+- **Clocks**: Static, do not tick
+- **Move List**: Not displayed (examining uses server-side move tracking)
+- **FICS Communication**: 
+  - All moves sent to server immediately
+  - Navigation commands sent to FICS (backward, forward, etc.)
+- **Available Buttons**:
+  - Unexamine
+  - Analysis (toggle on/off with controls)
+  - FICS navigation ([⏮] [◀] [▶] [⏭]) - sends commands to server
+- **Premove**: Not supported in this mode
+- **Board Updates**: Synchronized with FICS examination state
+
+#### Implementation Architecture
+
+```typescript
+interface PerspectiveConfig {
+  type: 'freestyle' | 'playing' | 'observing' | 'examining';
+  variant: ChessVariant;
+  enforceRules: boolean;
+  clocksActive: boolean;
+  moveListActive: boolean;
+  moveListVisible: boolean;
+  sendMovesToFICS: boolean;
+  acceptFICSUpdates: boolean;
+  premoveEnabled: boolean;
+  availableButtons: string[];
+  navigationMode: 'local' | 'fics' | 'none';
+}
+
+// Perspective state management
+const perspectiveConfigs: Record<string, PerspectiveConfig> = {
+  freestyle: {
+    type: 'freestyle',
+    variant: 'freestyle',
+    enforceRules: false,
+    clocksActive: false,
+    moveListActive: false,
+    moveListVisible: true,
+    sendMovesToFICS: false,
+    acceptFICSUpdates: false,
+    premoveEnabled: false,
+    availableButtons: ['analysis', 'setupFEN'],
+    navigationMode: 'local'
+  },
+  playing: {
+    type: 'playing',
+    variant: 'dynamic', // Set based on game
+    enforceRules: true,
+    clocksActive: true,
+    moveListActive: true,
+    moveListVisible: true,
+    sendMovesToFICS: true,
+    acceptFICSUpdates: true,
+    premoveEnabled: true,
+    availableButtons: ['draw', 'resign', 'abort'],
+    navigationMode: 'local'
+  },
+  observing: {
+    type: 'observing',
+    variant: 'dynamic', // Matches observed game
+    enforceRules: true,
+    clocksActive: true,
+    moveListActive: true,
+    moveListVisible: true,
+    sendMovesToFICS: false,
+    acceptFICSUpdates: true,
+    premoveEnabled: false,
+    availableButtons: ['unobserve', 'analysis'],
+    navigationMode: 'local'
+  },
+  examining: {
+    type: 'examining',
+    variant: 'dynamic', // Matches examined game
+    enforceRules: true,
+    clocksActive: false,
+    moveListActive: false,
+    moveListVisible: false, // No move list shown
+    sendMovesToFICS: true,
+    acceptFICSUpdates: true,
+    premoveEnabled: false,
+    availableButtons: ['unexamine', 'analysis'],
+    navigationMode: 'fics' // Navigation sends FICS commands
+  }
+};
+```
+
+#### UI Integration
+
+The perspective affects the button toolbar in the chess area:
+
+```
+Playing Perspective:
+┌─────────────────────────────────────────────┐
+│ [Draw] [Resign] [Abort*] [◀] [▶] [↺]       │
+└─────────────────────────────────────────────┘
+*Abort only visible on move 1
+
+Observing Perspective:
+┌─────────────────────────────────────────────┐
+│ [Unobserve] [Analysis] [◀] [▶] [↺]         │
+└─────────────────────────────────────────────┘
+
+Examining Perspective:
+┌─────────────────────────────────────────────┐
+│ [Unexamine] [Analysis] [⏮] [◀] [▶] [⏭]    │
+└─────────────────────────────────────────────┘
+Note: Navigation buttons send FICS commands (backward 999, backward, forward, forward 999)
+No local move list displayed in examining mode
+
+Freestyle Perspective:
+┌─────────────────────────────────────────────┐
+│ [Analysis] [Setup FEN] [◀] [▶] [↺]         │
+└─────────────────────────────────────────────┘
+```
+
+The perspective indicator should be displayed near the game info:
+```
+Game 23 • Blitz 3 0 • Playing
+almajnoun (1392) vs guisepp (1831)
+```
 
 #### Analysis Mode Additions
 
@@ -821,6 +1104,59 @@ _[Space for implementation notes and completion status]_
 
 ---
 
+### Phase 2.5.5: Chess Board Component Implementation (CRITICAL - Week 2)
+
+#### Task 2.5.5.1: Create Base Chess Board Component
+
+**Description**: Build the foundational chess board component with responsive sizing
+
+- [ ] Create ChessBoard component with 8x8 grid structure
+- [ ] Implement board sizing algorithm that calculates maximum size
+- [ ] Ensure all squares maintain consistent size (board-size / 8)
+- [ ] Add alternating light/dark square colors from theme
+- [ ] Implement coordinate labels (a-h, 1-8) with proper positioning
+- [ ] Add board flipping functionality for black's perspective
+- [ ] Connect to GameStore for position state
+
+**Comments**:
+_[Space for implementation notes and completion status]_
+
+---
+
+#### Task 2.5.5.2: Implement Chess Piece Rendering
+
+**Description**: Add chess piece display and positioning system
+
+- [ ] Create Piece component for rendering SVG pieces
+- [ ] Implement piece positioning based on FEN string
+- [ ] Add support for all piece types (K, Q, R, B, N, P)
+- [ ] Handle both white and black pieces with proper colors
+- [ ] Implement piece size scaling based on square size
+- [ ] Add piece animation for moves (optional enhancement)
+- [ ] Support chess variants piece sets (if different)
+
+**Comments**:
+_[Space for implementation notes and completion status]_
+
+---
+
+#### Task 2.5.5.3: Add Board Interaction and Move Handling
+
+**Description**: Implement user interaction for making moves
+
+- [ ] Add click-to-move functionality (click piece, then destination)
+- [ ] Implement drag-and-drop for pieces
+- [ ] Add legal move highlighting when piece selected
+- [ ] Show last move highlighting on board
+- [ ] Add premove visualization support
+- [ ] Implement touch support for mobile devices
+- [ ] Connect move events to GameStore and ChessAPI
+
+**Comments**:
+_[Space for implementation notes and completion status]_
+
+---
+
 ### Phase 2.6: View Mode System Implementation (Week 2)
 
 #### Task 2.6.1: Create View Mode Infrastructure
@@ -1188,6 +1524,9 @@ interface LayoutState {
 - [ ] **Intuitive**: Layout adapts naturally to orientation changes
 - [ ] **Consistent**: Theme system provides coherent visual experience
 - [ ] **Maintainable**: Clean, documented code with TypeScript support
+- [ ] **Chess Board Excellence**: Board maximizes space while maintaining perfect square aspect ratio
+- [ ] **Mode Flexibility**: Users can switch between Chess/Chat/Both views seamlessly
+- [ ] **Perspective Awareness**: UI correctly reflects playing vs observing vs analyzing states
 
 ## 📚 Recommended Libraries
 
@@ -1205,6 +1544,67 @@ interface LayoutState {
 
 ---
 
-**Status**: Ready to begin implementation
-**Estimated Timeline**: 4-5 weeks for complete responsive system
-**Dependencies**: Requires completed MobX stores (✅ Complete)
+## 🔗 Integration with Existing Infrastructure
+
+### MobX Store Connections
+
+The responsive UI must integrate with existing MobX stores:
+
+1. **GameStore** (`packages/shared/src/models/GameStore.ts`)
+   - `currentPosition` - FEN string for board display
+   - `moveHistory` - For move list component
+   - `makeMove()` - Called when user moves a piece
+   - `currentGameInfo` - Game metadata (players, time control, etc.)
+
+2. **FICSStore** (`packages/shared/src/models/FICSStore.ts`)
+   - `connectionState` - Show connection status in UI
+   - `currentGame` - Active game state
+   - `observedGames` - List of games being observed
+   - Style12 parsing for board updates
+
+3. **PreferencesStore** (`packages/shared/src/models/PreferencesStore.ts`)
+   - `theme` - Already integrated ✅
+   - `layout` - Already integrated ✅
+   - `boardTheme` - Future: different board colors/styles
+   - `pieceSet` - Future: different piece designs
+
+4. **ChatStore** (`packages/shared/src/models/ChatStore.ts`)
+   - `tabs` - For rendering chat tabs
+   - `addMessage()` - Display incoming messages
+   - `sendMessage()` - User input handling
+
+### ChessAPI Integration
+
+The chess board component must use ChessAPI for:
+- Move validation (`isValidMove()`)
+- Legal move generation (`getLegalMoves()`)
+- Position parsing (`loadFEN()`)
+- Variant-specific rules
+
+## 📌 Implementation Priority Order
+
+Given the current state, here's the recommended implementation sequence:
+
+### Immediate Priority (Week 1-2)
+1. **Chess Board Component** - Core functionality, without this nothing else matters
+2. **Basic Game UI Components** - Player cards, game info, move list
+3. **MobX Store Integration** - Connect UI to GameStore and FICSStore
+
+### High Priority (Week 2-3)  
+4. **View Mode System** - Chess Only/Chat Only/Chess & Chat switching
+5. **Chess Area Orientation** - Landscape/Portrait toggle for chess area
+6. **Splitter Component** - For resizing chess/chat areas in split mode
+
+### Medium Priority (Week 3-4)
+7. **Game Perspectives** - Freestyle/Playing/Observing/Examining modes
+8. **Chat Interface** - Tab system and message display
+9. **Analysis Integration** - Stockfish evaluation display
+
+### Future Enhancements (Week 4+)
+10. **NativeWind Migration** - Only if mobile app development begins
+11. **Advanced Features** - Board themes, piece sets, sound effects
+12. **Performance Optimizations** - Animation improvements, lazy loading
+
+**Status**: Foundation complete, ready for chess board implementation
+**Estimated Timeline**: 3-4 weeks for core responsive chess interface
+**Dependencies**: Theme system (✅), Layout system (✅), MobX stores (✅)
