@@ -174,7 +174,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 }) => {
   const layout = useLayout();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [calculatedSize, setCalculatedSize] = useState(providedSize || 400);
+  const [calculatedSize, setCalculatedSize] = useState(providedSize || 200);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
   const [possibleMoves, setPossibleMoves] = useState<Set<string>>(new Set());
   const [draggedPiece, setDraggedPiece] = useState<{
@@ -202,20 +202,16 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
       const { width: parentWidth, height: parentHeight } = parent.getBoundingClientRect();
 
-      const padding = 40;
+      // Add some padding to prevent edge overlap
+      const padding = 16;
       const maxWidth = parentWidth - padding;
       const maxHeight = parentHeight - padding;
 
       const optimalSize = Math.floor(Math.min(maxWidth, maxHeight));
-      const size = Math.floor(optimalSize / 8) * 8;
+      const size = Math.max(100, Math.floor(optimalSize / 8) * 8); // Minimum 100px
 
-      // Only update if size actually changed
-      setCalculatedSize(prevSize => {
-        if (Math.abs(prevSize - size) > 8) {
-          return size;
-        }
-        return prevSize;
-      });
+      // Always update the size
+      setCalculatedSize(size);
     };
 
     // Initial calculation

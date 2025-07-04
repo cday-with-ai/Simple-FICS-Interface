@@ -118,7 +118,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = observer(({
 }) => {
   const layout = useLayout();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [calculatedSize, setCalculatedSize] = useState(providedSize || 400);
+  const [calculatedSize, setCalculatedSize] = useState(providedSize || 200);
 
   // Calculate optimal board size based on available space
   useEffect(() => {
@@ -136,7 +136,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = observer(({
       const { width: parentWidth, height: parentHeight } = parent.getBoundingClientRect();
       
       // Account for padding and margins
-      const padding = 40;
+      const padding = 16;
       const maxWidth = parentWidth - padding;
       const maxHeight = parentHeight - padding;
       
@@ -144,15 +144,10 @@ export const ChessBoard: React.FC<ChessBoardProps> = observer(({
       const optimalSize = Math.floor(Math.min(maxWidth, maxHeight));
       
       // Ensure size is divisible by 8 for pixel-perfect squares
-      const size = Math.floor(optimalSize / 8) * 8;
+      const size = Math.max(100, Math.floor(optimalSize / 8) * 8); // Minimum 100px
       
-      // Only update if size actually changed
-      setCalculatedSize(prevSize => {
-        if (Math.abs(prevSize - size) > 8) {
-          return size;
-        }
-        return prevSize;
-      });
+      // Always update the size
+      setCalculatedSize(size);
     };
 
     // Initial calculation

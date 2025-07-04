@@ -103,6 +103,8 @@ export const AppLayout: React.FC = observer(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const newWidth = window.innerWidth - e.clientX;
       setChatPanelWidth(Math.max(300, Math.min(600, newWidth)));
+      // Trigger a resize event so the chess board recalculates its size
+      window.dispatchEvent(new Event('resize'));
     };
     
     const handleMouseUp = () => {
@@ -129,7 +131,7 @@ export const AppLayout: React.FC = observer(() => {
       
       <MainContent>
         <ChessArea $isVisible={showChess}>
-          <ChessGameLayout />
+          <ChessGameLayout hasChat={showChat} />
         </ChessArea>
         
         {showSplitter && (

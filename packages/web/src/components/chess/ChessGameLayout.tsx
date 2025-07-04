@@ -10,24 +10,39 @@ import { GameControls, CompactControlButton } from './GameControls';
 
 interface ChessGameLayoutProps {
   className?: string;
+  hasChat?: boolean;
 }
 
-const LayoutContainer = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
+const LayoutContainer = styled.div<{ $orientation: 'landscape' | 'portrait'; $hasChat: boolean }>`
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: ${props => props.$orientation === 'landscape' ? 'row' : 'column'};
+  display: ${props => props.$orientation === 'landscape' ? 'grid' : 'flex'};
+  ${props => props.$orientation === 'landscape' ? `
+    grid-template-columns: ${props.$hasChat ? 'minmax(0, 1fr) auto' : '1fr auto'};
+  ` : `
+    flex-direction: column;
+  `}
   gap: ${props => props.$orientation === 'landscape' ? props.theme.spacing[3] : props.theme.spacing[1]};
-  padding: ${props => props.theme.spacing[4]};
+  padding: ${props => props.theme.spacing[1]};
 `;
 
 const ChessSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: ${props => props.$orientation === 'landscape' ? 'flex-start' : 'center'};
   gap: ${props => props.theme.spacing[2]};
-  flex: ${props => props.$orientation === 'landscape' ? '0 0 auto' : '1'};
-  width: ${props => props.$orientation === 'portrait' ? '100%' : 'auto'};
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  justify-content: ${props => props.$orientation === 'portrait' ? 'flex-start' : 'center'};
+  ${props => props.$orientation === 'landscape' && `
+    padding-left: ${props.theme.spacing[4]};
+  `}
+  ${props => props.$orientation === 'portrait' && `
+    padding-top: ${props.theme.spacing[2]};
+  `}
+  overflow: ${props => props.$orientation === 'portrait' ? 'auto' : 'hidden'};
+  min-width: 0;
 `;
 
 const GameInfo = styled.div`
@@ -37,22 +52,31 @@ const GameInfo = styled.div`
   white-space: nowrap;
 `;
 
-const BoardWrapper = styled.div`
+const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  height: auto;
+  ${props => props.$orientation === 'portrait' ? `
+    width: min(100vw - 32px, calc(100vh - 400px));
+    height: min(100vw - 32px, calc(100vh - 400px));
+  ` : `
+    height: 100%;
+    aspect-ratio: 1;
+    max-width: 100%;
+    max-height: 100%;
+  `}
+  min-width: 0;
+  min-height: 0;
 `;
 
 const PortraitBoardSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing[3]};
-  align-items: stretch;
+  gap: ${props => props.theme.spacing[2]};
   width: fit-content;
   margin: 0 auto;
+  align-items: stretch;
 `;
 
 const MoveInfo = styled.div`
@@ -69,22 +93,34 @@ const ControlsSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
   display: flex;
   flex-direction: column;
   gap: ${props => props.theme.spacing[2]};
-  flex: 1;
+  flex: ${props => props.$orientation === 'landscape' ? '0 0 auto' : '0 0 auto'};
   min-width: ${props => props.$orientation === 'landscape' ? '280px' : 'auto'};
   max-width: ${props => props.$orientation === 'landscape' ? '320px' : 'none'};
   overflow: hidden;
+  ${props => props.$orientation === 'portrait' && `
+    width: 100%;
+    max-width: min(100vw - 32px, 600px);
+    margin: 0 auto;
+  `}
 `;
 
 const LandscapeLayout = styled.div`
   display: flex;
+  width: 100%;
   height: 100%;
   gap: ${props => props.theme.spacing[3]};
 `;
 
 const LandscapeBoardSection = styled.div`
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: auto auto;
   gap: ${props => props.theme.spacing[3]};
+  height: 100%;
+  align-items: center;
+  justify-self: start;
+  padding-left: ${props => props.theme.spacing[4]};
+  max-width: 100%;
+  overflow: hidden;
 `;
 
 const PlayersColumn = styled.div`
@@ -94,6 +130,7 @@ const PlayersColumn = styled.div`
   gap: 0;
   width: 200px;
   padding: ${props => props.theme.spacing[3]} 0;
+  flex-shrink: 0;
 `;
 
 const PlayerWithClock = styled.div`
@@ -156,7 +193,7 @@ const ExtraControlsContainer = styled.div`
   width: 100%;
 `;
 
-export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ className }) => {
+export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ className, hasChat = false }) => {
   const { gameStore, preferencesStore } = useRootStore();
   const layout = useLayout();
   
@@ -228,13 +265,35 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
     console.log('Setup FEN');
   }, []);
   
-  const renderLandscapeLayout = () => (
-    <LandscapeLayout>
-      <ChessSection $orientation="landscape">
+  
+  const renderPortraitLayout = () => (
+    <>
+      <ChessSection $orientation="portrait">
         <GameInfo>{gameInfo}</GameInfo>
         
-        <LandscapeBoardSection>
-          <BoardWrapper>
+        <PortraitBoardSection>
+          <HorizontalPlayerWithClock>
+            <PortraitClock 
+              time={blackPlayer.time} 
+              isActive={!isWhiteTurn}
+              showTenths={blackPlayer.time < 10}
+              lowTimeThreshold={30}
+              size="small"
+              compact={true}
+            />
+            <PlayerCard
+              name={blackPlayer.name}
+              rating={blackPlayer.rating}
+              time={blackPlayer.time}
+              isActive={!isWhiteTurn}
+              isWhite={false}
+              orientation="horizontal"
+              hideClockInCard={true}
+              compact={true}
+            />
+          </HorizontalPlayerWithClock>
+          
+          <BoardWrapper $orientation="portrait">
             <ChessBoardWithPieces
               position={position}
               flipped={preferencesStore.preferences.boardFlipped}
@@ -244,7 +303,91 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
             />
           </BoardWrapper>
           
-          <PlayersColumn>
+          <HorizontalPlayerWithClock>
+            <PortraitClock 
+              time={whitePlayer.time} 
+              isActive={isWhiteTurn}
+              showTenths={whitePlayer.time < 10}
+              lowTimeThreshold={30}
+              size="small"
+              compact={true}
+            />
+            <PlayerCard
+              name={whitePlayer.name}
+              rating={whitePlayer.rating}
+              time={whitePlayer.time}
+              isActive={isWhiteTurn}
+              isWhite={true}
+              orientation="horizontal"
+              hideClockInCard={true}
+              compact={true}
+            />
+          </HorizontalPlayerWithClock>
+        </PortraitBoardSection>
+        
+        <MoveInfo>
+          <span>{moveNotation}</span>
+          {opening && <span>• {opening}</span>}
+        </MoveInfo>
+      </ChessSection>
+      
+      <ControlsSection $orientation="portrait">
+        {perspective !== 'freestyle' && (
+          <GameControls
+            perspective={perspective}
+            canAbort={gameStore.moveHistory.length <= 1}
+          />
+        )}
+        
+        <MoveList
+          moves={gameStore.moveHistory}
+          currentMoveIndex={gameStore.moveHistory.length - 1}
+          onMoveClick={handleMoveClick}
+          onNavigate={(direction) => {
+            // TODO: Implement navigation
+            console.log('Navigate:', direction);
+          }}
+          extraControls={perspective === 'freestyle' ? (
+            <ExtraControlsContainer>
+              <CompactControlButton 
+                onClick={handleAnalysis} 
+                $variant="primary"
+                $isActive={false}
+              >
+                Analysis
+              </CompactControlButton>
+              <CompactControlButton 
+                onClick={handleSetupFEN} 
+                $variant="secondary"
+              >
+                FEN
+              </CompactControlButton>
+            </ExtraControlsContainer>
+          ) : undefined}
+        />
+      </ControlsSection>
+    </>
+  );
+  
+  return (
+    <LayoutContainer className={className} $orientation={isLandscape ? 'landscape' : 'portrait'} $hasChat={hasChat}>
+      {isLandscape ? (
+        <>
+          <ChessSection $orientation="landscape">
+            <GameInfo>{gameInfo}</GameInfo>
+            
+            <LandscapeBoardSection>
+              <BoardWrapper $orientation="landscape">
+                <ChessBoardWithPieces
+                    position={position}
+                    flipped={preferencesStore.preferences.boardFlipped}
+                    showCoordinates={true}
+                    onMove={handleMove}
+                    interactive={perspective === 'playing' || perspective === 'freestyle'}
+                />
+              </BoardWrapper>
+              
+              <PlayersColumn>
             <PlayerWithClock>
               <LandscapeClock 
                 time={blackPlayer.time} 
@@ -326,122 +469,15 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
       </ChessSection>
       
       {perspective !== 'freestyle' && (
-        <ControlsSection $orientation="landscape">
-          <GameControls
-            perspective={perspective}
-            canAbort={gameStore.moveHistory.length <= 1}
-          />
-        </ControlsSection>
-      )}
-    </LandscapeLayout>
-  );
-  
-  const renderPortraitLayout = () => (
-    <>
-      <ChessSection $orientation="portrait">
-        <GameInfo>{gameInfo}</GameInfo>
-        
-        <PortraitBoardSection>
-          <HorizontalPlayerWithClock>
-            <PortraitClock 
-              time={blackPlayer.time} 
-              isActive={!isWhiteTurn}
-              showTenths={blackPlayer.time < 10}
-              lowTimeThreshold={30}
-              size="small"
-              compact={true}
-            />
-            <PlayerCard
-              name={blackPlayer.name}
-              rating={blackPlayer.rating}
-              time={blackPlayer.time}
-              isActive={!isWhiteTurn}
-              isWhite={false}
-              orientation="horizontal"
-              hideClockInCard={true}
-              compact={true}
-            />
-          </HorizontalPlayerWithClock>
-          
-          <BoardWrapper>
-            <ChessBoardWithPieces
-              position={position}
-              flipped={preferencesStore.preferences.boardFlipped}
-              showCoordinates={true}
-              onMove={handleMove}
-              interactive={perspective === 'playing' || perspective === 'freestyle'}
-            />
-          </BoardWrapper>
-          
-          <HorizontalPlayerWithClock>
-            <PortraitClock 
-              time={whitePlayer.time} 
-              isActive={isWhiteTurn}
-              showTenths={whitePlayer.time < 10}
-              lowTimeThreshold={30}
-              size="small"
-              compact={true}
-            />
-            <PlayerCard
-              name={whitePlayer.name}
-              rating={whitePlayer.rating}
-              time={whitePlayer.time}
-              isActive={isWhiteTurn}
-              isWhite={true}
-              orientation="horizontal"
-              hideClockInCard={true}
-              compact={true}
-            />
-          </HorizontalPlayerWithClock>
-        </PortraitBoardSection>
-        
-        <MoveInfo>
-          <span>{moveNotation}</span>
-          {opening && <span>• {opening}</span>}
-        </MoveInfo>
-      </ChessSection>
-      
-      <ControlsSection $orientation="portrait">
-        {perspective !== 'freestyle' && (
-          <GameControls
-            perspective={perspective}
-            canAbort={gameStore.moveHistory.length <= 1}
-          />
-        )}
-        
-        <MoveList
-          moves={gameStore.moveHistory}
-          currentMoveIndex={gameStore.moveHistory.length - 1}
-          onMoveClick={handleMoveClick}
-          onNavigate={(direction) => {
-            // TODO: Implement navigation
-            console.log('Navigate:', direction);
-          }}
-          extraControls={perspective === 'freestyle' ? (
-            <ExtraControlsContainer>
-              <CompactControlButton 
-                onClick={handleAnalysis} 
-                $variant="primary"
-                $isActive={false}
-              >
-                Analysis
-              </CompactControlButton>
-              <CompactControlButton 
-                onClick={handleSetupFEN} 
-                $variant="secondary"
-              >
-                FEN
-              </CompactControlButton>
-            </ExtraControlsContainer>
-          ) : undefined}
-        />
-      </ControlsSection>
-    </>
-  );
-  
-  return (
-    <LayoutContainer className={className} $orientation={isLandscape ? 'landscape' : 'portrait'}>
-      {isLandscape ? renderLandscapeLayout() : renderPortraitLayout()}
+            <ControlsSection $orientation="landscape">
+              <GameControls
+                perspective={perspective}
+                canAbort={gameStore.moveHistory.length <= 1}
+              />
+            </ControlsSection>
+          )}
+        </>
+      ) : renderPortraitLayout()}
     </LayoutContainer>
   );
 });

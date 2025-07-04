@@ -11,9 +11,13 @@ const HeaderContainer = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 ${props => props.theme.spacing[4]};
+  padding: 0 ${props => props.theme.spacing[2]};
   position: relative;
   z-index: 100;
+  
+  @media (min-width: 640px) {
+    padding: 0 ${props => props.theme.spacing[4]};
+  }
 `;
 
 const LogoSection = styled.div`
@@ -41,18 +45,29 @@ const MenuButton = styled.button`
   }
 `;
 
-const AppTitle = styled.h1`
-  font-size: ${props => props.theme.typography.fontSize.lg};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  color: ${props => props.theme.colors.text};
-  margin: 0;
-  white-space: nowrap;
+const AppIcon = styled.div`
+  font-size: 24px;
+  color: ${props => props.theme.colors.primary};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  
+  @media (min-width: 640px) {
+    margin-right: ${props => props.theme.spacing[2]};
+  }
 `;
+
 
 const ControlsSection = styled.div`
   display: flex;
   align-items: center;
-  gap: ${props => props.theme.spacing[4]};
+  gap: ${props => props.theme.spacing[2]};
+  
+  @media (min-width: 640px) {
+    gap: ${props => props.theme.spacing[4]};
+  }
 `;
 
 const ToggleGroup = styled.div`
@@ -65,6 +80,11 @@ const ToggleLabel = styled.span`
   font-size: ${props => props.theme.typography.fontSize.sm};
   color: ${props => props.theme.colors.textSecondary};
   margin-right: ${props => props.theme.spacing[1]};
+  display: none;
+  
+  @media (min-width: 480px) {
+    display: inline;
+  }
 `;
 
 const ToggleContainer = styled.div`
@@ -123,7 +143,7 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
         <MenuButton onClick={onMenuClick} aria-label="Menu">
           ☰
         </MenuButton>
-        <AppTitle>Simple FICS Interface</AppTitle>
+        <AppIcon title="Simple FICS Interface">⚡FICS</AppIcon>
       </LogoSection>
       
       <ControlsSection>
