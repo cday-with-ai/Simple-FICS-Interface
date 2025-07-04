@@ -75,9 +75,11 @@ export class SANParser {
         const isKingside = notation === 'O-O' || notation === '0-0';
         const row = color === Color.WHITE ? '1' : '8';
 
+        // For Chess960, we cannot determine the exact king position from notation alone
+        // Return a special move that will be matched by SAN in makeMove
         return new Move(
             notation,
-            `e${row}`,
+            '*', // Special marker for castling moves that need SAN matching
             isKingside ? `g${row}` : `c${row}`,
             null,
             null,

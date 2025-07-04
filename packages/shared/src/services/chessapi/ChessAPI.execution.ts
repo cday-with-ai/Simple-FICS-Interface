@@ -127,20 +127,53 @@ export class MoveExecutor {
         const row = color === Color.WHITE ? 0 : 7;
         const isKingside = move.castlingSide === 'kingside';
 
-        if (isKingside) {
-            // Move king from e to g
-            board[row][6] = board[row][4];
-            board[row][4] = null;
-            // Move rook from h to f
-            board[row][5] = board[row][7];
-            board[row][7] = null;
+        // Try to get Chess960 castling squares
+        const chess960Squares = VariantRules.getChess960CastlingSquares(
+            board,
+            color,
+            move.castlingSide!
+        );
+
+        if (chess960Squares) {
+            // Chess960 castling - use dynamic positions
+            const kingFromCoords = this.algebraicToCoords(chess960Squares.kingFrom);
+            const kingToCoords = this.algebraicToCoords(chess960Squares.kingTo);
+            const rookFromCoords = this.algebraicToCoords(chess960Squares.rookFrom);
+            const rookToCoords = this.algebraicToCoords(chess960Squares.rookTo);
+
+            if (!kingFromCoords || !kingToCoords || !rookFromCoords || !rookToCoords) {
+                result.success = false;
+                return result;
+            }
+
+            // Save pieces
+            const king = board[kingFromCoords.row][kingFromCoords.col];
+            const rook = board[rookFromCoords.row][rookFromCoords.col];
+
+            // Clear original positions
+            board[kingFromCoords.row][kingFromCoords.col] = null;
+            board[rookFromCoords.row][rookFromCoords.col] = null;
+
+            // Place pieces in new positions
+            board[kingToCoords.row][kingToCoords.col] = king;
+            board[rookToCoords.row][rookToCoords.col] = rook;
         } else {
-            // Move king from e to c
-            board[row][2] = board[row][4];
-            board[row][4] = null;
-            // Move rook from a to d
-            board[row][3] = board[row][0];
-            board[row][0] = null;
+            // Fallback to standard chess castling (for compatibility)
+            if (isKingside) {
+                // Move king from e to g
+                board[row][6] = board[row][4];
+                board[row][4] = null;
+                // Move rook from h to f
+                board[row][5] = board[row][7];
+                board[row][7] = null;
+            } else {
+                // Move king from e to c
+                board[row][2] = board[row][4];
+                board[row][4] = null;
+                // Move rook from a to d
+                board[row][3] = board[row][0];
+                board[row][0] = null;
+            }
         }
 
         // Update castling rights - king has moved

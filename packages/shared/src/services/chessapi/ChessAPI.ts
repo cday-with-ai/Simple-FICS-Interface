@@ -377,19 +377,65 @@ export class ChessAPI {
      */
     makeMove(san: string): Move | null {
         const move = this._parseFlexibleSan(san);
-        if (!move) return null;
+        
+        // If parser succeeded, find and execute the matching legal move
+        if (move) {
+            // Handle drop moves (Crazyhouse)
+            if (move.from === '@') {
+                // Extract piece type from SAN (e.g., "N@g4" -> "n")
+                const pieceMatch = san.match(/^([PNBRQK])@/);
+                if (pieceMatch && this.variant === Variant.CRAZYHOUSE) {
+                    const pieceType = pieceMatch[1].toLowerCase() as PieceType;
+                    return this.makeDropMove(pieceType, move.to);
+                }
+                return null;
+            }
+            
+            // Handle castling moves (especially for Chess960)
+            if (move.from === '*' && move.isCastling) {
+                const legalMoves = this.getLegalMoves();
+                const matchingMove = legalMoves.find(legalMove =>
+                    legalMove.isCastling &&
+                    legalMove.castlingSide === move.castlingSide
+                );
+                if (matchingMove) {
+                    return this._executeMove(matchingMove);
+                }
+                return null;
+            }
+            
+            const legalMoves = this.getLegalMoves();
+            const matchingMove = legalMoves.find(legalMove =>
+                legalMove.from === move.from &&
+                legalMove.to === move.to &&
+                legalMove.promotion === move.promotion
+            );
 
-        // Check if this move is in the list of legal moves (includes variant filtering)
+            if (matchingMove) {
+                return this._executeMove(matchingMove);
+            }
+            return null;
+        }
+        
+        // Parser failed - try to match against legal moves directly
+        // This handles cases where the parser incorrectly thinks moves are ambiguous
         const legalMoves = this.getLegalMoves();
-        const matchingMove = legalMoves.find(legalMove =>
-            legalMove.from === move.from &&
-            legalMove.to === move.to &&
-            legalMove.promotion === move.promotion
-        );
-
+        
+        // First try exact match
+        let matchingMove = legalMoves.find(legalMove => legalMove.san === san);
+        
+        // If no exact match, try matching without check/checkmate notation
+        if (!matchingMove) {
+            const normalizedSan = san.replace(/[+#]$/, ''); // Remove trailing + or #
+            matchingMove = legalMoves.find(legalMove => 
+                legalMove.san.replace(/[+#]$/, '') === normalizedSan
+            );
+        }
+        
         if (matchingMove) {
             return this._executeMove(matchingMove);
         }
+        
         return null;
     }
 
@@ -490,17 +536,36 @@ export class ChessAPI {
                         for (let col = 0; col < 8; col++) {
                             if (!this.board[row][col]) {
                                 const dropSquare = this._coordsToAlgebraic({row, col});
-                                const dropMove = new Move(
-                                    `${pieceType.toUpperCase()}@${dropSquare}`,
-                                    '@',
-                                    dropSquare,
-                                    null,
-                                    null,
-                                    false,
-                                    false,
-                                    null
-                                );
-                                moves.push(dropMove);
+                                const coords = {row, col};
+                                
+                                // Validate the drop using VariantRules
+                                if (VariantRules.isValidDrop(this.board, pieceType, coords, this.activeColor)) {
+                                    // Test if this drop would give check
+                                    const testBoard = this._copyBoard(this.board);
+                                    testBoard[row][col] = {type: pieceType, color: this.activeColor};
+                                    
+                                    const opponentColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;
+                                    const givesCheck = MoveValidator.isKingInCheck(testBoard, opponentColor, this.variant);
+                                    
+                                    const san = `${pieceType.toUpperCase()}@${dropSquare}${givesCheck ? '+' : ''}`;
+                                    const dropMove = new Move(
+                                        san,
+                                        '@',
+                                        dropSquare,
+                                        null,
+                                        null,
+                                        false,
+                                        false,
+                                        null
+                                    );
+                                    
+                                    // Validate that this drop doesn't leave our own king in check
+                                    const testPosition = this._copyBoard(this.board);
+                                    testPosition[row][col] = {type: pieceType, color: this.activeColor};
+                                    if (!MoveValidator.isKingInCheck(testPosition, this.activeColor, this.variant)) {
+                                        moves.push(dropMove);
+                                    }
+                                }
                             }
                         }
                     }
@@ -625,6 +690,7 @@ export class ChessAPI {
         // Update en passant target
         this.enPassantTarget = result.enPassantTarget || null;
 
+
         // Update move counters
         // Check if it was a pawn move by looking at the SAN notation
         const isPawnMove = !['N', 'B', 'R', 'Q', 'K'].includes(move.san.charAt(0)) && move.san !== 'O-O' && move.san !== 'O-O-O';
@@ -639,19 +705,26 @@ export class ChessAPI {
             this.fullMoveNumber++;
         }
 
+        // Handle captured pieces for Crazyhouse BEFORE updating history
+        if (this.variant === Variant.CRAZYHOUSE && result.capturedPiece) {
+            let capturedType = result.capturedPiece.type;
+            
+            // In crazyhouse, promoted pieces revert to pawns when captured
+            // Check if the specific piece being captured was promoted by examining move history
+            if (this._wasPiecePromoted(move.to, result.capturedPiece)) {
+                capturedType = PieceType.PAWN;
+            }
+            
+            const captureForColor = result.capturedPiece.color === Color.WHITE ? Color.BLACK : Color.WHITE;
+            this.capturedPieces[captureForColor].push(capturedType);
+        }
+
         // Switch active color
         this.activeColor = this.activeColor === Color.WHITE ? Color.BLACK : Color.WHITE;
 
         // Update history
         this.moveHistory.push(move);
         this.positionHistory.push(this.getFen());
-
-        // Handle captured pieces for Crazyhouse
-        if (this.variant === Variant.CRAZYHOUSE && result.capturedPiece) {
-            const capturedType = result.capturedPiece.type;
-            const captureForColor = result.capturedPiece.color === Color.WHITE ? Color.BLACK : Color.WHITE;
-            this.capturedPieces[captureForColor].push(capturedType);
-        }
 
         return move;
     }
@@ -715,6 +788,13 @@ export class ChessAPI {
         this.legalMovesCache.clear();
         this.attacksFromCache.clear();
         this.isInCheckCache = null;
+    }
+
+    /**
+     * Creates a deep copy of the board
+     */
+    private _copyBoard(board: Board): Board {
+        return board.map(row => row.map(piece => piece ? {...piece} : null));
     }
 
     /**
@@ -826,5 +906,41 @@ export class ChessAPI {
         const toCoords = this._algebraicToCoords(to);
 
         return fromCoords !== null && toCoords !== null;
+    }
+
+    /**
+     * Checks if a piece at a square was promoted by tracking its lineage through move history
+     */
+    private _wasPiecePromoted(square: string, piece: Piece): boolean {
+        // Track the piece backwards through the move history to see if it originated from a promotion
+        return this._tracePieceLineage(square, piece, this.moveHistory.length - 1);
+    }
+
+    /**
+     * Recursively traces a piece's lineage back through move history to find if it was promoted
+     */
+    private _tracePieceLineage(square: string, piece: Piece, moveIndex: number): boolean {
+        if (moveIndex < 0) return false;
+
+        const move = this.moveHistory[moveIndex];
+
+        // If this move was a promotion to the current square, and it matches the piece
+        if (move.promotion && move.to === square && move.promotion === piece.type) {
+            return true;
+        }
+
+        // If this move involved the current square, continue tracing
+        if (move.to === square) {
+            // The piece moved TO this square, so trace where it came FROM
+            return this._tracePieceLineage(move.from, piece, moveIndex - 1);
+        }
+
+        // If this move captured something at this square, the piece is new here
+        if (move.capturedPiece && move.to === square) {
+            return false; // Piece was just captured, so it's not the same piece
+        }
+
+        // Continue searching backwards
+        return this._tracePieceLineage(square, piece, moveIndex - 1);
     }
 }

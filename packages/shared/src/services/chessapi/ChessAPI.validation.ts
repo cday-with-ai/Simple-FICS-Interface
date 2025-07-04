@@ -13,6 +13,7 @@ import {
     CastlingRights
 } from './ChessAPI';
 import {Coordinates} from './ChessAPI.types';
+import {VariantRules} from './ChessAPI.variants';
 
 export class MoveValidator {
     /**
@@ -82,6 +83,11 @@ export class MoveValidator {
                     }
                 }
             }
+        }
+
+        // In Suicide variant, king can move into check
+        if (variant === Variant.SUICIDE) {
+            return true;
         }
 
         // Check if the king is in check after the move
@@ -377,12 +383,59 @@ export class MoveValidator {
         }
 
         const row = color === Color.WHITE ? 0 : 7;
-        const kingCol = 4; // Standard position, would need adjustment for Chess960
 
         // Check if king is in check
         if (this.isKingInCheck(board, color, variant)) {
             return false;
         }
+
+        // For Chess960, use dynamic positions
+        const chess960Squares = VariantRules.getChess960CastlingSquares(board, color, side);
+        if (chess960Squares) {
+            const kingFromCoords = this.algebraicToCoords(chess960Squares.kingFrom);
+            const kingToCoords = this.algebraicToCoords(chess960Squares.kingTo);
+            const rookFromCoords = this.algebraicToCoords(chess960Squares.rookFrom);
+            const rookToCoords = this.algebraicToCoords(chess960Squares.rookTo);
+
+            if (!kingFromCoords || !kingToCoords || !rookFromCoords || !rookToCoords) {
+                return false;
+            }
+
+            // Check if all squares between king and rook are empty (except king and rook themselves)
+            const minCol = Math.min(kingFromCoords.col, rookFromCoords.col);
+            const maxCol = Math.max(kingFromCoords.col, rookFromCoords.col);
+            
+            for (let col = minCol + 1; col < maxCol; col++) {
+                if (board[row][col] !== null) {
+                    return false;
+                }
+            }
+
+            // Check if all squares between king's from and to positions are empty (except from position and rook position)
+            const kingMinCol = Math.min(kingFromCoords.col, kingToCoords.col);
+            const kingMaxCol = Math.max(kingFromCoords.col, kingToCoords.col);
+            
+            for (let col = kingMinCol; col <= kingMaxCol; col++) {
+                if (col !== kingFromCoords.col && col !== rookFromCoords.col && board[row][col] !== null) {
+                    return false;
+                }
+            }
+
+            // Check if all squares the king passes through or lands on are not attacked
+            for (let col = kingMinCol; col <= kingMaxCol; col++) {
+                if (this.isSquareAttacked(board, {
+                    row,
+                    col
+                }, color === Color.WHITE ? Color.BLACK : Color.WHITE, variant)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Fallback to standard chess validation
+        const kingCol = 4; // Standard position
 
         // Check path and destination
         if (side === 'kingside') {

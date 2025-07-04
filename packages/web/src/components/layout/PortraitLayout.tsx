@@ -38,11 +38,11 @@ const ChessBoardArea = styled.main`
 
 // Bottom panel area that can be collapsed/expanded
 const BottomPanelArea = styled.div<{
-    isExpanded: boolean;
-    panelHeight: number;
+    $isExpanded: boolean;
+    $panelHeight: number;
 }>`
-    height: ${({isExpanded, panelHeight}) =>
-            isExpanded ? `${panelHeight}px` : '60px'};
+    height: ${({$isExpanded, $panelHeight}) =>
+            $isExpanded ? `${$panelHeight}px` : '60px'};
     background: ${({theme}) => theme.colors.backgroundSecondary};
     border-top: 1px solid ${({theme}) => theme.colors.border};
     transition: ${({theme}) => `height ${theme.transitions.normal}`};
@@ -66,14 +66,14 @@ const TabBar = styled.div`
 `;
 
 // Tab button for bottom panels
-const TabButton = styled.button<{ isActive: boolean }>`
+const TabButton = styled.button<{ $isActive: boolean }>`
     padding: ${({theme}) => theme.spacing.xs} ${({theme}) => theme.spacing.sm};
     border: 1px solid ${({theme}) => theme.colors.border};
     border-radius: 6px;
-    background: ${({theme, isActive}) =>
-            isActive ? theme.colors.primary : theme.colors.surface};
-    color: ${({theme, isActive}) =>
-            isActive ? theme.colors.textInverse : theme.colors.text};
+    background: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.primary : theme.colors.surface};
+    color: ${({theme, $isActive}) =>
+            $isActive ? theme.colors.textInverse : theme.colors.text};
     font-size: ${({theme}) => theme.typography.fontSize.xs};
     font-weight: ${({theme}) => theme.typography.fontWeight.medium};
     cursor: pointer;
@@ -82,13 +82,13 @@ const TabButton = styled.button<{ isActive: boolean }>`
     min-width: 60px;
 
     &:hover {
-        background: ${({theme, isActive}) =>
-                isActive ? theme.colors.primaryHover : theme.colors.surfaceHover};
+        background: ${({theme, $isActive}) =>
+                $isActive ? theme.colors.primaryHover : theme.colors.surfaceHover};
     }
 `;
 
 // Expand/collapse button
-const ExpandButton = styled.button<{ isExpanded: boolean }>`
+const ExpandButton = styled.button<{ $isExpanded: boolean }>`
     margin-left: auto;
     padding: ${({theme}) => theme.spacing.xs};
     border: 1px solid ${({theme}) => theme.colors.border};
@@ -108,7 +108,7 @@ const ExpandButton = styled.button<{ isExpanded: boolean }>`
     }
 
     &::before {
-        content: '${({isExpanded}) => isExpanded ? '▼' : '▲'}';
+        content: '${({$isExpanded}) => $isExpanded ? '▼' : '▲'}';
         font-size: 12px;
     }
 `;
@@ -248,14 +248,14 @@ export const PortraitLayout: React.FC<PortraitLayoutProps> = ({
             </ChessBoardArea>
 
             <BottomPanelArea
-                isExpanded={isPanelExpanded}
-                panelHeight={panelHeight}
+                $isExpanded={isPanelExpanded}
+                $panelHeight={panelHeight}
             >
                 <TabBar>
                     {availableTabs.map(tab => (
                         <TabButton
                             key={tab}
-                            isActive={activeTab === tab && isPanelExpanded}
+                            $isActive={activeTab === tab && isPanelExpanded}
                             onClick={() => handleTabClick(tab)}
                         >
                             {tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -263,7 +263,7 @@ export const PortraitLayout: React.FC<PortraitLayoutProps> = ({
                     ))}
 
                     <ExpandButton
-                        isExpanded={isPanelExpanded}
+                        $isExpanded={isPanelExpanded}
                         onClick={handleExpandToggle}
                     />
                 </TabBar>

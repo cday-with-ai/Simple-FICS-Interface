@@ -69,7 +69,7 @@ class StockfishEngine {
     private loadStockfishScript(src: string): Promise<void> {
         return new Promise((resolve, reject) => {
             // Check if Stockfish is already loaded
-            if (typeof window !== 'undefined' && (window.Stockfish || window.Sf167Web)) {
+            if (typeof window !== 'undefined' && (typeof window.Stockfish === 'function' || typeof window.Sf167Web === 'function')) {
                 resolve();
                 return;
             }

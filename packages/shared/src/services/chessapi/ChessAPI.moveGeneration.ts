@@ -79,7 +79,12 @@ export class MoveGenerator {
         if (this.isValidSquare(oneSquareForward) && !context.board[oneSquareForward.row][oneSquareForward.col]) {
             if (oneSquareForward.row === promotionRank) {
                 // Promotion moves
-                [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT].forEach(promo => {
+                const promotionPieces = [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT];
+                // In Suicide variant, pawns can also promote to King
+                if (context.variant === Variant.SUICIDE) {
+                    promotionPieces.push(PieceType.KING);
+                }
+                promotionPieces.forEach(promo => {
                     moves.push({
                         from: this.coordsToAlgebraic(from),
                         to: this.coordsToAlgebraic(oneSquareForward),
@@ -113,7 +118,12 @@ export class MoveGenerator {
                 if (targetPiece && targetPiece.color !== piece.color) {
                     if (captureSquare.row === promotionRank) {
                         // Promotion captures
-                        [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT].forEach(promo => {
+                        const promotionPieces = [PieceType.QUEEN, PieceType.ROOK, PieceType.BISHOP, PieceType.KNIGHT];
+                        // In Suicide variant, pawns can also promote to King
+                        if (context.variant === Variant.SUICIDE) {
+                            promotionPieces.push(PieceType.KING);
+                        }
+                        promotionPieces.forEach(promo => {
                             moves.push({
                                 from: this.coordsToAlgebraic(from),
                                 to: this.coordsToAlgebraic(captureSquare),
@@ -229,35 +239,44 @@ export class MoveGenerator {
     ): MoveObject[] {
         const moves: MoveObject[] = [];
 
-        // Check if king hasn't moved (simplified - full implementation would check move history)
-        if (piece.color === Color.WHITE && from.row === 0 && from.col === 4) {
-            // White castling
+        // Only generate castling moves if piece is a king and has castling rights
+        if (piece.type !== PieceType.KING) return moves;
+
+        const color = piece.color;
+        const row = color === Color.WHITE ? 0 : 7;
+
+        // Check castling rights and generate moves
+        if (color === Color.WHITE) {
             if (context.castlingRights.K && this.canCastleKingside(context, Color.WHITE)) {
+                // For Chess960, get the actual king position
+                const kingSquare = this.coordsToAlgebraic(from);
                 moves.push({
-                    from: 'e1',
+                    from: kingSquare,
                     to: 'g1',
                     castling: 'kingside'
                 });
             }
             if (context.castlingRights.Q && this.canCastleQueenside(context, Color.WHITE)) {
+                const kingSquare = this.coordsToAlgebraic(from);
                 moves.push({
-                    from: 'e1',
+                    from: kingSquare,
                     to: 'c1',
                     castling: 'queenside'
                 });
             }
-        } else if (piece.color === Color.BLACK && from.row === 7 && from.col === 4) {
-            // Black castling
+        } else {
             if (context.castlingRights.k && this.canCastleKingside(context, Color.BLACK)) {
+                const kingSquare = this.coordsToAlgebraic(from);
                 moves.push({
-                    from: 'e8',
+                    from: kingSquare,
                     to: 'g8',
                     castling: 'kingside'
                 });
             }
             if (context.castlingRights.q && this.canCastleQueenside(context, Color.BLACK)) {
+                const kingSquare = this.coordsToAlgebraic(from);
                 moves.push({
-                    from: 'e8',
+                    from: kingSquare,
                     to: 'c8',
                     castling: 'queenside'
                 });
@@ -273,11 +292,47 @@ export class MoveGenerator {
     private static canCastleKingside(context: MoveGenerationContext, color: Color): boolean {
         const row = color === Color.WHITE ? 0 : 7;
 
+        // For Chess960, find king and kingside rook positions
+        let kingCol = -1;
+        let rookCol = -1;
+
+        // Find king
+        for (let col = 0; col < 8; col++) {
+            const piece = context.board[row][col];
+            if (piece && piece.type === PieceType.KING && piece.color === color) {
+                kingCol = col;
+                break;
+            }
+        }
+
+        if (kingCol === -1) return false;
+
+        // Find kingside rook (rightmost rook)
+        for (let col = 7; col >= 0; col--) {
+            const piece = context.board[row][col];
+            if (piece && piece.type === PieceType.ROOK && piece.color === color) {
+                rookCol = col;
+                break;
+            }
+        }
+
+        if (rookCol === -1 || rookCol < kingCol) return false; // No kingside rook
+
         // Check if squares between king and rook are empty
-        return !context.board[row][5] && !context.board[row][6] &&
-            // Check if rook is in position
-            context.board[row][7]?.type === PieceType.ROOK &&
-            context.board[row][7]?.color === color;
+        for (let col = Math.min(kingCol, rookCol) + 1; col < Math.max(kingCol, rookCol); col++) {
+            if (context.board[row][col]) return false;
+        }
+
+        // Check if king's destination square (g-file) and intermediate squares are empty
+        // In Chess960, the castling rook might be on one of these squares, which is OK
+        const kingDestCol = 6; // g-file
+        if (kingCol !== kingDestCol) {
+            for (let col = Math.min(kingCol, kingDestCol); col <= Math.max(kingCol, kingDestCol); col++) {
+                if (col !== kingCol && col !== rookCol && context.board[row][col]) return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -286,11 +341,47 @@ export class MoveGenerator {
     private static canCastleQueenside(context: MoveGenerationContext, color: Color): boolean {
         const row = color === Color.WHITE ? 0 : 7;
 
+        // For Chess960, find king and queenside rook positions
+        let kingCol = -1;
+        let rookCol = -1;
+
+        // Find king
+        for (let col = 0; col < 8; col++) {
+            const piece = context.board[row][col];
+            if (piece && piece.type === PieceType.KING && piece.color === color) {
+                kingCol = col;
+                break;
+            }
+        }
+
+        if (kingCol === -1) return false;
+
+        // Find queenside rook (leftmost rook)
+        for (let col = 0; col < 8; col++) {
+            const piece = context.board[row][col];
+            if (piece && piece.type === PieceType.ROOK && piece.color === color) {
+                rookCol = col;
+                break;
+            }
+        }
+
+        if (rookCol === -1 || rookCol > kingCol) return false; // No queenside rook
+
         // Check if squares between king and rook are empty
-        return !context.board[row][1] && !context.board[row][2] && !context.board[row][3] &&
-            // Check if rook is in position
-            context.board[row][0]?.type === PieceType.ROOK &&
-            context.board[row][0]?.color === color;
+        for (let col = Math.min(kingCol, rookCol) + 1; col < Math.max(kingCol, rookCol); col++) {
+            if (context.board[row][col]) return false;
+        }
+
+        // Check if king's destination square (c-file) and intermediate squares are empty
+        // In Chess960, the castling rook might be on one of these squares, which is OK
+        const kingDestCol = 2; // c-file
+        if (kingCol !== kingDestCol) {
+            for (let col = Math.min(kingCol, kingDestCol); col <= Math.max(kingCol, kingDestCol); col++) {
+                if (col !== kingCol && col !== rookCol && context.board[row][col]) return false;
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -77,3 +77,13 @@ transient props (prefixed with `$`) which are automatically filtered out.
 - **2025-01-29**: Found and fixed additional errors in LayoutToggle, TabButton, and ThemeToggle components
 - **2025-01-29**: All styled-components errors resolved - total of 7 components fixed
 - **2025-01-29**: Added favicon to eliminate 404 error
+
+## New Errors Found
+
+### 9. PortraitLayout Component
+
+- [x] **Error**: `isExpanded` prop being sent to DOM
+- [x] **Error**: `panelHeight` prop being sent to DOM
+- **File**: `/src/components/layout/PortraitLayout.tsx`
+- **Solution**: Change to `$isExpanded` and `$panelHeight`
+- **Status**: ✅ FIXED

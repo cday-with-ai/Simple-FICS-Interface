@@ -18,7 +18,7 @@ export class VariantRules {
     /**
      * Checks if captures are forced in the current position (Losers/Suicide)
      */
-    static hasForedCaptures(
+    static hasForcedCaptures(
         board: Board,
         activeColor: Color,
         variant: Variant
