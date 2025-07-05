@@ -15,12 +15,18 @@
 - **Analysis Integration**: Stockfish evaluation display not connected
 - **NativeWind Migration**: Not started (using styled-components for web)
 
-### ✅ Newly Completed (Session Update)
+### ✅ Newly Completed (Latest Session Update)
 - **Chess Board Component**: Full implementation with responsive sizing, drag-and-drop, click-to-move
 - **Game UI Components**: Move list, player cards with clocks, game info, controls all implemented
 - **View Mode System**: Chess Only/Chat Only/Chess & Chat modes fully implemented
 - **Chess Area Orientation**: Landscape/Portrait toggle working with proper responsive behavior
 - **MobX Integration**: Connected to GameStore for position, moves, and game state
+- **Captured Pieces Display**: Fully integrated with ChessAPI, responsive positioning aligned with board ranks
+- **Board Flip Functionality**: Added flip button for freestyle mode with proper state management
+- **Move Navigation System**: Complete position history tracking, click-to-navigate moves, first/last/prev/next controls
+- **Analysis Bar Integration**: Proper sizing in both orientations, matches board height in portrait mode
+- **Layout Stability**: Fixed scrolling issues, prevented layout shifts when pieces are captured
+- **Enhanced GameStore**: Added position history, navigation methods, captured pieces tracking
 
 ## Overview
 
@@ -67,19 +73,21 @@ the chess interface.
 
 ### What's NOT Yet Implemented
 
-1. **Chess Board Component**
-   - Currently using placeholder divs
-   - No actual chess board implementation
-   - No piece rendering or movement
-   - No square highlighting or legal move indicators
+1. ~~**Chess Board Component**~~ ✅ COMPLETE
+   - ~~Currently using placeholder divs~~
+   - ~~No actual chess board implementation~~
+   - ~~No piece rendering or movement~~
+   - ~~No square highlighting or legal move indicators~~
 
-2. **View Mode System (Chess Only/Chat Only/Chess & Chat)**
-   - Mode switching infrastructure not built
-   - No splitter implementation for Chess & Chat mode
-   - Orientation toggle for chess area not implemented
+2. ~~**View Mode System (Chess Only/Chat Only/Chess & Chat)**~~ ✅ COMPLETE
+   - ~~Mode switching infrastructure not built~~
+   - ~~No splitter implementation for Chess & Chat mode~~
+   - ~~Orientation toggle for chess area not implemented~~
 
-3. **Game Perspectives (Freestyle/Playing/Observing/Examining)**
-   - No perspective management system
+3. **Game Perspectives (Freestyle/Playing/Observing/Examining)** 🚧 PARTIAL
+   - Basic perspective detection implemented
+   - Freestyle mode working with FEN dialog
+   - No full perspective management system
    - No variant-specific rule enforcement UI
    - No FICS communication integration
 
@@ -88,12 +96,12 @@ the chess interface.
    - No shared styles between web and mobile
    - Mobile package not yet started
 
-5. **Actual Game UI**
-   - No move list component
-   - No game info display
-   - No player info cards
-   - No analysis controls
-   - No chat interface implementation
+5. ~~**Actual Game UI**~~ ✅ COMPLETE
+   - ~~No move list component~~
+   - ~~No game info display~~
+   - ~~No player info cards~~
+   - ~~No analysis controls~~
+   - Chat interface implementation still pending
 
 ## UPDATE: NativeWind Refactoring Strategy
 
@@ -1690,22 +1698,102 @@ Given the current state, here's the recommended implementation sequence:
 2. **Piece Visibility** - Created symlink to pieces directory
 3. **Layout Overflow** - Board now shrinks appropriately with minimum 100px
 4. **TypeScript Errors** - Fixed theme property access (textSecondary)
+5. **Captured Pieces Display** - Fixed tracking and display of captured pieces
+6. **Portrait Mode Auto-scroll** - Disabled auto-scrolling when making moves
+7. **Move Navigation** - Implemented full move history navigation
+
+### Latest Session Progress (December 2024)
+
+#### Major Features Implemented
+
+1. **Captured Pieces Display**
+   - Integrated with ChessAPI to track captures
+   - Visual display alongside board in both orientations
+   - Portrait: Vertical column aligned with board ranks
+   - Landscape: Horizontal rows above/below player clocks
+   - Empty squares always shown to prevent layout shifts
+   - Piece count badges for multiple captures
+
+2. **Board Flip Functionality**
+   - Added flip button to freestyle perspective
+   - Board orientation reverses (black on bottom/white on top)
+   - Player positions and captured pieces swap accordingly
+   - Visual feedback with button highlighting when flipped
+
+3. **Move History Navigation**
+   - Click any move to jump to that position
+   - Navigation buttons (first/prev/next/last) fully functional
+   - Current move highlighted in move list
+   - Position history tracked for instant navigation
+   - Captured pieces update correctly when navigating
+
+4. **UI/UX Improvements**
+   - Fixed layout shift issues with captured pieces
+   - Improved button styling (consistent active/inactive states)
+   - Better spacing in portrait mode header
+   - Unified scroll behavior in portrait mode
+   - Analysis bar properly sized and aligned in portrait
+
+5. **Stockfish Analysis Integration**
+   - Start/stop analysis with toggle button
+   - Evaluation bar shows position assessment
+   - Engine depth and best line display
+   - Proper cleanup when stopping analysis
+
+#### Technical Achievements
+
+1. **State Management**
+   - Observable captured pieces in GameStore
+   - Position history tracking for navigation
+   - Current move index for highlighting
+   - Proper MobX reactivity for all updates
+
+2. **Layout Refinements**
+   - Portrait captured pieces positioned with precise offset
+   - Analysis bar height matches board exactly
+   - Consistent spacing with theme system
+   - Responsive adjustments for all screen sizes
+
+3. **Performance Optimizations**
+   - Debounced board resizing
+   - Efficient position loading for navigation
+   - Minimal re-renders with MobX
+   - Smooth transitions between states
+
+### Current State
+
+The chess interface is now feature-complete for single-player analysis and review:
+- Full move input (click and drag)
+- Complete move history with navigation
+- Captured pieces tracking
+- Board flipping for perspective changes
+- Stockfish analysis integration
+- Responsive layout for all devices
 
 ### Remaining Tasks
 
-1. **High Priority**
-   - Implement game perspectives (Playing/Observing/Examining/Freestyle)
+1. **High Priority - Multiplayer Support**
    - Connect to FICS protocol for live games
+   - Implement game perspectives (Playing/Observing/Examining)
+   - Clock management for timed games
+   - Premove support for fast games
+   
+2. **High Priority - Chat System**
    - Implement chat interface with tabs
+   - FICS command integration
+   - Channel management
+   - Private messaging support
    
-2. **Medium Priority**
-   - Add legal move indicators
-   - Implement premove support
-   - Add analysis mode with Stockfish
-   - Keyboard shortcuts for mode switching
+3. **Medium Priority - Game Features**
+   - Legal move indicators
+   - Check/checkmate indicators
+   - Game result handling
+   - PGN export functionality
+   - Keyboard shortcuts for navigation
    
-3. **Low Priority**
-   - Mobile FAB for mode switching
-   - Touch gestures for navigation
+4. **Low Priority - Enhancements**
    - Board themes and piece sets
-   - Sound effects
+   - Sound effects for moves
+   - Mobile-specific gestures
+   - Opening book integration
+   - Advanced analysis features

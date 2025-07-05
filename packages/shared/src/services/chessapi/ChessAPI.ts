@@ -261,6 +261,12 @@ export class ChessAPI {
 
             // Clear board
             this.board = this._createEmptyBoard();
+            
+            // Reset captured pieces when loading a new position
+            this.capturedPieces = {
+                [Color.WHITE]: [],
+                [Color.BLACK]: []
+            };
 
             // Parse position
             const rows = position.split('/');
@@ -705,18 +711,22 @@ export class ChessAPI {
             this.fullMoveNumber++;
         }
 
-        // Handle captured pieces for Crazyhouse BEFORE updating history
-        if (this.variant === Variant.CRAZYHOUSE && result.capturedPiece) {
+        // Handle captured pieces for all variants
+        if (result.capturedPiece) {
             let capturedType = result.capturedPiece.type;
             
             // In crazyhouse, promoted pieces revert to pawns when captured
-            // Check if the specific piece being captured was promoted by examining move history
-            if (this._wasPiecePromoted(move.to, result.capturedPiece)) {
-                capturedType = PieceType.PAWN;
+            if (this.variant === Variant.CRAZYHOUSE) {
+                // Check if the specific piece being captured was promoted by examining move history
+                if (this._wasPiecePromoted(move.to, result.capturedPiece)) {
+                    capturedType = PieceType.PAWN;
+                }
             }
             
-            const captureForColor = result.capturedPiece.color === Color.WHITE ? Color.BLACK : Color.WHITE;
-            this.capturedPieces[captureForColor].push(capturedType);
+            // The color that made the capture gets the piece
+            const capturingColor = this.activeColor;
+            this.capturedPieces[capturingColor].push(capturedType);
+            console.log(`Captured ${capturedType} by ${capturingColor}. Total captured:`, this.capturedPieces);
         }
 
         // Switch active color
@@ -845,7 +855,9 @@ export class ChessAPI {
      * Gets captured pieces for a color (Crazyhouse variant)
      */
     getCapturedPieces(color: Color): PieceType[] {
-        return [...this.capturedPieces[color]];
+        const pieces = [...this.capturedPieces[color]];
+        console.log(`getCapturedPieces(${color}):`, pieces);
+        return pieces;
     }
 
     /**

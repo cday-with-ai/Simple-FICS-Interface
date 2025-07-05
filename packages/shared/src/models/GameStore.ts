@@ -1,4 +1,4 @@
-import {makeAutoObservable, runInAction} from 'mobx';
+import {makeAutoObservable, runInAction, computed} from 'mobx';
 import {ChessAPI, Color, Variant, GameResult, Move} from '../services/ChessAPI';
 
 // Forward declaration to avoid circular dependency
@@ -28,21 +28,27 @@ export class GameStore {
     currentGame: GameState | null = null;
     chessBoard: ChessAPI;
     moveHistory: Move[] = [];
+    currentMoveIndex: number = -1; // -1 means at start position
     isAnalyzing = false;
     evaluation: { score: number; depth: number; pv: string } | null = null;
     rootStore?: RootStore;
     private _position: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    private _capturedPieces: { white: string[]; black: string[] } = { white: [], black: [] };
+    private _positionHistory: string[] = []; // Store FEN for each position
 
     constructor() {
         makeAutoObservable(this);
         this.chessBoard = new ChessAPI();
         this._position = this.chessBoard.getFen();
+        this._positionHistory = [this._position];
     }
 
     startNewGame(gameState: GameState, fen?: string) {
         this.currentGame = gameState;
         this.moveHistory = [];
+        this.currentMoveIndex = -1;
         this.evaluation = null;
+        this._capturedPieces = { white: [], black: [] };
 
         // Convert variant string to enum
         const variant = this.getVariantFromString(gameState.variant);
@@ -55,6 +61,7 @@ export class GameStore {
         
         runInAction(() => {
             this._position = this.chessBoard.getFen();
+            this._positionHistory = [this._position];
         });
     }
 
@@ -83,12 +90,16 @@ export class GameStore {
             if (move) {
                 runInAction(() => {
                     this.moveHistory.push(move);
+                    this.currentMoveIndex = this.moveHistory.length - 1;
                     if (this.currentGame) {
                         this.currentGame.lastMove = move.san;
                         this.currentGame.turn = this.chessBoard.getActiveColor() === Color.WHITE ? 'w' : 'b';
                     }
                     // Update the observable position
                     this._position = this.chessBoard.getFen();
+                    this._positionHistory.push(this._position);
+                    // Update captured pieces
+                    this.updateCapturedPieces();
                 });
 
                 // Send move to FICS if connected
@@ -107,10 +118,16 @@ export class GameStore {
             if (move) {
                 runInAction(() => {
                     this.moveHistory.push(move);
+                    this.currentMoveIndex = this.moveHistory.length - 1;
                     if (this.currentGame) {
                         this.currentGame.lastMove = move.san;
                         this.currentGame.turn = this.chessBoard.getActiveColor() === Color.WHITE ? 'w' : 'b';
                     }
+                    // Update the observable position
+                    this._position = this.chessBoard.getFen();
+                    this._positionHistory.push(this._position);
+                    // Update captured pieces
+                    this.updateCapturedPieces();
                 });
                 return true;
             }
@@ -160,6 +177,10 @@ export class GameStore {
                 runInAction(() => {
                     // Clear move history when loading a new position
                     this.moveHistory = [];
+                    this.currentMoveIndex = -1;
+                    this._positionHistory = [this.chessBoard.getFen()];
+                    // Reset captured pieces
+                    this._capturedPieces = { white: [], black: [] };
                     // Create a freestyle game for custom positions
                     this.currentGame = {
                         gameId: -1,
@@ -196,6 +217,18 @@ export class GameStore {
     get currentPosition() {
         return this._position;
     }
+
+    get capturedPieces() {
+        return this._capturedPieces;
+    }
+    
+    private updateCapturedPieces() {
+        this._capturedPieces = {
+            white: this.chessBoard.getCapturedPieces('w'),
+            black: this.chessBoard.getCapturedPieces('b')
+        };
+        console.log('Updated captured pieces:', this._capturedPieces);
+    }
     
     get lastMove() {
         if (this.moveHistory.length === 0) return null;
@@ -204,6 +237,60 @@ export class GameStore {
             from: move.from,
             to: move.to
         };
+    }
+
+    goToMove(index: number) {
+        // Allow -1 for starting position, but no lower
+        const targetIndex = Math.max(-1, Math.min(index, this.moveHistory.length - 1));
+        
+        // Don't allow going before start if there are no moves
+        if (this.moveHistory.length === 0 && targetIndex < 0) {
+            return;
+        }
+        
+        runInAction(() => {
+            this.currentMoveIndex = targetIndex;
+            
+            // Load the position at this move index
+            if (targetIndex === -1) {
+                // Go to starting position
+                this._position = this._positionHistory[0];
+            } else {
+                // Go to position after move at targetIndex
+                this._position = this._positionHistory[targetIndex + 1];
+            }
+            
+            // Load the position into ChessAPI
+            this.chessBoard.loadFen(this._position);
+            
+            // Update captured pieces based on position
+            this.updateCapturedPieces();
+            
+            // Update turn in game state
+            if (this.currentGame) {
+                this.currentGame.turn = this.chessBoard.getActiveColor() === Color.WHITE ? 'w' : 'b';
+            }
+        });
+    }
+
+    goToStart() {
+        // If no moves have been made, stay at current position
+        if (this.moveHistory.length === 0) {
+            return;
+        }
+        this.goToMove(-1);
+    }
+
+    goToEnd() {
+        this.goToMove(this.moveHistory.length - 1);
+    }
+
+    goToPreviousMove() {
+        this.goToMove(this.currentMoveIndex - 1);
+    }
+
+    goToNextMove() {
+        this.goToMove(this.currentMoveIndex + 1);
     }
     
     get currentGameInfo() {

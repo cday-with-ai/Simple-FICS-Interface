@@ -4,36 +4,36 @@ import { observer } from 'mobx-react-lite';
 import { useAnalysisStore } from '@fics/shared';
 import { EvaluationBar } from './EvaluationBar';
 
-const AnalysisSection = styled.div`
+const AnalysisSection = styled.div<{ $orientation?: 'vertical' | 'horizontal'; $boardSize?: number }>`
   display: flex;
   align-items: center;
-  height: 100%;
+  height: ${props => props.$boardSize ? `${props.$boardSize + (props.$boardSize / 8) * 0.25}px` : '99.5%'};
   position: relative;
+  padding: ${props => props.theme.spacing[2]} 0;
+  padding-top: ${props => props.theme.spacing[3]};
+  box-sizing: border-box;
 `;
 
 const AnalysisInfo = styled.div`
-  background-color: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.borderRadius.md};
-  padding: ${props => props.theme.spacing[1]} ${props => props.theme.spacing[2]};
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  box-shadow: ${props => props.theme.shadows.sm};
   display: flex;
   align-items: center;
   gap: ${props => props.theme.spacing[2]};
-  margin-left: ${props => props.theme.spacing[2]};
-  min-width: 200px;
+  font-size: ${props => props.theme.typography.fontSize.xs};
+  width: 100%;
   
   .depth {
-    color: ${props => props.theme.colors.textSecondary};
+    color: ${props => props.theme.colors.textTertiary};
     font-size: ${props => props.theme.typography.fontSize.xs};
+    font-weight: ${props => props.theme.typography.fontWeight.normal};
     white-space: nowrap;
     flex-shrink: 0;
   }
   
   .line {
     font-family: ${props => props.theme.typography.fontFamilyMono};
-    color: ${props => props.theme.colors.text};
+    color: ${props => props.theme.colors.textTertiary};
     font-size: ${props => props.theme.typography.fontSize.xs};
+    font-weight: ${props => props.theme.typography.fontWeight.normal};
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -43,13 +43,14 @@ const AnalysisInfo = styled.div`
 
 interface AnalysisDisplayProps {
   orientation?: 'vertical' | 'horizontal';
+  boardSize?: number;
 }
 
-export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = observer(({ orientation = 'vertical' }) => {
+export const AnalysisDisplay: React.FC<AnalysisDisplayProps> = observer(({ orientation = 'vertical', boardSize }) => {
   const analysisStore = useAnalysisStore();
   
   return (
-    <AnalysisSection>
+    <AnalysisSection $orientation={orientation} $boardSize={boardSize}>
       <EvaluationBar
         evaluation={analysisStore.evaluation}
         percent={analysisStore.evaluationPercent}
@@ -66,12 +67,11 @@ interface AnalysisInfoDisplayProps {
 export const AnalysisInfoDisplay: React.FC<AnalysisInfoDisplayProps> = observer(({ className }) => {
   const analysisStore = useAnalysisStore();
   
-  if (!analysisStore.currentLine) return null;
-  
+  // Temporarily always show something for debugging
   return (
     <AnalysisInfo className={className}>
-      <div className="depth">Depth {analysisStore.depth}</div>
-      <div className="line">{analysisStore.principalVariation || 'Calculating...'}</div>
+      <div className="depth">Depth {analysisStore.depth || 0}</div>
+      <div className="line">{analysisStore.principalVariation || analysisStore.currentLine || 'Calculating...'}</div>
     </AnalysisInfo>
   );
 });

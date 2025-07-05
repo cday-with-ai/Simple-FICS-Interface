@@ -11,6 +11,7 @@ interface MoveListProps {
   showHeader?: boolean;
   extraControls?: React.ReactNode;
   className?: string;
+  disableAutoScroll?: boolean;
 }
 
 const MoveListContainer = styled.div`
@@ -112,19 +113,20 @@ export const MoveList: React.FC<MoveListProps> = observer(({
   onNavigate,
   showHeader = true,
   extraControls,
-  className
+  className,
+  disableAutoScroll = false
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
   
   // Auto-scroll to current move
   useEffect(() => {
-    if (contentRef.current && currentMoveIndex !== undefined) {
+    if (!disableAutoScroll && contentRef.current && currentMoveIndex !== undefined) {
       const currentElement = contentRef.current.querySelector(`[data-move-index="${currentMoveIndex}"]`);
       if (currentElement) {
         currentElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     }
-  }, [currentMoveIndex]);
+  }, [currentMoveIndex, disableAutoScroll]);
   
   const renderMoves = () => {
     const rows = [];

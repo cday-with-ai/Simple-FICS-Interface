@@ -341,7 +341,11 @@ class StockfishEngine {
     stopAnalysis(): void {
         console.log("Call to stop analysis.");
         if (this.engine) {
+            // Clear any pending analysis first
+            this.pendingAnalysis = null;
+            // Send stop command
             this.engine.uci('stop');
+            console.log("Sent stop command to engine");
         }
     }
 

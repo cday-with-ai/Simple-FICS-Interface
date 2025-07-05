@@ -28,9 +28,9 @@ const BarContainer = styled.div<{ $orientation: 'vertical' | 'horizontal' }>`
 
 const EvaluationLabel = styled.div<{ $orientation: 'vertical' | 'horizontal' }>`
   position: absolute;
-  font-weight: bold;
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: #000;
+  font-weight: ${props => props.theme.typography.fontWeight.normal};
+  font-size: ${props => props.theme.typography.fontSize.xs};
+  color: ${props => props.theme.colors.textTertiary};
   z-index: 2;
   ${props => props.$orientation === 'vertical' ? `
     top: -20px;
@@ -52,8 +52,8 @@ const VerticalEvalText = styled.div<{ $isLight: boolean }>`
   writing-mode: vertical-rl;
   text-orientation: mixed;
   font-size: ${props => props.theme.typography.fontSize.xs};
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => props.$isLight ? props.theme.colors.text : props.theme.colors.background};
+  font-weight: ${props => props.theme.typography.fontWeight.normal};
+  color: ${props => props.$isLight ? props.theme.colors.textTertiary : props.theme.colors.background};
   z-index: 3;
   text-shadow: ${props => props.$isLight ? '0 1px 2px rgba(0,0,0,0.3)' : '0 1px 2px rgba(255,255,255,0.3)'};
 `;
