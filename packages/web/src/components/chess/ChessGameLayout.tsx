@@ -31,15 +31,12 @@ const LayoutContainer = styled.div<{ $orientation: 'landscape' | 'portrait'; $ha
 const ChessSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
   display: flex;
   flex-direction: column;
-  align-items: ${props => props.$orientation === 'landscape' ? 'flex-start' : 'center'};
+  align-items: center;
   gap: ${props => props.theme.spacing[2]};
   flex: 1;
   width: 100%;
   height: 100%;
   justify-content: ${props => props.$orientation === 'portrait' ? 'flex-start' : 'center'};
-  ${props => props.$orientation === 'landscape' && `
-    padding-left: ${props.theme.spacing[4]};
-  `}
   ${props => props.$orientation === 'portrait' && `
     padding-top: ${props.theme.spacing[2]};
   `}
@@ -63,7 +60,6 @@ const BoardArea = styled.div`
   flex-direction: column;
   gap: 0;
   height: 100%;
-  flex: 1;
   align-items: center;
   justify-content: center;
 `;
@@ -74,8 +70,6 @@ const TopBoardInfo = styled.div`
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  max-width: min(calc(100vh - 120px), calc(100vw - 400px));
-  margin-bottom: -10px;
   z-index: 1;
 `;
 
@@ -83,35 +77,56 @@ const BottomBoardInfo = styled.div`
   display: flex;
   justify-content: space-between;
   width: 100%;
-  max-width: min(calc(100vh - 120px), calc(100vw - 400px));
   align-items: center;
-  margin-top: -10px;
   z-index: 1;
 `;
 
+// Landscape-specific info components
+const LandscapeTopInfo = styled(TopBoardInfo)`
+  margin-bottom: -6px;
+  max-width: min(calc(100vh - 120px), calc(100vw - 400px));
+  padding: 0 11px;
+`;
+
+const LandscapeBottomInfo = styled(BottomBoardInfo)`
+  margin-top: -6px;
+  max-width: min(calc(100vh - 120px), calc(100vw - 400px));
+  padding: 0 11px;
+`;
+
+// Portrait-specific info components
+const PortraitTopInfo = styled(TopBoardInfo)`
+  margin-bottom: ${props => props.theme.spacing[2]};
+  padding: 0 10px;
+`;
+
+const PortraitBottomInfo = styled(BottomBoardInfo)`
+  margin-top: ${props => props.theme.spacing[2]};
+  padding: 0 10px;
+`;
+
 const GameNumber = styled.div`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.text};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  margin-left: 11px;
+  font-size: ${props => props.theme.typography.fontSize.xs};
+  color: ${props => props.theme.colors.textTertiary};
+  font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
 const TimeControl = styled.div`
   font-size: ${props => props.theme.typography.fontSize.xs};
-  color: ${props => props.theme.colors.textSecondary};
-  margin-right: 11px;
+  color: ${props => props.theme.colors.textTertiary};
+  font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
 const LastMoveInfo = styled.div`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.textSecondary};
-  margin-left: 11px;
+  font-size: ${props => props.theme.typography.fontSize.xs};
+  color: ${props => props.theme.colors.textTertiary};
+  font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
 const OpeningInfo = styled.div`
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.text};
-  margin-right: 11px;
+  font-size: ${props => props.theme.typography.fontSize.xs};
+  color: ${props => props.theme.colors.textTertiary};
+  font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
 const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
@@ -120,8 +135,10 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
   align-items: center;
   justify-content: center;
   ${props => props.$orientation === 'portrait' ? `
-    width: min(100vw - 32px, calc(100vh - 400px));
-    height: min(100vw - 32px, calc(100vh - 400px));
+    width: min(100vw - 32px, calc(100vh - 300px));
+    height: min(100vw - 32px, calc(100vh - 300px));
+    max-width: 600px;
+    max-height: 600px;
   ` : `
     width: min(calc(100vh - 120px), calc(100vw - 400px));
     height: min(calc(100vh - 120px), calc(100vw - 400px));
@@ -186,9 +203,10 @@ const LandscapeLayout = styled.div`
 const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
   display: flex;
   flex-direction: row;
-  gap: ${props => props.theme.spacing[2]};
+  gap: ${props => props.theme.spacing[3]};
   height: 100%;
   align-items: center;
+  justify-content: center;
   padding: ${props => props.theme.spacing[2]};
   width: 100%;
   position: relative;
@@ -228,6 +246,17 @@ const HorizontalPlayerWithClock = styled.div`
   align-items: center;
   justify-content: space-between;
   width: 100%;
+`;
+
+const PortraitPlayerInfo = styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: ${props => props.theme.spacing[2]};
+  align-items: center;
+  justify-content: space-between;
+  width: min(100vw - 32px, calc(100vh - 300px), 600px);
+  max-width: 600px;
+  padding: 0 10px;
 `;
 
 const CompactMoveList = styled(MoveList)`
@@ -370,10 +399,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
   const renderPortraitLayout = () => (
     <>
       <ChessSection $orientation="portrait">
-        <GameInfo>{gameInfo}</GameInfo>
-        
         <PortraitBoardSection>
-          <HorizontalPlayerWithClock>
+          <PortraitTopInfo>
+            <GameNumber>Game #{gameStore.currentGame?.gameId || '12345'}</GameNumber>
+            <TimeControl>{gameStore.currentGameInfo?.timeControl || '5 0'}</TimeControl>
+          </PortraitTopInfo>
+          
+          <PortraitPlayerInfo>
             <PortraitClock 
               time={blackPlayer.time} 
               isActive={!isWhiteTurn}
@@ -392,9 +424,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
               hideClockInCard={true}
               compact={true}
             />
-          </HorizontalPlayerWithClock>
+          </PortraitPlayerInfo>
           
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', width: 'fit-content', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             {isAnalysisActive && (
               <PortraitAnalysisBar>
                 <AnalysisDisplay orientation="horizontal" />
@@ -412,7 +444,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
             </BoardWrapper>
           </div>
           
-          <HorizontalPlayerWithClock>
+          <PortraitPlayerInfo>
             <PortraitClock 
               time={whitePlayer.time} 
               isActive={isWhiteTurn}
@@ -431,13 +463,17 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
               hideClockInCard={true}
               compact={true}
             />
-          </HorizontalPlayerWithClock>
+          </PortraitPlayerInfo>
+          
+          <PortraitBottomInfo>
+            <LastMoveInfo>
+              {moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none'}
+            </LastMoveInfo>
+            {opening && (
+              <OpeningInfo>{opening}</OpeningInfo>
+            )}
+          </PortraitBottomInfo>
         </PortraitBoardSection>
-        
-        <MoveInfo>
-          <span>{moveNotation}</span>
-          {opening && <span>• {opening}</span>}
-        </MoveInfo>
         
         <div style={{ minHeight: '28px' }}>
           {isAnalysisActive && (
@@ -494,10 +530,10 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
                 <AnalysisDisplay orientation="vertical" />
               )}
               <BoardArea>
-                <TopBoardInfo>
+                <LandscapeTopInfo>
                   <GameNumber>Game #{gameStore.currentGame?.gameId || '12345'}</GameNumber>
                   <TimeControl>{gameStore.currentGameInfo?.timeControl || '5 0'}</TimeControl>
-                </TopBoardInfo>
+                </LandscapeTopInfo>
                 <BoardWrapper $orientation="landscape">
                   <ChessBoardWithPieces
                       position={position}
@@ -508,14 +544,14 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
                       lastMove={gameStore.lastMove || undefined}
                   />
                 </BoardWrapper>
-                <BottomBoardInfo>
+                <LandscapeBottomInfo>
                   <LastMoveInfo>
-                    {moveNotation !== 'Starting position' ? moveNotation : 'Last move: none'}
+                    {moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none'}
                   </LastMoveInfo>
                   {opening && (
                     <OpeningInfo>{opening}</OpeningInfo>
                   )}
-                </BottomBoardInfo>
+                </LandscapeBottomInfo>
               </BoardArea>
               
               <PlayersColumn>
