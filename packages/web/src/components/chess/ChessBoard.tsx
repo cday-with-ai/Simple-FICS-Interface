@@ -77,7 +77,7 @@ const Square = styled.div<{
 
 const Coordinate = styled.div<{ $type: 'file' | 'rank'; $isLight: boolean }>`
   position: absolute;
-  font-size: 5px;
+  font-size: 7px;
   font-weight: 600;
   color: ${props => props.$isLight 
     ? props.theme.colors.board.dark  // Use dark square color on light squares

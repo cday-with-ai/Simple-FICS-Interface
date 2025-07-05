@@ -1,12 +1,14 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
-import { useRootStore } from '@fics/shared';
+import { useRootStore, useAnalysisStore } from '@fics/shared';
 import { useLayout } from '../../theme/hooks';
 import { ChessBoardWithPieces } from './ChessBoardWithPieces';
 import { PlayerCard, GameClock } from './PlayerCard';
 import { MoveList } from './MoveList';
 import { GameControls, CompactControlButton } from './GameControls';
+import { AnalysisDisplay, AnalysisInfoDisplay } from './AnalysisDisplay';
+import { FENDialog } from './FENDialog';
 
 interface ChessGameLayoutProps {
   className?: string;
@@ -43,6 +45,10 @@ const ChessSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
   `}
   overflow: ${props => props.$orientation === 'portrait' ? 'auto' : 'hidden'};
   min-width: 0;
+  /* Reserve minimum height for analysis info to prevent jumps */
+  & > *:last-child {
+    min-height: 28px;
+  }
 `;
 
 const GameInfo = styled.div`
@@ -50,6 +56,62 @@ const GameInfo = styled.div`
   font-size: ${props => props.theme.typography.fontSize.sm};
   color: ${props => props.theme.colors.textSecondary};
   white-space: nowrap;
+`;
+
+const BoardArea = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+`;
+
+const TopBoardInfo = styled.div`
+  display: flex;
+  gap: ${props => props.theme.spacing[2]};
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: min(calc(100vh - 120px), calc(100vw - 400px));
+  margin-bottom: -10px;
+  z-index: 1;
+`;
+
+const BottomBoardInfo = styled.div`
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: min(calc(100vh - 120px), calc(100vw - 400px));
+  align-items: center;
+  margin-top: -10px;
+  z-index: 1;
+`;
+
+const GameNumber = styled.div`
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  color: ${props => props.theme.colors.text};
+  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  margin-left: 11px;
+`;
+
+const TimeControl = styled.div`
+  font-size: ${props => props.theme.typography.fontSize.xs};
+  color: ${props => props.theme.colors.textSecondary};
+  margin-right: 11px;
+`;
+
+const LastMoveInfo = styled.div`
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  color: ${props => props.theme.colors.textSecondary};
+  margin-left: 11px;
+`;
+
+const OpeningInfo = styled.div`
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  color: ${props => props.theme.colors.text};
+  margin-right: 11px;
 `;
 
 const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
@@ -61,14 +123,13 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
     width: min(100vw - 32px, calc(100vh - 400px));
     height: min(100vw - 32px, calc(100vh - 400px));
   ` : `
-    height: 100%;
-    aspect-ratio: 1;
+    width: min(calc(100vh - 120px), calc(100vw - 400px));
+    height: min(calc(100vh - 120px), calc(100vw - 400px));
     max-width: 100%;
     max-height: 100%;
   `}
-  min-width: 0;
-  min-height: 0;
 `;
+
 
 const PortraitBoardSection = styled.div`
   display: flex;
@@ -77,6 +138,17 @@ const PortraitBoardSection = styled.div`
   width: fit-content;
   margin: 0 auto;
   align-items: stretch;
+  position: relative;
+`;
+
+const PortraitAnalysisBar = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  z-index: 1;
+  box-shadow: ${props => props.theme.shadows.sm};
 `;
 
 const MoveInfo = styled.div`
@@ -111,16 +183,25 @@ const LandscapeLayout = styled.div`
   gap: ${props => props.theme.spacing[3]};
 `;
 
-const LandscapeBoardSection = styled.div`
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: ${props => props.theme.spacing[3]};
+const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
+  display: flex;
+  flex-direction: row;
+  gap: ${props => props.theme.spacing[2]};
   height: 100%;
   align-items: center;
-  justify-self: start;
-  padding-left: ${props => props.theme.spacing[4]};
-  max-width: 100%;
-  overflow: hidden;
+  padding: ${props => props.theme.spacing[2]};
+  width: 100%;
+  position: relative;
+  /* Reserve space for analysis bar to prevent layout shift */
+  ${props => !props.$hasAnalysis && `
+    &::before {
+      content: '';
+      width: 18px;
+      height: 100%;
+      flex-shrink: 0;
+      visibility: hidden;
+    }
+  `}
 `;
 
 const PlayersColumn = styled.div`
@@ -195,7 +276,10 @@ const ExtraControlsContainer = styled.div`
 
 export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ className, hasChat = false }) => {
   const { gameStore, preferencesStore } = useRootStore();
+  const analysisStore = useAnalysisStore();
   const layout = useLayout();
+  const [isAnalysisActive, setIsAnalysisActive] = useState(false);
+  const [isFENDialogOpen, setIsFENDialogOpen] = useState(false);
   
   // Use the user's preference for chess orientation instead of device orientation
   const isLandscape = preferencesStore.preferences.chessOrientation === 'landscape';
@@ -203,10 +287,15 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
   // Get current position from GameStore
   const position = gameStore.currentPosition || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
   
+  // Test: Start with position after 1.e4
+  // const position = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1';
+  
   // Determine perspective
   const perspective = useMemo(() => {
     if (!gameStore.currentGame) return 'freestyle';
-    // TODO: Determine based on game state
+    // Freestyle mode for custom positions (negative gameId)
+    if (gameStore.currentGame.gameId < 0) return 'freestyle';
+    // TODO: Determine based on actual game state (playing, observing, examining)
     return 'playing';
   }, [gameStore.currentGame]);
   
@@ -243,7 +332,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
     return 'Starting position';
   }, [gameStore.moveHistory]);
   
-  const opening = ''; // TODO: Get from ECO database
+  const opening = 'Sicilian Defense: Najdorf Variation'; // TODO: Get from ECO database
   
   // Mock player data for now
   const whitePlayer = gameStore.currentGame?.white || { name: 'White', rating: 1500, time: 900 };
@@ -255,14 +344,26 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
     console.log('Navigate to move:', index);
   }, []);
   
+  // Initialize analysis engine on mount
+  useEffect(() => {
+    analysisStore.initialize();
+  }, [analysisStore]);
+  
+  // Handle analysis toggle
+  useEffect(() => {
+    if (isAnalysisActive && analysisStore.isEngineReady) {
+      analysisStore.startAnalysis(position);
+    } else {
+      analysisStore.stopAnalysis();
+    }
+  }, [isAnalysisActive, position, analysisStore]);
+  
   const handleAnalysis = useCallback(() => {
-    // TODO: Implement analysis
-    console.log('Toggle analysis');
+    setIsAnalysisActive(prev => !prev);
   }, []);
   
   const handleSetupFEN = useCallback(() => {
-    // TODO: Implement FEN setup
-    console.log('Setup FEN');
+    setIsFENDialogOpen(true);
   }, []);
   
   
@@ -293,15 +394,23 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
             />
           </HorizontalPlayerWithClock>
           
-          <BoardWrapper $orientation="portrait">
-            <ChessBoardWithPieces
-              position={position}
-              flipped={preferencesStore.preferences.boardFlipped}
-              showCoordinates={true}
-              onMove={handleMove}
-              interactive={perspective === 'playing' || perspective === 'freestyle'}
-            />
-          </BoardWrapper>
+          <div style={{ position: 'relative' }}>
+            {isAnalysisActive && (
+              <PortraitAnalysisBar>
+                <AnalysisDisplay orientation="horizontal" />
+              </PortraitAnalysisBar>
+            )}
+            <BoardWrapper $orientation="portrait">
+              <ChessBoardWithPieces
+                position={position}
+                flipped={preferencesStore.preferences.boardFlipped}
+                showCoordinates={true}
+                onMove={handleMove}
+                interactive={perspective === 'playing' || perspective === 'freestyle'}
+                lastMove={gameStore.lastMove || undefined}
+              />
+            </BoardWrapper>
+          </div>
           
           <HorizontalPlayerWithClock>
             <PortraitClock 
@@ -329,6 +438,12 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
           <span>{moveNotation}</span>
           {opening && <span>• {opening}</span>}
         </MoveInfo>
+        
+        <div style={{ minHeight: '28px' }}>
+          {isAnalysisActive && (
+            <AnalysisInfoDisplay />
+          )}
+        </div>
       </ChessSection>
       
       <ControlsSection $orientation="portrait">
@@ -374,18 +489,34 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
       {isLandscape ? (
         <>
           <ChessSection $orientation="landscape">
-            <GameInfo>{gameInfo}</GameInfo>
-            
-            <LandscapeBoardSection>
-              <BoardWrapper $orientation="landscape">
-                <ChessBoardWithPieces
-                    position={position}
-                    flipped={preferencesStore.preferences.boardFlipped}
-                    showCoordinates={true}
-                    onMove={handleMove}
-                    interactive={perspective === 'playing' || perspective === 'freestyle'}
-                />
-              </BoardWrapper>
+            <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
+              {isAnalysisActive && (
+                <AnalysisDisplay orientation="vertical" />
+              )}
+              <BoardArea>
+                <TopBoardInfo>
+                  <GameNumber>Game #{gameStore.currentGame?.gameId || '12345'}</GameNumber>
+                  <TimeControl>{gameStore.currentGameInfo?.timeControl || '5 0'}</TimeControl>
+                </TopBoardInfo>
+                <BoardWrapper $orientation="landscape">
+                  <ChessBoardWithPieces
+                      position={position}
+                      flipped={preferencesStore.preferences.boardFlipped}
+                      showCoordinates={true}
+                      onMove={handleMove}
+                      interactive={perspective === 'playing' || perspective === 'freestyle'}
+                      lastMove={gameStore.lastMove || undefined}
+                  />
+                </BoardWrapper>
+                <BottomBoardInfo>
+                  <LastMoveInfo>
+                    {moveNotation !== 'Starting position' ? moveNotation : 'Last move: none'}
+                  </LastMoveInfo>
+                  {opening && (
+                    <OpeningInfo>{opening}</OpeningInfo>
+                  )}
+                </BottomBoardInfo>
+              </BoardArea>
               
               <PlayersColumn>
             <PlayerWithClock>
@@ -406,7 +537,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
                 orientation="vertical"
                 hideClockInCard={true}
                 compact={true}
-                style={{ width: '100%' }}
               />
             </PlayerWithClock>
             
@@ -420,7 +550,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
                   <CompactControlButton 
                     onClick={handleAnalysis} 
                     $variant="primary"
-                    $isActive={false}
+                    $isActive={isAnalysisActive}
                   >
                     Analysis
                   </CompactControlButton>
@@ -448,7 +578,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
                 orientation="vertical"
                 hideClockInCard={true}
                 compact={true}
-                style={{ width: '100%' }}
               />
               <LandscapeClock 
                 time={whitePlayer.time} 
@@ -462,10 +591,11 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
           </PlayersColumn>
         </LandscapeBoardSection>
         
-        <MoveInfo>
-          <span>{moveNotation}</span>
-          {opening && <span>• {opening}</span>}
-        </MoveInfo>
+        <div style={{ minHeight: '28px' }}>
+          {isAnalysisActive && (
+            <AnalysisInfoDisplay />
+          )}
+        </div>
       </ChessSection>
       
       {perspective !== 'freestyle' && (
@@ -478,6 +608,11 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({ class
           )}
         </>
       ) : renderPortraitLayout()}
+      
+      <FENDialog 
+        isOpen={isFENDialogOpen}
+        onClose={() => setIsFENDialogOpen(false)}
+      />
     </LayoutContainer>
   );
 });

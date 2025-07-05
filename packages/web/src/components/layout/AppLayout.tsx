@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import { AppHeader } from './AppHeader';
 import { ChessGameLayout } from '../chess/ChessGameLayout';
-import { useViewport } from '../../theme/hooks';
+import { useLayout } from '../../theme/hooks';
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -74,22 +74,22 @@ const ChatPlaceholder = styled.div`
 export const AppLayout: React.FC = observer(() => {
   const { preferencesStore } = useRootStore();
   const { viewMode, autoViewMode } = preferencesStore.preferences;
-  const viewport = useViewport();
+  const layout = useLayout();
   const [chatPanelWidth, setChatPanelWidth] = useState(384);
   const [isResizing, setIsResizing] = useState(false);
   
   // Auto-select view mode based on viewport
   useEffect(() => {
     if (autoViewMode) {
-      if (viewport.isMobile) {
+      if (layout.isMobile) {
         preferencesStore.updatePreference('viewMode', 'chess-only');
-      } else if (viewport.isTablet) {
+      } else if (layout.isTablet) {
         preferencesStore.updatePreference('viewMode', 'chess-only');
       } else {
         preferencesStore.updatePreference('viewMode', 'chess-and-chat');
       }
     }
-  }, [viewport.isMobile, viewport.isTablet, autoViewMode, preferencesStore]);
+  }, [layout.isMobile, layout.isTablet, autoViewMode, preferencesStore]);
   
   // Handle splitter resize
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -123,7 +123,7 @@ export const AppLayout: React.FC = observer(() => {
   // Determine what to show based on view mode
   const showChess = viewMode === 'chess-only' || viewMode === 'chess-and-chat';
   const showChat = viewMode === 'chat-only' || viewMode === 'chess-and-chat';
-  const showSplitter = viewMode === 'chess-and-chat' && !viewport.isMobile;
+  const showSplitter = viewMode === 'chess-and-chat' && !layout.isMobile;
   
   return (
     <LayoutContainer>
@@ -144,7 +144,7 @@ export const AppLayout: React.FC = observer(() => {
         
         <ChatPanel 
           $isVisible={showChat}
-          style={{ width: showChat && !viewport.isMobile ? `${chatPanelWidth}px` : undefined }}
+          style={{ width: showChat && !layout.isMobile ? `${chatPanelWidth}px` : undefined }}
         >
           <ChatPlaceholder>
             Chat System Coming Soon

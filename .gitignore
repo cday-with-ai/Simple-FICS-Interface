@@ -23,3 +23,6 @@ coverage/
 /packages/shared/tsconfig.tsbuildinfo
 /packages/web/dist/
 /packages/mobile/build/
+
+temp
+temp/**

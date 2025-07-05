@@ -327,6 +327,7 @@ class StockfishEngine {
         if (this.engine) {
             console.log('Sending UCI commands for analysis...');
             this.engine.uci('stop');
+            this.engine.uci('setoption name MultiPV value 1');
             this.engine.uci(`position fen ${fen}`);
             this.engine.uci(`go infinite`);
         } else {

@@ -41,6 +41,7 @@ export const ChessPiece: React.FC<ChessPieceProps> = ({
 
   return (
     <PieceImage
+      className="chess-piece"
       src={pieceUrl}
       alt={pieceName}
       $isDragging={isDragging}

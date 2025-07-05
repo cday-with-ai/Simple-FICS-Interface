@@ -20,8 +20,8 @@ const GameViewContainer = styled.div`
 
 const GameInfo = styled.div`
   text-align: center;
-  font-size: ${props => props.theme.typography.sizes.sm};
-  color: ${props => props.theme.colors.text.secondary};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  color: ${props => props.theme.colors.textSecondary};
 `;
 
 const BoardWrapper = styled.div`
@@ -35,8 +35,8 @@ const BoardWrapper = styled.div`
 
 const MoveInfo = styled.div`
   text-align: center;
-  font-size: ${props => props.theme.typography.sizes.sm};
-  color: ${props => props.theme.colors.text.secondary};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  color: ${props => props.theme.colors.textSecondary};
   display: flex;
   gap: ${props => props.theme.spacing[4]};
   align-items: center;

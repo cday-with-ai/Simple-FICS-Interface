@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import styled from 'styled-components';
-import { observer } from 'mobx-react-lite';
+// Removed observer - this component doesn't use MobX state directly
 import { useLayout } from '../../theme/hooks';
 import { ChessPiece } from './ChessPiece';
 
@@ -13,6 +13,7 @@ interface ChessBoardWithPiecesProps {
   highlightedSquares?: Set<string>;
   lastMove?: { from: string; to: string };
   interactive?: boolean;
+  onSizeCalculated?: (size: number) => void;
 }
 
 const BoardContainer = styled.div<{ $size: number }>`
@@ -96,7 +97,7 @@ const Square = styled.div<{
 
 const Coordinate = styled.div<{ $type: 'file' | 'rank'; $isLight: boolean }>`
   position: absolute;
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 600;
   color: ${props => props.$isLight 
     ? props.theme.colors.board.dark  // Use dark square color on light squares
@@ -117,8 +118,8 @@ const Coordinate = styled.div<{ $type: 'file' | 'rank'; $isLight: boolean }>`
 
 const DraggingPiece = styled.div<{ $x: number; $y: number; $size: number }>`
   position: fixed;
-  left: ${props => props.$x - props.$size / 2}px;
-  top: ${props => props.$y - props.$size / 2}px;
+  left: 0;
+  top: 0;
   width: ${props => props.$size}px;
   height: ${props => props.$size}px;
   pointer-events: none;
@@ -126,6 +127,11 @@ const DraggingPiece = styled.div<{ $x: number; $y: number; $size: number }>`
   display: flex;
   align-items: center;
   justify-content: center;
+  transform: translate(
+    calc(${props => props.$x}px - 50%), 
+    calc(${props => props.$y}px - 50%)
+  );
+  will-change: transform;
 `;
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -162,7 +168,7 @@ function parseFEN(fen: string): Map<string, string> {
   return pieces;
 }
 
-export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observer(({
+export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
   position,
   size: providedSize,
   flipped = false,
@@ -170,7 +176,8 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   onMove,
   highlightedSquares = new Set(),
   lastMove,
-  interactive = true
+  interactive = true,
+  onSizeCalculated
 }) => {
   const layout = useLayout();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -182,6 +189,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     from: string;
     x: number;
     y: number;
+    size: number;
   } | null>(null);
 
   // Parse position
@@ -195,12 +203,26 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     }
 
     const calculateBoardSize = () => {
-      if (!containerRef.current) return;
+      if (!containerRef.current) {
+        console.log('calculateBoardSize: No container ref');
+        return;
+      }
 
       const parent = containerRef.current.parentElement;
-      if (!parent) return;
+      if (!parent) {
+        console.log('calculateBoardSize: No parent element');
+        return;
+      }
 
       const { width: parentWidth, height: parentHeight } = parent.getBoundingClientRect();
+      const containerRect = containerRef.current.getBoundingClientRect();
+
+      console.log('calculateBoardSize debug:', {
+        parentSize: { width: parentWidth, height: parentHeight },
+        containerSize: { width: containerRect.width, height: containerRect.height },
+        currentCalculatedSize: calculatedSize,
+        parentElement: parent.className || parent.tagName,
+      });
 
       // Add some padding to prevent edge overlap
       const padding = 16;
@@ -210,11 +232,17 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       const optimalSize = Math.floor(Math.min(maxWidth, maxHeight));
       const size = Math.max(100, Math.floor(optimalSize / 8) * 8); // Minimum 100px
 
-      // Always update the size
-      setCalculatedSize(size);
+      // Only update if size actually changed
+      if (size !== calculatedSize) {
+        setCalculatedSize(size);
+        onSizeCalculated?.(size);
+      }
     };
 
-    // Initial calculation
+    // Initial calculation with a small delay to ensure parent is rendered
+    const initialTimeout = setTimeout(calculateBoardSize, 50);
+    
+    // Also calculate immediately in case parent is already sized
     calculateBoardSize();
 
     // Use debounced resize handler
@@ -226,11 +254,24 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
     window.addEventListener('resize', handleResize);
 
+    // Add ResizeObserver to watch parent element
+    let resizeObserver: ResizeObserver | null = null;
+    if (containerRef.current && containerRef.current.parentElement) {
+      resizeObserver = new ResizeObserver(() => {
+        handleResize();
+      });
+      resizeObserver.observe(containerRef.current.parentElement);
+    }
+
     return () => {
       window.removeEventListener('resize', handleResize);
       clearTimeout(resizeTimeout);
+      clearTimeout(initialTimeout);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
     };
-  }, [providedSize]);
+  }, [providedSize, calculatedSize]);
 
   const squareSize = calculatedSize / 8;
 
@@ -266,10 +307,26 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
     e.preventDefault();
     setSelectedSquare(square);
-    setDraggedPiece({ piece, from: square, x: e.clientX, y: e.clientY });
+    
+    // Get the square's position and ACTUAL size
+    const rect = e.currentTarget.getBoundingClientRect();
+    const actualSquareSize = rect.width; // Use the real square size!
+    const squareCenterX = rect.left + rect.width / 2;
+    const squareCenterY = rect.top + rect.height / 2;
+    
+    // Calculate offset from click position to square center
+    const offsetX = e.clientX - squareCenterX;
+    const offsetY = e.clientY - squareCenterY;
+    
+    // Start with piece at square center with actual size
+    setDraggedPiece({ piece, from: square, x: squareCenterX, y: squareCenterY, size: actualSquareSize });
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      setDraggedPiece(prev => prev ? { ...prev, x: moveEvent.clientX, y: moveEvent.clientY } : null);
+      setDraggedPiece(prev => prev ? { 
+        ...prev, 
+        x: moveEvent.clientX - offsetX, 
+        y: moveEvent.clientY - offsetY 
+      } : null);
     };
 
     const handleMouseUp = (upEvent: MouseEvent) => {
@@ -365,12 +422,14 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
         </BoardGrid>
       </BoardContainer>
       {draggedPiece && (
-        <DraggingPiece $x={draggedPiece.x} $y={draggedPiece.y} $size={squareSize}>
-          <ChessPiece piece={draggedPiece.piece} size={squareSize} isDragging />
-        </DraggingPiece>
+        <>
+          <DraggingPiece $x={draggedPiece.x} $y={draggedPiece.y} $size={draggedPiece.size}>
+            <ChessPiece piece={draggedPiece.piece} size={draggedPiece.size} isDragging />
+          </DraggingPiece>
+        </>
       )}
     </>
   );
-});
+};
 
 ChessBoardWithPieces.displayName = 'ChessBoardWithPieces';

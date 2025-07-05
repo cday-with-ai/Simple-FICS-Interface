@@ -31,10 +31,12 @@ export class GameStore {
     isAnalyzing = false;
     evaluation: { score: number; depth: number; pv: string } | null = null;
     rootStore?: RootStore;
+    private _position: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
     constructor() {
         makeAutoObservable(this);
         this.chessBoard = new ChessAPI();
+        this._position = this.chessBoard.getFen();
     }
 
     startNewGame(gameState: GameState, fen?: string) {
@@ -50,6 +52,10 @@ export class GameStore {
         } else {
             this.chessBoard = new ChessAPI(variant);
         }
+        
+        runInAction(() => {
+            this._position = this.chessBoard.getFen();
+        });
     }
 
     private getVariantFromString(variantStr: string): Variant {
@@ -81,6 +87,8 @@ export class GameStore {
                         this.currentGame.lastMove = move.san;
                         this.currentGame.turn = this.chessBoard.getActiveColor() === Color.WHITE ? 'w' : 'b';
                     }
+                    // Update the observable position
+                    this._position = this.chessBoard.getFen();
                 });
 
                 // Send move to FICS if connected
@@ -145,6 +153,36 @@ export class GameStore {
         });
     }
 
+    loadPosition(fen: string): boolean {
+        try {
+            const isValid = this.chessBoard.loadFen(fen);
+            if (isValid) {
+                runInAction(() => {
+                    // Clear move history when loading a new position
+                    this.moveHistory = [];
+                    // Create a freestyle game for custom positions
+                    this.currentGame = {
+                        gameId: -1,
+                        white: { name: 'White', rating: 0, time: 0 },
+                        black: { name: 'Black', rating: 0, time: 0 },
+                        turn: this.chessBoard.getActiveColor() === Color.WHITE ? 'w' : 'b',
+                        moveNumber: 1,
+                        lastMove: undefined,
+                        result: undefined,
+                        variant: 'standard'
+                    };
+                    // Update the observable position
+                    this._position = this.chessBoard.getFen();
+                });
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Failed to load FEN:', error);
+            return false;
+        }
+    }
+
     toggleAnalysis() {
         runInAction(() => {
             this.isAnalyzing = !this.isAnalyzing;
@@ -156,7 +194,16 @@ export class GameStore {
     }
     
     get currentPosition() {
-        return this.chessBoard.getFen();
+        return this._position;
+    }
+    
+    get lastMove() {
+        if (this.moveHistory.length === 0) return null;
+        const move = this.moveHistory[this.moveHistory.length - 1];
+        return {
+            from: move.from,
+            to: move.to
+        };
     }
     
     get currentGameInfo() {

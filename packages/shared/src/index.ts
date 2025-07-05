@@ -3,6 +3,7 @@ export {GameStore} from './models/GameStore';
 export {FICSStore} from './models/FICSStore';
 export {ChatStore} from './models/ChatStore';
 export {PreferencesStore} from './models/PreferencesStore';
+export {AnalysisStore} from './models/AnalysisStore';
 export {RootStore, createRootStore} from './models/RootStore';
 
 // Services
@@ -29,11 +30,13 @@ export {
     useGameStore,
     useFICSStore,
     useChatStore,
-    usePreferencesStore
+    usePreferencesStore,
+    useAnalysisStore
 } from './contexts/RootStoreContext';
 
 // Types
 export type {GameState, Player} from './models/GameStore';
 export type {FICSUser} from './models/FICSStore';
 export type {ChatMessage, ChatTab} from './models/ChatStore';
-export type {Preferences} from './models/PreferencesStore';
+export type {Preferences, ViewMode, ChessOrientation} from './models/PreferencesStore';
+export type {AnalysisLine} from './models/AnalysisStore';
