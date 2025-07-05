@@ -71,7 +71,7 @@ export const AnalysisInfoDisplay: React.FC<AnalysisInfoDisplayProps> = observer(
   return (
     <AnalysisInfo className={className}>
       <div className="depth">Depth {analysisStore.depth || 0}</div>
-      <div className="line">{analysisStore.principalVariation || analysisStore.currentLine || 'Calculating...'}</div>
+      <div className="line">{analysisStore.principalVariation || (analysisStore.currentLine ? analysisStore.currentLine.pv.join(' ') : null) || 'Calculating...'}</div>
     </AnalysisInfo>
   );
 });

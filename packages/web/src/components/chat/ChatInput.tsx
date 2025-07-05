@@ -1,0 +1,133 @@
+import React, { useRef, KeyboardEvent } from 'react';
+import styled from 'styled-components';
+
+interface ChatInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  onSend: (message: string) => void;
+  onHistoryNavigate?: (direction: 'up' | 'down') => void;
+  placeholder?: string;
+  disabled?: boolean;
+}
+
+const InputContainer = styled.div`
+  display: flex;
+  gap: ${props => props.theme.spacing[2]};
+  padding: ${props => props.theme.spacing[2]};
+  background-color: ${props => props.theme.colors.backgroundTertiary};
+  border-top: 1px solid ${props => props.theme.colors.border};
+`;
+
+const InputField = styled.input`
+  flex: 1;
+  padding: ${props => props.theme.spacing[2]};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.sm};
+  background-color: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.text};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  font-family: ${props => props.theme.typography.fontFamilyMono};
+  outline: none;
+  transition: all ${props => props.theme.transitions.fast};
+  
+  &:focus {
+    border-color: ${props => props.theme.colors.primary};
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primary}20;
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  &::placeholder {
+    color: ${props => props.theme.colors.textTertiary};
+  }
+`;
+
+const SendButton = styled.button`
+  padding: ${props => props.theme.spacing[2]} ${props => props.theme.spacing[3]};
+  border: none;
+  border-radius: ${props => props.theme.borderRadius.sm};
+  background-color: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.textInverse};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  font-weight: ${props => props.theme.typography.fontWeight.medium};
+  cursor: pointer;
+  transition: all ${props => props.theme.transitions.fast};
+  outline: none;
+  
+  &:hover:not(:disabled) {
+    background-color: ${props => props.theme.colors.primaryHover};
+  }
+  
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  &:focus-visible {
+    box-shadow: 0 0 0 2px ${props => props.theme.colors.primary}40;
+  }
+`;
+
+export const ChatInput: React.FC<ChatInputProps> = ({
+  value,
+  onChange,
+  onSend,
+  onHistoryNavigate,
+  placeholder = 'Type a message...',
+  disabled = false
+}) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (value.trim()) {
+        onSend(value);
+      }
+    } else if (e.key === 'ArrowUp' && !value) {
+      e.preventDefault();
+      onHistoryNavigate?.('up');
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      onHistoryNavigate?.('down');
+    }
+  };
+
+  const handleSendClick = () => {
+    if (value.trim()) {
+      onSend(value);
+    }
+  };
+
+  return (
+    <InputContainer>
+      <InputField
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+        spellCheck="true"
+      />
+      <SendButton
+        onClick={handleSendClick}
+        disabled={disabled || !value.trim()}
+        title="Send message (Enter)"
+      >
+        Send
+      </SendButton>
+    </InputContainer>
+  );
+};
+
+ChatInput.displayName = 'ChatInput';

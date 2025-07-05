@@ -224,8 +224,8 @@ export class GameStore {
     
     private updateCapturedPieces() {
         this._capturedPieces = {
-            white: this.chessBoard.getCapturedPieces('w'),
-            black: this.chessBoard.getCapturedPieces('b')
+            white: this.chessBoard.getCapturedPieces(Color.WHITE),
+            black: this.chessBoard.getCapturedPieces(Color.BLACK)
         };
         console.log('Updated captured pieces:', this._capturedPieces);
     }

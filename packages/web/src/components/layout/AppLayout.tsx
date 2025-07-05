@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import { AppHeader } from './AppHeader';
 import { ChessGameLayout } from '../chess/ChessGameLayout';
+import { ChatPanel as ChatPanelComponent } from '../chat';
 import { useLayout } from '../../theme/hooks';
 
 const LayoutContainer = styled.div`
@@ -28,7 +29,7 @@ const ChessArea = styled.div<{ $isVisible: boolean }>`
   overflow: hidden;
 `;
 
-const ChatPanel = styled.div<{ $isVisible: boolean }>`
+const ChatPanelContainer = styled.div<{ $isVisible: boolean }>`
   width: ${props => props.$isVisible ? '384px' : '0'};
   display: ${props => props.$isVisible ? 'flex' : 'none'};
   flex-direction: column;
@@ -60,15 +61,6 @@ const Splitter = styled.div<{ $isVisible: boolean }>`
     left: -2px;
     right: -2px;
   }
-`;
-
-const ChatPlaceholder = styled.div`
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${props => props.theme.colors.textSecondary};
-  font-size: ${props => props.theme.typography.fontSize.lg};
 `;
 
 export const AppLayout: React.FC = observer(() => {
@@ -142,14 +134,12 @@ export const AppLayout: React.FC = observer(() => {
           />
         )}
         
-        <ChatPanel 
+        <ChatPanelContainer 
           $isVisible={showChat}
           style={{ width: showChat && !layout.isMobile ? `${chatPanelWidth}px` : undefined }}
         >
-          <ChatPlaceholder>
-            Chat System Coming Soon
-          </ChatPlaceholder>
-        </ChatPanel>
+          <ChatPanelComponent />
+        </ChatPanelContainer>
       </MainContent>
     </LayoutContainer>
   );

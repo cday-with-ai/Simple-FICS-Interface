@@ -45,17 +45,27 @@ const MenuButton = styled.button`
   }
 `;
 
-const AppIcon = styled.div`
-  font-size: 24px;
-  color: ${props => props.theme.colors.primary};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
+const AppIcon = styled.img`
+  width: 36px;
+  height: 36px;
+  display: block;
   
   @media (min-width: 640px) {
+    width: 40px;
+    height: 40px;
     margin-right: ${props => props.theme.spacing[2]};
+  }
+`;
+
+const AppTitle = styled.h1`
+  font-size: ${props => props.theme.typography.fontSize.lg};
+  font-weight: ${props => props.theme.typography.fontWeight.bold};
+  color: ${props => props.theme.colors.text};
+  margin: 0;
+  display: none;
+  
+  @media (min-width: 768px) {
+    display: block;
   }
 `;
 
@@ -143,7 +153,12 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
         <MenuButton onClick={onMenuClick} aria-label="Menu">
           ☰
         </MenuButton>
-        <AppIcon title="Simple FICS Interface">⚡FICS</AppIcon>
+        <AppIcon 
+          src="/simpleficsinterface.svg" 
+          alt="Simple FICS Interface" 
+          title="Simple FICS Interface"
+        />
+        <AppTitle>Simple FICS Interface</AppTitle>
       </LogoSection>
       
       <ControlsSection>

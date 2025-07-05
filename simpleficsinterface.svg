@@ -1,0 +1,33 @@
+<svg width="240" height="100" viewBox="0 0 240 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Defining a gradient for king piece -->
+    <defs>
+        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#ffffff;stop-opacity:1"/>
+        </linearGradient>
+    </defs>
+    <!-- Dark background with rounded corners -->
+    <rect x="3" y="3" width="234" height="94" rx="12" fill="#121212"/>
+    <!-- Chessboard pattern with alternating squares -->
+    <g opacity="0.3">
+        <rect x="15" y="15" width="15" height="15" fill="#ffffff"/>
+        <rect x="45" y="15" width="15" height="15" fill="#ffffff"/>
+        <rect x="15" y="45" width="15" height="15" fill="#ffffff"/>
+        <rect x="45" y="45" width="15" height="15" fill="#ffffff"/>
+        <rect x="30" y="30" width="15" height="15" fill="#ffffff"/>
+        <rect x="60" y="30" width="15" height="15" fill="#ffffff"/>
+        <rect x="30" y="60" width="15" height="15" fill="#ffffff"/>
+        <rect x="60" y="60" width="15" height="15" fill="#ffffff"/>
+    </g>
+    <!-- Stylized king chess piece -->
+    <path d="M65 80 L65 70 C65 65 60 60 55 60 L55 55 C55 50 60 45 65 45 L65 35 C65 30 70 25 75 25 C80 25 85 30 85 35 L85 45 C90 45 95 50 95 55 L95 60 C90 60 85 65 85 70 L85 80 L90 80 L90 85 L60 85 L60 80 Z" fill="url(#gradient)"/>
+    <!-- FICS text with wider, bolder font and letter spacing -->
+    <text x="110" y="70" font-family="Helvetica, sans-serif" font-size="48" font-weight="900" letter-spacing="2" fill="#ffffff">FICS</text>
+    <!-- Glowing connection nodes for tech vibe -->
+    <circle cx="205" cy="25" r="5" fill="#4CAF50">
+        <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="220" cy="25" r="5" fill="#4CAF50">
+        <animate attributeName="opacity" values="1;0.4;1" dur="2s" begin="0.5s" repeatCount="indefinite"/>
+    </circle>
+</svg>
