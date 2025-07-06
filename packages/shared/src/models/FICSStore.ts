@@ -31,6 +31,12 @@ export class FICSStore {
     // Timeseal protocol constants
     private readonly timesealConnect = "TIMESEAL2|openseal|simpleficsinterface|";
     private readonly timesealKey = "Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
+    
+    // Message buffer for handling FICS protocol delimiter
+    private messageBuffer = "";
+    
+    // Track login state
+    private loginState: 'pre-login' | 'logging-in' | 'logged-in' = 'pre-login';
 
     constructor() {
         makeAutoObservable(this);
@@ -124,6 +130,8 @@ export class FICSStore {
             this.connecting = false;
             this.user = null;
             this.error = null;
+            this.loginState = 'pre-login';
+            this.messageBuffer = '';
         });
     }
 
@@ -214,25 +222,131 @@ export class FICSStore {
     }
 
     private handleMessage(data: string) {
-        console.log('FICS message received:', data.substring(0, 200));
+        console.log('FICS message received (length: ' + data.length + '):', data);
+        console.log('Current login state:', this.loginState);
         
         runInAction(() => {
             this.lastPing = Date.now();
         });
 
-        // Parse FICS protocol messages using the protocol parser
-        const messages = FicsProtocol.parseMessage(data);
+        // Don't buffer messages until we're actually logged in
+        if (this.loginState !== 'logged-in') {
+            // Process the message immediately without buffering
+            const messages = FicsProtocol.parseMessage(data);
+            this.processMessages(messages);
+            return;
+        }
 
+        // After login, buffer messages until we see \nfics%
+        this.messageBuffer += data;
+        
+        console.log('Buffer state:');
+        console.log('  Length:', this.messageBuffer.length);
+        console.log('  Contains \\n\\rfics%?', this.messageBuffer.includes('\n\rfics%'));
+        console.log('  Contains \\nfics%?', this.messageBuffer.includes('\nfics%'));
+        console.log('  Ends with:', JSON.stringify(this.messageBuffer.slice(-20)));
+        
+        // Process complete messages ending with fics%
+        // FICS uses \n\r before fics% on some systems
+        const delimiters = ['\n\rfics%', '\nfics%', '\rfics%'];
+        let delimiterIndex = -1;
+        let delimiterLength = 0;
+        
+        // Find which delimiter is present
+        for (const delim of delimiters) {
+            const index = this.messageBuffer.indexOf(delim);
+            if (index !== -1) {
+                delimiterIndex = index;
+                delimiterLength = delim.length;
+                break;
+            }
+        }
+        
+        // Also check for just 'fics%' at the start of buffer (for cases where \n was in previous chunk)
+        if (delimiterIndex === -1 && this.messageBuffer.startsWith('fics%')) {
+            delimiterIndex = 0;
+            delimiterLength = 5;
+        }
+        
+        while (delimiterIndex !== -1) {
+            let completeMessage;
+            
+            if (delimiterIndex === 0 && delimiterLength === 5) {
+                // Handle case where fics% is at the start
+                completeMessage = '';
+                this.messageBuffer = this.messageBuffer.substring(5);
+            } else {
+                // Extract the complete message (up to but not including the delimiter)
+                completeMessage = this.messageBuffer.substring(0, delimiterIndex);
+                
+                // Remove the processed message and delimiter from the buffer
+                this.messageBuffer = this.messageBuffer.substring(delimiterIndex + delimiterLength);
+            }
+            
+            if (completeMessage) {
+                // Parse the complete message
+                console.log('Processing complete message:', JSON.stringify(completeMessage));
+                const messages = FicsProtocol.parseMessage(completeMessage);
+                console.log('Parsed messages:', messages.map(m => ({ type: m.type, data: m.data })));
+                this.processMessages(messages);
+            }
+            
+            // Look for the next delimiter
+            delimiterIndex = -1;
+            delimiterLength = 0;
+            
+            for (const delim of delimiters) {
+                const index = this.messageBuffer.indexOf(delim);
+                if (index !== -1) {
+                    delimiterIndex = index;
+                    delimiterLength = delim.length;
+                    break;
+                }
+            }
+            
+            if (delimiterIndex === -1 && this.messageBuffer.startsWith('fics%')) {
+                delimiterIndex = 0;
+                delimiterLength = 5;
+            }
+        }
+        
+        console.log('Remaining buffer:', this.messageBuffer.substring(0, 100));
+    }
+
+    private processMessages(messages: any[]) {
         for (const message of messages) {
             try {
                 switch (message.type) {
+                    case 'login':
+                        // User needs to enter username
+                        runInAction(() => {
+                            this.loginState = 'logging-in';
+                        });
+                        break;
+                        
+                    case 'password':
+                        // User needs to enter password
+                        runInAction(() => {
+                            this.loginState = 'logging-in';
+                        });
+                        break;
+
                     case 'sessionStart':
                         this.handleLogin();
-                        this.user = {
-                            handle: message.data.username,
-                            rating: {},
-                            isGuest: message.data.username.startsWith('Guest')
-                        };
+                        runInAction(() => {
+                            this.loginState = 'logged-in';
+                            this.user = {
+                                handle: message.data.username,
+                                rating: {},
+                                isGuest: message.data.username.startsWith('Guest')
+                            };
+                        });
+                        
+                        // Send FICS initialization commands
+                        this.sendCommand('set style 12');
+                        this.sendCommand('set prompt');
+                        this.sendCommand('set bell off');
+                        this.sendCommand('set interface Simple FICS Interface');
                         break;
 
                     case 'style12':
@@ -273,10 +387,6 @@ export class FICSStore {
                         });
                         break;
 
-                    case 'chatContinuation':
-                        // Append to the last chat message (any type)
-                        this.rootStore?.chatStore.appendToLastMessage(message.data.message);
-                        break;
 
                     case 'directTell':
                         // Create private tab if it doesn't exist
@@ -325,7 +435,7 @@ export class FICSStore {
                     case 'raw':
                     default:
                         // Route raw messages to console
-                        if (message.type === 'raw' && message.data && message.data.trim()) {
+                        if (message.type === 'raw' && message.data !== null && message.data !== undefined) {
                             // Create timestamp and force it to be in local timezone
                             const now = new Date();
                             

@@ -115,12 +115,6 @@ const TabIcon = styled.span<{ $type: 'channel' | 'private' | 'console' }>`
   font-size: 12px;
   opacity: 0.7;
   
-  ${props => props.$type === 'private' && `
-    &::before {
-      content: '@';
-    }
-  `}
-  
   ${props => props.$type === 'console' && `
     &::before {
       content: '>';

@@ -73,38 +73,6 @@ export class ChatStore {
         });
     }
 
-    appendToLastMessage(additionalContent: string) {
-        runInAction(() => {
-            // Find the most recent chat message across all tabs (within last 30 seconds)
-            let lastChatMessage: ChatMessage | null = null;
-            let lastChatTab: string | null = null;
-            let lastTimestamp = 0;
-            const thirtySecondsAgo = Date.now() - 30000;
-
-            for (const [tabId, tab] of this.tabs.entries()) {
-                if (tab.messages.length > 0) {
-                    const lastMessage = tab.messages[tab.messages.length - 1];
-                    const messageTime = new Date(lastMessage.timestamp).getTime();
-                    
-                    // Consider all chat messages (not system messages) for continuation
-                    const isChatMessage = lastMessage.type === 'message' || 
-                                        lastMessage.type === 'whisper' || 
-                                        lastMessage.type === 'announcement';
-                    
-                    if (isChatMessage && messageTime > lastTimestamp && messageTime > thirtySecondsAgo) {
-                        lastTimestamp = messageTime;
-                        lastChatMessage = lastMessage;
-                        lastChatTab = tabId;
-                    }
-                }
-            }
-
-            // Append to the last chat message if found and recent
-            if (lastChatMessage && lastChatTab) {
-                lastChatMessage.content += ' ' + additionalContent;
-            }
-        });
-    }
 
     createTab(id: string, name: string, type: ChatTab['type']) {
         runInAction(() => {

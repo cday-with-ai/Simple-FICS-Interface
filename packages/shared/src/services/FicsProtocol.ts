@@ -21,40 +21,76 @@ export class FicsProtocol {
 
         const messages: FicsMessage[] = [];
 
-        // Don't do global line continuation - handle it only for channel messages
+        // Normalize line endings from \r\n or \n\r to just \n
+        msg = msg.replace(/\r\n/g, '\n').replace(/\n\r/g, '\n').replace(/\r/g, '\n');
+        
+        // Remove trailing fics% prompt if present
+        msg = msg.replace(/\nfics%\s*$/, '\n');
 
-        // For multi-line messages, we need to handle them holistically first
+        // Parse multi-line channel tells and other chat messages FIRST
+        // These can contain newlines and \ continuations
+        const channelTells = this.parseChannelTells(msg);
+        messages.push(...channelTells);
+
+        // Track which lines have been processed by channel tells
+        const processedLines = new Set<number>();
+        const lines = msg.split('\n');
+        
+        // Mark lines that were part of channel tells
+        let lineIndex = 0;
+        for (const line of lines) {
+            for (const tell of channelTells) {
+                if (tell.type === 'channelTell' && tell.data) {
+                    // Check if this line is the start of this channel tell
+                    if (line.includes(tell.data.username) && line.includes(`(${tell.data.channelNumber})`)) {
+                        processedLines.add(lineIndex);
+                        // Mark continuation lines as processed too
+                        let nextIndex = lineIndex + 1;
+                        while (nextIndex < lines.length && lines[nextIndex].match(/^\\\s*/)) {
+                            processedLines.add(nextIndex);
+                            nextIndex++;
+                        }
+                    }
+                }
+            }
+            lineIndex++;
+        }
+        
+        // Create remaining message without processed lines
+        let remainingMsg = lines.filter((_, index) => !processedLines.has(index)).join('\n');
+
         // Parse Style12 messages (can span multiple lines in the input)
-        const style12Messages = this.parseStyle12Messages(msg);
+        const style12Messages = this.parseStyle12Messages(remainingMsg);
         messages.push(...style12Messages);
 
         // Parse moves list (can be multi-line)
-        const movesList = this.parseMovesList(msg);
+        const movesList = this.parseMovesList(remainingMsg);
         if (movesList) {
             messages.push({type: 'movesList', data: movesList});
         }
 
         // Parse game start messages (might be multi-line for creating game format)
-        const gameStart = this.parseGameStart(msg);
+        const gameStart = this.parseGameStart(remainingMsg);
         if (gameStart) {
             messages.push({type: 'gameStart', data: gameStart});
         }
 
         // Parse unobserve (can have multiple in one message)
-        const unobserve = this.parseUnobserve(msg);
+        const unobserve = this.parseUnobserve(remainingMsg);
         unobserve.forEach(gameNumber => {
             messages.push({type: 'unobserve', data: {gameNumber}});
         });
 
-        // Now process line by line for line-based messages
-        const lines = msg.split('\n').filter(line => line.trim().length > 0);
+        // Now process line by line for other line-based messages
+        const remainingLines = remainingMsg.split('\n').filter(line => line.trim().length > 0);
 
-        for (const line of lines) {
-            // Skip lines that were already processed as part of Style12, movesList, gameStart, or unobserve
+        for (const line of remainingLines) {
+            // Skip lines that were already processed
             if (line.trim().startsWith('<12>') ||
                 (movesList && (line.includes('Movelist for game') || line.match(/^\[.*\]$/) || line.match(/^\d+\./))) ||
                 (gameStart && (line.includes('Creating:') || line.match(/^\{Game \d+.*\}$/) || line.match(/^Game \d+:/))) ||
-                line.match(/Removing game \d+ from observation list/)) {
+                line.match(/Removing game \d+ from observation list/) ||
+                channelTells.some(tell => tell.type === 'channelTell' && tell.data && line.includes(tell.data.username) && line.includes(`(${tell.data.channelNumber})`))) {
                 continue;
             }
 
@@ -78,39 +114,22 @@ export class FicsProtocol {
                 messages.push({type: 'sessionStart', data: {username: sessionStartMatch[1]}});
                 lineProcessed = true;
             }
-
-            // Game start messages are handled at the top level for multi-line support
-
-            // Check for chat message continuation (lines starting with \ after any chat message)
-            const continuationMatch = line.match(/^\\\s*(.*)$/);
-            if (continuationMatch) {
-                // Only treat as continuation if we recently had any chat message (within last few messages)
-                const recentChatMessage = messages.slice(-3).some(msg => 
-                    msg.type === 'channelTell' || 
-                    msg.type === 'directTell' ||
-                    msg.type === 'kibitz' ||
-                    msg.type === 'whisper' ||
-                    msg.type === 'shout' ||
-                    msg.type === 'cshout'
-                );
-                if (recentChatMessage) {
-                    messages.push({type: 'chatContinuation', data: {message: continuationMatch[1]}});
-                    lineProcessed = true;
-                }
-            }
-
-            // Parse channel tells
-            const channelTell = this.parseChannelTell(line);
-            if (channelTell) {
-                messages.push({type: 'channelTell', data: channelTell});
+            
+            // Also check for guest login pattern
+            const guestMatch = line.match(/Logging you in as "([a-zA-Z0-9]+)"/);
+            if (guestMatch) {
+                // For guest logins, we'll treat this as session start
+                messages.push({type: 'sessionStart', data: {username: guestMatch[1]}});
                 lineProcessed = true;
             }
 
             // Parse direct tells
-            const directTell = this.parseDirectTell(line);
-            if (directTell) {
-                messages.push({type: 'directTell', data: directTell});
-                lineProcessed = true;
+            if (!lineProcessed) {
+                const directTell = this.parseDirectTell(line);
+                if (directTell) {
+                    messages.push({type: 'directTell', data: directTell});
+                    lineProcessed = true;
+                }
             }
 
             // Parse game end
@@ -135,7 +154,8 @@ export class FicsProtocol {
             }
 
             // If this line wasn't processed by any specific parser, add it as raw
-            if (!lineProcessed && line.trim().length > 0) {
+            // Skip FICS prompts, empty lines, and \ continuation lines
+            if (!lineProcessed && line.trim().length > 0 && line.trim() !== 'fics%' && !line.trim().startsWith('\\')) {
                 messages.push({type: 'raw', data: line});
             }
         }
@@ -245,19 +265,60 @@ export class FicsProtocol {
         return null;
     }
 
+    private static escapeRegex(str: string): string {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    private static parseChannelTells(msg: string): FicsMessage[] {
+        const messages: FicsMessage[] = [];
+        
+        // Split into potential message blocks first
+        const lines = msg.split('\n');
+        let i = 0;
+        
+        while (i < lines.length) {
+            const line = lines[i].trim();
+            
+            // Check if this line starts a channel tell
+            const channelMatch = line.match(/^([a-zA-Z0-9_\[\]*-]+)(?:\([^)]*\))*\((\d+)\)\s*:\s*(.*)/);
+            
+            if (channelMatch) {
+                let fullMessage = channelMatch[3];
+                let j = i + 1;
+                
+                // Look for continuation lines (starting with \)
+                while (j < lines.length && lines[j].match(/^\\\s*/)) {
+                    // Remove the leading \ and append the rest
+                    fullMessage += '\n' + lines[j].replace(/^\\\s*/, '');
+                    j++;
+                }
+                
+                messages.push({
+                    type: 'channelTell',
+                    data: {
+                        username: channelMatch[1],
+                        channelNumber: channelMatch[2],
+                        message: fullMessage
+                    }
+                });
+                
+                i = j;
+            } else {
+                i++;
+            }
+        }
+        
+        return messages;
+    }
+
     private static parseChannelTell(msg: string): ChannelTell | null {
-        // Trim the message to remove leading/trailing whitespace
+        // This is now only used for single-line channel tells
+        // Multi-line tells are handled by parseChannelTells
         const trimmedMsg = msg.trim();
         
         // Updated regex to handle titles between username and channel number
         // Examples: username(39): message, username(*)(39): message, username(TD)(TR)(39): message
         const match = trimmedMsg.match(/^([a-zA-Z0-9_\[\]*-]+)(?:\([^)]*\))*\((\d+)\)\s*:\s*(.*)/);
-        
-        // Debug logging
-        if (trimmedMsg.includes('(39):') || trimmedMsg.includes('(220):')) {
-            console.log('parseChannelTell checking:', trimmedMsg);
-            console.log('parseChannelTell match:', match);
-        }
         
         if (match) {
             return {
