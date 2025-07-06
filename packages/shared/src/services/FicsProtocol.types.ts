@@ -44,6 +44,10 @@ export interface DirectTell {
     message: string;
 }
 
+export interface ChatContinuation {
+    message: string;
+}
+
 export interface GameEnd {
     gameNumber: number;
     whiteName: string;
@@ -71,6 +75,7 @@ export type FicsMessage =
     | { type: 'gameStart'; data: GameStart }
     | { type: 'style12'; data: Style12 }
     | { type: 'channelTell'; data: ChannelTell }
+    | { type: 'chatContinuation'; data: ChatContinuation }
     | { type: 'directTell'; data: DirectTell }
     | { type: 'gameEnd'; data: GameEnd }
     | { type: 'movesList'; data: MovesList }

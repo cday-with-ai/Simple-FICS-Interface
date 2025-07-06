@@ -133,6 +133,11 @@ export class FICSStore {
             // Encode with timeseal protocol
             const encoded = this.encodeTimeseal(command);
             this.ws.send(encoded);
+            
+            // Update last activity time
+            runInAction(() => {
+                this.lastPing = Date.now();
+            });
 
             // Add to chat history if it's a chat command
             if (command.startsWith('tell ') || command.startsWith('say ') || command.startsWith('shout ')) {
@@ -268,6 +273,11 @@ export class FICSStore {
                         });
                         break;
 
+                    case 'chatContinuation':
+                        // Append to the last chat message (any type)
+                        this.rootStore?.chatStore.appendToLastMessage(message.data.message);
+                        break;
+
                     case 'directTell':
                         // Create private tab if it doesn't exist
                         const privateTabId = message.data.username.toLowerCase();
@@ -355,10 +365,16 @@ export class FICSStore {
 
     private handleLogin() {
         runInAction(() => {
-            // Initialize ping mechanism
+            // Initialize keepalive mechanism - only send if no activity for 50 minutes
             this.pingInterval = setInterval(() => {
-                this.sendCommand('date');
-            }, 30000);
+                const now = Date.now();
+                const timeSinceLastActivity = now - this.lastPing;
+                const fiftyMinutes = 50 * 60 * 1000; // 50 minutes in milliseconds
+                
+                if (timeSinceLastActivity >= fiftyMinutes) {
+                    this.sendCommand('date');
+                }
+            }, 60000); // Check every minute
         });
     }
 

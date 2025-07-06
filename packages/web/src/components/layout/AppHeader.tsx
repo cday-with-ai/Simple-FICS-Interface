@@ -16,6 +16,7 @@ const HeaderContainer = styled.header`
   z-index: 100;
   
   @media (min-width: 640px) {
+    height: 64px;
     padding: 0 ${props => props.theme.spacing[4]};
   }
 `;
@@ -46,13 +47,13 @@ const MenuButton = styled.button`
 `;
 
 const AppIcon = styled.img`
-  width: 36px;
-  height: 36px;
+  width: 160px;
+  height: 40px;
   display: block;
   
   @media (min-width: 640px) {
-    width: 40px;
-    height: 40px;
+    width: 200px;
+    height: 50px;
     margin-right: ${props => props.theme.spacing[2]};
   }
 `;
@@ -158,7 +159,6 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
           alt="Simple FICS Interface" 
           title="Simple FICS Interface"
         />
-        <AppTitle>Simple FICS Interface</AppTitle>
       </LogoSection>
       
       <ControlsSection>

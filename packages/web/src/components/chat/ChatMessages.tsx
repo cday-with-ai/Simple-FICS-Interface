@@ -117,7 +117,7 @@ const Sender = styled.span<{ $isYou?: boolean }>`
   flex-shrink: 0;
   
   &::after {
-    content: ': ';
+    content: ':';
   }
 `;
 
@@ -278,7 +278,11 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
         }
         
         return (
-          <MessageGroup key={groupIndex}>
+          <MessageGroup 
+            key={groupIndex}
+            onMouseEnter={() => onMessageHover?.(group.timestamp)}
+            onMouseLeave={() => onMessageHover?.(null)}
+          >
             <MessageRow $type={firstMessage.type}>
               <Sender $isYou={isYou}>{group.sender}</Sender>
               <Content>

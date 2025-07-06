@@ -21,6 +21,8 @@ export class FicsProtocol {
 
         const messages: FicsMessage[] = [];
 
+        // Don't do global line continuation - handle it only for channel messages
+
         // For multi-line messages, we need to handle them holistically first
         // Parse Style12 messages (can span multiple lines in the input)
         const style12Messages = this.parseStyle12Messages(msg);
@@ -78,6 +80,24 @@ export class FicsProtocol {
             }
 
             // Game start messages are handled at the top level for multi-line support
+
+            // Check for chat message continuation (lines starting with \ after any chat message)
+            const continuationMatch = line.match(/^\\\s*(.*)$/);
+            if (continuationMatch) {
+                // Only treat as continuation if we recently had any chat message (within last few messages)
+                const recentChatMessage = messages.slice(-3).some(msg => 
+                    msg.type === 'channelTell' || 
+                    msg.type === 'directTell' ||
+                    msg.type === 'kibitz' ||
+                    msg.type === 'whisper' ||
+                    msg.type === 'shout' ||
+                    msg.type === 'cshout'
+                );
+                if (recentChatMessage) {
+                    messages.push({type: 'chatContinuation', data: {message: continuationMatch[1]}});
+                    lineProcessed = true;
+                }
+            }
 
             // Parse channel tells
             const channelTell = this.parseChannelTell(line);
@@ -235,7 +255,7 @@ export class FicsProtocol {
         
         // Debug logging
         if (trimmedMsg.includes('(39):') || trimmedMsg.includes('(220):')) {
-            console.log('parseChannelTell checking (trimmed):', trimmedMsg);
+            console.log('parseChannelTell checking:', trimmedMsg);
             console.log('parseChannelTell match:', match);
         }
         
