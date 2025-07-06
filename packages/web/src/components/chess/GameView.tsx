@@ -74,16 +74,7 @@ export const GameView: React.FC<GameViewProps> = observer(({ className }) => {
   }, [gameStore.currentGameInfo]);
   
   // Get last move
-  const lastMove = useMemo(() => {
-    const history = gameStore.moveHistory;
-    if (history.length > 0) {
-      const lastMoveData = history[history.length - 1];
-      // Extract from and to squares from the move
-      // This is a simplified version - real implementation would parse the move properly
-      return undefined; // TODO: Implement proper last move extraction
-    }
-    return undefined;
-  }, [gameStore.moveHistory]);
+  const lastMove = gameStore.lastMove;
   
   // Get move info (last move notation and opening)
   const moveNotation = useMemo(() => {
@@ -106,11 +97,11 @@ export const GameView: React.FC<GameViewProps> = observer(({ className }) => {
       <BoardWrapper>
         <ChessBoardWithPieces
           position={position}
-          flipped={preferencesStore.preferences.boardFlipped}
+          flipped={gameStore.shouldShowFlippedBoard}
           showCoordinates={true}
           onMove={handleMove}
           lastMove={lastMove}
-          interactive={true} // TODO: Check if it's player's turn or freestyle mode
+          interactive={gameStore.isMyTurn || gameStore.isExamining || !gameStore.currentGame}
         />
       </BoardWrapper>
       

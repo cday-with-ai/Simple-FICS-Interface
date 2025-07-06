@@ -166,4 +166,13 @@ export class PreferencesStore {
                 return true; // For other boolean and basic types, type check is sufficient
         }
     }
+    
+    // Convenience getters
+    get boardFlipped(): boolean {
+        return this.preferences.boardFlipped;
+    }
+    
+    toggleBoardFlip() {
+        this.updatePreference('boardFlipped', !this.preferences.boardFlipped);
+    }
 }

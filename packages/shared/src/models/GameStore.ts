@@ -1,9 +1,12 @@
 import {makeAutoObservable, runInAction, computed} from 'mobx';
 import {ChessAPI, Color, Variant, GameResult, Move} from '../services/ChessAPI';
+import {Style12} from '../services/FicsProtocol.types';
+import {style12ToFen} from '../utils/utils';
 
 // Forward declaration to avoid circular dependency
 interface RootStore {
     ficsStore: any;
+    preferencesStore?: any;
 }
 
 export interface Player {
@@ -35,6 +38,10 @@ export class GameStore {
     private _position: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     private _capturedPieces: { white: string[]; black: string[] } = { white: [], black: [] };
     private _positionHistory: string[] = []; // Store FEN for each position
+    
+    // Game perspective properties
+    gameRelation: number = 0; // -3: isolated, -2: observing examined, -1: playing opponent turn, 0: observing, 1: playing my turn, 2: examining
+    shouldFlipBoard: boolean = false; // From style12 flipBoard field
 
     constructor() {
         makeAutoObservable(this);
@@ -137,29 +144,124 @@ export class GameStore {
         return false;
     }
 
-    updateFromStyle12(style12Data: any) {
+    updateFromStyle12(style12: Style12) {
         runInAction(() => {
-            // Parse Style12 format: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b -1 1 0 1 0 0 1 none (0:00) none 1 0 0 39 39 600 600 1 K/k -1
-            const parts = style12Data.split(' ');
-            if (parts.length >= 26) {
-                const fen = parts.slice(0, 6).join(' ');
-                try {
-                    this.chessBoard.loadFen(fen);
+            try {
+                // Convert Style12 board array to string format for style12ToFen
+                // Style12 board is already in the correct format (8x8 array of strings)
+                const boardRows = style12.board.map(row => row.join(''));
+                
+                // Create a mock style12 string with the required format
+                const mockStyle12Line = '<12> ' + boardRows.join(' ') + ' ' +
+                    style12.colorToMove + ' ' +
+                    (style12.enPassantSquare === '-' ? '-1' : 
+                        (style12.enPassantSquare.charCodeAt(0) - 97)) + ' ' +
+                    (style12.castlingRights.includes('K') ? '1' : '0') + ' ' +
+                    (style12.castlingRights.includes('Q') ? '1' : '0') + ' ' +
+                    (style12.castlingRights.includes('k') ? '1' : '0') + ' ' +
+                    (style12.castlingRights.includes('q') ? '1' : '0') + ' ' +
+                    style12.halfMoveClock + ' ' +
+                    style12.gameNumber + ' ' +
+                    style12.whiteName + ' ' +
+                    style12.blackName + ' ' +
+                    style12.relation + ' ' +
+                    style12.initialTime + ' ' +
+                    style12.incrementTime + ' ' +
+                    style12.whiteMaterialStrength + ' ' +
+                    style12.blackMaterialStrength + ' ' +
+                    style12.whiteTimeRemaining + ' ' +
+                    style12.blackTimeRemaining + ' ' +
+                    style12.moveNumber + ' ' +
+                    style12.verboseMove + ' ' +
+                    style12.timeTaken + ' ' +
+                    style12.prettyMove + ' ' +
+                    (style12.flipBoard ? '1' : '0');
+                
+                // Convert to FEN using the utility
+                const fen = style12ToFen(mockStyle12Line);
+                
+                // Load the position
+                this.chessBoard.loadFen(fen);
 
-                    // Update game state from style12
-                    if (this.currentGame) {
-                        this.currentGame.turn = parts[1] === 'w' ? 'w' : 'b';
-                        this.currentGame.moveNumber = parseInt(parts[5]) || 1;
-
-                        // Times are at positions 16 and 17 in Style12 format
-                        const whiteTime = parseInt(parts[16]) || 0;
-                        const blackTime = parseInt(parts[17]) || 0;
-                        this.currentGame.white.time = whiteTime;
-                        this.currentGame.black.time = blackTime;
+                // Update or create game state
+                if (!this.currentGame || this.currentGame.gameId !== style12.gameNumber) {
+                    // New game or joining mid-game
+                    this.currentGame = {
+                        gameId: style12.gameNumber,
+                        white: { 
+                            name: style12.whiteName, 
+                            rating: 0, // Will be updated from game start
+                            time: style12.whiteTimeRemaining 
+                        },
+                        black: { 
+                            name: style12.blackName, 
+                            rating: 0, // Will be updated from game start
+                            time: style12.blackTimeRemaining 
+                        },
+                        turn: style12.colorToMove.toLowerCase() as 'w' | 'b',
+                        moveNumber: style12.moveNumber,
+                        lastMove: style12.prettyMove !== 'none' ? style12.prettyMove : undefined,
+                        variant: 'standard', // Will be updated from game start
+                        timeControl: `${style12.initialTime/60} ${style12.incrementTime}`
+                    };
+                } else {
+                    // Update existing game
+                    this.currentGame.turn = style12.colorToMove.toLowerCase() as 'w' | 'b';
+                    this.currentGame.moveNumber = style12.moveNumber;
+                    this.currentGame.white.time = style12.whiteTimeRemaining;
+                    this.currentGame.black.time = style12.blackTimeRemaining;
+                    
+                    // Apply the move if there is one
+                    if (style12.prettyMove !== 'none' && style12.verboseMove !== 'none') {
+                        this.currentGame.lastMove = style12.prettyMove;
+                        
+                        // Add move to history if it's not already there
+                        // This handles mid-game joins where we get a style12 with a move
+                        const lastHistoryMove = this.moveHistory[this.moveHistory.length - 1];
+                        if (!lastHistoryMove || lastHistoryMove.san !== style12.prettyMove) {
+                            // Create a move object from the style12 data
+                            const move: Move = {
+                                from: style12.verboseMove.includes('/') ? 
+                                    style12.verboseMove.split('/')[1].split('-')[0] : '',
+                                to: style12.verboseMove.includes('/') ? 
+                                    style12.verboseMove.split('/')[1].split('-')[1] : '',
+                                san: style12.prettyMove,
+                                piece: null, // Will be filled by ChessAPI
+                                color: style12.colorToMove === 'W' ? Color.BLACK : Color.WHITE, // Previous move color
+                                flags: 0,
+                                captured: null,
+                                promotion: null
+                            };
+                            this.moveHistory.push(move);
+                            this.currentMoveIndex = this.moveHistory.length - 1;
+                        }
                     }
-                } catch (error) {
-                    console.error('Failed to parse Style12 data:', error);
                 }
+                
+                // Update position
+                this._position = this.chessBoard.getFen();
+                
+                // If this is a new position, add it to history
+                if (this._positionHistory[this._positionHistory.length - 1] !== this._position) {
+                    this._positionHistory.push(this._position);
+                }
+                
+                // Update captured pieces
+                this.updateCapturedPieces();
+                
+                // Store the relation for game perspective
+                // relation values:
+                // -3: isolated position
+                // -2: observing examined game  
+                // -1: playing, opponent's turn
+                //  0: observing a game
+                //  1: playing, my turn
+                //  2: examining a game
+                this.gameRelation = style12.relation;
+                this.shouldFlipBoard = style12.flipBoard;
+                
+            } catch (error) {
+                console.error('Failed to parse Style12 data:', error);
             }
         });
     }
@@ -330,5 +432,57 @@ export class GameStore {
 
     getLegalMovesForSquare(square: string) {
         return this.chessBoard.getLegalMoves(square);
+    }
+    
+    // Game perspective computed properties
+    get isPlaying(): boolean {
+        return this.gameRelation === -1 || this.gameRelation === 1;
+    }
+    
+    get isMyTurn(): boolean {
+        return this.gameRelation === 1;
+    }
+    
+    get isObserving(): boolean {
+        return this.gameRelation === 0 || this.gameRelation === -2;
+    }
+    
+    get isExamining(): boolean {
+        return this.gameRelation === 2;
+    }
+    
+    get playingColor(): 'white' | 'black' | null {
+        if (!this.isPlaying) return null;
+        if (!this.currentGame) return null;
+        
+        // If it's my turn (relation = 1), I'm the color whose turn it is
+        // If it's opponent's turn (relation = -1), I'm the opposite color
+        if (this.gameRelation === 1) {
+            return this.currentGame.turn === 'w' ? 'white' : 'black';
+        } else {
+            return this.currentGame.turn === 'w' ? 'black' : 'white';
+        }
+    }
+    
+    // Determine if board should be flipped based on game perspective
+    get shouldShowFlippedBoard(): boolean {
+        // First check if there's a manual override from PreferencesStore
+        const preferencesFlipped = this.rootStore?.preferencesStore?.boardFlipped;
+        if (preferencesFlipped !== undefined) {
+            return preferencesFlipped;
+        }
+        
+        // If playing as black, flip the board
+        if (this.playingColor === 'black') {
+            return true;
+        }
+        
+        // If observing, use the style12 flipBoard field
+        if (this.isObserving || this.isExamining) {
+            return this.shouldFlipBoard;
+        }
+        
+        // Default: white at bottom
+        return false;
     }
 }
