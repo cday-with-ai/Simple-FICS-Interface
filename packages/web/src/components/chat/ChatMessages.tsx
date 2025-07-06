@@ -174,39 +174,46 @@ interface ChatMessagesProps {
 export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHover }) => {
   const { chatStore, ficsStore } = useRootStore();
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(0);
   const activeTab = chatStore.activeTab;
   const messages = activeTab?.messages || [];
   const currentUsername = ficsStore.username || 'You';
   
-  // Smart auto-scroll: only scroll to bottom when user is already at/near bottom
+  // Use MutationObserver for console to ensure scrolling happens after DOM updates
   useEffect(() => {
-    if (containerRef.current) {
+    if (containerRef.current && activeTab?.type === 'console') {
       const container = containerRef.current;
       
-      // Use double requestAnimationFrame to ensure DOM is fully updated
+      const observer = new MutationObserver(() => {
+        smartScrollToBottom(container, 100);
+      });
+      
+      observer.observe(container, {
+        childList: true,
+        subtree: true
+      });
+      
+      return () => observer.disconnect();
+    }
+  }, [activeTab?.type]);
+  
+  // Smart auto-scroll for non-console tabs
+  useEffect(() => {
+    if (containerRef.current && activeTab?.type !== 'console' && messages.length > prevMessageCountRef.current) {
+      const container = containerRef.current;
+      
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          // For console tab during initial messages (login), always scroll
-          if (activeTab?.type === 'console') {
-            // During first 20 messages (login phase), always scroll to bottom
-            if (messages.length <= 20) {
-              container.scrollTop = container.scrollHeight;
-            } else {
-              // After login, use smart scroll
-              smartScrollToBottom(container, 100); // Larger threshold for console
-            }
-          } else {
-            // For initial load or when switching tabs, always scroll to bottom
-            if (messages.length <= 1) {
-              container.scrollTop = container.scrollHeight;
-            } else {
-              // Use smart scroll for subsequent messages with a larger threshold
-              smartScrollToBottom(container, 50);
-            }
-          }
-        });
+        // For initial load or when switching tabs, always scroll to bottom
+        if (messages.length <= 1) {
+          container.scrollTop = container.scrollHeight;
+        } else {
+          // Use smart scroll for subsequent messages
+          smartScrollToBottom(container, 50);
+        }
       });
     }
+    
+    prevMessageCountRef.current = messages.length;
   }, [messages.length, activeTab?.type]);
   
   // Also scroll to bottom when switching tabs
