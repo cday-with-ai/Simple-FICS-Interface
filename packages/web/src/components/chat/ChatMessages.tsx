@@ -32,25 +32,48 @@ const MessagesContainer = styled.div`
   }
 `;
 
+const Timestamp = styled.span`
+  color: ${props => props.theme.colors.textTertiary};
+  font-size: 10px;
+  flex-shrink: 0;
+  user-select: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  min-width: 50px;
+`;
+
 const MessageGroup = styled.div`
-  margin-bottom: ${props => props.theme.spacing[3]};
+  margin-bottom: ${props => props.theme.spacing[1]};
   
   &:last-child {
     margin-bottom: 0;
   }
+  
+  &:hover ${Timestamp} {
+    opacity: 1;
+  }
+`;
+
+const InlineMessageRow = styled.div`
+  display: flex;
+  align-items: baseline;
+  gap: ${props => props.theme.spacing[1]};
 `;
 
 const MessageRow = styled.div<{ $type: ChatMessage['type'] }>`
   display: flex;
-  gap: ${props => props.theme.spacing[2]};
   align-items: baseline;
-  margin-bottom: ${props => props.theme.spacing[1]};
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  font-family: ${props => props.theme.typography.fontFamilyMono};
+  gap: ${props => props.theme.spacing[1]};
+  font-size: 11px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  line-height: 1.3;
+  white-space: pre-wrap;
+  word-break: break-all;
+  position: relative;
+  flex: 1;
   
   ${props => props.$type === 'system' && `
     color: ${props.theme.colors.textSecondary};
-    font-style: italic;
   `}
   
   ${props => props.$type === 'whisper' && `
@@ -61,13 +84,28 @@ const MessageRow = styled.div<{ $type: ChatMessage['type'] }>`
     color: ${props.theme.colors.warning};
     font-weight: ${props.theme.typography.fontWeight.semibold};
   `}
+  
+  ${props => props.$type === 'message' && `
+    color: ${props.theme.colors.text};
+  `}
 `;
 
-const Timestamp = styled.span`
-  color: ${props => props.theme.colors.textTertiary};
-  font-size: ${props => props.theme.typography.fontSize.xs};
-  flex-shrink: 0;
-  user-select: none;
+const ConsoleMessageWrapper = styled.div`
+  position: relative;
+  
+  &:hover ${Timestamp} {
+    opacity: 1;
+  }
+`;
+
+const ConsoleTimestamp = styled(Timestamp)`
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: ${props => props.theme.colors.background};
+  padding: 0 4px;
+  z-index: 1;
+  font-weight: ${props => props.theme.typography.fontWeight.bold};
 `;
 
 const Sender = styled.span<{ $isYou?: boolean }>`
@@ -79,7 +117,7 @@ const Sender = styled.span<{ $isYou?: boolean }>`
   flex-shrink: 0;
   
   &::after {
-    content: ':';
+    content: ': ';
   }
 `;
 
@@ -107,14 +145,32 @@ const SystemMessage = styled.div`
   font-size: ${props => props.theme.typography.fontSize.sm};
 `;
 
-const formatTimestamp = (date: Date): string => {
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  const seconds = date.getSeconds().toString().padStart(2, '0');
-  return `${hours}:${minutes}:${seconds}`;
+const formatTimestamp = (timestamp: Date | string | number): string => {
+  // Ensure we have a Date object
+  let date: Date;
+  
+  if (timestamp instanceof Date) {
+    date = timestamp;
+  } else {
+    // Convert string or number to Date
+    date = new Date(timestamp);
+  }
+  
+  // Check if the date is valid
+  if (isNaN(date.getTime())) {
+    console.error('Invalid timestamp:', timestamp);
+    return 'Invalid time';
+  }
+  
+  // Use local time formatting
+  return date.toLocaleTimeString();
 };
 
-export const ChatMessages: React.FC = observer(() => {
+interface ChatMessagesProps {
+  onMessageHover?: (timestamp: Date | string | number | null) => void;
+}
+
+export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHover }) => {
   const { chatStore, ficsStore } = useRootStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const activeTab = chatStore.activeTab;
@@ -147,10 +203,10 @@ export const ChatMessages: React.FC = observer(() => {
       <MessagesContainer>
         <EmptyState>
           {activeTab.type === 'channel' 
-            ? `No messages in #${activeTab.name} yet`
+            ? `No messages in (${activeTab.name}) yet`
             : activeTab.type === 'private'
             ? `No messages with ${activeTab.name} yet`
-            : 'No messages yet'
+            : 'Connecting to freechess.org...'
           }
         </EmptyState>
       </MessagesContainer>
@@ -188,6 +244,25 @@ export const ChatMessages: React.FC = observer(() => {
     }
   });
 
+  // For console tab, show raw messages without grouping
+  if (activeTab.type === 'console') {
+    return (
+      <MessagesContainer ref={containerRef}>
+        {messages.map((message) => (
+          <MessageRow 
+            key={message.id}
+            $type={message.type}
+            onMouseEnter={() => onMessageHover?.(message.timestamp)}
+            onMouseLeave={() => onMessageHover?.(null)}
+          >
+            {message.content}
+          </MessageRow>
+        ))}
+      </MessagesContainer>
+    );
+  }
+
+  // For other tabs, use the grouped display
   return (
     <MessagesContainer ref={containerRef}>
       {groupedMessages.map((group, groupIndex) => {
@@ -205,7 +280,6 @@ export const ChatMessages: React.FC = observer(() => {
         return (
           <MessageGroup key={groupIndex}>
             <MessageRow $type={firstMessage.type}>
-              <Timestamp>{formatTimestamp(group.timestamp)}</Timestamp>
               <Sender $isYou={isYou}>{group.sender}</Sender>
               <Content>
                 {group.messages.map((msg, i) => (

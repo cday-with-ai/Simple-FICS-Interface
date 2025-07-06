@@ -226,7 +226,19 @@ export class FicsProtocol {
     }
 
     private static parseChannelTell(msg: string): ChannelTell | null {
-        const match = msg.match(/^([a-zA-Z0-9_\[\]*-]+)\(([0-9]+)\)\s*:\s*(.*)/);
+        // Trim the message to remove leading/trailing whitespace
+        const trimmedMsg = msg.trim();
+        
+        // Updated regex to handle titles between username and channel number
+        // Examples: username(39): message, username(*)(39): message, username(TD)(TR)(39): message
+        const match = trimmedMsg.match(/^([a-zA-Z0-9_\[\]*-]+)(?:\([^)]*\))*\((\d+)\)\s*:\s*(.*)/);
+        
+        // Debug logging
+        if (trimmedMsg.includes('(39):') || trimmedMsg.includes('(220):')) {
+            console.log('parseChannelTell checking (trimmed):', trimmedMsg);
+            console.log('parseChannelTell match:', match);
+        }
+        
         if (match) {
             return {
                 username: match[1],

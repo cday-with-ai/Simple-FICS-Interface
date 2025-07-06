@@ -10,7 +10,7 @@ export interface ChatMessage {
     channel: string;
     sender: string;
     content: string;
-    timestamp: Date;
+    timestamp: Date | string | number;  // Allow flexibility for MobX serialization
     type: 'message' | 'system' | 'whisper' | 'announcement';
 }
 

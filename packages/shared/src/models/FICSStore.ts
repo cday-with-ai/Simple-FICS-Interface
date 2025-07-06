@@ -27,6 +27,10 @@ export class FICSStore {
     private ws: WebSocket | null = null;
     private reconnectTimeout: NodeJS.Timeout | null = null;
     private pingInterval: NodeJS.Timeout | null = null;
+    
+    // Timeseal protocol constants
+    private readonly timesealConnect = "TIMESEAL2|openseal|simpleficsinterface|";
+    private readonly timesealKey = "Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
 
     constructor() {
         makeAutoObservable(this);
@@ -37,38 +41,55 @@ export class FICSStore {
         this.error = null;
 
         try {
+            // Connect to FICS WebSocket server directly
+            // This works in the browser because FICS provides a WebSocket endpoint
             this.ws = new WebSocket('wss://www.freechess.org:5001');
 
             this.ws.onopen = () => {
+                // Send timeseal connect string WITH encoding (like the original does)
+                const encoded = this.encodeTimeseal(this.timesealConnect);
+                this.ws!.send(encoded);
+                
                 runInAction(() => {
                     this.connected = true;
                     this.connecting = false;
                 });
 
-                if (credentials) {
-                    this.login(credentials.username, credentials.password);
+                console.log('Connected to FICS WebSocket with timeseal');
+            };
+
+            this.ws.onmessage = async (event) => {
+                // Handle different data types from WebSocket
+                let data: string;
+                if (event.data instanceof Blob) {
+                    data = await event.data.text();
+                } else if (event.data instanceof ArrayBuffer) {
+                    const decoder = new TextDecoder();
+                    data = decoder.decode(event.data);
                 } else {
-                    this.loginAsGuest();
+                    data = event.data;
                 }
+                this.handleMessage(data);
             };
 
-            this.ws.onmessage = (event) => {
-                this.handleMessage(event.data);
-            };
-
-            this.ws.onclose = () => {
+            this.ws.onclose = (event) => {
                 runInAction(() => {
                     this.connected = false;
                     this.connecting = false;
+                    if (event.code !== 1000) { // 1000 is normal closure
+                        this.error = `Connection closed: ${event.reason || 'Unknown reason'}`;
+                    }
                 });
-                this.scheduleReconnect();
+                // Don't auto-reconnect, let user manually reconnect
+                // this.scheduleReconnect();
             };
 
             this.ws.onerror = (error) => {
                 runInAction(() => {
-                    this.error = 'Connection error';
+                    this.error = 'Connection error - check your internet connection';
                     this.connecting = false;
                 });
+                console.error('WebSocket error:', error);
             };
         } catch (error) {
             runInAction(() => {
@@ -90,19 +111,28 @@ export class FICSStore {
         }
 
         if (this.ws) {
-            this.ws.close();
+            // Send quit command before closing
+            if (this.connected) {
+                this.sendCommand('quit');
+            }
+            this.ws.close(1000, 'User requested disconnect');
             this.ws = null;
         }
 
         runInAction(() => {
             this.connected = false;
+            this.connecting = false;
             this.user = null;
+            this.error = null;
         });
     }
 
     sendCommand(command: string) {
-        if (this.ws && this.connected) {
-            this.ws.send(command + '\n');
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            console.log('Sending command to FICS:', command, 'Length:', command.length);
+            // Encode with timeseal protocol
+            const encoded = this.encodeTimeseal(command);
+            this.ws.send(encoded);
 
             // Add to chat history if it's a chat command
             if (command.startsWith('tell ') || command.startsWith('say ') || command.startsWith('shout ')) {
@@ -111,6 +141,62 @@ export class FICSStore {
         } else {
             console.warn('Cannot send command: not connected to FICS');
         }
+    }
+    
+    private encodeTimeseal(e: string): Uint8Array {
+        let t = e.length;
+        const n = new Uint8Array(t + 30);
+        
+        // Copy message to array
+        for (let i = 0; i < e.length; i++)
+            n[i] = e.charCodeAt(i);
+        
+        n[t] = 24;
+        t++;
+        
+        // Add timestamp - exact same calculation as original
+        const o = (new Date).getTime();
+        const A = Math.floor(o / 1e3);
+        const s = (A % 1e4 * 1e3 + (o - 1e3 * A)).toString();
+        
+        for (let i = 0; i < s.length; i++)
+            n[t + i] = s.charCodeAt(i);
+        
+        t += s.length;
+        n[t] = 25;
+        t++;
+        
+        // Pad to multiple of 12
+        while (t % 12 != 0) {
+            n[t] = 49;
+            t++;
+        }
+        
+        // Scramble
+        for (let i = 0; i < t; i += 12) {
+            n[i] ^= n[i + 11];
+            n[i + 11] ^= n[i];
+            n[i] ^= n[i + 11];
+            n[i + 2] ^= n[i + 9];
+            n[i + 9] ^= n[i + 2];
+            n[i + 2] ^= n[i + 9];
+            n[i + 4] ^= n[i + 7];
+            n[i + 7] ^= n[i + 4];
+            n[i + 4] ^= n[i + 7];
+        }
+        
+        // XOR with key
+        for (let i = 0; i < t; i++) {
+            const keyChar = this.timesealKey.charCodeAt(i % 50);
+            n[i] = ((128 | n[i]) ^ keyChar) - 32;
+        }
+        
+        n[t] = 128;
+        t++;
+        n[t] = 10;
+        t++;
+        
+        return n.slice(0, t);
     }
 
     private login(username: string, password: string) {
@@ -123,6 +209,8 @@ export class FICSStore {
     }
 
     private handleMessage(data: string) {
+        console.log('FICS message received:', data.substring(0, 200));
+        
         runInAction(() => {
             this.lastPing = Date.now();
         });
@@ -151,6 +239,7 @@ export class FICSStore {
                         break;
 
                     case 'channelTell':
+                        console.log('Handling channelTell:', message.data);
                         // Create channel tab if it doesn't exist
                         const channelId = `channel-${message.data.channelNumber}`;
                         this.rootStore?.chatStore.createTab(
@@ -159,12 +248,22 @@ export class FICSStore {
                             'channel'
                         );
                         
+                        // Create corrected timestamp
+                        const channelNow = new Date();
+                        const channelIsInGMT = channelNow.getTimezoneOffset() === 0;
+                        let channelLocalTime = channelNow;
+                        
+                        if (channelIsInGMT) {
+                            const edtOffset = -4 * 60; // EDT is UTC-4
+                            channelLocalTime = new Date(channelNow.getTime() + (edtOffset * 60 * 1000));
+                        }
+                        
                         // Add message to channel
                         this.rootStore?.chatStore.addMessage(channelId, {
                             channel: channelId,
                             sender: message.data.username,
                             content: message.data.message,
-                            timestamp: new Date(),
+                            timestamp: channelLocalTime,
                             type: 'message'
                         });
                         break;
@@ -178,12 +277,22 @@ export class FICSStore {
                             'private'
                         );
                         
+                        // Create corrected timestamp
+                        const privateNow = new Date();
+                        const privateIsInGMT = privateNow.getTimezoneOffset() === 0;
+                        let privateLocalTime = privateNow;
+                        
+                        if (privateIsInGMT) {
+                            const edtOffset = -4 * 60; // EDT is UTC-4
+                            privateLocalTime = new Date(privateNow.getTime() + (edtOffset * 60 * 1000));
+                        }
+                        
                         // Add message to private chat
                         this.rootStore?.chatStore.addMessage(privateTabId, {
                             channel: privateTabId,
                             sender: message.data.username,
                             content: message.data.message,
-                            timestamp: new Date(),
+                            timestamp: privateLocalTime,
                             type: 'whisper'
                         });
                         break;
@@ -207,11 +316,26 @@ export class FICSStore {
                     default:
                         // Route raw messages to console
                         if (message.type === 'raw' && message.data && message.data.trim()) {
+                            // Create timestamp and force it to be in local timezone
+                            const now = new Date();
+                            
+                            // Check if we're in GMT when we shouldn't be
+                            const isInGMT = now.getTimezoneOffset() === 0;
+                            let localTime = now;
+                            
+                            if (isInGMT) {
+                                // If we're in GMT but should be in EDT (UTC-4), subtract 4 hours
+                                // This is a workaround for the timezone issue
+                                const edtOffset = -4 * 60; // EDT is UTC-4 (240 minutes behind UTC)
+                                localTime = new Date(now.getTime() + (edtOffset * 60 * 1000));
+                            }
+                            
+                            
                             this.rootStore?.chatStore.addMessage('console', {
                                 channel: 'console',
                                 sender: 'FICS',
                                 content: message.data,
-                                timestamp: new Date(),
+                                timestamp: localTime,
                                 type: 'system'
                             });
                         }

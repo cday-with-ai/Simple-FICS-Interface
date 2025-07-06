@@ -25,6 +25,7 @@ const Container = styled.div<{ $compact: boolean }>`
 const Header = styled.div`
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: ${props => props.theme.spacing[2]};
   background-color: ${props => props.theme.colors.backgroundTertiary};
   border-bottom: 1px solid ${props => props.theme.colors.border};
@@ -35,6 +36,12 @@ const Title = styled.h3`
   font-size: ${props => props.theme.typography.fontSize.md};
   font-weight: ${props => props.theme.typography.fontWeight.semibold};
   color: ${props => props.theme.colors.text};
+`;
+
+const HeaderTimestamp = styled.span`
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  color: ${props => props.theme.colors.textSecondary};
+  margin-left: auto;
 `;
 
 const Content = styled.div`
@@ -48,51 +55,40 @@ const Content = styled.div`
 export const ChatPanel: React.FC<ChatPanelProps> = observer(({ className, compact = false }) => {
   const { chatStore, ficsStore } = useRootStore();
   const [inputValue, setInputValue] = useState('');
+  const [isWaitingForPassword, setIsWaitingForPassword] = useState(false);
+  const [hoveredMessageTime, setHoveredMessageTime] = useState<Date | string | number | null>(null);
 
-  // Add some mock messages for testing (remove in production)
+  // Auto-connect to FICS on mount
   React.useEffect(() => {
-    // Add initial welcome message
-    chatStore.addMessage('console', {
-      channel: 'console',
-      sender: 'FICS',
-      content: 'Welcome to Free Internet Chess Server (FICS)',
-      timestamp: new Date(),
-      type: 'system'
-    });
+    if (!ficsStore.connected && !ficsStore.connecting) {
+      console.log('Auto-connecting to FICS...');
+      ficsStore.connect();
+    }
+  }, [ficsStore]);
+  
 
-    // Create a test channel
-    chatStore.createTab('channel-1', '1', 'channel');
-    chatStore.addMessage('channel-1', {
-      channel: 'channel-1',
-      sender: 'ChessMaster',
-      content: 'Anyone up for a game of blitz?',
-      timestamp: new Date(Date.now() - 60000),
-      type: 'message'
-    });
-
-    // Create a test private message
-    chatStore.createTab('testuser', 'TestUser', 'private');
-    chatStore.addMessage('testuser', {
-      channel: 'testuser',
-      sender: 'TestUser',
-      content: 'Hey! Want to play a game?',
-      timestamp: new Date(Date.now() - 30000),
-      type: 'whisper'
-    });
-  }, [chatStore]);
+  // Monitor FICS errors
+  React.useEffect(() => {
+    if (ficsStore.error) {
+      chatStore.addMessage('console', {
+        channel: 'console',
+        sender: 'System',
+        content: `Error: ${ficsStore.error}`,
+        timestamp: new Date(),
+        type: 'system'
+      });
+    }
+  }, [ficsStore.error, chatStore]);
 
   const handleSendMessage = (message: string) => {
+    console.log('handleSendMessage called with:', message, 'Length:', message.length);
     if (!message.trim()) return;
 
     // Add to history
     chatStore.addToHistory(message);
     
-    // Determine if it's a command or a message
-    if (message.startsWith('/') || message.startsWith('\\')) {
-      // FICS command - send directly
-      ficsStore.sendCommand(message.substring(1));
-      
-      // Add to console tab
+    // Handle special local commands (only /help now)
+    if (message === '/help' || message === '\\help') {
       chatStore.addMessage('console', {
         channel: 'console',
         sender: 'You',
@@ -100,30 +96,59 @@ export const ChatPanel: React.FC<ChatPanelProps> = observer(({ className, compac
         timestamp: new Date(),
         type: 'message'
       });
+      
+      chatStore.addMessage('console', {
+        channel: 'console',
+        sender: 'System',
+        content: `FICS Commands:
+guest - Login as guest
+<username> - Login with username (will prompt for password)
+tell <user> <message> - Send private message
+tell <channel> <message> - Send channel message
+who - List online users
+games - List current games
+observe <game> - Observe a game
+seek <time> <inc> - Seek a game
+quit - Disconnect from FICS
+
+Local commands:
+/help - Show this help`,
+        timestamp: new Date(),
+        type: 'system'
+      });
+      setInputValue('');
+      return;
+    }
+    
+    // Show what user typed
+    chatStore.addMessage('console', {
+      channel: 'console',
+      sender: 'You',
+      content: message,
+      timestamp: new Date(),
+      type: 'message'
+    });
+
+    // Determine if it's a command or a message
+    if (message.startsWith('/') || message.startsWith('\\')) {
+      // Command prefix - strip it and send
+      ficsStore.sendCommand(message.substring(1));
     } else {
-      // Regular message - determine destination
+      // Regular message - determine destination based on active tab
       const activeTab = chatStore.activeTab;
       if (!activeTab) return;
 
       if (activeTab.type === 'channel') {
-        // Channel message
-        ficsStore.sendCommand(`tell ${activeTab.id} ${message}`);
+        // Channel message - send as "tell <channel> <message>"
+        const channelNum = activeTab.id.replace('channel-', '');
+        ficsStore.sendCommand(`tell ${channelNum} ${message}`);
       } else if (activeTab.type === 'private') {
-        // Private message
+        // Private message - send as "tell <user> <message>"
         ficsStore.sendCommand(`tell ${activeTab.id} ${message}`);
       } else {
-        // Console - treat as command
+        // Console - send as raw command
         ficsStore.sendCommand(message);
       }
-
-      // Add message to current tab
-      chatStore.addMessage(activeTab.id, {
-        channel: activeTab.id,
-        sender: ficsStore.username || 'You',
-        content: message,
-        timestamp: new Date(),
-        type: 'message'
-      });
     }
 
     setInputValue('');
@@ -141,11 +166,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = observer(({ className, compac
       {!compact && (
         <Header>
           <Title>Chat</Title>
+          {hoveredMessageTime && (
+            <HeaderTimestamp>
+              {new Date(hoveredMessageTime).toLocaleTimeString()}
+            </HeaderTimestamp>
+          )}
         </Header>
       )}
       <Content>
         <ChatTabs />
-        <ChatMessages />
+        <ChatMessages onMessageHover={setHoveredMessageTime} />
         <ChatInput
           value={inputValue}
           onChange={setInputValue}
@@ -153,7 +183,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = observer(({ className, compac
           onHistoryNavigate={handleHistoryNavigation}
           placeholder={
             chatStore.activeTab?.type === 'channel' 
-              ? `Message #${chatStore.activeTab.name}...`
+              ? `Message (${chatStore.activeTab.name})...`
               : chatStore.activeTab?.type === 'private'
               ? `Message ${chatStore.activeTab.name}...`
               : 'Enter command...'

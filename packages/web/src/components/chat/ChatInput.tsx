@@ -89,7 +89,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (value.trim()) {
-        onSend(value);
+        onSend(value.trim());
       }
     } else if (e.key === 'ArrowUp' && !value) {
       e.preventDefault();
@@ -102,7 +102,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleSendClick = () => {
     if (value.trim()) {
-      onSend(value);
+      onSend(value.trim());
     }
   };
 

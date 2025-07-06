@@ -115,12 +115,6 @@ const TabIcon = styled.span<{ $type: 'channel' | 'private' | 'console' }>`
   font-size: 12px;
   opacity: 0.7;
   
-  ${props => props.$type === 'channel' && `
-    &::before {
-      content: '#';
-    }
-  `}
-  
   ${props => props.$type === 'private' && `
     &::before {
       content: '@';
@@ -148,7 +142,9 @@ export const ChatTabs: React.FC = observer(() => {
           onClick={() => chatStore.setActiveTab(tab.id)}
         >
           <TabIcon $type={tab.type} />
-          <TabName>{tab.name}</TabName>
+          <TabName>
+            {tab.type === 'channel' ? `(${tab.name})` : tab.name}
+          </TabName>
           {tab.unreadCount > 0 && (
             <UnreadBadge>
               {tab.unreadCount > 99 ? '99+' : tab.unreadCount}

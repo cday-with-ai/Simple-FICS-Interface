@@ -30,7 +30,7 @@ const ChessArea = styled.div<{ $isVisible: boolean }>`
 `;
 
 const ChatPanelContainer = styled.div<{ $isVisible: boolean }>`
-  width: ${props => props.$isVisible ? '384px' : '0'};
+  width: ${props => props.$isVisible ? '600px' : '0'};
   display: ${props => props.$isVisible ? 'flex' : 'none'};
   flex-direction: column;
   background-color: ${props => props.theme.colors.surface};
@@ -67,7 +67,7 @@ export const AppLayout: React.FC = observer(() => {
   const { preferencesStore } = useRootStore();
   const { viewMode, autoViewMode } = preferencesStore.preferences;
   const layout = useLayout();
-  const [chatPanelWidth, setChatPanelWidth] = useState(384);
+  const [chatPanelWidth, setChatPanelWidth] = useState(600); // Start fully expanded
   const [isResizing, setIsResizing] = useState(false);
   
   // Auto-select view mode based on viewport
