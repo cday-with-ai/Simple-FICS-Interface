@@ -88,7 +88,7 @@ export const GameView: React.FC<GameViewProps> = observer(({ className }) => {
     return 'Starting position';
   }, [gameStore.moveHistory]);
   
-  const opening = ''; // TODO: Get opening from ECO database
+  const opening = gameStore.currentOpening;
 
   return (
     <GameViewContainer className={className}>
@@ -100,7 +100,7 @@ export const GameView: React.FC<GameViewProps> = observer(({ className }) => {
           flipped={gameStore.shouldShowFlippedBoard}
           showCoordinates={true}
           onMove={handleMove}
-          lastMove={lastMove}
+          lastMove={lastMove || undefined}
           interactive={gameStore.isMyTurn || gameStore.isExamining || !gameStore.currentGame}
         />
       </BoardWrapper>

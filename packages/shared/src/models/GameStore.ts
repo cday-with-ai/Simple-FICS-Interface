@@ -1,7 +1,8 @@
-import {makeAutoObservable, runInAction, computed} from 'mobx';
+import {makeAutoObservable, runInAction, computed, action, observable} from 'mobx';
 import {ChessAPI, Color, Variant, GameResult, Move} from '../services/ChessAPI';
 import {Style12} from '../services/FicsProtocol.types';
 import {style12ToFen} from '../utils/utils';
+import {lookupFromMoveList, lookupFromFEN} from '../services/Eco';
 
 // Forward declaration to avoid circular dependency
 interface RootStore {
@@ -35,9 +36,10 @@ export class GameStore {
     isAnalyzing = false;
     evaluation: { score: number; depth: number; pv: string } | null = null;
     rootStore?: RootStore;
-    private _position: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    _position: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     private _capturedPieces: { white: string[]; black: string[] } = { white: [], black: [] };
     private _positionHistory: string[] = []; // Store FEN for each position
+    private _lastKnownOpening: string | null = null; // Store the last matched opening
     
     // Game perspective properties
     gameRelation: number = 0; // -3: isolated, -2: observing examined, -1: playing opponent turn, 0: observing, 1: playing my turn, 2: examining
@@ -50,18 +52,30 @@ export class GameStore {
     private baseBlackTime: number = 0;
 
     constructor() {
-        makeAutoObservable(this);
+        makeAutoObservable(this, {
+            chessBoard: false, // Don't make ChessAPI observable
+            rootStore: false
+        });
         this.chessBoard = new ChessAPI();
         this._position = this.chessBoard.getFen();
         this._positionHistory = [this._position];
     }
 
     startNewGame(gameState: GameState, fen?: string) {
+        // Don't reset the board if we already have a game with this ID and a non-starting position
+        if (this.currentGame?.gameId === gameState.gameId && 
+            this._position !== 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
+            // Just update game metadata
+            this.currentGame = { ...this.currentGame, ...gameState };
+            return;
+        }
+        
         this.currentGame = gameState;
         this.moveHistory = [];
         this.currentMoveIndex = -1;
         this.evaluation = null;
         this._capturedPieces = { white: [], black: [] };
+        this._lastKnownOpening = null;
 
         // Convert variant string to enum
         const variant = this.getVariantFromString(gameState.variant);
@@ -187,7 +201,7 @@ export class GameStore {
                 const fen = style12ToFen(mockStyle12Line);
                 
                 // Load the position
-                this.chessBoard.loadFen(fen);
+                const loadSuccess = this.chessBoard.loadFen(fen);
 
                 // Update or create game state
                 if (!this.currentGame || this.currentGame.gameId !== style12.gameNumber) {
@@ -236,18 +250,16 @@ export class GameStore {
                         const lastHistoryMove = this.moveHistory[this.moveHistory.length - 1];
                         if (!lastHistoryMove || lastHistoryMove.san !== style12.prettyMove) {
                             // Create a move object from the style12 data
-                            const move: Move = {
-                                from: style12.verboseMove.includes('/') ? 
-                                    style12.verboseMove.split('/')[1].split('-')[0] : '',
-                                to: style12.verboseMove.includes('/') ? 
-                                    style12.verboseMove.split('/')[1].split('-')[1] : '',
-                                san: style12.prettyMove,
-                                piece: null, // Will be filled by ChessAPI
-                                color: style12.colorToMove === 'W' ? Color.BLACK : Color.WHITE, // Previous move color
-                                flags: 0,
-                                captured: null,
-                                promotion: null
-                            };
+                            const from = style12.verboseMove.includes('/') ? 
+                                style12.verboseMove.split('/')[1].split('-')[0] : '';
+                            const to = style12.verboseMove.includes('/') ? 
+                                style12.verboseMove.split('/')[1].split('-')[1] : '';
+                                
+                            const move = new Move(
+                                style12.prettyMove,
+                                from,
+                                to
+                            );
                             this.moveHistory.push(move);
                             this.currentMoveIndex = this.moveHistory.length - 1;
                         }
@@ -255,6 +267,7 @@ export class GameStore {
                 }
                 
                 // Update position
+                const oldPosition = this._position;
                 this._position = this.chessBoard.getFen();
                 
                 // If this is a new position, add it to history
@@ -302,6 +315,8 @@ export class GameStore {
                     this._positionHistory = [this.chessBoard.getFen()];
                     // Reset captured pieces
                     this._capturedPieces = { white: [], black: [] };
+                    // Reset opening
+                    this._lastKnownOpening = null;
                     // Create a freestyle game for custom positions
                     this.currentGame = {
                         gameId: -1,
@@ -336,7 +351,9 @@ export class GameStore {
     }
     
     get currentPosition() {
-        return this._position;
+        // Force MobX to track this as a dependency
+        const pos = this._position;
+        return pos;
     }
 
     get capturedPieces() {
@@ -348,7 +365,6 @@ export class GameStore {
             white: this.chessBoard.getCapturedPieces(Color.WHITE),
             black: this.chessBoard.getCapturedPieces(Color.BLACK)
         };
-        console.log('Updated captured pieces:', this._capturedPieces);
     }
     
     get lastMove() {
@@ -427,6 +443,47 @@ export class GameStore {
     get pgn() {
         // Convert move history to PGN format
         return this.moveHistory.map(move => move.san).join(' ');
+    }
+    
+    get currentOpening(): string | null {
+        if (this.moveHistory.length === 0) return null;
+        
+        // Only check up to the current move index when browsing history
+        const movesToCheck = this.currentMoveIndex >= 0 
+            ? this.moveHistory.slice(0, this.currentMoveIndex + 1)
+            : this.moveHistory;
+        
+        // Build move list string in the format ECO expects: "1. e4 e5 2. Nf3 Nc6"
+        let moveStr = '';
+        for (let i = 0; i < movesToCheck.length; i++) {
+            if (i % 2 === 0) {
+                // White's move
+                moveStr += `${Math.floor(i / 2) + 1}. ${movesToCheck[i].san}`;
+            } else {
+                // Black's move
+                moveStr += ` ${movesToCheck[i].san}`;
+            }
+            if (i < movesToCheck.length - 1) {
+                moveStr += ' ';
+            }
+        }
+        
+        // Try to find opening by move list first
+        const opening = lookupFromMoveList(moveStr);
+        if (opening) {
+            this._lastKnownOpening = opening;
+            return opening;
+        }
+        
+        // If not found by moves, try by FEN position
+        const fenOpening = lookupFromFEN(this._position);
+        if (fenOpening && fenOpening !== 'Unknown opening') {
+            this._lastKnownOpening = fenOpening;
+            return fenOpening;
+        }
+        
+        // Return the last known opening if no current match
+        return this._lastKnownOpening;
     }
 
     get legalMoves() {
@@ -539,6 +596,7 @@ export class GameStore {
         } else {
             this.currentGame.black.time = Math.max(0, this.baseBlackTime - elapsed);
         }
+        
     }
     
     // Computed property for live clock times
@@ -562,5 +620,80 @@ export class GameStore {
     endGame() {
         this.stopClock();
         this.currentGame = null;
+    }
+    
+    hasMoveHistory(): boolean {
+        return this.moveHistory.length > 0;
+    }
+    
+    loadMovesFromList(moves: string[]) {
+        if (!this.currentGame) return;
+        
+        runInAction(() => {
+            // Get the variant for the current game
+            const variant = this.getVariantFromString(this.currentGame!.variant);
+            
+            // Create a new chess board with the same variant to reset to starting position
+            this.chessBoard = new ChessAPI(variant);
+            const startingFen = this.chessBoard.getFen();
+            
+            // Clear existing moves and rebuild from the list
+            this.moveHistory = [];
+            this._positionHistory = [startingFen];
+            
+            // Apply each move in sequence
+            for (const moveStr of moves) {
+                try {
+                    const move = this.chessBoard.makeMove(moveStr);
+                    if (move) {
+                        this.moveHistory.push(move);
+                        this._positionHistory.push(this.chessBoard.getFen());
+                    }
+                } catch (error) {
+                    console.error('Error applying move from list:', moveStr, error);
+                }
+            }
+            
+            // Update current position
+            this._position = this.chessBoard.getFen();
+            this.currentMoveIndex = this.moveHistory.length - 1;
+            
+            // Update captured pieces
+            this.updateCapturedPieces();
+            
+            // Update game state
+            if (this.currentGame) {
+                this.currentGame.turn = this.chessBoard.getActiveColor() === Color.WHITE ? 'w' : 'b';
+                if (this.moveHistory.length > 0) {
+                    this.currentGame.lastMove = this.moveHistory[this.moveHistory.length - 1].san;
+                }
+            }
+            
+            // After loading moves, update the last known opening
+            // Build the complete move string to look up the opening
+            if (this.moveHistory.length > 0) {
+                let moveStr = '';
+                for (let i = 0; i < this.moveHistory.length; i++) {
+                    if (i % 2 === 0) {
+                        moveStr += `${Math.floor(i / 2) + 1}. ${this.moveHistory[i].san}`;
+                    } else {
+                        moveStr += ` ${this.moveHistory[i].san}`;
+                    }
+                    if (i < this.moveHistory.length - 1) {
+                        moveStr += ' ';
+                    }
+                }
+                
+                const opening = lookupFromMoveList(moveStr);
+                if (opening) {
+                    this._lastKnownOpening = opening;
+                } else {
+                    const fenOpening = lookupFromFEN(this._position);
+                    if (fenOpening && fenOpening !== 'Unknown opening') {
+                        this._lastKnownOpening = fenOpening;
+                    }
+                }
+            }
+        });
     }
 }

@@ -28,7 +28,7 @@ const TabsContainer = styled.div`
   }
 `;
 
-const Tab = styled.button<{ $active: boolean; $hasUnread: boolean; $dragging?: boolean; $dragOver?: boolean }>`
+const Tab = styled.div<{ $active: boolean; $hasUnread: boolean; $dragging?: boolean; $dragOver?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${props => props.theme.spacing[1]};
@@ -42,13 +42,14 @@ const Tab = styled.button<{ $active: boolean; $hasUnread: boolean; $dragging?: b
     ? props.theme.colors.text 
     : props.theme.colors.textSecondary
   };
-  cursor: ${props => props.$dragging ? 'grabbing' : 'grab'};
+  cursor: ${props => props.$dragging ? 'grabbing' : 'pointer'};
   white-space: nowrap;
   font-size: ${props => props.theme.typography.fontSize.sm};
   transition: all ${props => props.theme.transitions.fast};
   position: relative;
   min-width: 60px;
   opacity: ${props => props.$dragging ? 0.5 : 1};
+  user-select: none;
   
   ${props => props.$dragOver && !props.$dragging && `
     border-left: 2px solid ${props.theme.colors.primary};

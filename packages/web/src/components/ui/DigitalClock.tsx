@@ -26,29 +26,18 @@ const TimeDisplay = styled.span<{ $isLowTime?: boolean; $isActive?: boolean; $co
     display: inline-block;
     padding: ${({theme, $compact}) => 
             $compact ? `4px ${theme.spacing[2]}` : `${theme.spacing[1]} ${theme.spacing[2]}`};
-    background: ${({theme, $isActive}) =>
-            $isActive ? theme.colors.primary : theme.colors.backgroundSecondary};
-    color: ${({theme, $isActive, $isLowTime}) =>
-            $isLowTime ? theme.colors.error : ($isActive ? theme.colors.textInverse : theme.colors.text)};
+    background: ${({theme}) => theme.colors.backgroundSecondary};
+    color: ${({theme, $isLowTime}) =>
+            $isLowTime ? theme.colors.error : theme.colors.text};
     border-radius: ${({theme}) => theme.borderRadius.md};
-    box-shadow: ${({theme, $isActive}) => 
-            $isActive ? theme.shadows.lg : theme.shadows.sm};
-    border: 2px solid ${({theme, $isActive}) => 
-            $isActive ? theme.colors.primaryHover : 'transparent'};
+    box-shadow: ${({theme}) => theme.shadows.sm};
+    border: 2px solid transparent;
     transition: all ${({theme}) => theme.transitions.fast};
 
     ${({$isLowTime, theme}) => $isLowTime && `
     color: ${theme.colors.error};
-    animation: blink 1s infinite;
-  `} @keyframes blink {
-    0%, 50% {
-        opacity: 1;
-    }
-
-    51%, 100% {
-        opacity: 0.3;
-    }
-}
+    font-weight: bold;
+  `}
 `;
 
 interface DigitalClockProps {
@@ -75,16 +64,19 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = Math.floor(seconds % 60);
         const tenths = Math.floor((seconds % 1) * 10);
+        
+        // When active, blink the colon every second
+        const colon = isActive && Math.floor(seconds) % 2 === 0 ? ' ' : ':';
 
         if (hours > 0) {
             // Show hours:minutes:seconds
-            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            return `${hours}${colon}${minutes.toString().padStart(2, '0')}${colon}${secs.toString().padStart(2, '0')}`;
         } else if (seconds < lowTimeThreshold && showTenths) {
             // Show minutes:seconds.tenths for low time
-            return `${minutes}:${secs.toString().padStart(2, '0')}.${tenths}`;
+            return `${minutes}${colon}${secs.toString().padStart(2, '0')}.${tenths}`;
         } else {
             // Show minutes:seconds
-            return `${minutes}:${secs.toString().padStart(2, '0')}`;
+            return `${minutes}${colon}${secs.toString().padStart(2, '0')}`;
         }
     };
 

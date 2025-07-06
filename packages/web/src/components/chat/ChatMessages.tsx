@@ -242,7 +242,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
   messages.forEach((message, index) => {
     const prevMessage = index > 0 ? messages[index - 1] : null;
     const timeDiff = prevMessage 
-      ? message.timestamp.getTime() - prevMessage.timestamp.getTime()
+      ? new Date(message.timestamp).getTime() - new Date(prevMessage.timestamp).getTime()
       : Infinity;
     
     if (
@@ -257,7 +257,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
       // Create new group
       groupedMessages.push({
         sender: message.sender,
-        timestamp: message.timestamp,
+        timestamp: new Date(message.timestamp),
         messages: [message]
       });
     }

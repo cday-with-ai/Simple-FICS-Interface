@@ -11,6 +11,7 @@ interface GameControlsProps {
   onUnobserve?: () => void;
   onUnexamine?: () => void;
   onSetupFEN?: () => void;
+  onFlipBoard?: () => void;
   isAnalysisActive?: boolean;
   canAbort?: boolean;
   className?: string;
@@ -79,6 +80,7 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
   onUnobserve,
   onUnexamine,
   onSetupFEN,
+  onFlipBoard,
   isAnalysisActive,
   canAbort,
   className
@@ -96,6 +98,9 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
       <ControlButton onClick={onResign} $variant="danger">
         Resign
       </ControlButton>
+      <ControlButton onClick={onFlipBoard} $variant="secondary">
+        Flip
+      </ControlButton>
     </>
   );
   
@@ -110,6 +115,9 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
         $isActive={isAnalysisActive}
       >
         Analysis
+      </ControlButton>
+      <ControlButton onClick={onFlipBoard} $variant="secondary">
+        Flip
       </ControlButton>
     </>
   );
@@ -126,12 +134,27 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
       >
         Analysis
       </ControlButton>
+      <ControlButton onClick={onFlipBoard} $variant="secondary">
+        Flip
+      </ControlButton>
     </>
   );
   
   const renderFreestyleControls = () => (
     <>
-      {/* Analysis and FEN buttons moved to move list */}
+      <ControlButton 
+        onClick={onAnalysis} 
+        $variant="primary"
+        $isActive={isAnalysisActive}
+      >
+        Analysis
+      </ControlButton>
+      <ControlButton onClick={onFlipBoard} $variant="secondary">
+        Flip
+      </ControlButton>
+      <ControlButton onClick={onSetupFEN} $variant="secondary">
+        FEN
+      </ControlButton>
     </>
   );
   

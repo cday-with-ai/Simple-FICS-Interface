@@ -1,11 +1,12 @@
 import React, {useCallback, useMemo, useState, useEffect} from 'react';
 import styled from 'styled-components';
 import {observer} from 'mobx-react-lite';
-import {useRootStore, useAnalysisStore} from '@fics/shared';
+import {useGameStore, usePreferencesStore, useAnalysisStore} from '@fics/shared';
 import {useLayout} from '../../theme/hooks';
 import {ChessBoardWithPieces} from './ChessBoardWithPieces';
 import {PlayerCard, GameClock} from './PlayerCard';
 import {MoveList} from './MoveList';
+import {ObservableClock} from './ObservableClock';
 import {GameControls, CompactControlButton} from './GameControls';
 import {AnalysisDisplay, AnalysisInfoDisplay} from './AnalysisDisplay';
 import {FENDialog} from './FENDialog';
@@ -283,7 +284,7 @@ const PlayersColumn = styled.div`
     flex-direction: column;
     justify-content: center;
     gap: ${props => props.theme.spacing[2]};
-    width: 200px;
+    width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
     flex-shrink: 0;
 `;
@@ -405,7 +406,8 @@ const PortraitAnalysisWrapper = styled.div<{ $squareSize?: number; $topOffset?: 
 
 
 export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({className, hasChat = false}) => {
-    const {gameStore, preferencesStore} = useRootStore();
+    const gameStore = useGameStore();
+    const preferencesStore = usePreferencesStore();
     const analysisStore = useAnalysisStore();
     const layout = useLayout();
     const [isAnalysisActive, setIsAnalysisActive] = useState(false);
@@ -415,8 +417,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     // Use the user's preference for chess orientation instead of device orientation
     const isLandscape = preferencesStore.preferences.chessOrientation === 'landscape';
 
-    // Get current position from GameStore
+    // Get current position from GameStore - direct access to ensure MobX tracks it
     const position = gameStore.currentPosition || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    
 
     // Test: Start with position after 1.e4
     // const position = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1';
@@ -469,29 +472,19 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
         return 'Starting position';
     }, [gameStore.moveHistory]);
 
-    const opening = 'Sicilian Defense: Najdorf Variation'; // TODO: Get from ECO database
+    const opening = gameStore.currentOpening;
 
-    // Get live clock values
-    const liveClocks = gameStore.liveClocks;
-    
-    // Mock player data for now
-    const whitePlayer = gameStore.currentGame?.white || {name: 'White', rating: 1500, time: 900};
-    const blackPlayer = gameStore.currentGame?.black || {name: 'Black', rating: 1500, time: 900};
-    const isWhiteTurn = !gameStore.currentGame || gameStore.currentGame.turn === 'w';
-    
-    // Use live clock values for display
-    const whiteTime = liveClocks.white;
-    const blackTime = liveClocks.black;
+    // Get player data without accessing time to avoid re-renders
+    const currentGame = gameStore.currentGame;
+    const whitePlayer = currentGame?.white || {name: 'White', rating: 1500, time: 900};
+    const blackPlayer = currentGame?.black || {name: 'Black', rating: 1500, time: 900};
+    const isWhiteTurn = !currentGame || currentGame.turn === 'w';
     
     // Determine which player should be shown at top/bottom based on board flip
     const topPlayer = preferencesStore.preferences.boardFlipped ? whitePlayer : blackPlayer;
     const bottomPlayer = preferencesStore.preferences.boardFlipped ? blackPlayer : whitePlayer;
     const isTopPlayerWhite = preferencesStore.preferences.boardFlipped;
     const isTopPlayerTurn = preferencesStore.preferences.boardFlipped ? isWhiteTurn : !isWhiteTurn;
-    
-    // Get time for top/bottom players
-    const topPlayerTime = isTopPlayerWhite ? whiteTime : blackTime;
-    const bottomPlayerTime = isTopPlayerWhite ? blackTime : whiteTime;
 
     const handleMoveClick = useCallback((index: number) => {
         gameStore.goToMove(index);
@@ -543,39 +536,97 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 <PortraitTopInfo>
                                     <GameNumber>Game #{gameStore.currentGame?.gameId || '12345'}</GameNumber>
                                     <TimeControl>{gameStore.currentGameInfo?.timeControl || '5 0'}</TimeControl>
-                                    {perspective === 'freestyle' && (
-                                        <PortraitControlButtons>
-                                            <CompactControlButton
-                                                onClick={handleAnalysis}
-                                                $variant={isAnalysisActive ? "primary" : "secondary"}
-                                                $isActive={isAnalysisActive}
-                                            >
-                                                Analysis
-                                            </CompactControlButton>
-                                            <CompactControlButton
-                                                onClick={handleFlipBoard}
-                                                $variant={preferencesStore.preferences.boardFlipped ? "primary" : "secondary"}
-                                                $isActive={preferencesStore.preferences.boardFlipped}
-                                            >
-                                                Flip
-                                            </CompactControlButton>
-                                            <CompactControlButton
-                                                onClick={handleSetupFEN}
-                                                $variant="secondary"
-                                            >
-                                                FEN
-                                            </CompactControlButton>
-                                        </PortraitControlButtons>
-                                    )}
+                                    <PortraitControlButtons>
+                                        {perspective === 'playing' && (
+                                            <>
+                                                {gameStore.moveHistory.length <= 1 && (
+                                                    <CompactControlButton
+                                                        onClick={() => {/* TODO: Implement abort */}}
+                                                        $variant="secondary"
+                                                    >
+                                                        Abort
+                                                    </CompactControlButton>
+                                                )}
+                                                <CompactControlButton
+                                                    onClick={() => {/* TODO: Implement draw */}}
+                                                    $variant="secondary"
+                                                >
+                                                    Draw
+                                                </CompactControlButton>
+                                                <CompactControlButton
+                                                    onClick={() => {/* TODO: Implement resign */}}
+                                                    $variant="danger"
+                                                >
+                                                    Resign
+                                                </CompactControlButton>
+                                            </>
+                                        )}
+                                        {perspective === 'observing' && (
+                                            <>
+                                                <CompactControlButton
+                                                    onClick={() => {/* TODO: Implement unobserve */}}
+                                                    $variant="secondary"
+                                                >
+                                                    Unobserve
+                                                </CompactControlButton>
+                                                <CompactControlButton
+                                                    onClick={handleAnalysis}
+                                                    $variant={isAnalysisActive ? "primary" : "secondary"}
+                                                    $isActive={isAnalysisActive}
+                                                >
+                                                    Analysis
+                                                </CompactControlButton>
+                                            </>
+                                        )}
+                                        {perspective === 'examining' && (
+                                            <>
+                                                <CompactControlButton
+                                                    onClick={() => {/* TODO: Implement unexamine */}}
+                                                    $variant="secondary"
+                                                >
+                                                    Unexamine
+                                                </CompactControlButton>
+                                                <CompactControlButton
+                                                    onClick={handleAnalysis}
+                                                    $variant={isAnalysisActive ? "primary" : "secondary"}
+                                                    $isActive={isAnalysisActive}
+                                                >
+                                                    Analysis
+                                                </CompactControlButton>
+                                            </>
+                                        )}
+                                        {perspective === 'freestyle' && (
+                                            <>
+                                                <CompactControlButton
+                                                    onClick={handleAnalysis}
+                                                    $variant={isAnalysisActive ? "primary" : "secondary"}
+                                                    $isActive={isAnalysisActive}
+                                                >
+                                                    Analysis
+                                                </CompactControlButton>
+                                                <CompactControlButton
+                                                    onClick={handleFlipBoard}
+                                                    $variant={preferencesStore.preferences.boardFlipped ? "primary" : "secondary"}
+                                                    $isActive={preferencesStore.preferences.boardFlipped}
+                                                >
+                                                    Flip
+                                                </CompactControlButton>
+                                                <CompactControlButton
+                                                    onClick={handleSetupFEN}
+                                                    $variant="secondary"
+                                                >
+                                                    FEN
+                                                </CompactControlButton>
+                                            </>
+                                        )}
+                                    </PortraitControlButtons>
                                 </PortraitTopInfo>
 
                                 {/* Top player info aligned with board */}
                                 <PortraitPlayerInfo>
-                                    <PortraitClock
-                                        time={topPlayerTime}
+                                    <ObservableClock
+                                        player={topPlayer}
                                         isActive={isTopPlayerTurn}
-                                        showTenths={topPlayerTime < 10}
-                                        lowTimeThreshold={30}
                                         size="small"
                                         compact={true}
                                     />
@@ -583,7 +634,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         <PlayerCard
                                             name={topPlayer.name}
                                             rating={topPlayer.rating}
-                                            time={topPlayerTime}
+                                            time={0}
                                             isActive={isTopPlayerTurn}
                                             isWhite={isTopPlayerWhite}
                                             orientation="horizontal"
@@ -607,11 +658,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
 
                                 {/* Bottom player info aligned with board */}
                                 <PortraitPlayerInfo>
-                                    <PortraitClock
-                                        time={bottomPlayerTime}
+                                    <ObservableClock
+                                        player={bottomPlayer}
                                         isActive={!isTopPlayerTurn}
-                                        showTenths={bottomPlayerTime < 10}
-                                        lowTimeThreshold={30}
                                         size="small"
                                         compact={true}
                                     />
@@ -619,7 +668,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         <PlayerCard
                                             name={bottomPlayer.name}
                                             rating={bottomPlayer.rating}
-                                            time={bottomPlayerTime}
+                                            time={0}
                                             isActive={!isTopPlayerTurn}
                                             isWhite={!isTopPlayerWhite}
                                             orientation="horizontal"
@@ -669,13 +718,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
             </ChessSection>
 
             <ControlsSection $orientation="portrait">
-                {perspective !== 'freestyle' && (
-                    <GameControls
-                        perspective={perspective}
-                        canAbort={gameStore.moveHistory.length <= 1}
-                    />
-                )}
-
                 <MoveList
                     moves={gameStore.moveHistory}
                     currentMoveIndex={gameStore.currentMoveIndex}
@@ -697,30 +739,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 break;
                         }
                     }}
-                    extraControls={perspective === 'freestyle' ? (
-                        <ExtraControlsContainer>
-                            <CompactControlButton
-                                onClick={handleAnalysis}
-                                $variant="primary"
-                                $isActive={isAnalysisActive}
-                            >
-                                Analysis
-                            </CompactControlButton>
-                            <CompactControlButton
-                                onClick={handleFlipBoard}
-                                $variant="primary"
-                                $isActive={preferencesStore.preferences.boardFlipped}
-                            >
-                                Flip
-                            </CompactControlButton>
-                            <CompactControlButton
-                                onClick={handleSetupFEN}
-                                $variant="secondary"
-                            >
-                                FEN
-                            </CompactControlButton>
-                        </ExtraControlsContainer>
-                    ) : undefined}
                 />
             </ControlsSection>
         </>
@@ -776,18 +794,17 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 />
                                 
                                 <PlayerWithClock>
-                                    <LandscapeClock
-                                        time={topPlayerTime}
+                                    <ObservableClock
+                                        player={topPlayer}
                                         isActive={isTopPlayerTurn}
-                                        showTenths={topPlayerTime < 10}
-                                        lowTimeThreshold={30}
                                         size="small"
                                         compact={true}
+                                        variant="landscape"
                                     />
                                     <PlayerCard
                                         name={topPlayer.name}
                                         rating={topPlayer.rating}
-                                        time={topPlayerTime}
+                                        time={0}
                                         isActive={isTopPlayerTurn}
                                         isWhite={isTopPlayerWhite}
                                         orientation="vertical"
@@ -796,35 +813,20 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     />
                                 </PlayerWithClock>
 
+                                <GameControls
+                                    perspective={perspective}
+                                    canAbort={gameStore.moveHistory.length <= 1}
+                                    onAnalysis={handleAnalysis}
+                                    onFlipBoard={handleFlipBoard}
+                                    onSetupFEN={handleSetupFEN}
+                                    isAnalysisActive={isAnalysisActive}
+                                />
+
                                 <CompactMoveList
                                     moves={gameStore.moveHistory}
                                     currentMoveIndex={gameStore.currentMoveIndex}
                                     onMoveClick={handleMoveClick}
                                     showHeader={false}
-                                    extraControls={perspective === 'freestyle' ? (
-                                        <ExtraControlsContainer>
-                                            <CompactControlButton
-                                                onClick={handleAnalysis}
-                                                $variant={isAnalysisActive ? "primary" : "secondary"}
-                                                $isActive={isAnalysisActive}
-                                            >
-                                                Analysis
-                                            </CompactControlButton>
-                                            <CompactControlButton
-                                                onClick={handleFlipBoard}
-                                                $variant={preferencesStore.preferences.boardFlipped ? "primary" : "secondary"}
-                                                $isActive={preferencesStore.preferences.boardFlipped}
-                                            >
-                                                Flip
-                                            </CompactControlButton>
-                                            <CompactControlButton
-                                                onClick={handleSetupFEN}
-                                                $variant="secondary"
-                                            >
-                                                FEN
-                                            </CompactControlButton>
-                                        </ExtraControlsContainer>
-                                    ) : undefined}
                                     onNavigate={(direction) => {
                                         switch (direction) {
                                             case 'first':
@@ -847,20 +849,19 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     <PlayerCard
                                         name={bottomPlayer.name}
                                         rating={bottomPlayer.rating}
-                                        time={bottomPlayerTime}
+                                        time={0}
                                         isActive={!isTopPlayerTurn}
                                         isWhite={!isTopPlayerWhite}
                                         orientation="vertical"
                                         hideClockInCard={true}
                                         compact={true}
                                     />
-                                    <LandscapeClock
-                                        time={bottomPlayerTime}
+                                    <ObservableClock
+                                        player={bottomPlayer}
                                         isActive={!isTopPlayerTurn}
-                                        showTenths={bottomPlayerTime < 10}
-                                        lowTimeThreshold={30}
                                         size="small"
                                         compact={true}
+                                        variant="landscape"
                                     />
                                 </PlayerWithClock>
                                 
@@ -872,15 +873,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                             </PlayersColumn>
                         </LandscapeBoardSection>
                     </ChessSection>
-
-                    {perspective !== 'freestyle' && (
-                        <ControlsSection $orientation="landscape">
-                            <GameControls
-                                perspective={perspective}
-                                canAbort={gameStore.moveHistory.length <= 1}
-                            />
-                        </ControlsSection>
-                    )}
                 </>
             ) : renderPortraitLayout()}
 

@@ -1,6 +1,6 @@
 import {makeAutoObservable, runInAction} from 'mobx';
 import {FicsProtocol} from '../services/FicsProtocol';
-import {GameStart} from '../services/FicsProtocol.types';
+import {GameStart, GameEnd, MovesList} from '../services/FicsProtocol.types';
 
 // Forward declaration to avoid circular dependency
 interface RootStore {
@@ -40,6 +40,12 @@ export class FICSStore {
 
     constructor() {
         makeAutoObservable(this);
+    }
+    
+    // Helper to strip titles from usernames
+    private stripTitles(username: string): string {
+        // Remove all parenthetical titles like (TD), (*), (C), etc.
+        return username.replace(/\([^)]*\)/g, '').trim();
     }
 
     connect(credentials?: { username: string; password: string }) {
@@ -351,6 +357,14 @@ export class FICSStore {
 
                     case 'style12':
                         this.rootStore?.gameStore.updateFromStyle12(message.data);
+                        // If we're observing and not at move 1, request the moves
+                        if (message.data.moveNumber > 1 && 
+                            (message.data.relation === 0 || message.data.relation === -2)) {
+                            // Check if we already have moves for this game
+                            if (!this.rootStore?.gameStore.hasMoveHistory()) {
+                                this.sendCommand(`moves ${message.data.gameNumber}`);
+                            }
+                        }
                         break;
 
                     case 'gameStart':
@@ -380,7 +394,7 @@ export class FICSStore {
                         // Add message to channel
                         this.rootStore?.chatStore.addMessage(channelId, {
                             channel: channelId,
-                            sender: message.data.username,
+                            sender: this.stripTitles(message.data.username),
                             content: message.data.message,
                             timestamp: channelLocalTime,
                             type: 'message'
@@ -389,11 +403,13 @@ export class FICSStore {
 
 
                     case 'directTell':
+                        // Strip titles from username
+                        const cleanUsername = this.stripTitles(message.data.username);
                         // Create private tab if it doesn't exist
-                        const privateTabId = message.data.username.toLowerCase();
+                        const privateTabId = cleanUsername.toLowerCase();
                         this.rootStore?.chatStore.createTab(
                             privateTabId,
-                            message.data.username,
+                            cleanUsername,
                             'private'
                         );
                         
@@ -410,15 +426,19 @@ export class FICSStore {
                         // Add message to private chat
                         this.rootStore?.chatStore.addMessage(privateTabId, {
                             channel: privateTabId,
-                            sender: message.data.username,
+                            sender: cleanUsername,
                             content: message.data.message,
                             timestamp: privateLocalTime,
                             type: 'whisper'
                         });
                         break;
 
+                    case 'movesList':
+                        this.handleMovesList(message.data);
+                        break;
+
                     case 'gameEnd':
-                        // TODO: Handle game end
+                        this.handleGameEnd(message.data);
                         break;
 
                     case 'illegalMove':
@@ -516,6 +536,37 @@ export class FICSStore {
         };
 
         this.rootStore?.gameStore.startNewGame(gameState);
+    }
+    
+    private handleGameEnd(gameEnd: GameEnd) {
+        // Check if this is the game we're currently observing/playing
+        if (this.rootStore?.gameStore.currentGame?.gameId === gameEnd.gameNumber) {
+            // Update the game result
+            if (this.rootStore.gameStore.currentGame) {
+                this.rootStore.gameStore.currentGame.result = gameEnd.result;
+            }
+            
+            // If we were observing, end the game and switch to freestyle
+            if (this.rootStore.gameStore.isObserving) {
+                this.rootStore.gameStore.endGame();
+            }
+            
+            // Show game end message in console
+            this.rootStore?.chatStore.addMessage('console', {
+                channel: 'console',
+                sender: 'FICS',
+                content: `Game ${gameEnd.gameNumber} (${gameEnd.whiteName} vs. ${gameEnd.blackName}) ${gameEnd.reason} ${gameEnd.result}`,
+                timestamp: new Date(),
+                type: 'system'
+            });
+        }
+    }
+
+    private handleMovesList(movesList: MovesList) {
+        // Update the game store with the moves list
+        if (this.rootStore?.gameStore.currentGame?.gameId === movesList.gameNumber) {
+            this.rootStore.gameStore.loadMovesFromList(movesList.moves);
+        }
     }
 
     private mapGameTypeToVariant(gameType: string): 'standard' | 'chess960' | 'losers' | 'suicide' | 'atomic' | 'crazyhouse' | 'wild' {
