@@ -183,18 +183,25 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
     if (containerRef.current) {
       const container = containerRef.current;
       
-      // Use requestAnimationFrame to ensure DOM is updated
+      // Use double requestAnimationFrame to ensure DOM is fully updated
       requestAnimationFrame(() => {
-        // For initial load or when switching tabs, always scroll to bottom
-        if (messages.length <= 1) {
-          container.scrollTop = container.scrollHeight;
-        } else {
-          // Use smart scroll for subsequent messages with a larger threshold
-          smartScrollToBottom(container, 50);
-        }
+        requestAnimationFrame(() => {
+          // For console tab, always use smart scroll
+          if (activeTab?.type === 'console') {
+            smartScrollToBottom(container, 100); // Larger threshold for console
+          } else {
+            // For initial load or when switching tabs, always scroll to bottom
+            if (messages.length <= 1) {
+              container.scrollTop = container.scrollHeight;
+            } else {
+              // Use smart scroll for subsequent messages with a larger threshold
+              smartScrollToBottom(container, 50);
+            }
+          }
+        });
       });
     }
-  }, [messages.length]);
+  }, [messages.length, activeTab?.type]);
   
   // Also scroll to bottom when switching tabs
   useEffect(() => {
