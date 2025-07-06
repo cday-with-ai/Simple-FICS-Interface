@@ -10,6 +10,11 @@
  * @returns true if the element is near the bottom
  */
 export function isScrolledToBottom(element: HTMLElement, threshold: number = 10): boolean {
+  // If content fits in viewport (no scrollbar), treat as at bottom
+  if (element.scrollHeight <= element.clientHeight) {
+    return true;
+  }
+  
   return element.scrollHeight - element.scrollTop <= element.clientHeight + threshold;
 }
 
