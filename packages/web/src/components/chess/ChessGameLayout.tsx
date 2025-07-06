@@ -426,9 +426,15 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
         if (!gameStore.currentGame) return 'freestyle';
         // Freestyle mode for custom positions (negative gameId)
         if (gameStore.currentGame.gameId < 0) return 'freestyle';
-        // TODO: Determine based on actual game state (playing, observing, examining)
-        return 'playing';
-    }, [gameStore.currentGame]);
+        
+        // Use the game perspective from gameStore
+        if (gameStore.isPlaying) return 'playing';
+        if (gameStore.isObserving) return 'observing';
+        if (gameStore.isExamining) return 'examining';
+        
+        // Default to observing if we have a game but unclear state
+        return 'observing';
+    }, [gameStore.currentGame, gameStore.gameRelation]);
 
     // Handle moves
     const handleMove = useCallback((from: string, to: string) => {
