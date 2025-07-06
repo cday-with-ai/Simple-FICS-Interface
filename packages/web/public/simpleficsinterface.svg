@@ -22,7 +22,7 @@
     <!-- Stylized king chess piece with clear crown shape -->
     <path d="M50 42 L47 42 L47 32 L45 32 L45 27 L43 27 L43 22 L45 22 L45 17 L47 17 L47 15 L50 12 L53 15 L53 17 L55 17 L55 22 L57 22 L57 27 L55 27 L55 32 L53 32 L53 42 L50 42 Z M47 15 L53 15" fill="url(#gradient)"/>
     <!-- FICS Simple Interface text -->
-    <text x="70" y="38" font-family="Helvetica, sans-serif" font-size="20" font-weight="900" letter-spacing="1" fill="#ffffff">FICS Simple Interface</text>
+    <text x="70" y="38" font-family="Helvetica, sans-serif" font-size="20" font-weight="900" letter-spacing="1" fill="#ffffff">Simple FICS Interface</text>
     <!-- Glowing connection nodes for tech vibe -->
     <circle cx="277" cy="15" r="3" fill="#4CAF50">
         <animate attributeName="opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite"/>

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import { ChatMessage } from '@fics/shared';
+import { smartScrollToBottom } from '../../utils/chatScrolling';
 
 const MessagesContainer = styled.div`
   flex: 1;
@@ -177,22 +178,38 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
   const messages = activeTab?.messages || [];
   const currentUsername = ficsStore.username || 'You';
   
-  // Auto-scroll to bottom when new messages arrive
+  // Smart auto-scroll: only scroll to bottom when user is already at/near bottom
   useEffect(() => {
     if (containerRef.current) {
       const container = containerRef.current;
-      const isScrolledToBottom = 
-        container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
       
-      if (isScrolledToBottom) {
-        container.scrollTop = container.scrollHeight;
-      }
+      // Use requestAnimationFrame to ensure DOM is updated
+      requestAnimationFrame(() => {
+        // For initial load or when switching tabs, always scroll to bottom
+        if (messages.length <= 1) {
+          container.scrollTop = container.scrollHeight;
+        } else {
+          // Use smart scroll for subsequent messages with a larger threshold
+          smartScrollToBottom(container, 50);
+        }
+      });
     }
   }, [messages.length]);
+  
+  // Also scroll to bottom when switching tabs
+  useEffect(() => {
+    if (containerRef.current && messages.length > 0) {
+      const container = containerRef.current;
+      requestAnimationFrame(() => {
+        // Always scroll to bottom when switching to a different tab
+        container.scrollTop = container.scrollHeight;
+      });
+    }
+  }, [activeTab?.id]);
 
   if (!activeTab) {
     return (
-      <MessagesContainer>
+      <MessagesContainer className="chat-messages-container">
         <EmptyState>No active chat</EmptyState>
       </MessagesContainer>
     );
@@ -200,7 +217,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
 
   if (messages.length === 0) {
     return (
-      <MessagesContainer>
+      <MessagesContainer className="chat-messages-container">
         <EmptyState>
           {activeTab.type === 'channel' 
             ? `No messages in (${activeTab.name}) yet`
@@ -247,7 +264,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
   // For console tab, show raw messages without grouping
   if (activeTab.type === 'console') {
     return (
-      <MessagesContainer ref={containerRef}>
+      <MessagesContainer ref={containerRef} className="chat-messages-container">
         {messages.map((message) => (
           <MessageRow 
             key={message.id}
@@ -264,7 +281,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
 
   // For other tabs, use the grouped display
   return (
-    <MessagesContainer ref={containerRef}>
+    <MessagesContainer ref={containerRef} className="chat-messages-container">
       {groupedMessages.map((group, groupIndex) => {
         const firstMessage = group.messages[0];
         const isYou = group.sender.toLowerCase() === currentUsername.toLowerCase();

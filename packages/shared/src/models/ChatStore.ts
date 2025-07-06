@@ -20,6 +20,7 @@ export interface ChatTab {
     type: 'channel' | 'private' | 'console';
     unreadCount: number;
     messages: ChatMessage[];
+    order: number;
 }
 
 export class ChatStore {
@@ -43,7 +44,8 @@ export class ChatStore {
             name: 'Console',
             type: 'console',
             unreadCount: 0,
-            messages: []
+            messages: [],
+            order: 0
         });
     }
 
@@ -77,12 +79,16 @@ export class ChatStore {
     createTab(id: string, name: string, type: ChatTab['type']) {
         runInAction(() => {
             if (!this.tabs.has(id)) {
+                // Find the highest order number
+                const maxOrder = Math.max(...Array.from(this.tabs.values()).map(tab => tab.order));
+                
                 this.tabs.set(id, {
                     id,
                     name,
                     type,
                     unreadCount: 0,
-                    messages: []
+                    messages: [],
+                    order: maxOrder + 1
                 });
             }
         });
@@ -140,10 +146,29 @@ export class ChatStore {
     }
 
     get sortedTabs() {
-        return Array.from(this.tabs.values()).sort((a, b) => {
-            if (a.type === 'console') return -1;
-            if (b.type === 'console') return 1;
-            return a.name.localeCompare(b.name);
+        return Array.from(this.tabs.values()).sort((a, b) => a.order - b.order);
+    }
+    
+    reorderTabs(fromId: string, toId: string) {
+        runInAction(() => {
+            const fromTab = this.tabs.get(fromId);
+            const toTab = this.tabs.get(toId);
+            
+            if (!fromTab || !toTab || fromId === toId) return;
+            
+            const tabs = this.sortedTabs;
+            const fromIndex = tabs.findIndex(t => t.id === fromId);
+            const toIndex = tabs.findIndex(t => t.id === toId);
+            
+            // Remove the tab from its current position
+            tabs.splice(fromIndex, 1);
+            // Insert it at the new position
+            tabs.splice(toIndex, 0, fromTab);
+            
+            // Update order values
+            tabs.forEach((tab, index) => {
+                tab.order = index;
+            });
         });
     }
 }

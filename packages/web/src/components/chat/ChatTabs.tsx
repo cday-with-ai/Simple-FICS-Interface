@@ -28,7 +28,7 @@ const TabsContainer = styled.div`
   }
 `;
 
-const Tab = styled.button<{ $active: boolean; $hasUnread: boolean }>`
+const Tab = styled.button<{ $active: boolean; $hasUnread: boolean; $dragging?: boolean; $dragOver?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${props => props.theme.spacing[1]};
@@ -42,12 +42,17 @@ const Tab = styled.button<{ $active: boolean; $hasUnread: boolean }>`
     ? props.theme.colors.text 
     : props.theme.colors.textSecondary
   };
-  cursor: pointer;
+  cursor: ${props => props.$dragging ? 'grabbing' : 'grab'};
   white-space: nowrap;
   font-size: ${props => props.theme.typography.fontSize.sm};
   transition: all ${props => props.theme.transitions.fast};
   position: relative;
   min-width: 60px;
+  opacity: ${props => props.$dragging ? 0.5 : 1};
+  
+  ${props => props.$dragOver && !props.$dragging && `
+    border-left: 2px solid ${props.theme.colors.primary};
+  `}
   
   &:hover {
     background-color: ${props => props.$active 
@@ -125,6 +130,37 @@ const TabIcon = styled.span<{ $type: 'channel' | 'private' | 'console' }>`
 export const ChatTabs: React.FC = observer(() => {
   const { chatStore } = useRootStore();
   const tabs = chatStore.sortedTabs;
+  const [draggedTabId, setDraggedTabId] = React.useState<string | null>(null);
+  const [dragOverTabId, setDragOverTabId] = React.useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, tabId: string) => {
+    setDraggedTabId(tabId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, tabId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverTabId(tabId);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverTabId(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, toTabId: string) => {
+    e.preventDefault();
+    if (draggedTabId && draggedTabId !== toTabId) {
+      chatStore.reorderTabs(draggedTabId, toTabId);
+    }
+    setDraggedTabId(null);
+    setDragOverTabId(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTabId(null);
+    setDragOverTabId(null);
+  };
 
   return (
     <TabsContainer>
@@ -133,6 +169,14 @@ export const ChatTabs: React.FC = observer(() => {
           key={tab.id}
           $active={tab.id === chatStore.activeTabId}
           $hasUnread={tab.unreadCount > 0}
+          $dragging={tab.id === draggedTabId}
+          $dragOver={tab.id === dragOverTabId}
+          draggable
+          onDragStart={(e) => handleDragStart(e, tab.id)}
+          onDragOver={(e) => handleDragOver(e, tab.id)}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, tab.id)}
+          onDragEnd={handleDragEnd}
           onClick={() => chatStore.setActiveTab(tab.id)}
         >
           <TabIcon $type={tab.type} />
