@@ -471,16 +471,27 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
 
     const opening = 'Sicilian Defense: Najdorf Variation'; // TODO: Get from ECO database
 
+    // Get live clock values
+    const liveClocks = gameStore.liveClocks;
+    
     // Mock player data for now
     const whitePlayer = gameStore.currentGame?.white || {name: 'White', rating: 1500, time: 900};
     const blackPlayer = gameStore.currentGame?.black || {name: 'Black', rating: 1500, time: 900};
     const isWhiteTurn = !gameStore.currentGame || gameStore.currentGame.turn === 'w';
+    
+    // Use live clock values for display
+    const whiteTime = liveClocks.white;
+    const blackTime = liveClocks.black;
     
     // Determine which player should be shown at top/bottom based on board flip
     const topPlayer = preferencesStore.preferences.boardFlipped ? whitePlayer : blackPlayer;
     const bottomPlayer = preferencesStore.preferences.boardFlipped ? blackPlayer : whitePlayer;
     const isTopPlayerWhite = preferencesStore.preferences.boardFlipped;
     const isTopPlayerTurn = preferencesStore.preferences.boardFlipped ? isWhiteTurn : !isWhiteTurn;
+    
+    // Get time for top/bottom players
+    const topPlayerTime = isTopPlayerWhite ? whiteTime : blackTime;
+    const bottomPlayerTime = isTopPlayerWhite ? blackTime : whiteTime;
 
     const handleMoveClick = useCallback((index: number) => {
         gameStore.goToMove(index);
@@ -561,9 +572,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 {/* Top player info aligned with board */}
                                 <PortraitPlayerInfo>
                                     <PortraitClock
-                                        time={topPlayer.time}
+                                        time={topPlayerTime}
                                         isActive={isTopPlayerTurn}
-                                        showTenths={topPlayer.time < 10}
+                                        showTenths={topPlayerTime < 10}
                                         lowTimeThreshold={30}
                                         size="small"
                                         compact={true}
@@ -572,7 +583,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         <PlayerCard
                                             name={topPlayer.name}
                                             rating={topPlayer.rating}
-                                            time={topPlayer.time}
+                                            time={topPlayerTime}
                                             isActive={isTopPlayerTurn}
                                             isWhite={isTopPlayerWhite}
                                             orientation="horizontal"
@@ -597,9 +608,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 {/* Bottom player info aligned with board */}
                                 <PortraitPlayerInfo>
                                     <PortraitClock
-                                        time={bottomPlayer.time}
+                                        time={bottomPlayerTime}
                                         isActive={!isTopPlayerTurn}
-                                        showTenths={bottomPlayer.time < 10}
+                                        showTenths={bottomPlayerTime < 10}
                                         lowTimeThreshold={30}
                                         size="small"
                                         compact={true}
@@ -608,7 +619,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         <PlayerCard
                                             name={bottomPlayer.name}
                                             rating={bottomPlayer.rating}
-                                            time={bottomPlayer.time}
+                                            time={bottomPlayerTime}
                                             isActive={!isTopPlayerTurn}
                                             isWhite={!isTopPlayerWhite}
                                             orientation="horizontal"
@@ -766,9 +777,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 
                                 <PlayerWithClock>
                                     <LandscapeClock
-                                        time={topPlayer.time}
+                                        time={topPlayerTime}
                                         isActive={isTopPlayerTurn}
-                                        showTenths={topPlayer.time < 10}
+                                        showTenths={topPlayerTime < 10}
                                         lowTimeThreshold={30}
                                         size="small"
                                         compact={true}
@@ -776,7 +787,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     <PlayerCard
                                         name={topPlayer.name}
                                         rating={topPlayer.rating}
-                                        time={topPlayer.time}
+                                        time={topPlayerTime}
                                         isActive={isTopPlayerTurn}
                                         isWhite={isTopPlayerWhite}
                                         orientation="vertical"
@@ -836,7 +847,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     <PlayerCard
                                         name={bottomPlayer.name}
                                         rating={bottomPlayer.rating}
-                                        time={bottomPlayer.time}
+                                        time={bottomPlayerTime}
                                         isActive={!isTopPlayerTurn}
                                         isWhite={!isTopPlayerWhite}
                                         orientation="vertical"
@@ -844,9 +855,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         compact={true}
                                     />
                                     <LandscapeClock
-                                        time={bottomPlayer.time}
+                                        time={bottomPlayerTime}
                                         isActive={!isTopPlayerTurn}
-                                        showTenths={bottomPlayer.time < 10}
+                                        showTenths={bottomPlayerTime < 10}
                                         lowTimeThreshold={30}
                                         size="small"
                                         compact={true}

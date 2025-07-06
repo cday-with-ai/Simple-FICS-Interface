@@ -29,8 +29,25 @@ const CardContainer = styled.div<{ $isActive: boolean; $orientation: 'horizontal
     ? props.theme.shadows.md 
     : props.theme.shadows.sm
   };
+  border: 2px solid ${props => props.$isActive 
+    ? props.theme.colors.primary 
+    : 'transparent'
+  };
   transition: all ${props => props.theme.transitions.fast};
   width: 100%;
+  position: relative;
+  
+  ${props => props.$isActive && `
+    &::before {
+      content: '▶';
+      position: absolute;
+      left: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: ${props.theme.colors.primary};
+      font-size: 12px;
+    }
+  `}
 `;
 
 const PlayerInfo = styled.div`

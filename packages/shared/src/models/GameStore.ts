@@ -42,6 +42,12 @@ export class GameStore {
     // Game perspective properties
     gameRelation: number = 0; // -3: isolated, -2: observing examined, -1: playing opponent turn, 0: observing, 1: playing my turn, 2: examining
     shouldFlipBoard: boolean = false; // From style12 flipBoard field
+    
+    // Clock management
+    private clockInterval: NodeJS.Timeout | null = null;
+    private lastClockUpdate: number = Date.now();
+    private baseWhiteTime: number = 0;
+    private baseBlackTime: number = 0;
 
     constructor() {
         makeAutoObservable(this);
@@ -204,12 +210,22 @@ export class GameStore {
                         variant: 'standard', // Will be updated from game start
                         timeControl: `${style12.initialTime/60} ${style12.incrementTime}`
                     };
+                    
+                    // Initialize clock base times
+                    this.baseWhiteTime = style12.whiteTimeRemaining;
+                    this.baseBlackTime = style12.blackTimeRemaining;
+                    this.lastClockUpdate = Date.now();
                 } else {
                     // Update existing game
                     this.currentGame.turn = style12.colorToMove.toLowerCase() as 'w' | 'b';
                     this.currentGame.moveNumber = style12.moveNumber;
                     this.currentGame.white.time = style12.whiteTimeRemaining;
                     this.currentGame.black.time = style12.blackTimeRemaining;
+                    
+                    // Update clock base times
+                    this.baseWhiteTime = style12.whiteTimeRemaining;
+                    this.baseBlackTime = style12.blackTimeRemaining;
+                    this.lastClockUpdate = Date.now();
                     
                     // Apply the move if there is one
                     if (style12.prettyMove !== 'none' && style12.verboseMove !== 'none') {
@@ -259,6 +275,9 @@ export class GameStore {
                 //  2: examining a game
                 this.gameRelation = style12.relation;
                 this.shouldFlipBoard = style12.flipBoard;
+                
+                // Start or restart clock
+                this.startClock();
                 
             } catch (error) {
                 console.error('Failed to parse Style12 data:', error);
@@ -484,5 +503,64 @@ export class GameStore {
         
         // Default: white at bottom
         return false;
+    }
+    
+    // Clock management methods
+    private startClock() {
+        // Clear any existing interval
+        this.stopClock();
+        
+        // Only start clock if we have an active game
+        if (this.currentGame && this.currentGame.gameId > 0) {
+            this.clockInterval = setInterval(() => {
+                runInAction(() => {
+                    this.updateClocks();
+                });
+            }, 100); // Update every 100ms for smooth display
+        }
+    }
+    
+    private stopClock() {
+        if (this.clockInterval) {
+            clearInterval(this.clockInterval);
+            this.clockInterval = null;
+        }
+    }
+    
+    private updateClocks() {
+        if (!this.currentGame) return;
+        
+        const now = Date.now();
+        const elapsed = (now - this.lastClockUpdate) / 1000; // Convert to seconds
+        
+        // Update the active player's clock
+        if (this.currentGame.turn === 'w') {
+            this.currentGame.white.time = Math.max(0, this.baseWhiteTime - elapsed);
+        } else {
+            this.currentGame.black.time = Math.max(0, this.baseBlackTime - elapsed);
+        }
+    }
+    
+    // Computed property for live clock times
+    get liveClocks() {
+        if (!this.currentGame) return { white: 0, black: 0 };
+        
+        const now = Date.now();
+        const elapsed = (now - this.lastClockUpdate) / 1000;
+        
+        return {
+            white: this.currentGame.turn === 'w' 
+                ? Math.max(0, this.baseWhiteTime - elapsed)
+                : this.baseWhiteTime,
+            black: this.currentGame.turn === 'b'
+                ? Math.max(0, this.baseBlackTime - elapsed)
+                : this.baseBlackTime
+        };
+    }
+    
+    // Clean up interval when game ends
+    endGame() {
+        this.stopClock();
+        this.currentGame = null;
     }
 }

@@ -27,10 +27,14 @@ const TimeDisplay = styled.span<{ $isLowTime?: boolean; $isActive?: boolean; $co
     padding: ${({theme, $compact}) => 
             $compact ? `4px ${theme.spacing[2]}` : `${theme.spacing[1]} ${theme.spacing[2]}`};
     background: ${({theme, $isActive}) =>
-            $isActive ? theme.colors.surface : theme.colors.backgroundSecondary};
+            $isActive ? theme.colors.primary : theme.colors.backgroundSecondary};
+    color: ${({theme, $isActive, $isLowTime}) =>
+            $isLowTime ? theme.colors.error : ($isActive ? theme.colors.textInverse : theme.colors.text)};
     border-radius: ${({theme}) => theme.borderRadius.md};
     box-shadow: ${({theme, $isActive}) => 
-            $isActive ? theme.shadows.md : theme.shadows.sm};
+            $isActive ? theme.shadows.lg : theme.shadows.sm};
+    border: 2px solid ${({theme, $isActive}) => 
+            $isActive ? theme.colors.primaryHover : 'transparent'};
     transition: all ${({theme}) => theme.transitions.fast};
 
     ${({$isLowTime, theme}) => $isLowTime && `
