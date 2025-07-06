@@ -174,47 +174,29 @@ interface ChatMessagesProps {
 export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHover }) => {
   const { chatStore, ficsStore } = useRootStore();
   const containerRef = useRef<HTMLDivElement>(null);
-  const prevMessageCountRef = useRef(0);
   const activeTab = chatStore.activeTab;
   const messages = activeTab?.messages || [];
   const currentUsername = ficsStore.username || 'You';
   
-  // Use MutationObserver for console to ensure scrolling happens after DOM updates
+  // Auto-scroll effect - use a key that changes with messages
   useEffect(() => {
-    if (containerRef.current && activeTab?.type === 'console') {
+    if (containerRef.current && messages.length > 0) {
       const container = containerRef.current;
       
-      const observer = new MutationObserver(() => {
-        smartScrollToBottom(container, 100);
-      });
-      
-      observer.observe(container, {
-        childList: true,
-        subtree: true
-      });
-      
-      return () => observer.disconnect();
-    }
-  }, [activeTab?.type]);
-  
-  // Smart auto-scroll for non-console tabs
-  useEffect(() => {
-    if (containerRef.current && activeTab?.type !== 'console' && messages.length > prevMessageCountRef.current) {
-      const container = containerRef.current;
-      
-      requestAnimationFrame(() => {
-        // For initial load or when switching tabs, always scroll to bottom
-        if (messages.length <= 1) {
+      // Small delay to ensure render is complete
+      const timeoutId = setTimeout(() => {
+        if (activeTab?.type === 'console') {
+          // For console, always scroll to bottom
           container.scrollTop = container.scrollHeight;
         } else {
-          // Use smart scroll for subsequent messages
+          // For other tabs, use smart scroll
           smartScrollToBottom(container, 50);
         }
-      });
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
     }
-    
-    prevMessageCountRef.current = messages.length;
-  }, [messages.length, activeTab?.type]);
+  }, [messages.length, messages[messages.length - 1]?.id]); // Depend on last message ID
   
   // Also scroll to bottom when switching tabs
   useEffect(() => {
