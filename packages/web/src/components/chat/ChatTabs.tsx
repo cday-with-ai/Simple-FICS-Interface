@@ -119,12 +119,6 @@ const CloseButton = styled.button`
 const TabIcon = styled.span<{ $type: 'channel' | 'private' | 'console' }>`
   font-size: 12px;
   opacity: 0.7;
-  
-  ${props => props.$type === 'console' && `
-    &::before {
-      content: '>';
-    }
-  `}
 `;
 
 export const ChatTabs: React.FC = observer(() => {
@@ -179,7 +173,7 @@ export const ChatTabs: React.FC = observer(() => {
           onDragEnd={handleDragEnd}
           onClick={() => chatStore.setActiveTab(tab.id)}
         >
-          <TabIcon $type={tab.type} />
+          {tab.type !== 'console' && <TabIcon $type={tab.type} />}
           <TabName>
             {tab.type === 'channel' ? `(${tab.name})` : tab.name}
           </TabName>
