@@ -32,7 +32,7 @@ const Tab = styled.button<{ $active: boolean; $hasUnread: boolean; $dragging?: b
   display: flex;
   align-items: center;
   gap: ${props => props.theme.spacing[1]};
-  padding: ${props => props.theme.spacing[1]} ${props => props.theme.spacing[3]};
+  padding: ${props => props.theme.spacing[1]} ${props => props.theme.spacing[1]};
   border: none;
   background-color: ${props => props.$active 
     ? props.theme.colors.surface 
