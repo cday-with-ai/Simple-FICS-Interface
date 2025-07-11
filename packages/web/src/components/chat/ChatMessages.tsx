@@ -5,6 +5,7 @@ import { useRootStore } from '@fics/shared';
 import { ChatMessage } from '@fics/shared';
 import { smartScrollToBottom } from '../../utils/chatScrolling';
 import { PlayerName } from '../ui/PlayerName';
+import { LinkifiedText } from '../ui/LinkifiedText';
 
 const MessagesContainer = styled.div`
   flex: 1;
@@ -275,7 +276,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
             onMouseEnter={() => onMessageHover?.(message.timestamp)}
             onMouseLeave={() => onMessageHover?.(null)}
           >
-            {message.content}
+            <LinkifiedText text={message.content} />
           </MessageRow>
         ))}
       </MessagesContainer>
@@ -292,7 +293,12 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
         if (firstMessage.type === 'system') {
           return (
             <SystemMessage key={groupIndex}>
-              {group.messages.map(msg => msg.content).join('\n')}
+              {group.messages.map((msg, i) => (
+                <React.Fragment key={msg.id}>
+                  {i > 0 && '\n'}
+                  <LinkifiedText text={msg.content} />
+                </React.Fragment>
+              ))}
             </SystemMessage>
           );
         }
@@ -311,7 +317,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
                 {group.messages.map((msg, i) => (
                   <React.Fragment key={msg.id}>
                     {i > 0 && '\n'}
-                    {msg.content}
+                    <LinkifiedText text={msg.content} />
                   </React.Fragment>
                 ))}
               </Content>
