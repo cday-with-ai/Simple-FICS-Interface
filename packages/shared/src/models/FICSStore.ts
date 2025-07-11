@@ -572,8 +572,8 @@ export class FICSStore {
                 this.rootStore.gameStore.currentGame.result = gameEnd.result;
             }
             
-            // If we were observing, end the game and switch to freestyle
-            if (this.rootStore.gameStore.isObserving) {
+            // End the game and switch to freestyle for both observing and playing
+            if (this.rootStore.gameStore.isObserving || this.rootStore.gameStore.isPlaying) {
                 this.rootStore.gameStore.endGame();
             }
             
