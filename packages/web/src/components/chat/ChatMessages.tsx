@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import { ChatMessage } from '@fics/shared';
 import { smartScrollToBottom } from '../../utils/chatScrolling';
+import { PlayerName } from '../ui/PlayerName';
 
 const MessagesContainer = styled.div`
   flex: 1;
@@ -303,7 +304,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
             onMouseLeave={() => onMessageHover?.(null)}
           >
             <MessageRow $type={firstMessage.type}>
-              <Sender $isYou={isYou}>{group.sender}</Sender>
+              <Sender $isYou={isYou}>
+                {isYou ? group.sender : <PlayerName name={group.sender} />}
+              </Sender>
               <Content>
                 {group.messages.map((msg, i) => (
                   <React.Fragment key={msg.id}>

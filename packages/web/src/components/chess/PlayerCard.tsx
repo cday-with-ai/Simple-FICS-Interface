@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { GameClock } from '../ui/DigitalClock';
+import { PlayerName } from '../ui/PlayerName';
 
 interface PlayerCardProps {
   name: string;
@@ -47,7 +48,7 @@ const NameWithRating = styled.div`
   flex: 1;
 `;
 
-const PlayerName = styled.div`
+const PlayerNameContainer = styled.div`
   font-size: ${props => props.theme.typography.fontSize.sm};
   font-weight: ${props => props.theme.typography.fontWeight.semibold};
   color: ${props => props.theme.colors.text};
@@ -84,7 +85,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = observer(({
     <>
       <PlayerInfo>
         <NameWithRating>
-          <PlayerName>{name}</PlayerName>
+          <PlayerNameContainer>
+            <PlayerName name={name} />
+          </PlayerNameContainer>
           <PlayerRating>{rating}</PlayerRating>
         </NameWithRating>
       </PlayerInfo>

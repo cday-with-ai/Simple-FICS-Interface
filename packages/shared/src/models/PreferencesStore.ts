@@ -50,6 +50,9 @@ export interface Preferences {
     engineDepth: number;
     showEvaluation: boolean;
 
+    // Context menu preferences
+    playerContextCommands: Array<{ label: string; command: string } | { divider: true }>;
+    
     // Internal preferences (for theme system)
     lastSystemThemeCheck?: number;
 }
@@ -81,7 +84,15 @@ const DEFAULT_PREFERENCES: Preferences = {
     defaultTimeControl: '15 0',
     autoAnalyze: false,
     engineDepth: 20,
-    showEvaluation: true
+    showEvaluation: true,
+    playerContextCommands: [
+        { label: 'Finger', command: 'finger {player}' },
+        { label: 'History', command: 'hi {player}' },
+        { label: 'Variables', command: 'vars {player}' },
+        { divider: true },
+        { label: 'Censor', command: '+censor {player}' },
+        { label: 'No Play', command: '+noplay {player}' }
+    ]
 };
 
 export class PreferencesStore {
