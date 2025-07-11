@@ -15,17 +15,17 @@ const Container = styled.div`
 `;
 
 const Button = styled.button<{ $size: 'small' | 'medium' }>`
-  width: ${props => props.$size === 'small' ? '32px' : '40px'};
-  height: ${props => props.$size === 'small' ? '32px' : '40px'};
+  width: ${props => props.$size === 'small' ? '36px' : '44px'};
+  height: ${props => props.$size === 'small' ? '36px' : '44px'};
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: ${props => props.theme.borderRadius.md};
-  background-color: ${props => props.theme.colors.backgroundSecondary};
+  background-color: ${props => props.theme.colors.backgroundTertiary};
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all ${props => props.theme.transitions.fast};
-  padding: 2px;
+  padding: 4px;
   
   &:hover {
     background-color: ${props => props.theme.colors.backgroundTertiary};
@@ -86,8 +86,12 @@ export const PromotionPieceSelector: React.FC<PromotionPieceSelectorProps> = obs
   const containerRef = useRef<HTMLDivElement>(null);
   
   const pieces = ['Q', 'R', 'B', 'N'] as const;
-  const colorPrefix = color === 'white' ? '' : 'b';
   const currentPiece = preferencesStore.preferences.autoPromotionPiece;
+  
+  // Convert to chess piece notation (uppercase for white, lowercase for black)
+  const getPieceNotation = (piece: string) => {
+    return color === 'white' ? piece : piece.toLowerCase();
+  };
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -108,7 +112,7 @@ export const PromotionPieceSelector: React.FC<PromotionPieceSelectorProps> = obs
     setIsOpen(false);
   };
   
-  const pieceSize = size === 'small' ? 24 : 32;
+  const pieceSize = size === 'small' ? 28 : 36;
   
   return (
     <Container ref={containerRef}>
@@ -117,7 +121,7 @@ export const PromotionPieceSelector: React.FC<PromotionPieceSelectorProps> = obs
         onClick={() => setIsOpen(!isOpen)}
         title="Select promotion piece"
       >
-        <ChessPiece piece={colorPrefix + currentPiece} size={pieceSize} />
+        <ChessPiece piece={getPieceNotation(currentPiece)} size={pieceSize} />
       </Button>
       
       <Dropdown $isOpen={isOpen}>
@@ -128,7 +132,7 @@ export const PromotionPieceSelector: React.FC<PromotionPieceSelectorProps> = obs
             onClick={() => handleSelect(piece)}
             title={`Promote to ${piece === 'Q' ? 'Queen' : piece === 'R' ? 'Rook' : piece === 'B' ? 'Bishop' : 'Knight'}`}
           >
-            <ChessPiece piece={colorPrefix + piece} size={pieceSize} />
+            <ChessPiece piece={getPieceNotation(piece)} size={pieceSize} />
           </PieceOption>
         ))}
       </Dropdown>

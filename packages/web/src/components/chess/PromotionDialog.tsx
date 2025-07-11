@@ -67,7 +67,10 @@ export const PromotionDialog: React.FC<PromotionDialogProps> = ({
   if (!position) return null;
   
   const pieces = ['Q', 'R', 'B', 'N'];
-  const colorPrefix = color === 'white' ? '' : 'b';
+  // Convert to chess piece notation (uppercase for white, lowercase for black)
+  const getPieceNotation = (piece: string) => {
+    return color === 'white' ? piece : piece.toLowerCase();
+  };
   
   return (
     <Overlay $isOpen={isOpen} onClick={onCancel}>
@@ -81,7 +84,7 @@ export const PromotionDialog: React.FC<PromotionDialogProps> = ({
             key={piece}
             onClick={() => onSelect(piece)}
           >
-            <ChessPiece piece={colorPrefix + piece} size={50} />
+            <ChessPiece piece={getPieceNotation(piece)} size={50} />
           </PieceOption>
         ))}
       </Dialog>
