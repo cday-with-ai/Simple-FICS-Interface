@@ -5,7 +5,6 @@ import {ThemeToggle} from './ui/ThemeToggle';
 import {LayoutToggle} from './ui/LayoutToggle';
 import {DigitalClock, GameClock} from './ui/DigitalClock';
 import {DigitalScore, EvaluationBar} from './ui/DigitalScore';
-import {StockfishTest} from './StockfishTest';
 import {ChessGameLayout} from './chess';
 
 export const MainLayout: React.FC = () => {
@@ -44,8 +43,6 @@ export const MainLayout: React.FC = () => {
             <p>Compact mode: {isCompactMode ? 'Yes' : 'No'}</p>
             <p>Preference: {layoutPreference}</p>
 
-            {/* Stockfish Integration Test */}
-            <StockfishTest/>
 
             <div style={{marginTop: '1rem'}}>
                 <h4>Sample Chat Messages:</h4>

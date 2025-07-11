@@ -42,7 +42,7 @@ const Title = styled.h3`
 
 const Message = styled.p`
   margin: 0 0 ${props => props.theme.spacing[6]} 0;
-  font-size: ${props => props.theme.typography.fontSize.base};
+  font-size: ${props => props.theme.typography.fontSize.md};
   color: ${props => props.theme.colors.textSecondary};
 `;
 
