@@ -7,6 +7,8 @@
   ],
   "scripts": {
     "web": "yarn workspace @fics/web start",
+    "build:web": "yarn workspace @fics/web build",
+    "serve": "node serve-app.js",
     "mobile": "yarn workspace @fics/mobile start",
     "ios": "yarn workspace @fics/mobile ios",
     "android": "yarn workspace @fics/mobile android",
