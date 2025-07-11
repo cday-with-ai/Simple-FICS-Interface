@@ -16,6 +16,7 @@ export interface Preferences {
     boardFlipped: boolean;
     animateMoves: boolean;
     animationDuration: number; // in milliseconds
+    disableAnimationLowTime: boolean; // Disable animations when under 10 seconds
     autoPromoteToQueen: boolean;
 
     // UI Theme preferences
@@ -59,6 +60,7 @@ const DEFAULT_PREFERENCES: Preferences = {
     boardFlipped: false,
     animateMoves: true,
     animationDuration: 250, // 0.25 seconds
+    disableAnimationLowTime: true, // Default to disabling animations when low on time
     autoPromoteToQueen: false,
     theme: 'system',
     layout: 'auto',

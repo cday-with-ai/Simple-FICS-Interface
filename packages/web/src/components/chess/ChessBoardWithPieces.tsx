@@ -1,9 +1,9 @@
 import React, { useMemo, useRef, useEffect, useState, useCallback } from 'react';
 import styled from 'styled-components';
-// Removed observer - this component doesn't use MobX state directly
+import { observer } from 'mobx-react-lite';
 import { useLayout } from '../../theme/hooks';
 import { ChessPiece } from './ChessPiece';
-import { usePreferencesStore } from '@fics/shared';
+import { usePreferencesStore, useGameStore } from '@fics/shared';
 
 interface ChessBoardWithPiecesProps {
   position: string; // FEN position string
@@ -201,7 +201,7 @@ function parseFEN(fen: string): Map<string, string> {
   return pieces;
 }
 
-export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
+export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observer(({
   position,
   size: providedSize,
   flipped = false,
@@ -214,6 +214,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
 }) => {
   const layout = useLayout();
   const preferencesStore = usePreferencesStore();
+  const gameStore = useGameStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [calculatedSize, setCalculatedSize] = useState(providedSize || 200);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
@@ -324,9 +325,29 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
 
   const squareSize = calculatedSize / 8;
   
+  // Check if we should disable animations due to low time
+  const shouldAnimateMoves = useMemo(() => {
+    if (!preferencesStore.preferences.animateMoves) return false;
+    
+    // Check if we're playing and have low time
+    if (gameStore.isPlaying && preferencesStore.preferences.disableAnimationLowTime) {
+      const currentGame = gameStore.currentGame;
+      const playingColor = gameStore.playingColor;
+      if (currentGame && playingColor) {
+        // Get the time for the player (not necessarily the active player)
+        const playerTime = playingColor === 'white' ? currentGame.white.time : currentGame.black.time;
+        // Disable animations if under 10 seconds
+        if (playerTime < 10) return false;
+      }
+    }
+    
+    return true;
+  }, [preferencesStore.preferences.animateMoves, preferencesStore.preferences.disableAnimationLowTime, 
+      gameStore.isPlaying, gameStore.currentGame, gameStore.playingColor]);
+  
   // Detect piece movements and start animations
   useEffect(() => {
-    if (!preferencesStore.preferences.animateMoves) {
+    if (!shouldAnimateMoves) {
       previousPiecesRef.current = new Map(pieces);
       return;
     }
@@ -360,7 +381,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
     }
     
     previousPiecesRef.current = new Map(pieces);
-  }, [pieces, lastMove, preferencesStore.preferences.animateMoves]);
+  }, [pieces, lastMove, shouldAnimateMoves]);
   
   // Animation loop
   useEffect(() => {
@@ -577,6 +598,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
       )}
     </>
   );
-};
+});
 
 ChessBoardWithPieces.displayName = 'ChessBoardWithPieces';
