@@ -599,8 +599,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                                 )}
                                                 <CompactControlButton
                                                     onClick={handleDraw}
-                                                    $variant={isDrawOffered ? "primary" : "secondary"}
-                                                    $isActive={isDrawOffered}
+                                                    $variant="secondary"
                                                 >
                                                     Draw
                                                 </CompactControlButton>
@@ -622,8 +621,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                                 </CompactControlButton>
                                                 <CompactControlButton
                                                     onClick={handleAnalysis}
-                                                    $variant={isAnalysisActive ? "primary" : "secondary"}
-                                                    $isActive={isAnalysisActive}
+                                                    $variant="secondary"
                                                 >
                                                     Analysis
                                                 </CompactControlButton>
@@ -639,8 +637,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                                 </CompactControlButton>
                                                 <CompactControlButton
                                                     onClick={handleAnalysis}
-                                                    $variant={isAnalysisActive ? "primary" : "secondary"}
-                                                    $isActive={isAnalysisActive}
+                                                    $variant="secondary"
                                                 >
                                                     Analysis
                                                 </CompactControlButton>
@@ -650,15 +647,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                             <>
                                                 <CompactControlButton
                                                     onClick={handleAnalysis}
-                                                    $variant={isAnalysisActive ? "primary" : "secondary"}
-                                                    $isActive={isAnalysisActive}
+                                                    $variant="secondary"
                                                 >
                                                     Analysis
                                                 </CompactControlButton>
                                                 <CompactControlButton
                                                     onClick={handleFlipBoard}
-                                                    $variant={boardFlipped ? "primary" : "secondary"}
-                                                    $isActive={boardFlipped}
+                                                    $variant="secondary"
                                                 >
                                                     Flip
                                                 </CompactControlButton>

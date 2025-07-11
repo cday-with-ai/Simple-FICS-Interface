@@ -28,7 +28,7 @@ const ControlsContainer = styled.div`
   box-shadow: ${props => props.theme.shadows.sm};
 `;
 
-const ControlButton = styled.button<{ $variant?: 'primary' | 'danger' | 'secondary'; $isActive?: boolean }>`
+const ControlButton = styled.button<{ $variant?: 'primary' | 'danger' | 'secondary' }>`
   padding: ${props => props.theme.spacing[1]} ${props => props.theme.spacing[3]};
   border: none;
   border-radius: ${props => props.theme.borderRadius.md};
@@ -49,10 +49,10 @@ const ControlButton = styled.button<{ $variant?: 'primary' | 'danger' | 'seconda
         `;
       case 'primary':
         return `
-          background-color: ${props.$isActive ? props.theme.colors.primary : props.theme.colors.secondary};
+          background-color: ${props.theme.colors.secondary};
           color: ${props.theme.colors.textInverse};
           &:hover {
-            background-color: ${props.$isActive ? props.theme.colors.primaryHover : props.theme.colors.secondaryHover};
+            background-color: ${props.theme.colors.secondaryHover};
           }
         `;
       default:
@@ -94,7 +94,7 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
           Abort
         </ControlButton>
       )}
-      <ControlButton onClick={onDraw} $variant={isDrawOffered ? "primary" : "secondary"} $isActive={isDrawOffered}>
+      <ControlButton onClick={onDraw} $variant="secondary">
         Draw
       </ControlButton>
       <ControlButton onClick={onResign} $variant="secondary">
@@ -113,8 +113,7 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
       </ControlButton>
       <ControlButton 
         onClick={onAnalysis} 
-        $variant="primary"
-        $isActive={isAnalysisActive}
+        $variant="secondary"
       >
         Analysis
       </ControlButton>
@@ -131,8 +130,7 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
       </ControlButton>
       <ControlButton 
         onClick={onAnalysis} 
-        $variant="primary"
-        $isActive={isAnalysisActive}
+        $variant="secondary"
       >
         Analysis
       </ControlButton>
@@ -146,8 +144,7 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
     <>
       <ControlButton 
         onClick={onAnalysis} 
-        $variant="primary"
-        $isActive={isAnalysisActive}
+        $variant="secondary"
       >
         Analysis
       </ControlButton>
