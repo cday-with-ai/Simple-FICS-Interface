@@ -12,6 +12,7 @@ import {AnalysisDisplay, AnalysisInfoDisplay} from './AnalysisDisplay';
 import {FENDialog} from './FENDialog';
 import {CapturedPieces} from './CapturedPieces';
 import {ConfirmDialog} from '../ui/ConfirmDialog';
+import {PromotionPieceSelector} from './PromotionPieceSelector';
 
 interface ChessGameLayoutProps {
     className?: string;
@@ -444,9 +445,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     }, [gameStore.currentGame, gameStore.gameRelation]);
 
     // Handle moves
-    const handleMove = useCallback((from: string, to: string) => {
+    const handleMove = useCallback((from: string, to: string, promotion?: string) => {
         try {
-            const success = gameStore.makeMove(from, to);
+            const success = gameStore.makeMove(from, to, promotion);
             if (!success) {
                 console.error('Invalid move:', from, to);
             }
@@ -609,6 +610,10 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                                 >
                                                     Resign
                                                 </CompactControlButton>
+                                                <PromotionPieceSelector
+                                                    color={gameStore.playingColor || 'white'}
+                                                    size="small"
+                                                />
                                             </>
                                         )}
                                         {perspective === 'observing' && (

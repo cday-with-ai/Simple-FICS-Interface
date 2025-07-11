@@ -4,13 +4,14 @@ import { observer } from 'mobx-react-lite';
 import { useLayout } from '../../theme/hooks';
 import { ChessPiece } from './ChessPiece';
 import { usePreferencesStore, useGameStore } from '@fics/shared';
+import { PromotionDialog } from './PromotionDialog';
 
 interface ChessBoardWithPiecesProps {
   position: string; // FEN position string
   size?: number;
   flipped?: boolean;
   showCoordinates?: boolean;
-  onMove?: (from: string, to: string) => void;
+  onMove?: (from: string, to: string, promotion?: string) => void;
   highlightedSquares?: Set<string>;
   lastMove?: { from: string; to: string };
   interactive?: boolean;
@@ -228,6 +229,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   } | null>(null);
   const [animatingPieces, setAnimatingPieces] = useState<AnimatingPiece[]>([]);
   const animationFrameRef = useRef<number>();
+  const [promotionState, setPromotionState] = useState<{
+    from: string;
+    to: string;
+    color: 'white' | 'black';
+    position: { x: number; y: number };
+  } | null>(null);
 
   // Parse position
   const pieces = useMemo(() => parseFEN(position), [position]);
@@ -244,6 +251,14 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     
     return { x, y };
   }, [flipped]);
+  
+  // Check if a pawn move is a promotion
+  const isPromotion = useCallback((piece: string, from: string, to: string) => {
+    const isPawn = piece.toLowerCase() === 'p';
+    const toRank = to[1];
+    const isPromotionRank = toRank === '8' || toRank === '1';
+    return isPawn && isPromotionRank;
+  }, []);
 
   // Calculate optimal board size
   useEffect(() => {
@@ -415,7 +430,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   }, [animatingPieces.length, preferencesStore.preferences.animationDuration]);
 
   // Handle square click
-  const handleSquareClick = useCallback((square: string) => {
+  const handleSquareClick = useCallback((square: string, event?: React.MouseEvent) => {
     if (!interactive) return;
 
     const piece = pieces.get(square);
@@ -423,7 +438,28 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     if (selectedSquare) {
       // If clicking on a possible move, make the move
       if (possibleMoves.has(square) || square !== selectedSquare) {
-        onMove?.(selectedSquare, square);
+        const movingPiece = pieces.get(selectedSquare);
+        if (movingPiece && isPromotion(movingPiece, selectedSquare, square)) {
+          // Handle promotion
+          const color = movingPiece === movingPiece.toUpperCase() ? 'white' : 'black';
+          
+          // In playing mode, use auto-promotion preference
+          if (gameStore.isPlaying) {
+            const promotionPiece = preferencesStore.preferences.autoPromotionPiece;
+            onMove?.(selectedSquare, square, promotionPiece);
+          } else {
+            // Show promotion dialog
+            const rect = event?.currentTarget.getBoundingClientRect();
+            setPromotionState({
+              from: selectedSquare,
+              to: square,
+              color,
+              position: rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+            });
+          }
+        } else {
+          onMove?.(selectedSquare, square);
+        }
         setSelectedSquare(null);
         setPossibleMoves(new Set());
       } else {
@@ -438,7 +474,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       // For now, just highlight some squares as an example
       setPossibleMoves(new Set());
     }
-  }, [selectedSquare, possibleMoves, pieces, onMove, interactive]);
+  }, [selectedSquare, possibleMoves, pieces, onMove, interactive, isPromotion, gameStore.isPlaying, preferencesStore.preferences.autoPromotionPiece]);
 
   // Handle drag start
   const handleDragStart = useCallback((e: React.MouseEvent, square: string, piece: string) => {
@@ -475,7 +511,26 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       const targetSquare = squareElement?.getAttribute('data-square');
 
       if (targetSquare && targetSquare !== square) {
-        onMove?.(square, targetSquare);
+        if (isPromotion(piece, square, targetSquare)) {
+          // Handle promotion
+          const color = piece === piece.toUpperCase() ? 'white' : 'black';
+          
+          // In playing mode, use auto-promotion preference
+          if (gameStore.isPlaying) {
+            const promotionPiece = preferencesStore.preferences.autoPromotionPiece;
+            onMove?.(square, targetSquare, promotionPiece);
+          } else {
+            // Show promotion dialog
+            setPromotionState({
+              from: square,
+              to: targetSquare,
+              color,
+              position: { x: upEvent.clientX, y: upEvent.clientY }
+            });
+          }
+        } else {
+          onMove?.(square, targetSquare);
+        }
       }
 
       setDraggedPiece(null);
@@ -488,7 +543,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [onMove, interactive]);
+  }, [onMove, interactive, isPromotion, gameStore.isPlaying, preferencesStore.preferences.autoPromotionPiece]);
 
   const squares = useMemo(() => {
     const result = [];
@@ -518,7 +573,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             $isLastMoveSquare={!!isLastMoveSquare}
             $isSelected={isSelected}
             $isPossibleMove={isPossibleMove}
-            onClick={() => handleSquareClick(squareName)}
+            onClick={(e) => handleSquareClick(squareName, e)}
             onMouseDown={(e) => piece && handleDragStart(e, squareName, piece)}
           >
             {piece && !isDraggedFrom && !isAnimating && (
@@ -595,6 +650,18 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             <ChessPiece piece={draggedPiece.piece} size={draggedPiece.size} isDragging />
           </DraggingPiece>
         </>
+      )}
+      {promotionState && (
+        <PromotionDialog
+          isOpen={true}
+          color={promotionState.color}
+          position={promotionState.position}
+          onSelect={(piece) => {
+            onMove?.(promotionState.from, promotionState.to, piece);
+            setPromotionState(null);
+          }}
+          onCancel={() => setPromotionState(null)}
+        />
       )}
     </>
   );

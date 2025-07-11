@@ -18,6 +18,7 @@ export interface Preferences {
     animationDuration: number; // in milliseconds
     disableAnimationLowTime: boolean; // Disable animations when under 10 seconds
     autoPromoteToQueen: boolean;
+    autoPromotionPiece: 'Q' | 'R' | 'B' | 'N'; // Piece to auto-promote to in playing mode
 
     // UI Theme preferences
     theme: 'light' | 'dark' | 'system';
@@ -62,6 +63,7 @@ const DEFAULT_PREFERENCES: Preferences = {
     animationDuration: 250, // 0.25 seconds
     disableAnimationLowTime: true, // Default to disabling animations when low on time
     autoPromoteToQueen: false,
+    autoPromotionPiece: 'Q', // Default to queen
     theme: 'system',
     layout: 'auto',
     viewMode: 'chess-and-chat',
@@ -152,6 +154,8 @@ export class PreferencesStore {
                 return typeof value === 'number' && value >= 1 && value <= 50;
             case 'animationDuration':
                 return typeof value === 'number' && value >= 0 && value <= 1000;
+            case 'autoPromotionPiece':
+                return ['Q', 'R', 'B', 'N'].includes(value);
             case 'boardTheme':
                 return ['brown', 'blue', 'green', 'purple'].includes(value);
             case 'pieceSet':

@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
+import { useGameStore } from '@fics/shared';
+import { PromotionPieceSelector } from './PromotionPieceSelector';
 
 interface GameControlsProps {
   perspective: 'playing' | 'observing' | 'examining' | 'freestyle';
@@ -87,6 +89,8 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
   canAbort,
   className
 }) => {
+  const gameStore = useGameStore();
+  
   const renderPlayingControls = () => (
     <>
       {canAbort && (
@@ -103,6 +107,10 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
       <ControlButton onClick={onFlipBoard} $variant="secondary">
         Flip
       </ControlButton>
+      <PromotionPieceSelector
+        color={gameStore.playingColor || 'white'}
+        size="medium"
+      />
     </>
   );
   
