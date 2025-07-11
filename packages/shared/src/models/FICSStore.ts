@@ -234,17 +234,28 @@ export class FICSStore {
         runInAction(() => {
             this.lastPing = Date.now();
         });
+        
+        // Handle timeseal acknowledgements
+        const { cleanedMessage, needsAck } = FicsProtocol.handleTimesealAcknowledgement(data);
+        if (needsAck) {
+            // Send timeseal acknowledgement
+            const ack = FicsProtocol.createTimesealAck();
+            this.ws!.send(ack);
+        }
+        
+        // Use cleaned message for processing
+        const processData = cleanedMessage;
 
         // Don't buffer messages until we're actually logged in
         if (this.loginState !== 'logged-in') {
             // Process the message immediately without buffering
-            const messages = FicsProtocol.parseMessage(data);
+            const messages = FicsProtocol.parseMessage(processData);
             this.processMessages(messages);
             return;
         }
 
         // After login, buffer messages until we see \nfics%
-        this.messageBuffer += data;
+        this.messageBuffer += processData;
         
         console.log('Buffer state:');
         console.log('  Length:', this.messageBuffer.length);
@@ -439,6 +450,21 @@ export class FICSStore {
 
                     case 'gameEnd':
                         this.handleGameEnd(message.data);
+                        break;
+                        
+                    case 'unobserve':
+                        // If we're unobserving the current game, end it
+                        if (this.rootStore?.gameStore.currentGame?.gameId === message.data.gameNumber) {
+                            this.rootStore?.gameStore.endGame();
+                        }
+                        // Show message in console
+                        this.rootStore?.chatStore.addMessage('console', {
+                            channel: 'console',
+                            sender: 'FICS',
+                            content: `Removing game ${message.data.gameNumber} from observation list.`,
+                            timestamp: new Date(),
+                            type: 'system'
+                        });
                         break;
 
                     case 'illegalMove':

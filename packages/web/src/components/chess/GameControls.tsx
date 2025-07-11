@@ -13,6 +13,7 @@ interface GameControlsProps {
   onSetupFEN?: () => void;
   onFlipBoard?: () => void;
   isAnalysisActive?: boolean;
+  isDrawOffered?: boolean;
   canAbort?: boolean;
   className?: string;
 }
@@ -82,6 +83,7 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
   onSetupFEN,
   onFlipBoard,
   isAnalysisActive,
+  isDrawOffered,
   canAbort,
   className
 }) => {
@@ -92,10 +94,10 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
           Abort
         </ControlButton>
       )}
-      <ControlButton onClick={onDraw} $variant="secondary">
+      <ControlButton onClick={onDraw} $variant={isDrawOffered ? "primary" : "secondary"} $isActive={isDrawOffered}>
         Draw
       </ControlButton>
-      <ControlButton onClick={onResign} $variant="danger">
+      <ControlButton onClick={onResign} $variant="secondary">
         Resign
       </ControlButton>
       <ControlButton onClick={onFlipBoard} $variant="secondary">

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 // Removed observer - this component doesn't use MobX state directly
 import { useLayout } from '../../theme/hooks';
 import { ChessPiece } from './ChessPiece';
+import { usePreferencesStore } from '@fics/shared';
 
 interface ChessBoardWithPiecesProps {
   position: string; // FEN position string
@@ -14,6 +15,13 @@ interface ChessBoardWithPiecesProps {
   lastMove?: { from: string; to: string };
   interactive?: boolean;
   onSizeCalculated?: (size: number) => void;
+}
+
+interface AnimatingPiece {
+  piece: string;
+  from: string;
+  to: string;
+  startTime: number;
 }
 
 const BoardContainer = styled.div<{ $size: number }>`
@@ -134,6 +142,31 @@ const DraggingPiece = styled.div<{ $x: number; $y: number; $size: number }>`
   will-change: transform;
 `;
 
+const AnimatingPieceWrapper = styled.div<{ 
+  $fromX: number; 
+  $fromY: number; 
+  $toX: number; 
+  $toY: number; 
+  $progress: number;
+  $size: number;
+}>`
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: ${props => props.$size}px;
+  height: ${props => props.$size}px;
+  pointer-events: none;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(
+    ${props => props.$fromX + (props.$toX - props.$fromX) * props.$progress}px,
+    ${props => props.$fromY + (props.$toY - props.$fromY) * props.$progress}px
+  );
+  will-change: transform;
+`;
+
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'];
 
@@ -180,6 +213,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
   onSizeCalculated
 }) => {
   const layout = useLayout();
+  const preferencesStore = usePreferencesStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const [calculatedSize, setCalculatedSize] = useState(providedSize || 200);
   const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
@@ -191,9 +225,24 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
     y: number;
     size: number;
   } | null>(null);
+  const [animatingPieces, setAnimatingPieces] = useState<AnimatingPiece[]>([]);
+  const animationFrameRef = useRef<number>();
 
   // Parse position
   const pieces = useMemo(() => parseFEN(position), [position]);
+  const previousPiecesRef = useRef<Map<string, string>>(new Map());
+  
+  // Function to get square position relative to board
+  const getSquarePosition = useCallback((square: string, boardSize: number) => {
+    const fileIndex = FILES.indexOf(square[0]);
+    const rankIndex = RANKS.indexOf(square[1]);
+    const squareSize = boardSize / 8;
+    
+    const x = flipped ? (7 - fileIndex) * squareSize : fileIndex * squareSize;
+    const y = flipped ? (7 - rankIndex) * squareSize : rankIndex * squareSize;
+    
+    return { x, y };
+  }, [flipped]);
 
   // Calculate optimal board size
   useEffect(() => {
@@ -274,6 +323,75 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
   }, [providedSize, calculatedSize]);
 
   const squareSize = calculatedSize / 8;
+  
+  // Detect piece movements and start animations
+  useEffect(() => {
+    if (!preferencesStore.preferences.animateMoves) {
+      previousPiecesRef.current = new Map(pieces);
+      return;
+    }
+    
+    const previousPieces = previousPiecesRef.current;
+    const newAnimations: AnimatingPiece[] = [];
+    
+    // Find pieces that moved
+    previousPieces.forEach((piece, square) => {
+      if (!pieces.has(square)) {
+        // This piece moved from this square - find where it went
+        // Look for the same piece type that appeared on a new square
+        pieces.forEach((newPiece, newSquare) => {
+          if (newPiece === piece && !previousPieces.has(newSquare)) {
+            // Check if this could be the move based on lastMove
+            if (lastMove && lastMove.from === square && lastMove.to === newSquare) {
+              newAnimations.push({
+                piece,
+                from: square,
+                to: newSquare,
+                startTime: Date.now()
+              });
+            }
+          }
+        });
+      }
+    });
+    
+    if (newAnimations.length > 0) {
+      setAnimatingPieces(prev => [...prev, ...newAnimations]);
+    }
+    
+    previousPiecesRef.current = new Map(pieces);
+  }, [pieces, lastMove, preferencesStore.preferences.animateMoves]);
+  
+  // Animation loop
+  useEffect(() => {
+    if (animatingPieces.length === 0) return;
+    
+    const animate = () => {
+      const now = Date.now();
+      const duration = preferencesStore.preferences.animationDuration;
+      
+      setAnimatingPieces(prev => {
+        const ongoing = prev.filter(anim => {
+          const elapsed = now - anim.startTime;
+          return elapsed < duration;
+        });
+        
+        if (ongoing.length > 0) {
+          animationFrameRef.current = requestAnimationFrame(animate);
+        }
+        
+        return ongoing;
+      });
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [animatingPieces.length, preferencesStore.preferences.animationDuration]);
 
   // Handle square click
   const handleSquareClick = useCallback((square: string) => {
@@ -365,6 +483,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
         const isSelected = selectedSquare === squareName;
         const isPossibleMove = possibleMoves.has(squareName);
         const isDraggedFrom = draggedPiece?.from === squareName;
+        const isAnimating = animatingPieces.some(anim => anim.to === squareName);
 
         const showFileCoordinate = showCoordinates && rankIndex === 7;
         const showRankCoordinate = showCoordinates && fileIndex === 0;
@@ -381,7 +500,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
             onClick={() => handleSquareClick(squareName)}
             onMouseDown={(e) => piece && handleDragStart(e, squareName, piece)}
           >
-            {piece && !isDraggedFrom && (
+            {piece && !isDraggedFrom && !isAnimating && (
               <ChessPiece piece={piece} size={squareSize} />
             )}
             {showFileCoordinate && (
@@ -420,6 +539,34 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = ({
         <BoardGrid>
           {squares}
         </BoardGrid>
+        {/* Render animating pieces */}
+        {animatingPieces.map((anim, index) => {
+          const fromPos = getSquarePosition(anim.from, calculatedSize);
+          const toPos = getSquarePosition(anim.to, calculatedSize);
+          const elapsed = Date.now() - anim.startTime;
+          const duration = preferencesStore.preferences.animationDuration;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          // Use easeInOutCubic for smooth animation
+          const easeInOutCubic = (t: number) => {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+          };
+          const easedProgress = easeInOutCubic(progress);
+          
+          return (
+            <AnimatingPieceWrapper
+              key={`${anim.from}-${anim.to}-${anim.startTime}`}
+              $fromX={fromPos.x}
+              $fromY={fromPos.y}
+              $toX={toPos.x}
+              $toY={toPos.y}
+              $progress={easedProgress}
+              $size={squareSize}
+            >
+              <ChessPiece piece={anim.piece} size={squareSize} />
+            </AnimatingPieceWrapper>
+          );
+        })}
       </BoardContainer>
       {draggedPiece && (
         <>

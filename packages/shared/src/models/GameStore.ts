@@ -30,6 +30,7 @@ export interface GameState {
 
 export class GameStore {
     currentGame: GameState | null = null;
+    lastGameState: GameState | null = null; // Preserve last game state for freestyle mode
     chessBoard: ChessAPI;
     moveHistory: Move[] = [];
     currentMoveIndex: number = -1; // -1 means at start position
@@ -44,6 +45,7 @@ export class GameStore {
     // Game perspective properties
     gameRelation: number = 0; // -3: isolated, -2: observing examined, -1: playing opponent turn, 0: observing, 1: playing my turn, 2: examining
     shouldFlipBoard: boolean = false; // From style12 flipBoard field
+    private _playingColor: 'white' | 'black' | null = null; // Cache player's color when game starts
     
     // Clock management
     private clockInterval: NodeJS.Timeout | null = null;
@@ -71,11 +73,13 @@ export class GameStore {
         }
         
         this.currentGame = gameState;
+        this.lastGameState = null; // Clear last game state when starting a new game
         this.moveHistory = [];
         this.currentMoveIndex = -1;
         this.evaluation = null;
         this._capturedPieces = { white: [], black: [] };
         this._lastKnownOpening = null;
+        this._playingColor = null; // Reset playing color
 
         // Convert variant string to enum
         const variant = this.getVariantFromString(gameState.variant);
@@ -250,10 +254,18 @@ export class GameStore {
                         const lastHistoryMove = this.moveHistory[this.moveHistory.length - 1];
                         if (!lastHistoryMove || lastHistoryMove.san !== style12.prettyMove) {
                             // Create a move object from the style12 data
-                            const from = style12.verboseMove.includes('/') ? 
-                                style12.verboseMove.split('/')[1].split('-')[0] : '';
-                            const to = style12.verboseMove.includes('/') ? 
-                                style12.verboseMove.split('/')[1].split('-')[1] : '';
+                            // verboseMove format is like "P/g2-g3" or "o-o" for castling
+                            let from = '';
+                            let to = '';
+                            
+                            if (style12.verboseMove.includes('/')) {
+                                const parts = style12.verboseMove.split('/');
+                                if (parts[1] && parts[1].includes('-')) {
+                                    const moveParts = parts[1].split('-');
+                                    from = moveParts[0];
+                                    to = moveParts[1];
+                                }
+                            }
                                 
                             const move = new Move(
                                 style12.prettyMove,
@@ -262,6 +274,7 @@ export class GameStore {
                             );
                             this.moveHistory.push(move);
                             this.currentMoveIndex = this.moveHistory.length - 1;
+                            console.log('Added move to history:', move.san, 'Total moves:', this.moveHistory.length);
                         }
                     }
                 }
@@ -288,6 +301,16 @@ export class GameStore {
                 //  2: examining a game
                 this.gameRelation = style12.relation;
                 this.shouldFlipBoard = style12.flipBoard;
+                
+                // Cache playing color on first move when playing
+                if (this.isPlaying && this._playingColor === null) {
+                    // Determine color based on relation and whose turn it is
+                    if (style12.relation === 1) {
+                        this._playingColor = style12.colorToMove === 'W' ? 'white' : 'black';
+                    } else if (style12.relation === -1) {
+                        this._playingColor = style12.colorToMove === 'W' ? 'black' : 'white';
+                    }
+                }
                 
                 // Start or restart clock
                 this.startClock();
@@ -529,8 +552,13 @@ export class GameStore {
     
     get playingColor(): 'white' | 'black' | null {
         if (!this.isPlaying) return null;
+        // Return cached color if available
+        if (this._playingColor !== null) {
+            return this._playingColor;
+        }
         if (!this.currentGame) return null;
         
+        // Fallback calculation if color not cached yet
         // If it's my turn (relation = 1), I'm the color whose turn it is
         // If it's opponent's turn (relation = -1), I'm the opposite color
         if (this.gameRelation === 1) {
@@ -542,18 +570,26 @@ export class GameStore {
     
     // Determine if board should be flipped based on game perspective
     get shouldShowFlippedBoard(): boolean {
-        // First check if there's a manual override from PreferencesStore
-        const preferencesFlipped = this.rootStore?.preferencesStore?.boardFlipped;
+        // For playing perspective, always put player's pieces at bottom by default
+        if (this.isPlaying) {
+            const color = this.playingColor;
+            const baseFlip = color === 'black';
+            // Check if user has manually flipped from this default
+            const preferencesFlipped = this.rootStore?.preferencesStore?.preferences.boardFlipped;
+            if (preferencesFlipped !== undefined) {
+                // XOR with base flip to toggle from the default
+                return baseFlip !== preferencesFlipped;
+            }
+            return baseFlip;
+        }
+        
+        // For non-playing modes, check manual preference first
+        const preferencesFlipped = this.rootStore?.preferencesStore?.preferences.boardFlipped;
         if (preferencesFlipped !== undefined) {
             return preferencesFlipped;
         }
         
-        // If playing as black, flip the board
-        if (this.playingColor === 'black') {
-            return true;
-        }
-        
-        // If observing, use the style12 flipBoard field
+        // If observing or examining, use the style12 flipBoard field
         if (this.isObserving || this.isExamining) {
             return this.shouldFlipBoard;
         }
@@ -566,6 +602,11 @@ export class GameStore {
     private startClock() {
         // Clear any existing interval
         this.stopClock();
+        
+        // Don't start clock in examine mode
+        if (this.isExamining) {
+            return;
+        }
         
         // Only start clock if we have an active game
         if (this.currentGame && this.currentGame.gameId > 0) {
@@ -619,7 +660,12 @@ export class GameStore {
     // Clean up interval when game ends
     endGame() {
         this.stopClock();
+        // Preserve the last game state before clearing
+        if (this.currentGame) {
+            this.lastGameState = { ...this.currentGame };
+        }
         this.currentGame = null;
+        this._playingColor = null; // Reset playing color
     }
     
     hasMoveHistory(): boolean {

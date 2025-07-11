@@ -1,7 +1,7 @@
 import React, {useCallback, useMemo, useState, useEffect} from 'react';
 import styled from 'styled-components';
 import {observer} from 'mobx-react-lite';
-import {useGameStore, usePreferencesStore, useAnalysisStore} from '@fics/shared';
+import {useGameStore, usePreferencesStore, useAnalysisStore, useFICSStore} from '@fics/shared';
 import {useLayout} from '../../theme/hooks';
 import {ChessBoardWithPieces} from './ChessBoardWithPieces';
 import {PlayerCard, GameClock} from './PlayerCard';
@@ -11,6 +11,7 @@ import {GameControls, CompactControlButton} from './GameControls';
 import {AnalysisDisplay, AnalysisInfoDisplay} from './AnalysisDisplay';
 import {FENDialog} from './FENDialog';
 import {CapturedPieces} from './CapturedPieces';
+import {ConfirmDialog} from '../ui/ConfirmDialog';
 
 interface ChessGameLayoutProps {
     className?: string;
@@ -409,10 +410,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     const gameStore = useGameStore();
     const preferencesStore = usePreferencesStore();
     const analysisStore = useAnalysisStore();
+    const ficsStore = useFICSStore();
     const layout = useLayout();
     const [isAnalysisActive, setIsAnalysisActive] = useState(false);
     const [isFENDialogOpen, setIsFENDialogOpen] = useState(false);
     const [boardSize, setBoardSize] = useState<number>(0);
+    const [showResignConfirm, setShowResignConfirm] = useState(false);
+    const [isDrawOffered, setIsDrawOffered] = useState(false);
 
     // Use the user's preference for chess orientation instead of device orientation
     const isLandscape = preferencesStore.preferences.chessOrientation === 'landscape';
@@ -460,31 +464,34 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
         return 'No active game';
     }, [gameStore.currentGameInfo, gameStore.currentGame]);
 
-    // Get move info
-    const moveNotation = useMemo(() => {
-        const history = gameStore.moveHistory;
-        if (history.length > 0) {
-            const lastMove = history[history.length - 1];
-            const moveNumber = Math.ceil(history.length / 2);
-            const isWhiteMove = history.length % 2 === 1;
+    // Get move info - computed value for MobX reactivity
+    const moveNotation = (() => {
+        const historyLength = gameStore.moveHistory.length;
+        if (historyLength > 0) {
+            const lastMove = gameStore.moveHistory[historyLength - 1];
+            const moveNumber = Math.ceil(historyLength / 2);
+            const isWhiteMove = historyLength % 2 === 1;
             return `${moveNumber}.${isWhiteMove ? '' : '..'} ${lastMove.san}`;
         }
         return 'Starting position';
-    }, [gameStore.moveHistory]);
+    })();
 
     const opening = gameStore.currentOpening;
 
     // Get player data without accessing time to avoid re-renders
     const currentGame = gameStore.currentGame;
-    const whitePlayer = currentGame?.white || {name: 'White', rating: 1500, time: 900};
-    const blackPlayer = currentGame?.black || {name: 'Black', rating: 1500, time: 900};
+    // Use last game state if available when in freestyle mode
+    const gameStateForDisplay = currentGame || gameStore.lastGameState;
+    const whitePlayer = gameStateForDisplay?.white || {name: 'White', rating: 1500, time: 900};
+    const blackPlayer = gameStateForDisplay?.black || {name: 'Black', rating: 1500, time: 900};
     const isWhiteTurn = !currentGame || currentGame.turn === 'w';
     
     // Determine which player should be shown at top/bottom based on board flip
-    const topPlayer = preferencesStore.preferences.boardFlipped ? whitePlayer : blackPlayer;
-    const bottomPlayer = preferencesStore.preferences.boardFlipped ? blackPlayer : whitePlayer;
-    const isTopPlayerWhite = preferencesStore.preferences.boardFlipped;
-    const isTopPlayerTurn = preferencesStore.preferences.boardFlipped ? isWhiteTurn : !isWhiteTurn;
+    const boardFlipped = gameStore.shouldShowFlippedBoard;
+    const topPlayer = boardFlipped ? whitePlayer : blackPlayer;
+    const bottomPlayer = boardFlipped ? blackPlayer : whitePlayer;
+    const isTopPlayerWhite = boardFlipped;
+    const isTopPlayerTurn = boardFlipped ? isWhiteTurn : !isWhiteTurn;
 
     const handleMoveClick = useCallback((index: number) => {
         gameStore.goToMove(index);
@@ -494,6 +501,21 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     useEffect(() => {
         analysisStore.initialize();
     }, [analysisStore]);
+    
+    // Auto-send draw command when a move is made while draw is offered
+    useEffect(() => {
+        if (isDrawOffered && gameStore.isPlaying && gameStore.currentGame) {
+            // Send draw command when move count changes
+            ficsStore.sendCommand('draw');
+        }
+    }, [gameStore.moveHistory.length, isDrawOffered, gameStore.isPlaying, ficsStore]);
+    
+    // Reset draw offer when game ends
+    useEffect(() => {
+        if (!gameStore.currentGame || !gameStore.isPlaying) {
+            setIsDrawOffered(false);
+        }
+    }, [gameStore.currentGame, gameStore.isPlaying]);
 
     // Handle analysis toggle
     useEffect(() => {
@@ -515,6 +537,34 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     const handleFlipBoard = useCallback(() => {
         preferencesStore.updatePreference('boardFlipped', !preferencesStore.preferences.boardFlipped);
     }, [preferencesStore]);
+    
+    const handleUnobserve = useCallback(() => {
+        if (gameStore.currentGame) {
+            ficsStore.sendCommand(`unobs ${gameStore.currentGame.gameId}`);
+        }
+    }, [ficsStore, gameStore.currentGame]);
+    
+    const handleUnexamine = useCallback(() => {
+        ficsStore.sendCommand('unexamine');
+    }, [ficsStore]);
+    
+    const handleResign = useCallback(() => {
+        setShowResignConfirm(true);
+    }, []);
+    
+    const confirmResign = useCallback(() => {
+        ficsStore.sendCommand('resign');
+        setShowResignConfirm(false);
+    }, [ficsStore]);
+    
+    const handleDraw = useCallback(() => {
+        ficsStore.sendCommand('draw');
+        setIsDrawOffered(!isDrawOffered);
+    }, [ficsStore, isDrawOffered]);
+    
+    const handleAbort = useCallback(() => {
+        ficsStore.sendCommand('abort');
+    }, [ficsStore]);
 
 
     const renderPortraitLayout = () => (
@@ -534,28 +584,29 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
 
                             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}} id="board-container">
                                 <PortraitTopInfo>
-                                    <GameNumber>Game #{gameStore.currentGame?.gameId || '12345'}</GameNumber>
-                                    <TimeControl>{gameStore.currentGameInfo?.timeControl || '5 0'}</TimeControl>
+                                    <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
+                                    <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                     <PortraitControlButtons>
                                         {perspective === 'playing' && (
                                             <>
                                                 {gameStore.moveHistory.length <= 1 && (
                                                     <CompactControlButton
-                                                        onClick={() => {/* TODO: Implement abort */}}
+                                                        onClick={handleAbort}
                                                         $variant="secondary"
                                                     >
                                                         Abort
                                                     </CompactControlButton>
                                                 )}
                                                 <CompactControlButton
-                                                    onClick={() => {/* TODO: Implement draw */}}
-                                                    $variant="secondary"
+                                                    onClick={handleDraw}
+                                                    $variant={isDrawOffered ? "primary" : "secondary"}
+                                                    $isActive={isDrawOffered}
                                                 >
                                                     Draw
                                                 </CompactControlButton>
                                                 <CompactControlButton
-                                                    onClick={() => {/* TODO: Implement resign */}}
-                                                    $variant="danger"
+                                                    onClick={handleResign}
+                                                    $variant="secondary"
                                                 >
                                                     Resign
                                                 </CompactControlButton>
@@ -564,7 +615,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         {perspective === 'observing' && (
                                             <>
                                                 <CompactControlButton
-                                                    onClick={() => {/* TODO: Implement unobserve */}}
+                                                    onClick={handleUnobserve}
                                                     $variant="secondary"
                                                 >
                                                     Unobserve
@@ -581,7 +632,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         {perspective === 'examining' && (
                                             <>
                                                 <CompactControlButton
-                                                    onClick={() => {/* TODO: Implement unexamine */}}
+                                                    onClick={handleUnexamine}
                                                     $variant="secondary"
                                                 >
                                                     Unexamine
@@ -606,8 +657,8 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                                 </CompactControlButton>
                                                 <CompactControlButton
                                                     onClick={handleFlipBoard}
-                                                    $variant={preferencesStore.preferences.boardFlipped ? "primary" : "secondary"}
-                                                    $isActive={preferencesStore.preferences.boardFlipped}
+                                                    $variant={boardFlipped ? "primary" : "secondary"}
+                                                    $isActive={boardFlipped}
                                                 >
                                                     Flip
                                                 </CompactControlButton>
@@ -647,7 +698,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 <BoardWrapper $orientation="portrait">
                                     <ChessBoardWithPieces
                                         position={position}
-                                        flipped={preferencesStore.preferences.boardFlipped}
+                                        flipped={boardFlipped}
                                         showCoordinates={true}
                                         onMove={handleMove}
                                         interactive={perspective === 'playing' || perspective === 'freestyle'}
@@ -703,12 +754,12 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                             <CapturedPiecesColumn $squareSize={boardSize ? boardSize / 8 : 0}>
                                 <CapturedPieces
                                     orientation="vertical"
-                                    isWhitePieces={preferencesStore.preferences.boardFlipped}
+                                    isWhitePieces={boardFlipped}
                                     boardSize={boardSize}
                                 />
                                 <CapturedPieces
                                     orientation="vertical"
-                                    isWhitePieces={!preferencesStore.preferences.boardFlipped}
+                                    isWhitePieces={!boardFlipped}
                                     boardSize={boardSize}
                                 />
                             </CapturedPiecesColumn>
@@ -724,19 +775,38 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                     onMoveClick={handleMoveClick}
                     disableAutoScroll={true}
                     onNavigate={(direction) => {
-                        switch (direction) {
-                            case 'first':
-                                gameStore.goToStart();
-                                break;
-                            case 'prev':
-                                gameStore.goToPreviousMove();
-                                break;
-                            case 'next':
-                                gameStore.goToNextMove();
-                                break;
-                            case 'last':
-                                gameStore.goToEnd();
-                                break;
+                        if (gameStore.isExamining) {
+                            // In examine mode, send commands to FICS
+                            switch (direction) {
+                                case 'first':
+                                    ficsStore.sendCommand('back 500');
+                                    break;
+                                case 'prev':
+                                    ficsStore.sendCommand('back');
+                                    break;
+                                case 'next':
+                                    ficsStore.sendCommand('forward');
+                                    break;
+                                case 'last':
+                                    ficsStore.sendCommand('forward 500');
+                                    break;
+                            }
+                        } else {
+                            // Local navigation for other modes
+                            switch (direction) {
+                                case 'first':
+                                    gameStore.goToStart();
+                                    break;
+                                case 'prev':
+                                    gameStore.goToPreviousMove();
+                                    break;
+                                case 'next':
+                                    gameStore.goToNextMove();
+                                    break;
+                                case 'last':
+                                    gameStore.goToEnd();
+                                    break;
+                            }
                         }
                     }}
                 />
@@ -752,8 +822,8 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                         <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
                             <BoardArea>
                                 <LandscapeTopInfo>
-                                    <GameNumber>Game #{gameStore.currentGame?.gameId || '12345'}</GameNumber>
-                                    <TimeControl>{gameStore.currentGameInfo?.timeControl || '5 0'}</TimeControl>
+                                    <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
+                                    <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                 </LandscapeTopInfo>
                                 <BoardWithAnalysis>
                                     {isAnalysisActive && (
@@ -762,7 +832,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     <BoardWrapper $orientation="landscape">
                                         <ChessBoardWithPieces
                                             position={position}
-                                            flipped={preferencesStore.preferences.boardFlipped}
+                                            flipped={boardFlipped}
                                             showCoordinates={true}
                                             onMove={handleMove}
                                             interactive={perspective === 'playing' || perspective === 'freestyle'}
@@ -819,7 +889,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     onAnalysis={handleAnalysis}
                                     onFlipBoard={handleFlipBoard}
                                     onSetupFEN={handleSetupFEN}
+                                    onUnobserve={handleUnobserve}
+                                    onUnexamine={handleUnexamine}
+                                    onResign={handleResign}
+                                    onDraw={handleDraw}
+                                    onAbort={handleAbort}
                                     isAnalysisActive={isAnalysisActive}
+                                    isDrawOffered={isDrawOffered}
                                 />
 
                                 <CompactMoveList
@@ -828,19 +904,38 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     onMoveClick={handleMoveClick}
                                     showHeader={false}
                                     onNavigate={(direction) => {
-                                        switch (direction) {
-                                            case 'first':
-                                                gameStore.goToStart();
-                                                break;
-                                            case 'prev':
-                                                gameStore.goToPreviousMove();
-                                                break;
-                                            case 'next':
-                                                gameStore.goToNextMove();
-                                                break;
-                                            case 'last':
-                                                gameStore.goToEnd();
-                                                break;
+                                        if (gameStore.isExamining) {
+                                            // In examine mode, send commands to FICS
+                                            switch (direction) {
+                                                case 'first':
+                                                    ficsStore.sendCommand('backward 999');
+                                                    break;
+                                                case 'prev':
+                                                    ficsStore.sendCommand('backward');
+                                                    break;
+                                                case 'next':
+                                                    ficsStore.sendCommand('forward');
+                                                    break;
+                                                case 'last':
+                                                    ficsStore.sendCommand('forward 999');
+                                                    break;
+                                            }
+                                        } else {
+                                            // Local navigation for other modes
+                                            switch (direction) {
+                                                case 'first':
+                                                    gameStore.goToStart();
+                                                    break;
+                                                case 'prev':
+                                                    gameStore.goToPreviousMove();
+                                                    break;
+                                                case 'next':
+                                                    gameStore.goToNextMove();
+                                                    break;
+                                                case 'last':
+                                                    gameStore.goToEnd();
+                                                    break;
+                                            }
                                         }
                                     }}
                                 />
@@ -879,6 +974,15 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
             <FENDialog
                 isOpen={isFENDialogOpen}
                 onClose={() => setIsFENDialogOpen(false)}
+            />
+            <ConfirmDialog
+                isOpen={showResignConfirm}
+                title="Resign Game"
+                message="Are you sure you want to resign?"
+                confirmText="Yes, Resign"
+                cancelText="Cancel"
+                onConfirm={confirmResign}
+                onCancel={() => setShowResignConfirm(false)}
             />
         </LayoutContainer>
     );

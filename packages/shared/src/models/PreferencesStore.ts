@@ -15,6 +15,7 @@ export interface Preferences {
     showCoordinates: boolean;
     boardFlipped: boolean;
     animateMoves: boolean;
+    animationDuration: number; // in milliseconds
     autoPromoteToQueen: boolean;
 
     // UI Theme preferences
@@ -57,6 +58,7 @@ const DEFAULT_PREFERENCES: Preferences = {
     showCoordinates: true,
     boardFlipped: false,
     animateMoves: true,
+    animationDuration: 250, // 0.25 seconds
     autoPromoteToQueen: false,
     theme: 'system',
     layout: 'auto',
@@ -146,6 +148,8 @@ export class PreferencesStore {
         switch (key) {
             case 'engineDepth':
                 return typeof value === 'number' && value >= 1 && value <= 50;
+            case 'animationDuration':
+                return typeof value === 'number' && value >= 0 && value <= 1000;
             case 'boardTheme':
                 return ['brown', 'blue', 'green', 'purple'].includes(value);
             case 'pieceSet':
