@@ -21,8 +21,9 @@ const NameSpan = styled.span`
 export const PlayerName: React.FC<PlayerNameProps> = ({ name, className, style }) => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
   
@@ -31,7 +32,7 @@ export const PlayerName: React.FC<PlayerNameProps> = ({ name, className, style }
       <NameSpan
         className={className}
         style={style}
-        onContextMenu={handleContextMenu}
+        onClick={handleClick}
       >
         {name}
       </NameSpan>
