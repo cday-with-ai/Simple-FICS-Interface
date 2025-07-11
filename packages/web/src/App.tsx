@@ -5,7 +5,6 @@ import {ThemeProvider} from './theme';
 import {LayoutProvider} from './components/layout';
 import {AppLayout} from './components/layout/AppLayout';
 import {GlobalStyles} from './components/GlobalStyles';
-import {StockfishTestPage} from './pages/StockfishTestPage';
 
 const App: React.FC = () => {
     return (
@@ -19,7 +18,6 @@ const App: React.FC = () => {
                                 <AppLayout/>
                             </LayoutProvider>
                         }/>
-                        <Route path="/stockfish-test" element={<StockfishTestPage/>}/>
                     </Routes>
                 </BrowserRouter>
             </ThemeProvider>

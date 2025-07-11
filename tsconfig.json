@@ -26,7 +26,6 @@
   "exclude": [
     "**/node_modules",
     "**/dist",
-    "**/*.d.ts",
-    "scripts/**/*"
+    "**/*.d.ts"
   ]
 }
