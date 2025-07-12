@@ -412,6 +412,19 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         length: playerName.length
       });
     }
+    
+    // Also find URLs in channel log messages
+    URL_REGEX.lastIndex = 0;
+    let urlMatch;
+    while ((urlMatch = URL_REGEX.exec(text)) !== null) {
+      matches.push({
+        type: 'url',
+        match: urlMatch[0],
+        content: urlMatch[0],
+        index: urlMatch.index,
+        length: urlMatch[0].length
+      });
+    }
   } else if (isPlayerList) {
     // Parse player names from list after the colon
     const colonIndex = text.indexOf(':');
