@@ -29,13 +29,14 @@ const ChessArea = styled.div<{ $isVisible: boolean }>`
   overflow: hidden;
 `;
 
-const ChatPanelContainer = styled.div<{ $isVisible: boolean }>`
-  width: ${props => props.$isVisible ? '600px' : '0'};
+const ChatPanelContainer = styled.div<{ $isVisible: boolean; $fullWidth?: boolean }>`
+  width: ${props => props.$fullWidth ? '100%' : props.$isVisible ? '600px' : '0'};
   display: ${props => props.$isVisible ? 'flex' : 'none'};
   flex-direction: column;
   background-color: ${props => props.theme.colors.surface};
-  border-left: 1px solid ${props => props.theme.colors.border};
+  border-left: ${props => props.$fullWidth ? 'none' : '1px solid ' + props.theme.colors.border};
   overflow: hidden;
+  flex: ${props => props.$fullWidth ? '1' : 'initial'};
   
   @media (max-width: 768px) {
     width: ${props => props.$isVisible ? '100%' : '0'};
@@ -136,7 +137,8 @@ export const AppLayout: React.FC = observer(() => {
         
         <ChatPanelContainer 
           $isVisible={showChat}
-          style={{ width: showChat && !layout.isMobile ? `${chatPanelWidth}px` : undefined }}
+          $fullWidth={viewMode === 'chat-only'}
+          style={{ width: viewMode === 'chat-only' ? undefined : (showChat && !layout.isMobile ? `${chatPanelWidth}px` : undefined) }}
         >
           <ChatPanelComponent />
         </ChatPanelContainer>
