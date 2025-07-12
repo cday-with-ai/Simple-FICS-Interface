@@ -1,14 +1,57 @@
 # This file is for cloudflare pages.
-# The headers are set so stockfish can load.
+# The headers are set so stockfish can load with SharedArrayBuffer support.
+
+# Set COOP/COEP headers for all files to enable SharedArrayBuffer
 /*
-  Cross-Origin-Embedder-Policy: credentialless
+  Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
 
-# Specific Stockfish files
-/scripts/sf16-7.js
-  Content-Type: application/javascript
-  Cross-Origin-Resource-Policy: cross-origin
+# Specific headers for the main index.html
+/index.html
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  X-Content-Type-Options: nosniff
 
-/scripts/sf16-7.wasm
+# Headers for all JavaScript files
+/*.js
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Type: application/javascript
+  X-Content-Type-Options: nosniff
+
+# Headers for WebAssembly files
+/*.wasm
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
   Content-Type: application/wasm
-  Cross-Origin-Resource-Policy: cross-origin
+  X-Content-Type-Options: nosniff
+
+# Headers for the built app directory
+/packages/web/dist/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+
+# Specific Stockfish files in the built app
+/packages/web/dist/sf16-7.js
+  Content-Type: application/javascript
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+/packages/web/dist/sf16-7.wasm
+  Content-Type: application/wasm
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+# Headers for assets
+/packages/web/dist/assets/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+
+# Service Worker
+/packages/web/dist/sw.js
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Type: application/javascript
+  Service-Worker-Allowed: /
