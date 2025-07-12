@@ -114,6 +114,10 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // Check if this is a finger header
   const isFingerHeader = /^\s*Finger of\s+\w+/.test(text);
   
+  // Check if this is history output
+  const isHistoryOutput = /^\s*\d+:\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+\w+/.test(text) ||
+    /History for \w+:/.test(text);
+  
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
@@ -366,6 +370,52 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         length: playerName.length
       });
     }
+  } else if (isHistoryOutput) {
+    // Handle history header: "History for playerName:"
+    const headerRegex = /History for (\w+):/;
+    const headerMatch = headerRegex.exec(text);
+    if (headerMatch) {
+      const playerName = headerMatch[1];
+      const playerIndex = text.indexOf(playerName);
+      matches.push({
+        type: 'player',
+        match: playerName,
+        content: playerName,
+        index: playerIndex,
+        length: playerName.length
+      });
+    } else {
+      // Handle history entries: "N: +/- rating color rating opponent ..."
+      const historyRegex = /^(\s*)(\d+):\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+(\w+)/;
+      const historyMatch = historyRegex.exec(text);
+      if (historyMatch) {
+        const [fullMatch, indent, gameNum, opponent] = historyMatch;
+        
+        // Add game number as command - need to get the player name from somewhere
+        // Since this is history output, we'll need to extract it from the header
+        // For now, we'll make the game number clickable with a note
+        if (onCommandClick) {
+          const gameNumIndex = indent.length;
+          matches.push({
+            type: 'command',
+            match: gameNum,
+            content: `examine ${gameNum}`, // This will need the player name prepended
+            index: gameNumIndex,
+            length: gameNum.length
+          });
+        }
+        
+        // Add opponent name
+        const opponentIndex = text.indexOf(opponent);
+        matches.push({
+          type: 'player',
+          match: opponent,
+          content: opponent,
+          index: opponentIndex,
+          length: opponent.length
+        });
+      }
+    }
   } else {
     // Find URLs (not in special output formats)
     URL_REGEX.lastIndex = 0;
@@ -382,7 +432,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
