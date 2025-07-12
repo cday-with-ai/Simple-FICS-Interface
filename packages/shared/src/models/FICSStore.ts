@@ -231,7 +231,10 @@ export class FICSStore {
     }
 
     private handleMessage(data: string) {
-        console.log('FICS message received:', data);
+        // Skip logging noisy [G] messages - check trimmed version and regex for any position
+        if (!data.trim().startsWith('[G]') && !data.match(/\[G\]/)) {
+            console.log('FICS message received:', data);
+        }
         
         runInAction(() => {
             this.lastPing = Date.now();
