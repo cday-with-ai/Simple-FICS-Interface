@@ -229,7 +229,10 @@ export class GameStore {
 
                 // Update or create game state
                 if (!this.currentGame || this.currentGame.gameId !== style12.gameNumber) {
-                    // New game or joining mid-game
+                    // New game or joining mid-game - clear move history from previous game
+                    this.moveHistory = [];
+                    this.currentMoveIndex = -1;
+                    
                     this.currentGame = {
                         gameId: style12.gameNumber,
                         white: { 
