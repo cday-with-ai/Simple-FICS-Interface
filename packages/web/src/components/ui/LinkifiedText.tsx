@@ -44,6 +44,28 @@ const URL_REGEX = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z
 // Regex to match quoted FICS commands like "play 56", 'accept', "decline", etc.
 const COMMAND_REGEX = /["']([^"']+)["']/g;
 
+// Valid FICS commands (lowercase for case-insensitive comparison)
+const VALID_FICS_COMMANDS = new Set([
+  'abort', 'accept', 'addlist', 'adjourn', 'alias', 'allobservers', 'assess',
+  'backward', 'bell', 'best', 'boards', 'bsetup', 'bugwho', 'cbest',
+  'clearmessages', 'convert_bcf', 'convert_elo', 'convert_uscf', 'copygame',
+  'crank', 'cshout', 'date', 'decline', 'draw', 'examine', 'finger', 'flag',
+  'flip', 'fmessage', 'follow', 'forward', 'games', 'gnotify', 'goboard',
+  'handles', 'hbest', 'help', 'history', 'hrank', 'inchannel', 'index', 'info',
+  'it', 'jkill', 'jsave', 'kibitz', 'limits', 'llogons', 'logons', 'mailhelp',
+  'mailmess', 'mailmoves', 'mailoldmoves', 'mailsource', 'mailstored', 'match',
+  'messages', 'mexamine', 'moretime', 'moves', 'news', 'next', 'observe',
+  'oldmoves', 'open', 'password', 'pause', 'pending', 'pfollow', 'play',
+  'pobserve', 'promote', 'pstat', 'qtell', 'quit', 'rank', 'refresh', 'resign',
+  'resume', 'revert', 'say', 'seek', 'servers', 'set', 'shout', 'showlist',
+  'simabort', 'simallabort', 'simadjourn', 'simalladjourn', 'simgames',
+  'simmatch', 'simnext', 'simobserve', 'simopen', 'simpass', 'simprev',
+  'smoves', 'smposition', 'sought', 'sposition', 'statistics', 'stored',
+  'style', 'sublist', 'switch', 'takeback', 'tell', 'time', 'unalias',
+  'unexamine', 'unobserve', 'unpause', 'unseek', 'uptime', 'variables',
+  'whisper', 'who', 'withdraw', 'xkibitz', 'xtell', 'xwhisper', 'znotify'
+]);
+
 // Regex to match player names in seek messages
 // Matches: PlayerName (rating) seeking ... or PlayerName(C) (rating) seeking ...
 // Rating can be numbers, ++++ for unrated guests, or ---- for provisional
@@ -226,13 +248,25 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     COMMAND_REGEX.lastIndex = 0;
     let commandMatch;
     while ((commandMatch = COMMAND_REGEX.exec(text)) !== null) {
-      matches.push({
-        type: 'command',
-        match: commandMatch[0], // Full match with quotes
-        content: commandMatch[1], // Command without quotes
-        index: commandMatch.index,
-        length: commandMatch[0].length
-      });
+      const commandText = commandMatch[1].trim();
+      // Check if the quoted text starts with a valid FICS command
+      // Handle both regular commands and /prefix variations (e.g., "who /B")
+      const words = commandText.split(/\s+/);
+      const firstWord = words[0].toLowerCase();
+      
+      // Check if it's a valid command (including /B, /b, /L, etc. suffixes)
+      const isValidCommand = VALID_FICS_COMMANDS.has(firstWord) || 
+        (words.length > 1 && VALID_FICS_COMMANDS.has(firstWord) && words[1].startsWith('/'));
+      
+      if (isValidCommand) {
+        matches.push({
+          type: 'command',
+          match: commandMatch[0], // Full match with quotes
+          content: commandMatch[1], // Command without quotes
+          index: commandMatch.index,
+          length: commandMatch[0].length
+        });
+      }
     }
   }
   
