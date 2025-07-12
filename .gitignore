@@ -21,7 +21,6 @@ node_modules/
 coverage/
 **/coverage/
 /packages/shared/tsconfig.tsbuildinfo
-/packages/web/dist/
 /packages/mobile/build/
 
 temp
