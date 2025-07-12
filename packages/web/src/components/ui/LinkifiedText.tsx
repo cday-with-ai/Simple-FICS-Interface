@@ -88,6 +88,19 @@ const GamesLink = styled.span`
   }
 `;
 
+const SeekLink = styled.span`
+  color: inherit;
+  cursor: pointer;
+  display: inline-block;
+  width: 100%;
+  transition: all ${props => props.theme.transitions.fast};
+  
+  &:hover {
+    background-color: ${props => props.theme.colors.backgroundTertiary};
+    text-decoration: underline;
+  }
+`;
+
 // Comprehensive URL regex that matches various URL formats
 const URL_REGEX = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?|(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
 
@@ -133,11 +146,12 @@ let lastHistoryPlayer: string | null = null;
 let lastJournalPlayer: string | null = null;
 
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
-  // Debug log for history, journal, sought, and games lines
+  // Debug log for history, journal, sought, games, and seek lines
   if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/) || 
       text.includes('Journal for') || text.match(/^%\d+:/) ||
       text.match(/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/) ||
-      (text.includes(' - ') && text.includes('(') && text.match(/^\s*\d+\s+/))) {
+      (text.includes(' - ') && text.includes('(') && text.match(/^\s*\d+\s+/)) ||
+      text.includes('seeking') && text.includes('to respond')) {
     console.log('LinkifiedText processing:', { text: text.substring(0, 50), hasCommandClick: !!onCommandClick });
   }
   
@@ -152,6 +166,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     isJournalLine?: boolean;
     isSoughtLine?: boolean;
     isGamesLine?: boolean;
+    isSeekLine?: boolean;
   }> = [];
   
   // If we're not in command mode (no onCommandClick), only process URLs
@@ -263,6 +278,9 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   const isJournalOutput = /^\s*%\d+:\s+\w+/.test(text) ||
     /Journal for \w+:/.test(text);
   
+  // Check if this is an individual seek announcement
+  const isSeekMessage = /\w+\s+\((?:\d+|\+{4})\)\s+seeking.*\("play\s+(\d+)"\s+to\s+respond\)/.test(text);
+  
   // Check if this is best list output
   const isBestListOutput = /^\s*\d+\.\s+\w+\s+\d{4}/.test(text) ||
     /^\s+\w+\s+\d{4}\s+\d+\.\s+\w+\s+\d{4}/.test(text);
@@ -295,26 +313,51 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     !text.match(/^%\d+:/) && // Not a journal entry
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
-  // Debug logging for history, journal, sought, and games detection
+  // Debug logging for history, journal, sought, games, and seek detection
   if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/) ||
       text.includes('Journal for') || text.match(/^%\d+:/) ||
       text.match(/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/) ||
-      (text.includes(' - ') && text.includes('(') && text.match(/^\s*\d+\s+/))) {
-    console.log('History/Journal/Sought/Games detection:', { 
+      (text.includes(' - ') && text.includes('(') && text.match(/^\s*\d+\s+/)) ||
+      (text.includes('seeking') && text.includes('to respond'))) {
+    console.log('History/Journal/Sought/Games/Seek detection:', { 
       text: text.substring(0, 50), 
       isHistoryOutput,
       isJournalOutput,
       isSoughtOutput,
       isWhoOutput,
       isGamesOutput,
+      isSeekMessage,
       isCommandMode,
       isToldMessage,
       looksLikeUserInput
     });
   }
   
+  // Handle individual seek messages first (before normal command detection)
+  if (isSeekMessage) {
+    console.log('In seek message handling block', { text: text.substring(0, 50) });
+    const seekRegex = /\w+\s+\((?:\d+|\+{4})\)\s+seeking.*\("play\s+(\d+)"\s+to\s+respond\)/;
+    const seekMatch = seekRegex.exec(text);
+    console.log('Seek regex match:', seekMatch);
+    if (seekMatch) {
+      const gameNum = seekMatch[1];
+      console.log('Seek message detected:', { gameNum, text });
+      // Make the entire line clickable
+      matches.push({
+        type: 'command',
+        match: text,
+        content: `play ${gameNum}`,
+        index: 0,
+        length: text.length,
+        isSeekLine: true
+      });
+      console.log('Added seek line to matches:', matches[matches.length - 1]);
+    } else {
+      console.log('Seek message not matched:', { text, seekMatch, trimmedText: text.trim() });
+    }
+  }
   // Skip all special processing for "told" messages and user input (but not news items)
-  if ((isToldMessage || looksLikeUserInput) && !isNewsIndexOutput) {
+  else if ((isToldMessage || looksLikeUserInput) && !isNewsIndexOutput) {
     // Only process URLs for these messages
     URL_REGEX.lastIndex = 0;
     let urlMatch;
@@ -889,6 +932,19 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
           >
             {match.match}
           </GamesLink>
+        );
+      } else if (match.isSeekLine) {
+        parts.push(
+          <SeekLink
+            key={`seek-${i}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCommandClick!(match.content);
+            }}
+            title={`Click to accept challenge: ${match.content}`}
+          >
+            {match.match}
+          </SeekLink>
         );
       } else {
         parts.push(
