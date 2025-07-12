@@ -251,6 +251,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     color: 'white' | 'black';
     position: { x: number; y: number };
   } | null>(null);
+  const [userMoveInProgress, setUserMoveInProgress] = useState(false);
 
   // Parse position
   const pieces = useMemo(() => parseFEN(position), [position]);
@@ -381,7 +382,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   
   // Detect piece movements and start animations
   useEffect(() => {
-    if (!shouldAnimateMoves) {
+    if (!shouldAnimateMoves || userMoveInProgress) {
       previousPiecesRef.current = new Map(pieces);
       return;
     }
@@ -415,7 +416,19 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     }
     
     previousPiecesRef.current = new Map(pieces);
-  }, [pieces, lastMove, shouldAnimateMoves]);
+  }, [pieces, lastMove, shouldAnimateMoves, userMoveInProgress]);
+  
+  // Clear user move flag after position changes
+  useEffect(() => {
+    if (userMoveInProgress) {
+      // Clear the flag after a brief delay to ensure the position has updated
+      const timeout = setTimeout(() => {
+        setUserMoveInProgress(false);
+      }, 50);
+      
+      return () => clearTimeout(timeout);
+    }
+  }, [position, userMoveInProgress]);
   
   // Animation loop
   useEffect(() => {
@@ -513,6 +526,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             if (!gameStore.isMyTurn) {
               gameStore.setPremove(selectedSquare, square, promotionPiece);
             } else {
+              setUserMoveInProgress(true);
               onMove?.(selectedSquare, square, promotionPiece);
             }
           } else {
@@ -530,6 +544,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
           if (gameStore.isPlaying && !gameStore.isMyTurn) {
             gameStore.setPremove(selectedSquare, square);
           } else {
+            setUserMoveInProgress(true);
             onMove?.(selectedSquare, square);
           }
         }
@@ -705,6 +720,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
               gameStore.setPremove(fromSquare, targetSquare, promotionPiece);
             } else {
               console.log('Making promotion move');
+              setUserMoveInProgress(true);
               onMove?.(fromSquare, targetSquare, promotionPiece);
             }
           } else {
@@ -725,6 +741,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             gameStore.setPremove(fromSquare, targetSquare);
           } else {
             console.log('Making move via onMove');
+            setUserMoveInProgress(true);
             onMove?.(fromSquare, targetSquare);
           }
         }
@@ -853,6 +870,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
           color={promotionState.color}
           position={promotionState.position}
           onSelect={(piece) => {
+            setUserMoveInProgress(true);
             onMove?.(promotionState.from, promotionState.to, piece);
             setPromotionState(null);
           }}
