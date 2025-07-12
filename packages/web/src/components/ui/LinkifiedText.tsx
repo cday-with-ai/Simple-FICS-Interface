@@ -100,6 +100,9 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // Check if this is a channel log message with timestamp
   const isChannelLog = /^\:\[\d{2}:\d{2}:\d{2}\]/.test(text);
   
+  // Check if this is a "Present company includes:" or "Your arrival was noted by:" message
+  const isPlayerList = /^(?:Present company includes:|Your arrival was noted by:)/.test(text);
+  
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
@@ -277,6 +280,28 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         length: playerName.length
       });
     }
+  } else if (isPlayerList) {
+    // Parse player names from list after the colon
+    const colonIndex = text.indexOf(':');
+    if (colonIndex !== -1) {
+      const playersPart = text.substring(colonIndex + 1);
+      // Match player names (word characters, can have dots at the end)
+      const playerRegex = /(\w+)(?=\s|\.|\.|$)/g;
+      let playerMatch;
+      
+      while ((playerMatch = playerRegex.exec(playersPart)) !== null) {
+        const playerName = playerMatch[1];
+        const playerIndex = colonIndex + 1 + playerMatch.index;
+        
+        matches.push({
+          type: 'player',
+          match: playerName,
+          content: playerName,
+          index: playerIndex,
+          length: playerName.length
+        });
+      }
+    }
   } else {
     // Find URLs (not in special output formats)
     URL_REGEX.lastIndex = 0;
@@ -293,7 +318,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
