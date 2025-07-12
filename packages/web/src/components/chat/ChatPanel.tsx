@@ -168,7 +168,7 @@ Local commands:
           <Title>Chat</Title>
           {hoveredMessageTime && (
             <HeaderTimestamp>
-              {new Date(hoveredMessageTime).toLocaleTimeString()}
+              Received: {new Date(hoveredMessageTime).toLocaleTimeString()}
             </HeaderTimestamp>
           )}
         </Header>
