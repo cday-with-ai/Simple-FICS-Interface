@@ -391,19 +391,8 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       if (historyMatch) {
         const [fullMatch, indent, gameNum, opponent] = historyMatch;
         
-        // Add game number as command - need to get the player name from somewhere
-        // Since this is history output, we'll need to extract it from the header
-        // For now, we'll make the game number clickable with a note
-        if (onCommandClick) {
-          const gameNumIndex = indent.length;
-          matches.push({
-            type: 'command',
-            match: gameNum,
-            content: `examine ${gameNum}`, // This will need the player name prepended
-            index: gameNumIndex,
-            length: gameNum.length
-          });
-        }
+        // Skip game numbers for now - we would need the player name from the header
+        // to construct the correct "examine playerName gameNum" command
         
         // Add opponent name
         const opponentIndex = text.indexOf(opponent);
