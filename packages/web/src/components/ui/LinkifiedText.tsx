@@ -63,21 +63,37 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   const isWhoOutput = text.includes('players displayed') || 
     /^\s*(?:\d{3,4}|----|\+{4})/.test(text);
   
-  // Find URLs
-  URL_REGEX.lastIndex = 0;
-  let urlMatch;
-  while ((urlMatch = URL_REGEX.exec(text)) !== null) {
-    // Skip if this looks like a player name in who output (has dots but no slashes)
-    if (isWhoOutput && !urlMatch[0].includes('/') && /^[.^:#&]?[a-zA-Z]/.test(urlMatch[0])) {
-      continue;
+  // For who output, find player names
+  if (isWhoOutput) {
+    // Pattern to match player entries: rating/symbols + player name + optional flags
+    const whoPlayerRegex = /(?:^|\s)((?:\d{3,4}|----|\+{4})\s*)([.^:#&]?)([A-Za-z]\w*)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;
+    let whoMatch;
+    while ((whoMatch = whoPlayerRegex.exec(text)) !== null) {
+      const [fullMatch, rating, symbol, playerName] = whoMatch;
+      // Calculate position of just the player name
+      const playerStart = whoMatch.index + whoMatch[0].indexOf(playerName);
+      
+      matches.push({
+        type: 'player',
+        match: playerName,
+        content: playerName,
+        index: playerStart,
+        length: playerName.length
+      });
     }
-    matches.push({
-      type: 'url',
-      match: urlMatch[0],
-      content: urlMatch[0],
-      index: urlMatch.index,
-      length: urlMatch[0].length
-    });
+  } else {
+    // Find URLs (not in who output)
+    URL_REGEX.lastIndex = 0;
+    let urlMatch;
+    while ((urlMatch = URL_REGEX.exec(text)) !== null) {
+      matches.push({
+        type: 'url',
+        match: urlMatch[0],
+        content: urlMatch[0],
+        index: urlMatch.index,
+        length: urlMatch[0].length
+      });
+    }
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
