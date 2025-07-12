@@ -16,5 +16,13 @@ out/
 
 package-lock.json
 yarn.lock
-node_modules/*
-coverage/*
+node_modules/
+**/node_modules/
+coverage/
+**/coverage/
+/packages/shared/tsconfig.tsbuildinfo
+/packages/mobile/build/
+
+temp
+temp/**
+/packages/shared/coverage/
