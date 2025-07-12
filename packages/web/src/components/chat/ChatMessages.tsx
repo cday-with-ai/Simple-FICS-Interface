@@ -323,7 +323,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
                 {group.messages.map((msg, i) => (
                   <React.Fragment key={msg.id}>
                     {i > 0 && '\n'}
-                    <LinkifiedText text={msg.content} onCommandClick={handleCommandClick} />
+                    <LinkifiedText text={msg.content} />
                   </React.Fragment>
                 ))}
               </Content>

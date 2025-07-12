@@ -99,7 +99,8 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     /^\s*\d{1,3}\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text);
   
   // Check if this looks like channel member list (in command output)
-  const isChannelOutput = /^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(text);
+  // Must start with "Channel N" to avoid matching regular channel messages
+  const isChannelOutput = /^Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(text);
   
   // Check if this looks like moves command output
   const isMovesOutput = /\w+\s+\(\d+\)\s+vs\.\s+\w+\s+\(\d+\)/.test(text);
