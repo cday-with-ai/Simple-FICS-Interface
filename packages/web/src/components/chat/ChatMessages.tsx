@@ -75,23 +75,26 @@ const MessageRow = styled.div<{ $type: ChatMessage['type']; $color?: string }>`
   word-break: break-all;
   position: relative;
   flex: 1;
-  color: ${props => props.$color || props.theme.colors.text};
+  color: ${props => {
+    // Explicit color prop takes precedence
+    if (props.$color) return props.$color;
+    
+    // Otherwise use type-based colors
+    switch (props.$type) {
+      case 'system':
+        return props.theme.colors.textSecondary;
+      case 'whisper':
+        return props.theme.colors.primary;
+      case 'announcement':
+        return props.theme.colors.warning;
+      case 'message':
+      default:
+        return props.theme.colors.text;
+    }
+  }};
   
-  ${props => props.$type === 'system' && !props.$color && `
-    color: ${props.theme.colors.textSecondary};
-  `}
-  
-  ${props => props.$type === 'whisper' && !props.$color && `
-    color: ${props.theme.colors.primary};
-  `}
-  
-  ${props => props.$type === 'announcement' && !props.$color && `
-    color: ${props.theme.colors.warning};
+  ${props => props.$type === 'announcement' && `
     font-weight: ${props.theme.typography.fontWeight.semibold};
-  `}
-  
-  ${props => props.$type === 'message' && !props.$color && `
-    color: ${props.theme.colors.text};
   `}
 `;
 
@@ -325,13 +328,25 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
           );
         }
         
+        // Get channel color if this is a channel message
+        let messageColor: string | undefined;
+        if (activeTab.type === 'channel' && firstMessage.metadata?.consoleType === 'channel') {
+          const color = preferencesStore.getConsoleColor(
+            firstMessage.metadata.consoleType,
+            firstMessage.metadata.channelNumber
+          );
+          if (color) {
+            messageColor = color;
+          }
+        }
+        
         return (
           <MessageGroup 
             key={groupIndex}
             onMouseEnter={() => onMessageHover?.(group.timestamp)}
             onMouseLeave={() => onMessageHover?.(null)}
           >
-            <MessageRow $type={firstMessage.type}>
+            <MessageRow $type={firstMessage.type} $color={messageColor}>
               <Sender $isYou={isYou}>
                 {isYou ? group.sender : <PlayerName name={group.sender} />}
               </Sender>

@@ -24,11 +24,14 @@ export class FICSStore {
     gameList: any[] = [];
     error: string | null = null;
     lastPing = 0;
+    averagePing: number | null = null;
+    lastPingUpdate: Date | null = null;
     rootStore?: RootStore;
 
     private ws: WebSocket | null = null;
     private reconnectTimeout: NodeJS.Timeout | null = null;
-    private pingInterval: NodeJS.Timeout | null = null;
+    private pingMonitorInterval: NodeJS.Timeout | null = null;
+    private waitingForPing = false;
     
     // Timeseal protocol constants
     private readonly timesealConnect = "TIMESEAL2|openseal|simpleficsinterface|";
@@ -125,9 +128,9 @@ export class FICSStore {
             this.reconnectTimeout = null;
         }
 
-        if (this.pingInterval) {
-            clearInterval(this.pingInterval);
-            this.pingInterval = null;
+        if (this.pingMonitorInterval) {
+            clearInterval(this.pingMonitorInterval);
+            this.pingMonitorInterval = null;
         }
 
         if (this.ws) {
@@ -537,7 +540,11 @@ export class FICSStore {
                             sender: this.stripTitles(message.data.username),
                             content: message.data.message,
                             timestamp: channelLocalTime,
-                            type: 'message'
+                            type: 'message',
+                            metadata: {
+                                consoleType: 'channel',
+                                channelNumber: message.data.channelNumber
+                            }
                         });
                         break;
 
@@ -681,8 +688,20 @@ export class FICSStore {
                             }
                         }
                         
-                        // Route raw messages to console
+                        // Check for ping response before routing to console
                         if (message.type === 'raw' && message.data !== null && message.data !== undefined) {
+                            // Check if this is a ping response
+                            const pingMatch = message.data.match(/Average ping time for (\w+) is (\d+)ms\./);
+                            if (pingMatch && this.waitingForPing) {
+                                runInAction(() => {
+                                    this.averagePing = parseInt(pingMatch[2]);
+                                    this.lastPingUpdate = new Date();
+                                    this.waitingForPing = false;
+                                });
+                                // Don't show ping messages in console
+                                break;
+                            }
+                            
                             // Create timestamp and force it to be in local timezone
                             const now = new Date();
                             
@@ -732,16 +751,22 @@ export class FICSStore {
 
     private handleLogin() {
         runInAction(() => {
-            // Initialize keepalive mechanism - only send if no activity for 50 minutes
-            this.pingInterval = setInterval(() => {
-                const now = Date.now();
-                const timeSinceLastActivity = now - this.lastPing;
-                const fiftyMinutes = 50 * 60 * 1000; // 50 minutes in milliseconds
-                
-                if (timeSinceLastActivity >= fiftyMinutes) {
-                    this.sendCommand('date');
+            // Initialize ping monitoring - run every minute
+            this.pingMonitorInterval = setInterval(() => {
+                if (!this.waitingForPing && this.connected) {
+                    this.waitingForPing = true;
+                    this.sendCommand('ping');
+                    // Update lastPing to track activity
+                    this.lastPing = Date.now();
                 }
-            }, 60000); // Check every minute
+            }, 60000); // Run every minute
+            
+            // Run first ping immediately after login
+            if (this.connected) {
+                this.waitingForPing = true;
+                this.sendCommand('ping');
+                this.lastPing = Date.now();
+            }
         });
     }
 

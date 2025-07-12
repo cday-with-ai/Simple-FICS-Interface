@@ -44,6 +44,13 @@ const HeaderTimestamp = styled.span`
   margin-left: auto;
 `;
 
+const PingDisplay = styled.span`
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  color: ${props => props.theme.colors.textSecondary};
+  margin-left: auto;
+  margin-right: ${props => props.theme.spacing[4]};
+`;
+
 const Content = styled.div`
   flex: 1;
   display: flex;
@@ -166,6 +173,11 @@ Local commands:
       {!compact && (
         <Header>
           <Title>Chat</Title>
+          {ficsStore.averagePing !== null && (
+            <PingDisplay>
+              Ping: {ficsStore.averagePing}ms
+            </PingDisplay>
+          )}
           {hoveredMessageTime && (
             <HeaderTimestamp>
               Received: {new Date(hoveredMessageTime).toLocaleTimeString()}
