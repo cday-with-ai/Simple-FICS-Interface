@@ -75,26 +75,18 @@ const MessageRow = styled.div<{ $type: ChatMessage['type']; $color?: string }>`
   word-break: break-all;
   position: relative;
   flex: 1;
-  color: ${props => {
-    // Explicit color prop takes precedence
-    if (props.$color) return props.$color;
-    
-    // Otherwise use type-based colors
-    switch (props.$type) {
-      case 'system':
-        return props.theme.colors.textSecondary;
-      case 'whisper':
-        return props.theme.colors.primary;
-      case 'announcement':
-        return props.theme.colors.warning;
-      case 'message':
-      default:
-        return props.theme.colors.text;
-    }
-  }};
   
-  ${props => props.$type === 'announcement' && `
+  ${props => props.$color ? `
+    color: ${props.$color} !important;
+  ` : props.$type === 'system' ? `
+    color: ${props.theme.colors.textSecondary};
+  ` : props.$type === 'whisper' ? `
+    color: ${props.theme.colors.primary};
+  ` : props.$type === 'announcement' ? `
+    color: ${props.theme.colors.warning};
     font-weight: ${props.theme.typography.fontWeight.semibold};
+  ` : `
+    color: ${props.theme.colors.text};
   `}
 `;
 
@@ -290,6 +282,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
             if (color) {
               messageColor = color;
             }
+            
           }
           
           return (
@@ -300,7 +293,13 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
               onMouseEnter={() => onMessageHover?.(message.timestamp)}
               onMouseLeave={() => onMessageHover?.(null)}
             >
-              <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+              {messageColor ? (
+                <span style={{ color: messageColor }}>
+                  <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+                </span>
+              ) : (
+                <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+              )}
             </MessageRow>
           );
         })}

@@ -36,6 +36,19 @@ const CommandLink = styled.span`
   }
 `;
 
+const HistoryLink = styled.span`
+  color: inherit;
+  cursor: pointer;
+  display: inline-block;
+  width: 100%;
+  transition: all ${props => props.theme.transitions.fast};
+  
+  &:hover {
+    background-color: ${props => props.theme.colors.backgroundTertiary};
+    text-decoration: underline;
+  }
+`;
+
 // Comprehensive URL regex that matches various URL formats
 const URL_REGEX = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?|(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
 
@@ -81,6 +94,11 @@ let lastHistoryPlayer: string | null = null;
 let lastJournalPlayer: string | null = null;
 
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
+  // Debug log for history lines
+  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/)) {
+    console.log('LinkifiedText processing:', { text: text.substring(0, 50), hasCommandClick: !!onCommandClick });
+  }
+  
   // Find all matches (URLs, commands, and player names) with their positions
   const matches: Array<{
     type: 'url' | 'command' | 'player';
@@ -88,6 +106,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     content: string;
     index: number;
     length: number;
+    isHistoryLine?: boolean;
   }> = [];
   
   // If we're not in command mode (no onCommandClick), only process URLs
@@ -185,6 +204,16 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   const isHistoryOutput = /^\s*\d+:\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+\w+/.test(text) ||
     /History for \w+:/.test(text);
   
+  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/)) {
+    console.log('History detection:', { 
+      text: text.substring(0, 50), 
+      isHistoryOutput,
+      isCommandMode,
+      isToldMessage,
+      looksLikeUserInput
+    });
+  }
+  
   // Check if this is journal output
   const isJournalOutput = /^\s*%\d+:\s+\w+/.test(text) ||
     /Journal for \w+:/.test(text);
@@ -221,6 +250,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     !text.match(/^--/) && // Not a list header
     !text.match(/^\d{4}\s+\(\w{3},/) && // Not a news item
     !text.match(/^\d+\s+\(/) && // Not any numbered list with parentheses
+    !text.match(/^\d+:\s+[+-=]/) && // Not a history entry
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
   
@@ -505,49 +535,40 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       });
     }
   } else if (isHistoryOutput) {
+    console.log('In history handling block', { text: text.substring(0, 50), lastHistoryPlayer });
     // Handle history header: "History for playerName:"
     const headerRegex = /History for (\w+):/;
     const headerMatch = headerRegex.exec(text);
     if (headerMatch) {
       const playerName = headerMatch[1];
       lastHistoryPlayer = playerName; // Store for use in subsequent lines
-      const playerIndex = text.indexOf(playerName);
-      matches.push({
-        type: 'player',
-        match: playerName,
-        content: playerName,
-        index: playerIndex,
-        length: playerName.length
-      });
-    } else {
+      console.log('History header detected, player:', playerName);
+    } else if (lastHistoryPlayer) {
       // Handle history entries: "N: +/- rating color rating opponent ..."
-      const historyRegex = /^(\s*)(\d+):\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+(\w+)/;
-      const historyMatch = historyRegex.exec(text);
-      if (historyMatch) {
-        const [fullMatch, indent, gameNum, opponent] = historyMatch;
-        
-        // Add clickable game number if we have the player name
-        if (onCommandClick && lastHistoryPlayer) {
-          const gameNumIndex = indent.length;
-          matches.push({
-            type: 'command',
-            match: gameNum + ':',
-            content: `examine ${lastHistoryPlayer} ${gameNum}`,
-            index: gameNumIndex,
-            length: gameNum.length + 1  // Include the colon
-          });
-        }
-        
-        // Add opponent name
-        const opponentIndex = text.indexOf(opponent);
+      console.log('Checking history entry with lastHistoryPlayer:', lastHistoryPlayer);
+      // The regex needs to be more flexible to match the actual format
+      // Format: "N: +/- rating [W/B/N] rating opponent [ game_type ] ECO result Date"
+      const entryRegex = /^\s*(\d+):\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+(\w+)/;
+      const entryMatch = entryRegex.exec(text);
+      console.log('Entry regex match:', entryMatch);
+      if (entryMatch) {
+        const gameNumber = entryMatch[1];
+        console.log('History entry detected:', { gameNumber, player: lastHistoryPlayer, text });
+        // Make the entire line clickable
         matches.push({
-          type: 'player',
-          match: opponent,
-          content: opponent,
-          index: opponentIndex,
-          length: opponent.length
+          type: 'command',
+          match: text,
+          content: `examine ${lastHistoryPlayer} ${gameNumber}`,
+          index: 0,
+          length: text.length,
+          isHistoryLine: true
         });
+        console.log('Added history line to matches:', matches[matches.length - 1]);
+      } else {
+        console.log('History entry not matched:', { text, lastHistoryPlayer, entryMatch, trimmedText: text.trim() });
       }
+    } else {
+      console.log('No lastHistoryPlayer set for entry line');
     }
   } else if (isJournalOutput) {
     // Handle journal header: "Journal for playerName:"
@@ -813,18 +834,33 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         </Link>
       );
     } else if (match.type === 'command') {
-      parts.push(
-        <CommandLink
-          key={`cmd-${i}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onCommandClick!(match.content);
-          }}
-          title={`Click to send: ${match.content}`}
-        >
-          {match.match}
-        </CommandLink>
-      );
+      if (match.isHistoryLine) {
+        parts.push(
+          <HistoryLink
+            key={`hist-${i}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCommandClick!(match.content);
+            }}
+            title={`Click to examine game: ${match.content}`}
+          >
+            {match.match}
+          </HistoryLink>
+        );
+      } else {
+        parts.push(
+          <CommandLink
+            key={`cmd-${i}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCommandClick!(match.content);
+            }}
+            title={`Click to send: ${match.content}`}
+          >
+            {match.match}
+          </CommandLink>
+        );
+      }
     } else if (match.type === 'player') {
       parts.push(
         <PlayerName

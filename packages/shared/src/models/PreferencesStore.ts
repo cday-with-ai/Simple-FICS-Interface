@@ -27,6 +27,9 @@ export interface ConsoleColors {
     cshout: string;
     matchRequest: string;
     seek: string;
+    fingerNotes: string;
+    history: string;
+    journal: string;
 }
 
 export interface Preferences {
@@ -141,7 +144,10 @@ const DEFAULT_PREFERENCES: Preferences = {
         shout: '#006600',         // Dark Green
         cshout: '#990099',        // Magenta
         matchRequest: '#ff0000',  // Bright Red
-        seek: '#666666'           // Gray
+        seek: '#666666',          // Gray
+        fingerNotes: '#8b008b',   // DarkMagenta (more visible)
+        history: '#2e8b57',       // SeaGreen
+        journal: '#b8860b'        // DarkGoldenrod
     },
     consoleColorsDark: {
         notification: '#66b3ff',  // Light Blue
@@ -160,7 +166,10 @@ const DEFAULT_PREFERENCES: Preferences = {
         shout: '#99ff99',         // Bright Green
         cshout: '#ff66ff',        // Bright Magenta
         matchRequest: '#ff6666',  // Bright Red
-        seek: '#999999'           // Light Gray
+        seek: '#999999',          // Light Gray
+        fingerNotes: '#9370db',   // Medium Purple
+        history: '#66cdaa',       // MediumAquamarine
+        journal: '#ffd700'        // Gold
     }
 };
 
@@ -196,8 +205,22 @@ export class PreferencesStore {
                     runInAction(() => {
                         // Validate and merge with defaults, filtering out invalid values
                         const validatedPreferences = {...DEFAULT_PREFERENCES};
+                        
+                        // Ensure console colors have all required fields
+                        // This handles the case where new colors are added after preferences were saved
+                        validatedPreferences.consoleColorsLight = {
+                            ...DEFAULT_PREFERENCES.consoleColorsLight,
+                            ...(parsed.consoleColorsLight || {})
+                        };
+                        validatedPreferences.consoleColorsDark = {
+                            ...DEFAULT_PREFERENCES.consoleColorsDark,
+                            ...(parsed.consoleColorsDark || {})
+                        };
+                        
                         for (const [key, value] of Object.entries(parsed)) {
-                            if (key in DEFAULT_PREFERENCES && value != null && this.isValidPreferenceValue(key as keyof Preferences, value)) {
+                            if (key !== 'consoleColorsLight' && key !== 'consoleColorsDark' && 
+                                key in DEFAULT_PREFERENCES && value != null && 
+                                this.isValidPreferenceValue(key as keyof Preferences, value)) {
                                 (validatedPreferences as any)[key] = value;
                             }
                         }

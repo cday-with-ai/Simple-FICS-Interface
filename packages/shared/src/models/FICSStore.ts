@@ -919,6 +919,41 @@ export class FICSStore {
         // Skip empty messages
         if (!message || !message.trim()) return undefined;
         
+        // Check for journal output
+        if (
+            message.match(/^Journal for \w+:/) || // Header (e.g., "Journal for cday:")
+            message.match(/^\s+White\s+Rating\s+Black/) || // Column headers
+            message.match(/^%\d+:/) // Journal lines (e.g., "%01: cday")
+        ) {
+            return { consoleType: 'journal' };
+        }
+        
+        // Check for history output (more specific pattern)
+        if (
+            message.match(/^History for \w+:/) || // Header (e.g., "History for cday:")
+            message.match(/^\s+Opponent\s+Type\s+ECO/) || // Column headers
+            message.match(/^\d+:\s+[=+-]\s+\d+\s+[WB]\s+\d+/) // History lines (e.g., "29: = 1630 W 1824")
+        ) {
+            return { consoleType: 'history' };
+        }
+        
+        // Check for finger output - various patterns that appear in finger command output
+        if (
+            message.match(/^\s*\d+:/) || // Finger notes with or without space (e.g., "1:" or " 1:")
+            message.match(/^Finger of \w+/) || // Header (e.g., "Finger of MAd(*)(SR)(TM):")
+            message.match(/^On for:/) || // Online status
+            message.match(/^Last disconnected:/) || // Last disconnected
+            message.match(/^\s+rating\s+RD/) || // Rating header
+            message.match(/^(Blitz|Standard|Lightning|Wild|Bughouse|Crazyhouse|Suicide|Atomic|Losers)\s+\d+/) || // Rating lines
+            message.match(/^Timeseal \d+ :/) || // Timeseal status
+            message.match(/^Admin Level:/) || // Admin level
+            message.match(/^Email\s*:/) || // Email line
+            message.match(/^Total time online:/) || // Total time
+            message.match(/^% of life online:/) // Percentage online
+        ) {
+            return { consoleType: 'fingerNotes' };
+        }
+        
         // Notification messages
         if (message.includes('Notification:') || message.includes('has arrived.') || message.includes('has departed.')) {
             return { consoleType: 'notification' };
@@ -952,7 +987,9 @@ export class FICSStore {
             message.includes('seeks a match') ||
             message.includes('would like to play') ||
             message.includes('Accepting the match offer') ||
-            message.includes('Creating:')) {
+            message.includes('Creating:') ||
+            message.match(/^You can "accept" or "decline"/) || // Follow-up line for challenges
+            message.includes('propose different parameters')) { // Part of challenge follow-up
             return { consoleType: 'matchRequest' };
         }
         
