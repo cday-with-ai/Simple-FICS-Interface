@@ -419,6 +419,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     const [boardSize, setBoardSize] = useState<number>(0);
     const [showResignConfirm, setShowResignConfirm] = useState(false);
     const [isDrawOffered, setIsDrawOffered] = useState(false);
+    const [selectedCapturedPiece, setSelectedCapturedPiece] = useState<string | null>(null);
 
     // Use the user's preference for chess orientation instead of device orientation
     const isLandscape = preferencesStore.preferences.chessOrientation === 'landscape';
@@ -465,6 +466,26 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
             console.error('Error making move:', error);
         }
     }, [gameStore]);
+
+    // Handle drops (Crazyhouse)
+    const handleDrop = useCallback((piece: string, to: string) => {
+        try {
+            // Convert piece char to PieceType enum value  
+            const pieceType = piece.toLowerCase() as any;
+            // Try to make the drop using the chess API directly
+            const success = gameStore.makeSANMove(`${piece.toUpperCase()}@${to}`);
+            if (!success) {
+                console.error('Invalid drop:', piece, to);
+            }
+        } catch (error) {
+            console.error('Error making drop:', error);
+        }
+    }, [gameStore]);
+
+    // Handle captured piece selection
+    const handleCapturedPieceClick = useCallback((piece: string) => {
+        setSelectedCapturedPiece(selectedCapturedPiece === piece ? null : piece);
+    }, [selectedCapturedPiece]);
 
     // Get game info
     const gameInfo = useMemo(() => {
@@ -712,9 +733,12 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         flipped={boardFlipped}
                                         showCoordinates={true}
                                         onMove={handleMove}
+                                        onDrop={handleDrop}
                                         interactive={perspective === 'playing' || perspective === 'freestyle' || perspective === 'examining'}
                                         lastMove={gameStore.lastMove || undefined}
                                         onSizeCalculated={setBoardSize}
+                                        selectedCapturedPiece={selectedCapturedPiece}
+                                        onCapturedPieceSelect={setSelectedCapturedPiece}
                                     />
                                 </BoardWrapper>
 
@@ -771,11 +795,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         orientation="vertical"
                                         isWhitePieces={boardFlipped}
                                         boardSize={boardSize}
+                                        onPieceClick={handleCapturedPieceClick}
                                     />
                                     <CapturedPieces
                                         orientation="vertical"
                                         isWhitePieces={!boardFlipped}
                                         boardSize={boardSize}
+                                        onPieceClick={handleCapturedPieceClick}
                                     />
                                 </CapturedPiecesColumn>
                             </PortraitCapturedPiecesContainer>
@@ -851,9 +877,12 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                             flipped={boardFlipped}
                                             showCoordinates={true}
                                             onMove={handleMove}
+                                            onDrop={handleDrop}
                                             interactive={perspective === 'playing' || perspective === 'freestyle' || perspective === 'examining'}
                                             lastMove={gameStore.lastMove || undefined}
                                             onSizeCalculated={setBoardSize}
+                                            selectedCapturedPiece={selectedCapturedPiece}
+                                            onCapturedPieceSelect={setSelectedCapturedPiece}
                                         />
                                     </BoardWrapper>
                                 </BoardWithAnalysis>
@@ -881,6 +910,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         orientation="horizontal"
                                         isWhitePieces={isTopPlayerWhite}
                                         boardSize={boardSize}
+                                        onPieceClick={handleCapturedPieceClick}
                                     />
                                 )}
                                 
@@ -986,6 +1016,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         orientation="horizontal"
                                         isWhitePieces={!isTopPlayerWhite}
                                         boardSize={boardSize}
+                                        onPieceClick={handleCapturedPieceClick}
                                     />
                                 )}
                             </PlayersColumn>

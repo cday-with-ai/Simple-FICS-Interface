@@ -12,10 +12,13 @@ interface ChessBoardWithPiecesProps {
   flipped?: boolean;
   showCoordinates?: boolean;
   onMove?: (from: string, to: string, promotion?: string) => void;
+  onDrop?: (piece: string, to: string) => void;
   highlightedSquares?: Set<string>;
   lastMove?: { from: string; to: string };
   interactive?: boolean;
   onSizeCalculated?: (size: number) => void;
+  selectedCapturedPiece?: string | null;
+  onCapturedPieceSelect?: (piece: string | null) => void;
 }
 
 interface AnimatingPiece {
@@ -218,10 +221,13 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   flipped = false,
   showCoordinates = true,
   onMove,
+  onDrop,
   highlightedSquares = new Set(),
   lastMove,
   interactive = true,
-  onSizeCalculated
+  onSizeCalculated,
+  selectedCapturedPiece,
+  onCapturedPieceSelect
 }) => {
   const layout = useLayout();
   const preferencesStore = usePreferencesStore();
@@ -442,15 +448,55 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     };
   }, [animatingPieces.length, preferencesStore.preferences.animationDuration]);
 
+  // Calculate possible drop moves when a captured piece is selected
+  useEffect(() => {
+    if (selectedCapturedPiece) {
+      try {
+        // Ensure ChessAPI is synchronized with current position
+        const currentPosition = gameStore.position;
+        if (gameStore.chessBoard.getFen() !== currentPosition) {
+          gameStore.chessBoard.loadFen(currentPosition);
+        }
+        
+        const allMoves = gameStore.chessBoard.getLegalMoves();
+        const dropMoves = allMoves.filter(move => 
+          move.from === '@' && move.san.toLowerCase().startsWith(selectedCapturedPiece.toLowerCase())
+        );
+        const dropTargets = new Set(dropMoves.map(move => move.to));
+        setPossibleMoves(dropTargets);
+        // Clear regular piece selection when captured piece is selected
+        setSelectedSquare(null);
+      } catch (error) {
+        console.error('Error getting drop moves:', error);
+        setPossibleMoves(new Set());
+      }
+    }
+  }, [selectedCapturedPiece, gameStore]);
+
   // Handle square click
   const handleSquareClick = useCallback((square: string, event?: React.MouseEvent) => {
     if (!interactive) return;
 
     const piece = pieces.get(square);
 
+    // Handle captured piece drops
+    if (selectedCapturedPiece) {
+      if (possibleMoves.has(square)) {
+        // Make the drop
+        onDrop?.(selectedCapturedPiece, square);
+        onCapturedPieceSelect?.(null);
+        setPossibleMoves(new Set());
+      } else {
+        // Invalid drop target - clear selection
+        onCapturedPieceSelect?.(null);
+        setPossibleMoves(new Set());
+      }
+      return;
+    }
+
     if (selectedSquare) {
       // If clicking on a possible move, make the move
-      if (possibleMoves.has(square) || square !== selectedSquare) {
+      if (possibleMoves.has(square)) {
         const movingPiece = pieces.get(selectedSquare);
         if (movingPiece && isPromotion(movingPiece, selectedSquare, square)) {
           // Handle promotion
@@ -485,19 +531,57 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
         }
         setSelectedSquare(null);
         setPossibleMoves(new Set());
-      } else {
+      } else if (square === selectedSquare) {
         // Clicking the same square deselects
+        setSelectedSquare(null);
+        setPossibleMoves(new Set());
+      } else if (piece) {
+        // Select a different piece
+        setSelectedSquare(square);
+        // Calculate legal moves for the selected piece
+        try {
+          // Ensure ChessAPI is synchronized with current position
+          const currentPosition = gameStore.position;
+          if (gameStore.chessBoard.getFen() !== currentPosition) {
+            console.log('Syncing ChessAPI with position:', currentPosition);
+            gameStore.chessBoard.loadFen(currentPosition);
+          }
+          
+          const legalMoves = gameStore.chessBoard.getLegalMoves(square);
+          console.log(`Legal moves for ${square}:`, legalMoves.map(m => m.to));
+          const moveTargets = new Set(legalMoves.map(move => move.to));
+          setPossibleMoves(moveTargets);
+        } catch (error) {
+          console.error('Error getting legal moves:', error);
+          setPossibleMoves(new Set());
+        }
+      } else {
+        // Clicked on empty square that's not a valid move - deselect
         setSelectedSquare(null);
         setPossibleMoves(new Set());
       }
     } else if (piece) {
       // Select the piece
       setSelectedSquare(square);
-      // TODO: Calculate legal moves based on piece type and position
-      // For now, just highlight some squares as an example
-      setPossibleMoves(new Set());
+      // Calculate legal moves for the selected piece
+      try {
+        // Ensure ChessAPI is synchronized with current position
+        const currentPosition = gameStore.position;
+        if (gameStore.chessBoard.getFen() !== currentPosition) {
+          console.log('Syncing ChessAPI with position:', currentPosition);
+          gameStore.chessBoard.loadFen(currentPosition);
+        }
+        
+        const legalMoves = gameStore.chessBoard.getLegalMoves(square);
+        console.log(`Legal moves for ${square}:`, legalMoves.map(m => m.to));
+        const moveTargets = new Set(legalMoves.map(move => move.to));
+        setPossibleMoves(moveTargets);
+      } catch (error) {
+        console.error('Error getting legal moves:', error);
+        setPossibleMoves(new Set());
+      }
     }
-  }, [selectedSquare, possibleMoves, pieces, onMove, interactive, isPromotion, gameStore.isPlaying, gameStore.isMyTurn, preferencesStore.preferences.autoPromotionPiece, gameStore]);
+  }, [selectedSquare, possibleMoves, pieces, onMove, onDrop, interactive, isPromotion, gameStore, preferencesStore.preferences.autoPromotionPiece, selectedCapturedPiece, onCapturedPieceSelect]);
 
   // Handle drag start
   const handleDragStart = useCallback((e: React.MouseEvent, square: string, piece: string) => {

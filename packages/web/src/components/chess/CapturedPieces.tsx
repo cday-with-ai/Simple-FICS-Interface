@@ -9,6 +9,7 @@ interface CapturedPiecesProps {
   isWhitePieces?: boolean;
   className?: string;
   boardSize?: number;
+  onPieceClick?: (piece: string) => void;
 }
 
 const CapturedContainer = styled.div<{ $orientation: 'horizontal' | 'vertical'; $size?: number }>`
@@ -78,7 +79,8 @@ export const CapturedPieces: React.FC<CapturedPiecesProps> = observer(({
   orientation = 'horizontal',
   isWhitePieces = true,
   className,
-  boardSize 
+  boardSize,
+  onPieceClick
 }) => {
   const { gameStore } = useRootStore();
   
@@ -115,7 +117,12 @@ export const CapturedPieces: React.FC<CapturedPiecesProps> = observer(({
             : pieceType;
           
           return (
-            <InvisibleSquare key={pieceType} $size={squareSize}>
+            <InvisibleSquare 
+              key={pieceType} 
+              $size={squareSize}
+              onClick={count > 0 && onPieceClick ? () => onPieceClick(pieceChar) : undefined}
+              style={{ cursor: count > 0 && onPieceClick ? 'pointer' : 'default' }}
+            >
               {count > 0 && (
                 <>
                   <StyledChessPiece piece={pieceChar} size={squareSize} />
