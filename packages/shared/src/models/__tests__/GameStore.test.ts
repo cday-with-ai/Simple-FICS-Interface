@@ -1,6 +1,7 @@
 import {GameStore, GameState} from '../GameStore';
 import {runInAction} from 'mobx';
 import {ChessAPI, Move, Color, Variant} from '../../services/ChessAPI';
+import {Style12} from '../../services/FicsProtocol.types';
 
 // Mock ChessAPI
 jest.mock('../../services/ChessAPI', () => {
@@ -30,7 +31,8 @@ jest.mock('../../services/ChessAPI', () => {
             isGameOver: jest.fn().mockReturnValue(false),
             getGameResult: jest.fn().mockReturnValue('in_progress'),
             isInCheck: jest.fn().mockReturnValue(false),
-            getPiece: jest.fn().mockReturnValue(null)
+            getPiece: jest.fn().mockReturnValue(null),
+            getCapturedPieces: jest.fn().mockReturnValue([])
         })),
         Move: jest.fn().mockImplementation(() => mockMove),
         Color: {WHITE: 'w', BLACK: 'b'},
@@ -172,8 +174,38 @@ describe('GameStore', () => {
             };
             gameStore.startNewGame(mockGameState);
 
-            // Style12 format has about 31 fields
-            const style12Data = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b -1 1 0 1 0 0 1 TestWhite TestBlack -1 15 0 39 39 600 600 1 none (0:00) e4 0 1 0 extra';
+            // Create a proper Style12 object
+            const style12Data: Style12 = {
+                board: [
+                    ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'],
+                    ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'],
+                    ['-', '-', '-', '-', '-', '-', '-', '-'],
+                    ['-', '-', '-', '-', '-', '-', '-', '-'],
+                    ['-', '-', '-', '-', 'P', '-', '-', '-'],
+                    ['-', '-', '-', '-', '-', '-', '-', '-'],
+                    ['P', 'P', 'P', 'P', '-', 'P', 'P', 'P'],
+                    ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+                ],
+                colorToMove: 'B',
+                castlingRights: 'KQkq',
+                enPassantSquare: '-',
+                halfMoveClock: 0,
+                gameNumber: 1,
+                whiteName: 'TestWhite',
+                blackName: 'TestBlack',
+                relation: -1,
+                initialTime: 15,
+                incrementTime: 0,
+                whiteMaterialStrength: 39,
+                blackMaterialStrength: 39,
+                whiteTimeRemaining: 600,
+                blackTimeRemaining: 600,
+                moveNumber: 1,
+                verboseMove: 'P/e2-e4',
+                timeTaken: '(0:00)',
+                prettyMove: 'e4',
+                flipBoard: false
+            };
 
             gameStore.updateFromStyle12(style12Data);
 
@@ -184,7 +216,11 @@ describe('GameStore', () => {
         });
 
         it('should handle invalid Style12 data gracefully', () => {
-            const invalidData = 'invalid style12 data';
+            const invalidData: any = {
+                board: [], // Invalid board
+                colorToMove: 'X' as any, // Invalid color
+                // Missing required fields
+            };
 
             expect(() => {
                 gameStore.updateFromStyle12(invalidData);
@@ -239,6 +275,81 @@ describe('GameStore', () => {
             (gameStore.chessBoard.isGameOver as jest.Mock).mockReturnValue(true);
 
             expect(gameStore.isGameOver).toBe(true);
+        });
+    });
+
+    describe('Premove functionality', () => {
+        let gameStore: GameStore;
+        let rootStore: any;
+
+        beforeEach(() => {
+            gameStore = new GameStore();
+            rootStore = {
+                ficsStore: {
+                    sendCommand: jest.fn()
+                }
+            };
+            gameStore.rootStore = rootStore;
+        });
+
+        it('should set premove when playing and not my turn', () => {
+            // Set up playing state where it's opponent's turn
+            gameStore.gameRelation = -1; // Playing, opponent's turn
+            gameStore.setPremove('e2', 'e4');
+            
+            expect(gameStore.premove).toEqual({
+                from: 'e2',
+                to: 'e4',
+                promotion: undefined
+            });
+        });
+
+        it('should not set premove when it is my turn', () => {
+            // Set up playing state where it's my turn
+            gameStore.gameRelation = 1; // Playing, my turn
+            gameStore.setPremove('e2', 'e4');
+            
+            expect(gameStore.premove).toBeNull();
+        });
+
+        it('should not set premove when not playing', () => {
+            // Set up observing state
+            gameStore.gameRelation = 0; // Observing
+            gameStore.setPremove('e2', 'e4');
+            
+            expect(gameStore.premove).toBeNull();
+        });
+
+        it('should clear premove', () => {
+            gameStore.gameRelation = -1;
+            gameStore.setPremove('e2', 'e4');
+            expect(gameStore.premove).not.toBeNull();
+            
+            gameStore.clearPremove();
+            expect(gameStore.premove).toBeNull();
+        });
+
+        it('should execute premove when it becomes my turn', () => {
+            gameStore.gameRelation = -1;
+            gameStore.setPremove('e2', 'e4', 'q');
+            
+            // Now it becomes my turn
+            gameStore.gameRelation = 1;
+            gameStore.executePremove();
+            
+            expect(rootStore.ficsStore.sendCommand).toHaveBeenCalledWith('e2e4q');
+            expect(gameStore.premove).toBeNull();
+        });
+
+        it('should not execute premove when not my turn', () => {
+            gameStore.gameRelation = -1;
+            gameStore.setPremove('e2', 'e4');
+            
+            // Still opponent's turn
+            gameStore.executePremove();
+            
+            expect(rootStore.ficsStore.sendCommand).not.toHaveBeenCalled();
+            expect(gameStore.premove).not.toBeNull();
         });
     });
 });

@@ -1,113 +1,131 @@
-# Simple-FICS-Interface
+# Simple-FICS-Interface Version beta 1
 
 <img src="docs/screenshot.png">
 <img src="docs/analysis-screenshot.png">
 
 Try it <a href="https://simple-fics-interface.pages.dev/" target="_blank">here</a>.
 
-A minimalist FICS interface which focuses on easy game play and chat functionality with few UI distractions. Currently,
-it runs best in desktops, but phone/tablet will eventually be supported.
+A modern, responsive chess client for the Free Internet Chess Server (FICS) built with React and TypeScript. Features a 
+clean interface focused on gameplay and chat functionality with minimal UI distractions.
 
-**Functionality** (Working functionality):
+MIT licensed so anyone can fork and build upon it without worrying about IP.
 
-- Variants: Chess 960, Losers, Suicide, Atomic, Classic, Wild/*.
-    - Client side validation.
-    - Pre-move validation.
-- Lichess Stockfish 16 WASM integration for analysis.
-- Move animations.
-- Smart scroll.
-- Channel tabs.
-- resizable board and tab area with adjusters.
-- svg chess sets
-- Timeseal2.
-- Drag and drop and 'click-click' move.
-- ECO/Opening description lookup based on moves made.
+You can use this repo to report Issues.
 
-**Road Map**
+## Features
+**Working Functionality:**
 
-**Planned features to add:**
+- **Multiple Chess Variants**: 
+  - Standard, Chess960, Losers, Suicide, Atomic, Crazyhouse, Wild all supported
+  - Full client-side move validation
+  - Pre-move support with validation
+- **Stockfish 16 WASM Integration** for real-time analysis
+- **Modern UI Features**:
+  - Smooth piece animations
+  - Drag-and-drop and click-click move input
+  - Premove (Right click to clear)
+  - Smart scroll in chat
+  - Responsive design (portrait/landscape modes). Should work on phones and tablets.
+  - Landscape as well as Portrait mode. Show work with tilt on phones/tablets.
+  - Dark/Light theme support
+  - 30+ chess piece sets. (Same as lichess.org)
+  - Drag-and-drop chat tabs
+  - Chat links for player handles.
+- **FICS Protocol Support**:
+  - Timeseal2 protocol
+  - Style12 board updates
+  - Channel and private chat tabs
+  - Game observation
+  - Player context menus
+- **Game Features**:
+  - Move list with navigation
+  - ECO opening database
+  - Captured pieces display
+  - Clock display with low-time warnings
+  - Draw/Resign/Abort controls
+  - Pawn promotion dialogs
 
-- When playing and the other side castles, my pieces are
-  flashed as moving when they should not be.
-- Crazyhouse support.
-- Preferences:
-    - Expand preferences a bit (not too much).
-- Responsive web design. (phone/tablet support)
-  Added after everything is in place
-    - More changes for Responsive web design that work on mobile and tablets. (Last after features are added.)
-    - Add a layout when width is an issue that places the clocks ontop and underneath the board to reduce width.
-- Regression testing.
-    - Test all functionality.
+## Quick Start
 
-**Features that are not going to be supported:**
+### Option 1: Open Directly
+Simply open `index.html` in your browser. The app is pre-built and ready to use.
 
-- Bughouse support.
-- Viewing multiple boards at once.
+### Option 2: Development Server
+```bash
+# Install dependencies
+yarn install
 
-## Development Setup
+# Start development server
+yarn web
+```
 
-### Running Locally
+Then open http://localhost:5173
 
-For basic functionality, you can open `index.html` directly in a browser. However, **for chess analysis mode to work
-properly**, you must run the application through a web server due to WebAssembly security restrictions.
+## Project Structure
 
-#### Option 1: Node.js Server (Recommended)
+This is a monorepo using Yarn workspaces:
+
+```
+packages/
+├── shared/     # Core business logic, chess engine, FICS protocol
+├── web/        # React web application
+└── mobile/     # React Native app (in development)
+```
+
+## Building
 
 ```bash
-# Install Node.js if not already installed
-# Then run:
-node server.js
+# Build the web app
+yarn build:web
 ```
 
-The application will be available at `http://localhost:3000`
+The built files are already included in `packages/web/dist/` for easy deployment.
 
-#### Option 2: Python Server
+## Deployment
 
-```bash
-# Python 3
-python -m http.server 3000
+The app is configured for Cloudflare Pages deployment with:
+- `_headers` file for proper CORS headers (required for Stockfish)
+- Pre-built assets in `packages/web/dist/`
+- Root `index.html` that loads the app
 
-# Python 2
-python -m SimpleHTTPServer 3000
-```
+## Development
 
-### Analysis Mode Requirements
+### Key Technologies
+- **Frontend**: React 18, TypeScript, MobX, styled-components
+- **Chess Engine**: Custom implementation supporting multiple variants
+- **Analysis**: Stockfish 16 WASM
+- **Build Tool**: Vite
+- **Testing**: Jest with ~98% coverage on core logic
 
-The chess analysis feature uses Stockfish 16 WebAssembly and requires specific HTTP headers to function properly:
+### Architecture
+- MobX stores for state management
+- WebSocket connection to FICS servers
+- Custom chess engine with full variant support
+- Responsive design system
 
-#### Required Headers for Stockfish Files
+## Roadmap
 
-The following files **must** be served with these specific headers:
+**In Progress:**
+- Additional UI polish and animations
+- Adding Preferences
+- Bug fixes
 
-**For `sf16-7.js`:**
+**Planned:**
+- Enhanced mobile experience by creating react native apps.
 
-```
-Content-Type: application/javascript
-Cross-Origin-Embedder-Policy: require-corp
-Cross-Origin-Opener-Policy: same-origin
-```
+**Not Planned:**
+- Bughouse support
+- Multiple simultaneous boards
 
-**For `sf16-7.wasm`:**
+## Contributing
 
-```
-Content-Type: application/wasm
-Cross-Origin-Embedder-Policy: require-corp
-Cross-Origin-Opener-Policy: same-origin
-```
+This project uses Claude.ai for development assistance. See `CLAUDE.md` for AI collaboration guidelines.
 
-#### Why These Headers Are Required
+## Browser Requirements
 
-- **Cross-Origin-Embedder-Policy: require-corp**: Required for SharedArrayBuffer support in WebAssembly
-- **Cross-Origin-Opener-Policy: same-origin**: Enables cross-origin isolation for enhanced security
-- **Proper Content-Type**: Ensures browsers handle the files correctly
+- Modern browser with WebAssembly support
+- SharedArrayBuffer support (for Stockfish analysis)
+- WebSocket support
 
-#### Troubleshooting Analysis Mode
-
-If analysis mode doesn't work:
-
-1. **Check browser console** for CORS or WebAssembly errors
-2. **Verify server headers** using browser developer tools (Network tab)
-3. **Use a proper web server** - file:// protocol won't work
-4. **Check browser compatibility** - modern browsers required for WebAssembly
-
-The included `server.js` automatically sets these headers correctly.
+## License
+[MIT License](MIT.license.md)

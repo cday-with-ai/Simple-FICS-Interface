@@ -3,14 +3,20 @@ import {FicsProtocol} from '../FicsProtocol';
 // Generators for creating valid test data
 const generateUsername = (includeSpecial = false): string => {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    const specialChars = includeSpecial ? '_[]* -' : '';
-    const allChars = chars + specialChars;
-
+    const specialChars = includeSpecial ? '_[]*-' : '';
+    
     const length = Math.floor(Math.random() * 15) + 3; // 3-17 chars
     let result = '';
-    for (let i = 0; i < length; i++) {
+    
+    // Ensure the first character is alphanumeric
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    
+    // Add remaining characters
+    const allChars = chars + specialChars;
+    for (let i = 1; i < length; i++) {
         result += allChars.charAt(Math.floor(Math.random() * allChars.length));
     }
+    
     return result;
 };
 

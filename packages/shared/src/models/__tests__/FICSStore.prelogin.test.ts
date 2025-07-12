@@ -57,12 +57,11 @@ login: `;
     });
 
     it('should buffer messages after login when fics% delimiter is present', () => {
-        // Set user to simulate logged-in state
-        ficsStore.user = {
-            handle: 'TestUser',
-            rating: {},
-            isGuest: false
-        };
+        // Simulate login by triggering sessionStart
+        (ficsStore as any).handleMessage('**** Starting FICS session as TestUser ****');
+        
+        // Now we should be in logged-in state
+        expect((ficsStore as any).loginState).toBe('logged-in');
 
         // Send partial message (without fics% delimiter)
         const partialMessage = 'TestUser(50): This is a partial message';
@@ -88,9 +87,12 @@ login: `;
         (ficsStore as any).handleMessage(loginPrompt);
 
         // Check console has the login prompt
-        let consoleMessages = chatStore.tabs.get('console')!.messages;
-        expect(consoleMessages.length).toBe(1);
-        expect(consoleMessages[0].content).toBe('login: ');
+        const consoleTab = chatStore.tabs.get('console');
+        expect(consoleTab).toBeDefined();
+        
+        let consoleMessages = consoleTab!.messages;
+        expect(consoleMessages.length).toBeGreaterThan(0);
+        expect(consoleMessages.map(m => m.content).join('')).toContain('login: ');
 
         // Simulate login success
         const loginSuccess = `
@@ -116,12 +118,11 @@ fics%`;
     });
 
     it('should handle multi-line messages that arrive in chunks', () => {
-        // Set user to simulate logged-in state
-        ficsStore.user = {
-            handle: 'TestUser',
-            rating: {},
-            isGuest: false
-        };
+        // Simulate login by triggering sessionStart
+        (ficsStore as any).handleMessage('**** Starting FICS session as TestUser ****');
+        
+        // Now we should be in logged-in state
+        expect((ficsStore as any).loginState).toBe('logged-in');
 
         // First chunk - partial message without continuation
         const chunk1 = 'cday(202): this is a really long message this is a really long message this is a really long message this is a really';

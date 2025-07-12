@@ -531,3 +531,28 @@ export function regexIndexOf(string: string, regex: RegExp, startpos?: number): 
     var indexOf = string.substring(startpos || 0).search(regex);
     return (indexOf >= 0) ? (indexOf + (startpos || 0)) : indexOf;
 }
+
+/**
+ * Convert long algebraic notation (e2e4) to basic SAN for display
+ * This is a simplified version for premove display
+ * @param move Long algebraic move like "e2e4" 
+ * @returns Basic SAN like "e4" or "♘f3"
+ */
+export function longAlgebraicToDisplaySAN(move: string): string {
+    if (!move || move.length < 4) return move;
+    
+    const from = move.substring(0, 2);
+    const to = move.substring(2, 4);
+    const promotion = move.substring(4);
+    
+    // For basic display, just show destination
+    // In a full implementation, you'd need board state to determine piece type
+    let san = to;
+    
+    // Handle promotion
+    if (promotion) {
+        san += '=' + promotion.toUpperCase();
+    }
+    
+    return san;
+}

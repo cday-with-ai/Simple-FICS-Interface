@@ -30,7 +30,8 @@ describe('ChatStore', () => {
                 name: 'Console',
                 type: 'console',
                 unreadCount: 0,
-                messages: []
+                messages: [],
+                order: 0
             });
         });
 
@@ -57,6 +58,7 @@ describe('ChatStore', () => {
                 id: 'channel1',
                 name: 'Channel 1',
                 type: 'channel',
+                order: 1,
                 unreadCount: 0,
                 messages: []
             });
@@ -303,17 +305,18 @@ describe('ChatStore', () => {
             expect(chatStore.activeTab).toBeUndefined();
         });
 
-        it('should return sorted tabs with console first', () => {
+        it('should return sorted tabs by order', () => {
             chatStore.createTab('zebra', 'Zebra Channel', 'channel');
             chatStore.createTab('alpha', 'Alpha Channel', 'channel');
             chatStore.createTab('beta', 'Beta Channel', 'private');
 
             const sortedTabs = chatStore.sortedTabs;
 
-            expect(sortedTabs[0].id).toBe('console');
-            expect(sortedTabs[1].id).toBe('alpha');
-            expect(sortedTabs[2].id).toBe('beta');
-            expect(sortedTabs[3].id).toBe('zebra');
+            // Tabs are sorted by order (creation time), not alphabetically
+            expect(sortedTabs[0].id).toBe('console'); // Console is always first (order 0)
+            expect(sortedTabs[1].id).toBe('zebra');   // Created first
+            expect(sortedTabs[2].id).toBe('alpha');   // Created second
+            expect(sortedTabs[3].id).toBe('beta');    // Created third
         });
 
         it('should handle empty tabs in sorting', () => {

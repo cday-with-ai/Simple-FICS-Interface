@@ -4,140 +4,176 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Simple-FICS-Interface** - A cross-platform chess client for the Free Internet Chess Server (FICS), currently migrating from vanilla JavaScript to a React/React Native monorepo architecture.
+**Simple-FICS-Interface** - A modern chess client for the Free Internet Chess Server (FICS) built as a React/TypeScript monorepo.
 
-- **Current Branch**: `react-native` (active migration)
+- **Current Branch**: `react-native` (main development branch)
 - **Architecture**: Monorepo using Yarn workspaces
+- **Deployment**: Cloudflare Pages (simple-fics-interface.pages.dev)
 - **Main Packages**:
   - `@fics/shared`: Core business logic, chess engine, FICS protocol
   - `@fics/web`: React web application (Vite)
-  - `@fics/mobile`: React Native mobile app
+  - `@fics/mobile`: React Native mobile app (in development)
 
-## Development Commands
-
-### Running the Applications
+## Quick Start
 
 ```bash
-# Web development server
+# Install dependencies
+yarn install
+
+# Run web development server
 yarn web
 
-# Mobile development
-yarn ios       # iOS simulator
-yarn android   # Android emulator
-yarn mobile    # Metro bundler only
+# Build web app
+yarn build:web
 ```
 
-### Testing
-
-```bash
-# Run all tests
-yarn test
-
-# Package-specific tests
-yarn workspace @fics/shared test
-yarn workspace @fics/shared test:watch
-yarn workspace @fics/shared test:coverage
-yarn workspace @fics/web test
-```
-
-### Code Quality
-
-```bash
-# Type checking
-yarn typecheck
-
-# Linting (when configured)
-yarn lint
-```
+The app can also be opened directly via `index.html` in the root directory, which loads the pre-built app from `packages/web/dist/`.
 
 ## Architecture & Key Components
 
 ### Core Services (packages/shared/src/services/)
 
-- **ChessAPI**: Custom chess engine supporting multiple variants (Standard, Chess960, Crazyhouse, Suicide, Atomic, Losers, Wild)
-  - `ChessAPI.ts`: Main API interface
-  - `ChessAPI.execution.ts`: Move execution logic
-  - `ChessAPI.moveGeneration.ts`: Legal move generation
-  - `ChessAPI.validation.ts`: Move validation
-  - `ChessAPI.variants.ts`: Variant-specific rules
+- **ChessAPI**: Custom chess engine supporting multiple variants
+  - Standard, Chess960, Crazyhouse, Suicide, Atomic, Losers, Wild
+  - Full move validation and generation
+  - ~98% test coverage with 400+ tests
+  - Key files:
+    - `ChessAPI.ts`: Main API interface
+    - `ChessAPI.execution.ts`: Move execution logic
+    - `ChessAPI.moveGeneration.ts`: Legal move generation
+    - `ChessAPI.validation.ts`: Move validation
+    - `ChessAPI.variants.ts`: Variant-specific rules
 
-- **FICSProtocol**: WebSocket-based FICS server communication
-  - Comprehensive parsing of FICS messages
+- **FICSProtocol**: WebSocket-based FICS communication
+  - Timeseal2 protocol implementation
+  - Style12 board update parsing
+  - Comprehensive message parsing
   - Security hardened against XSS
-  - 400+ tests with ~98% coverage
 
-- **StockfishEngine**: WebAssembly integration for chess analysis
+- **StockfishEngine**: WebAssembly integration
   - Stockfish 16 WASM
-  - Requires proper CORS headers for SharedArrayBuffer
+  - Requires CORS headers (handled by `_headers` file)
 
 ### State Management (packages/shared/src/models/)
 
-All state is managed with MobX stores:
-- `GameStore`: Chess game state and move history
-- `FICSStore`: Server connection and protocol state
+MobX stores for reactive state:
+- `GameStore`: Chess game state, move history, clocks
+- `FICSStore`: Server connection, protocol handling
 - `ChatStore`: Tab-based chat system
-- `PreferencesStore`: User settings and preferences
+- `PreferencesStore`: User settings
+- `AnalysisStore`: Stockfish analysis state
 
-### Web Application Structure
+### Web Application (packages/web/)
 
-The web app uses:
-- React 18 with TypeScript
-- Vite for bundling
-- styled-components (with transient props pattern)
-- React Router v7
-- PWA support
-
-## Current Migration Status
-
-**Phase 1 (Core Logic)**: ✅ COMPLETED
-- All business logic migrated to TypeScript
-- Comprehensive test coverage
-- MobX stores implemented
-
-**Phase 2 (Web React App)**: 🚧 IN PROGRESS
-- Basic layout components created
-- Stockfish test page working
-- Main game interface pending
-
-**Phase 3 (React Native)**: 📅 PLANNED
+- **Tech Stack**: React 18, TypeScript, Vite, styled-components
+- **Key Components**:
+  - `ChessGameLayout`: Main game interface
+  - `ChessBoardWithPieces`: Board rendering and interaction
+  - `ChatPanel`: Multi-tab chat interface
+  - `PlayerCard` & `ObservableClock`: Player info display
+  - `GameControls`: Draw/resign/analysis buttons
 
 ## Important Technical Notes
 
-1. **WebAssembly Requirements**: When running the web app, ensure these headers are set:
-   ```
-   Cross-Origin-Embedder-Policy: require-corp
-   Cross-Origin-Opener-Policy: same-origin
-   ```
+### 1. WebAssembly Requirements
+Stockfish requires these headers (set in `_headers` for Cloudflare):
+```
+Cross-Origin-Embedder-Policy: require-corp
+Cross-Origin-Opener-Policy: same-origin
+```
 
-2. **Chess Variants**: The ChessAPI supports multiple variants. Each variant has specific rules implemented in `ChessAPI.variants.ts`.
+### 2. Build & Deployment
+- App builds to `packages/web/dist/`
+- Built files are committed to repository
+- Root `index.html` loads the built app
+- Cloudflare Pages serves directly without build step
 
-3. **Test Failures**: Some variant-specific tests are currently failing. Check test output before making changes to chess logic.
+### 3. Chess Move Handling
+```typescript
+// Moves can be made via:
+gameStore.makeMove(from, to, promotion); // Long algebraic
+gameStore.makeSANMove("Nf3"); // Standard algebraic
 
-4. **Styled Components**: Use transient props (prefixed with `$`) to avoid React warnings about DOM props.
+// For FICS, moves are sent as:
+ficsStore.sendCommand("e2e4"); // Long algebraic format
+```
 
-## Common Development Tasks
+### 4. Testing
+```bash
+# Run all tests
+yarn test
 
-### Adding a New Chess Variant
-1. Update variant types in `ChessAPI.types.ts`
+# Run specific package tests
+yarn workspace @fics/shared test
+
+# Watch mode
+yarn workspace @fics/shared test:watch
+```
+
+### 5. Common Development Tasks
+
+#### Adding a New Chess Variant
+1. Add variant type to `ChessAPI.types.ts`
 2. Implement rules in `ChessAPI.variants.ts`
 3. Add comprehensive tests in `__tests__/`
+4. Update variant mapping in `FICSStore`
 
-### Working with FICS Protocol
-1. Parser logic is in `FICSProtocol.parser.ts`
-2. Add new message types to `FICSProtocol.types.ts`
-3. Security: All user input must be sanitized
+#### Working with FICS Protocol
+1. New message types go in `FicsProtocol.types.ts`
+2. Parser logic in `FicsProtocol.parser.ts`
+3. Handle in `FICSStore.processMessages()`
+4. All user input must be sanitized
 
-### Running Specific Tests
+#### UI Component Guidelines
+- Use styled-components with transient props (`$propName`)
+- Follow existing component patterns
+- Isolate frequently updating components (e.g., clocks)
+- Use MobX `observer` for reactive components
+
+### 6. Performance Considerations
+
+- Clock updates run at 100ms intervals
+- Piece animations disabled when < 10 seconds
+- Use `React.memo` and `observer` strategically
+- Board renders are optimized with position diffing
+
+### 7. Current State Notes
+
+- All old vanilla JS code has been removed
+- Assets organized in `packages/web/public/`
+- No duplicate files at root level
+- Player names are clickable (not right-click) for context menu
+- Console tab shows FICS output with smart scrolling
+
+## Common Commands Reference
+
 ```bash
-# Run a specific test file
-yarn workspace @fics/shared test ChessAPI.test.ts
+# Development
+yarn web                    # Start dev server
+yarn build:web             # Build for production
+yarn test                  # Run all tests
+yarn typecheck             # Check TypeScript
 
-# Run tests matching a pattern
-yarn workspace @fics/shared test --testNamePattern="crazyhouse"
+# FICS Commands (via UI)
+tell <user> <message>      # Private message
+<number>. <message>        # Channel message
+observe <game>             # Watch a game
+seek <time> <inc>          # Seek a game
 ```
 
-### Debugging Chess Moves
-The ChessAPI has detailed error messages. Enable debug logging:
-```typescript
-const api = new ChessAPI({ debug: true });
-```
+## Debugging Tips
+
+1. **Chess moves not working**: Check browser console for validation errors
+2. **Stockfish not loading**: Verify CORS headers in Network tab
+3. **Board not updating**: Check Style12 parsing in console logs
+4. **Chat issues**: Verify WebSocket connection status
+
+## Code Style
+
+- TypeScript strict mode enabled
+- ESLint configuration in place
+- Prettier for formatting
+- No console.log in production code (except error handling)
+- Comprehensive error boundaries
+
+Remember: This is a production app deployed on Cloudflare Pages. All changes should maintain backwards compatibility and consider performance implications.

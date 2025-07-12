@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import { ChessBoardWithPieces } from './ChessBoardWithPieces';
+import { convertToUnicodeChessPieces } from '@fics/shared';
 
 interface GameViewProps {
   className?: string;
@@ -83,7 +84,8 @@ export const GameView: React.FC<GameViewProps> = observer(({ className }) => {
       const lastMove = history[history.length - 1];
       const moveNumber = Math.ceil(history.length / 2);
       const isWhiteMove = history.length % 2 === 1;
-      return `${moveNumber}.${isWhiteMove ? '' : '..'} ${lastMove.san}`;
+      const moveWithSymbols = convertToUnicodeChessPieces(lastMove.san);
+      return `${moveNumber}.${isWhiteMove ? '' : '..'} ${moveWithSymbols}`;
     }
     return 'Starting position';
   }, [gameStore.moveHistory]);

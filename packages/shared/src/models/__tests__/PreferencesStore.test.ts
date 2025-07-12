@@ -62,10 +62,17 @@ describe('PreferencesStore', () => {
                 boardTheme: 'brown',
                 pieceSet: 'standard',
                 showCoordinates: true,
+                boardFlipped: false,
                 animateMoves: true,
+                animationDuration: 250,
+                disableAnimationLowTime: true,
                 autoPromoteToQueen: false,
+                autoPromotionPiece: 'Q',
                 theme: 'system',
                 layout: 'auto',
+                viewMode: 'chess-and-chat',
+                chessOrientation: 'landscape',
+                autoViewMode: true,
                 enableSounds: true,
                 moveSound: true,
                 captureSound: true,
@@ -78,7 +85,15 @@ describe('PreferencesStore', () => {
                 defaultTimeControl: '15 0',
                 autoAnalyze: false,
                 engineDepth: 20,
-                showEvaluation: true
+                showEvaluation: true,
+                playerContextCommands: [
+                    {label: 'Finger', command: 'finger {player}'},
+                    {label: 'History', command: 'hi {player}'},
+                    {label: 'Variables', command: 'vars {player}'},
+                    {divider: true},
+                    {label: 'Censor', command: '+censor {player}'},
+                    {label: 'No Play', command: '+noplay {player}'}
+                ]
             });
         });
 

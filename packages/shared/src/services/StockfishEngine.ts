@@ -364,8 +364,10 @@ class StockfishEngine {
     }
 }
 
-// Export for use
-window.StockfishEngine = StockfishEngine;
+// Export for use in browser environment
+if (typeof window !== 'undefined') {
+    (window as any).StockfishEngine = StockfishEngine;
+}
 
 export default StockfishEngine;
 export type {AnalysisResult, AnalysisOptions, AnalysisCallback};

@@ -260,6 +260,14 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     return isPawn && isPromotionRank;
   }, []);
 
+  // Handle right click to clear premove
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    if (gameStore.isPlaying) {
+      gameStore.clearPremove();
+    }
+  }, [gameStore]);
+
   // Calculate optimal board size
   useEffect(() => {
     if (providedSize) {
@@ -446,7 +454,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
           // In playing mode, use auto-promotion preference
           if (gameStore.isPlaying) {
             const promotionPiece = preferencesStore.preferences.autoPromotionPiece;
-            onMove?.(selectedSquare, square, promotionPiece);
+            // If it's not our turn, set as premove
+            if (!gameStore.isMyTurn) {
+              gameStore.setPremove(selectedSquare, square, promotionPiece);
+            } else {
+              onMove?.(selectedSquare, square, promotionPiece);
+            }
           } else {
             // Show promotion dialog
             const rect = event?.currentTarget.getBoundingClientRect();
@@ -458,7 +471,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             });
           }
         } else {
-          onMove?.(selectedSquare, square);
+          // If it's not our turn in playing mode, set as premove
+          if (gameStore.isPlaying && !gameStore.isMyTurn) {
+            gameStore.setPremove(selectedSquare, square);
+          } else {
+            onMove?.(selectedSquare, square);
+          }
         }
         setSelectedSquare(null);
         setPossibleMoves(new Set());
@@ -474,7 +492,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       // For now, just highlight some squares as an example
       setPossibleMoves(new Set());
     }
-  }, [selectedSquare, possibleMoves, pieces, onMove, interactive, isPromotion, gameStore.isPlaying, preferencesStore.preferences.autoPromotionPiece]);
+  }, [selectedSquare, possibleMoves, pieces, onMove, interactive, isPromotion, gameStore.isPlaying, gameStore.isMyTurn, preferencesStore.preferences.autoPromotionPiece, gameStore]);
 
   // Handle drag start
   const handleDragStart = useCallback((e: React.MouseEvent, square: string, piece: string) => {
@@ -518,7 +536,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
           // In playing mode, use auto-promotion preference
           if (gameStore.isPlaying) {
             const promotionPiece = preferencesStore.preferences.autoPromotionPiece;
-            onMove?.(square, targetSquare, promotionPiece);
+            // If it's not our turn, set as premove
+            if (!gameStore.isMyTurn) {
+              gameStore.setPremove(square, targetSquare, promotionPiece);
+            } else {
+              onMove?.(square, targetSquare, promotionPiece);
+            }
           } else {
             // Show promotion dialog
             setPromotionState({
@@ -529,7 +552,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             });
           }
         } else {
-          onMove?.(square, targetSquare);
+          // If it's not our turn in playing mode, set as premove
+          if (gameStore.isPlaying && !gameStore.isMyTurn) {
+            gameStore.setPremove(square, targetSquare);
+          } else {
+            onMove?.(square, targetSquare);
+          }
         }
       }
 
@@ -543,7 +571,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [onMove, interactive, isPromotion, gameStore.isPlaying, preferencesStore.preferences.autoPromotionPiece]);
+  }, [onMove, interactive, isPromotion, gameStore.isPlaying, gameStore.isMyTurn, preferencesStore.preferences.autoPromotionPiece, gameStore]);
 
   const squares = useMemo(() => {
     const result = [];
@@ -611,7 +639,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
   return (
     <>
-      <BoardContainer ref={containerRef} $size={calculatedSize}>
+      <BoardContainer ref={containerRef} $size={calculatedSize} onContextMenu={handleContextMenu}>
         <BoardGrid>
           {squares}
         </BoardGrid>

@@ -37,6 +37,7 @@ export class FICSStore {
     
     // Track login state
     private loginState: 'pre-login' | 'logging-in' | 'logged-in' = 'pre-login';
+    private credentials: { username: string; password: string } | null = null;
 
     constructor() {
         makeAutoObservable(this);
@@ -51,6 +52,7 @@ export class FICSStore {
     connect(credentials?: { username: string; password: string }) {
         this.connecting = true;
         this.error = null;
+        this.credentials = credentials || null;
 
         try {
             // Connect to FICS WebSocket server directly
@@ -339,6 +341,23 @@ export class FICSStore {
                         runInAction(() => {
                             this.loginState = 'logging-in';
                         });
+                        
+                        // Also show in console
+                        if (this.rootStore?.chatStore) {
+                            this.rootStore.chatStore.addMessage('console', {
+                                channel: 'console',
+                                sender: 'FICS',
+                                content: 'login: ',
+                                timestamp: new Date(),
+                                type: 'system'
+                            });
+                        }
+                        
+                        if (this.credentials) {
+                            this.sendCommand(this.credentials.username);
+                        } else {
+                            this.sendCommand('guest');
+                        }
                         break;
                         
                     case 'password':
@@ -346,6 +365,9 @@ export class FICSStore {
                         runInAction(() => {
                             this.loginState = 'logging-in';
                         });
+                        if (this.credentials) {
+                            this.sendCommand(this.credentials.password);
+                        }
                         break;
 
                     case 'sessionStart':
@@ -480,6 +502,11 @@ export class FICSStore {
 
                     case 'raw':
                     default:
+                        // Check if it's a seek or game list message
+                        if (message.data) {
+                            this.handleSeekOrGame(message.data);
+                        }
+                        
                         // Route raw messages to console
                         if (message.type === 'raw' && message.data !== null && message.data !== undefined) {
                             // Create timestamp and force it to be in local timezone

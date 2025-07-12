@@ -42,10 +42,14 @@ export class GameStore {
     private _positionHistory: string[] = []; // Store FEN for each position
     private _lastKnownOpening: string | null = null; // Store the last matched opening
     
+    // Premove state
+    premove: { from: string; to: string; promotion?: string } | null = null;
+    
     // Game perspective properties
     gameRelation: number = 0; // -3: isolated, -2: observing examined, -1: playing opponent turn, 0: observing, 1: playing my turn, 2: examining
     shouldFlipBoard: boolean = false; // From style12 flipBoard field
     private _playingColor: 'white' | 'black' | null = null; // Cache player's color when game starts
+    private _lastBoardOrientation: boolean | null = null; // Cache the board orientation to preserve it after game ends
     
     // Clock management
     private clockInterval: NodeJS.Timeout | null = null;
@@ -80,6 +84,7 @@ export class GameStore {
         this._capturedPieces = { white: [], black: [] };
         this._lastKnownOpening = null;
         this._playingColor = null; // Reset playing color
+        this._lastBoardOrientation = null; // Reset cached board orientation for new game
 
         // Convert variant string to enum
         const variant = this.getVariantFromString(gameState.variant);
@@ -314,6 +319,14 @@ export class GameStore {
                 
                 // Start or restart clock
                 this.startClock();
+                
+                // Execute premove if it's now my turn
+                if (this.isMyTurn && this.premove) {
+                    // Add a small delay to ensure the board state is updated
+                    setTimeout(() => {
+                        this.executePremove();
+                    }, 100);
+                }
                 
             } catch (error) {
                 console.error('Failed to parse Style12 data:', error);
@@ -570,6 +583,8 @@ export class GameStore {
     
     // Determine if board should be flipped based on game perspective
     get shouldShowFlippedBoard(): boolean {
+        let orientation: boolean;
+        
         // For playing perspective, always put player's pieces at bottom by default
         if (this.isPlaying) {
             const color = this.playingColor;
@@ -578,9 +593,18 @@ export class GameStore {
             const preferencesFlipped = this.rootStore?.preferencesStore?.preferences.boardFlipped;
             if (preferencesFlipped !== undefined) {
                 // XOR with base flip to toggle from the default
-                return baseFlip !== preferencesFlipped;
+                orientation = baseFlip !== preferencesFlipped;
+            } else {
+                orientation = baseFlip;
             }
-            return baseFlip;
+            // Cache the orientation while in a game
+            this._lastBoardOrientation = orientation;
+            return orientation;
+        }
+        
+        // If we just finished a game, use the cached orientation
+        if (this._lastBoardOrientation !== null) {
+            return this._lastBoardOrientation;
         }
         
         // For non-playing modes, check manual preference first
@@ -670,6 +694,32 @@ export class GameStore {
     
     hasMoveHistory(): boolean {
         return this.moveHistory.length > 0;
+    }
+    
+    // Premove functionality
+    setPremove(from: string, to: string, promotion?: string) {
+        // Only allow premove in playing perspective when it's not my turn
+        if (this.isPlaying && !this.isMyTurn) {
+            runInAction(() => {
+                this.premove = { from, to, promotion };
+            });
+        }
+    }
+    
+    clearPremove() {
+        runInAction(() => {
+            this.premove = null;
+        });
+    }
+    
+    // Execute premove if it's now my turn
+    executePremove() {
+        if (this.premove && this.isMyTurn) {
+            const { from, to, promotion } = this.premove;
+            this.clearPremove();
+            // Send the move to FICS
+            this.rootStore?.ficsStore.sendCommand(from + to + (promotion || ''));
+        }
     }
     
     loadMovesFromList(moves: string[]) {

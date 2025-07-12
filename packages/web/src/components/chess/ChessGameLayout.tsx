@@ -13,6 +13,7 @@ import {FENDialog} from './FENDialog';
 import {CapturedPieces} from './CapturedPieces';
 import {ConfirmDialog} from '../ui/ConfirmDialog';
 import {PromotionPieceSelector} from './PromotionPieceSelector';
+import {convertToUnicodeChessPieces, longAlgebraicToDisplaySAN} from '@fics/shared';
 
 interface ChessGameLayoutProps {
     className?: string;
@@ -472,7 +473,8 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
             const lastMove = gameStore.moveHistory[historyLength - 1];
             const moveNumber = Math.ceil(historyLength / 2);
             const isWhiteMove = historyLength % 2 === 1;
-            return `${moveNumber}.${isWhiteMove ? '' : '..'} ${lastMove.san}`;
+            const moveWithSymbols = convertToUnicodeChessPieces(lastMove.san);
+            return `${moveNumber}.${isWhiteMove ? '' : '..'} ${moveWithSymbols}`;
         }
         return 'Starting position';
     })();
@@ -701,7 +703,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         flipped={boardFlipped}
                                         showCoordinates={true}
                                         onMove={handleMove}
-                                        interactive={perspective === 'playing' || perspective === 'freestyle'}
+                                        interactive={perspective === 'playing' || perspective === 'freestyle' || perspective === 'examining'}
                                         lastMove={gameStore.lastMove || undefined}
                                         onSizeCalculated={setBoardSize}
                                     />
@@ -731,7 +733,10 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
 
                                 <PortraitBottomInfo>
                                     <LastMoveInfo>
-                                        {moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none'}
+                                        {gameStore.premove ? 
+                                            `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`)}` :
+                                            (moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none')
+                                        }
                                     </LastMoveInfo>
                                     {opening && (
                                         <OpeningInfo>{opening}</OpeningInfo>
@@ -835,7 +840,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                             flipped={boardFlipped}
                                             showCoordinates={true}
                                             onMove={handleMove}
-                                            interactive={perspective === 'playing' || perspective === 'freestyle'}
+                                            interactive={perspective === 'playing' || perspective === 'freestyle' || perspective === 'examining'}
                                             lastMove={gameStore.lastMove || undefined}
                                             onSizeCalculated={setBoardSize}
                                         />
@@ -843,7 +848,10 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 </BoardWithAnalysis>
                                 <LandscapeBottomInfo>
                                     <LastMoveInfo>
-                                        {moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none'}
+                                        {gameStore.premove ? 
+                                            `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`)}` :
+                                            (moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none')
+                                        }
                                     </LastMoveInfo>
                                     {opening && (
                                         <OpeningInfo>{opening}</OpeningInfo>

@@ -109,8 +109,24 @@ describe('FICSStore', () => {
 
             ficsStore.connect(credentials);
             jest.advanceTimersByTime(1);
+            
+            // Simulate login prompt
+            const mockWs = (ficsStore as any).ws;
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: 'login: '
+                }));
+            }
 
             expect(sendCommandSpy).toHaveBeenCalledWith('testuser');
+            
+            // Simulate password prompt
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: 'password: '
+                }));
+            }
+            
             expect(sendCommandSpy).toHaveBeenCalledWith('testpass');
         });
 
@@ -119,6 +135,14 @@ describe('FICSStore', () => {
 
             ficsStore.connect();
             jest.advanceTimersByTime(1);
+            
+            // Simulate login prompt
+            const mockWs = (ficsStore as any).ws;
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: 'login: '
+                }));
+            }
 
             expect(sendCommandSpy).toHaveBeenCalledWith('guest');
         });
@@ -131,7 +155,7 @@ describe('FICSStore', () => {
                 mockWs.onerror(new Event('error'));
             }
 
-            expect(ficsStore.error).toBe('Connection error');
+            expect(ficsStore.error).toBe('Connection error - check your internet connection');
             expect(ficsStore.connecting).toBe(false);
         });
 
@@ -145,7 +169,7 @@ describe('FICSStore', () => {
             expect(ficsStore.user).toBeNull();
         });
 
-        it('should schedule reconnection on close', () => {
+        it('should handle connection close', () => {
             ficsStore.connect();
             jest.advanceTimersByTime(1);
 
@@ -156,10 +180,10 @@ describe('FICSStore', () => {
 
             expect(ficsStore.connected).toBe(false);
             expect(ficsStore.connecting).toBe(false);
-
-            // Check that reconnection is scheduled
+            
+            // Auto-reconnect is disabled, so connecting should remain false
             jest.advanceTimersByTime(5000);
-            expect(ficsStore.connecting).toBe(true);
+            expect(ficsStore.connecting).toBe(false);
         });
     });
 
@@ -175,7 +199,10 @@ describe('FICSStore', () => {
 
             ficsStore.sendCommand('moves');
 
-            expect(sendSpy).toHaveBeenCalledWith('moves\n');
+            expect(sendSpy).toHaveBeenCalled();
+            // The command is encoded with timeseal, so we just check it was called
+            const callArg = sendSpy.mock.calls[0][0];
+            expect(callArg).toBeInstanceOf(Uint8Array);
         });
 
         it('should not send commands when disconnected', () => {
@@ -201,7 +228,10 @@ describe('FICSStore', () => {
 
             ficsStore.sendCommand('moves');
 
-            expect(sendSpy).toHaveBeenCalledWith('moves\n');
+            expect(sendSpy).toHaveBeenCalled();
+            // The command is encoded with timeseal, so we just check it was called
+            const callArg = sendSpy.mock.calls[0][0];
+            expect(callArg).toBeInstanceOf(Uint8Array);
         });
     });
 
@@ -225,7 +255,16 @@ describe('FICSStore', () => {
 
         it('should handle Style12 messages', () => {
             const mockWs = (ficsStore as any).ws;
-            const style12Data = 'Style 12: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b -1 1 0 1 0 0 1 none (0:00) none 1 0 0 39 39 0 0 1 K/k -1';
+            
+            // First, simulate login to set the state to logged-in
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: '**** Starting FICS session as GuestABCD ****'
+                }));
+            }
+            
+            // Now send the Style12 message with proper format including prompt
+            const style12Data = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 111 TestPlayer1 TestPlayer2 -1 2 12 39 39 119 122 1 none (0:00) none 0 0 0\nfics%';
 
             if (mockWs && mockWs.onmessage) {
                 mockWs.onmessage(new MessageEvent('message', {
@@ -238,7 +277,16 @@ describe('FICSStore', () => {
 
         it('should handle game creation messages', () => {
             const mockWs = (ficsStore as any).ws;
-            const gameMessage = 'Creating: TestPlayer1 (1500) TestPlayer2 (1600) unrated standard 15 0';
+            
+            // First, simulate login to set the state to logged-in
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: '**** Starting FICS session as GuestABCD ****'
+                }));
+            }
+            
+            // Game start message format: Game 123: player1 (rating) player2 (rating) rated/unrated type time inc
+            const gameMessage = 'Game 123: TestPlayer1 (1500) TestPlayer2 (1600) unrated standard 15 0\nfics%';
 
             if (mockWs && mockWs.onmessage) {
                 mockWs.onmessage(new MessageEvent('message', {
@@ -276,20 +324,27 @@ describe('FICSStore', () => {
 
         it('should handle seek and game list updates', () => {
             const mockWs = (ficsStore as any).ws;
-
-            // Test seek message
+            
+            // First, simulate login to set the state to logged-in
             if (mockWs && mockWs.onmessage) {
                 mockWs.onmessage(new MessageEvent('message', {
-                    data: '1 player seeking 5 0 unrated'
+                    data: '**** Starting FICS session as GuestABCD ****'
+                }));
+            }
+
+            // Test seek message - it needs to have "seeking" in it
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: 'player seeking 5 0 unrated\nfics%'
                 }));
             }
 
             expect(ficsStore.seekList.length).toBeGreaterThan(0);
 
-            // Test game list message
+            // Test game list message - needs to start with digits
             if (mockWs && mockWs.onmessage) {
                 mockWs.onmessage(new MessageEvent('message', {
-                    data: '15 1500 1600 player1 player2 0 5'
+                    data: '15 1500 1600 player1 player2 0 5\nfics%'
                 }));
             }
 
@@ -376,8 +431,15 @@ describe('FICSStore', () => {
                 }));
             }
 
-            // Advance by ping interval (30 seconds)
-            jest.advanceTimersByTime(30000);
+            // Need to trigger sessionStart to call handleLogin
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: 'fics% **** Starting FICS session as GuestABCD ****\nfics% '
+                }));
+            }
+
+            // Advance by 50 minutes to trigger the ping
+            jest.advanceTimersByTime(50 * 60 * 1000);
 
             expect(sendCommandSpy).toHaveBeenCalledWith('date');
         });

@@ -40,3 +40,6 @@ export type {FICSUser} from './models/FICSStore';
 export type {ChatMessage, ChatTab} from './models/ChatStore';
 export type {Preferences, ViewMode, ChessOrientation} from './models/PreferencesStore';
 export type {AnalysisLine} from './models/AnalysisStore';
+
+// Utils
+export {convertToUnicodeChessPieces, longAlgebraicToDisplaySAN} from './utils/utils';

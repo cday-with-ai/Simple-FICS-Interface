@@ -30,8 +30,8 @@ function loadAllGames(): TestGameCollection[] {
         variant: 'CLASSIC' as TestGame['variant'],
         pgn: game.moves,
         description: game.headers.Event || undefined,
-        expectedMoveCount: game.expectedMoveCount,
-        expectedResult: game.expectedResult,
+        expectedMoveCount: game.expectedMoveCount || 0,
+        expectedResult: (game.expectedResult || '*') as TestGame['expectedResult'],
         tags: game.headers
     }));
     
@@ -71,8 +71,8 @@ function loadAllGames(): TestGameCollection[] {
             variant: mappedVariant as TestGame['variant'],
             pgn: game.moves,
             description: game.headers.Event || undefined,
-            expectedMoveCount: game.expectedMoveCount,
-            expectedResult: game.expectedResult,
+            expectedMoveCount: game.expectedMoveCount || 0,
+            expectedResult: (game.expectedResult || '*') as TestGame['expectedResult'],
             tags: game.headers
         });
     });

@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { Move } from '@fics/shared';
+import { convertToUnicodeChessPieces } from '@fics/shared';
 
 interface MoveListProps {
   moves: Move[];
@@ -143,7 +144,7 @@ export const MoveList: React.FC<MoveListProps> = observer(({
             onClick={() => onMoveClick?.(i)}
             data-move-index={i}
           >
-            {whiteMove.san}
+            {convertToUnicodeChessPieces(whiteMove.san)}
           </MoveText>
           {blackMove && (
             <MoveText
@@ -151,7 +152,7 @@ export const MoveList: React.FC<MoveListProps> = observer(({
               onClick={() => onMoveClick?.(i + 1)}
               data-move-index={i + 1}
             >
-              {blackMove.san}
+              {convertToUnicodeChessPieces(blackMove.san)}
             </MoveText>
           )}
         </MoveRow>
