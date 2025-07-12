@@ -68,7 +68,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     /^\s*\d{1,3}\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text);
   
   // Check if this looks like channel member list (in command output)
-  const isChannelOutput = /^\s*Channel\s+\d+\s+"[^"]+":/.test(text);
+  const isChannelOutput = /^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(text);
   
   // Check if this looks like moves command output
   const isMovesOutput = /\w+\s+\(\d+\)\s+vs\.\s+\w+\s+\(\d+\)/.test(text);
@@ -138,13 +138,20 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     if (colonIndex !== -1) {
       // Parse player names after the colon
       const membersPart = text.substring(colonIndex + 1);
-      // Match player names with optional (TD), (U), (*) suffixes
-      const memberRegex = /(\w+)(?:\([A-Z*]+\))?/g;
+      // Match player names with optional {}, (TD), (U), (*) suffixes
+      // Handles: playerName, {playerName}, playerName(TD), {playerName(TD)}
+      const memberRegex = /\{?(\w+)(?:\([A-Z*]+\))?\}?/g;
       let memberMatch;
       
       while ((memberMatch = memberRegex.exec(membersPart)) !== null) {
         const playerName = memberMatch[1];
-        const playerIndex = colonIndex + 1 + memberMatch.index;
+        // Skip if it's just whitespace or empty
+        if (!playerName || playerName.trim() === '') continue;
+        
+        // Calculate the actual position of the player name (not the curly brace)
+        const fullMatch = memberMatch[0];
+        const nameStartInMatch = fullMatch.indexOf(playerName);
+        const playerIndex = colonIndex + 1 + memberMatch.index + nameStartInMatch;
         
         matches.push({
           type: 'player',
