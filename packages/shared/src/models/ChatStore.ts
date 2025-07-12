@@ -12,6 +12,10 @@ export interface ChatMessage {
     content: string;
     timestamp: Date | string | number;  // Allow flexibility for MobX serialization
     type: 'message' | 'system' | 'whisper' | 'announcement';
+    metadata?: {
+        consoleType?: 'notification' | 'channel' | 'directTell' | 'shout' | 'cshout' | 'matchRequest' | 'seek';
+        channelNumber?: string;
+    };
 }
 
 export interface ChatTab {

@@ -64,7 +64,7 @@ const InlineMessageRow = styled.div`
   gap: ${props => props.theme.spacing[1]};
 `;
 
-const MessageRow = styled.div<{ $type: ChatMessage['type'] }>`
+const MessageRow = styled.div<{ $type: ChatMessage['type']; $color?: string }>`
   display: flex;
   align-items: baseline;
   gap: ${props => props.theme.spacing[1]};
@@ -75,21 +75,22 @@ const MessageRow = styled.div<{ $type: ChatMessage['type'] }>`
   word-break: break-all;
   position: relative;
   flex: 1;
+  color: ${props => props.$color || props.theme.colors.text};
   
-  ${props => props.$type === 'system' && `
+  ${props => props.$type === 'system' && !props.$color && `
     color: ${props.theme.colors.textSecondary};
   `}
   
-  ${props => props.$type === 'whisper' && `
+  ${props => props.$type === 'whisper' && !props.$color && `
     color: ${props.theme.colors.primary};
   `}
   
-  ${props => props.$type === 'announcement' && `
+  ${props => props.$type === 'announcement' && !props.$color && `
     color: ${props.theme.colors.warning};
     font-weight: ${props.theme.typography.fontWeight.semibold};
   `}
   
-  ${props => props.$type === 'message' && `
+  ${props => props.$type === 'message' && !props.$color && `
     color: ${props.theme.colors.text};
   `}
 `;
@@ -175,7 +176,7 @@ interface ChatMessagesProps {
 }
 
 export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHover }) => {
-  const { chatStore, ficsStore } = useRootStore();
+  const { chatStore, ficsStore, preferencesStore } = useRootStore();
   const containerRef = useRef<HTMLDivElement>(null);
   const activeTab = chatStore.activeTab;
   const messages = activeTab?.messages || [];
@@ -275,16 +276,31 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
   if (activeTab.type === 'console') {
     return (
       <MessagesContainer ref={containerRef} className="chat-messages-container">
-        {messages.map((message) => (
-          <MessageRow 
-            key={message.id}
-            $type={message.type}
-            onMouseEnter={() => onMessageHover?.(message.timestamp)}
-            onMouseLeave={() => onMessageHover?.(null)}
-          >
-            <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
-          </MessageRow>
-        ))}
+        {messages.map((message) => {
+          // Get console color if metadata is present
+          let messageColor: string | undefined;
+          if (message.metadata?.consoleType) {
+            const color = preferencesStore.getConsoleColor(
+              message.metadata.consoleType,
+              message.metadata.channelNumber
+            );
+            if (color) {
+              messageColor = color;
+            }
+          }
+          
+          return (
+            <MessageRow 
+              key={message.id}
+              $type={message.type}
+              $color={messageColor}
+              onMouseEnter={() => onMessageHover?.(message.timestamp)}
+              onMouseLeave={() => onMessageHover?.(null)}
+            >
+              <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+            </MessageRow>
+          );
+        })}
       </MessagesContainer>
     );
   }

@@ -8,6 +8,27 @@ interface RootStore {
 export type ViewMode = 'chess-only' | 'chat-only' | 'chess-and-chat';
 export type ChessOrientation = 'landscape' | 'portrait';
 
+// Console message color configuration
+export interface ConsoleColors {
+    notification: string;
+    channel1: string;
+    channel2: string;
+    channel10: string;
+    channel24: string;
+    channel36: string;
+    channel39: string;
+    channel40: string;
+    channel41: string;
+    channel49: string;
+    channel50: string;
+    channel88: string;
+    directTell: string;
+    shout: string;
+    cshout: string;
+    matchRequest: string;
+    seek: string;
+}
+
 export interface Preferences {
     // Display preferences
     boardTheme: 'brown' | 'blue' | 'green' | 'purple';
@@ -57,6 +78,10 @@ export interface Preferences {
     // Context menu preferences
     playerContextCommands: Array<{ label: string; command: string } | { divider: true }>;
     
+    // Console color preferences
+    consoleColorsLight: ConsoleColors;
+    consoleColorsDark: ConsoleColors;
+    
     // Internal preferences (for theme system)
     lastSystemThemeCheck?: number;
 }
@@ -98,7 +123,45 @@ const DEFAULT_PREFERENCES: Preferences = {
         { divider: true },
         { label: 'Censor', command: '+censor {player}' },
         { label: 'No Play', command: '+noplay {player}' }
-    ]
+    ],
+    consoleColorsLight: {
+        notification: '#0066cc',  // Blue
+        channel1: '#008000',      // Green
+        channel2: '#800080',      // Purple  
+        channel10: '#4d4d00',     // Dark Yellow
+        channel24: '#003366',     // Navy
+        channel36: '#ff6600',     // Orange
+        channel39: '#cc0000',     // Red
+        channel40: '#009999',     // Teal
+        channel41: '#663300',     // Brown
+        channel49: '#666600',     // Olive
+        channel50: '#ff0080',     // Pink
+        channel88: '#4d0099',     // Indigo
+        directTell: '#0066cc',    // Blue
+        shout: '#006600',         // Dark Green
+        cshout: '#990099',        // Magenta
+        matchRequest: '#ff0000',  // Bright Red
+        seek: '#666666'           // Gray
+    },
+    consoleColorsDark: {
+        notification: '#66b3ff',  // Light Blue
+        channel1: '#66ff66',      // Light Green
+        channel2: '#cc99ff',      // Light Purple
+        channel10: '#ffff66',     // Light Yellow
+        channel24: '#6699ff',     // Sky Blue
+        channel36: '#ffaa66',     // Light Orange
+        channel39: '#ff6666',     // Light Red
+        channel40: '#66ffff',     // Light Cyan
+        channel41: '#cc9966',     // Light Brown
+        channel49: '#cccc66',     // Light Olive
+        channel50: '#ff99cc',     // Light Pink
+        channel88: '#9966ff',     // Light Indigo
+        directTell: '#66b3ff',    // Light Blue
+        shout: '#99ff99',         // Bright Green
+        cshout: '#ff66ff',        // Bright Magenta
+        matchRequest: '#ff6666',  // Bright Red
+        seek: '#999999'           // Light Gray
+    }
 };
 
 export class PreferencesStore {
@@ -201,5 +264,23 @@ export class PreferencesStore {
     
     toggleBoardFlip() {
         this.updatePreference('boardFlipped', !this.preferences.boardFlipped);
+    }
+    
+    // Get console color based on message type and current theme
+    getConsoleColor(messageType: string, channelNumber?: string): string | null {
+        const isDark = this.preferences.theme === 'dark' || 
+            (this.preferences.theme === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+        
+        const colors = isDark ? this.preferences.consoleColorsDark : this.preferences.consoleColorsLight;
+        
+        // Handle channel colors
+        if (messageType === 'channel' && channelNumber) {
+            const channelKey = `channel${channelNumber}` as keyof ConsoleColors;
+            return colors[channelKey] || null;
+        }
+        
+        // Handle other message types
+        const colorKey = messageType as keyof ConsoleColors;
+        return colors[colorKey] || null;
     }
 }

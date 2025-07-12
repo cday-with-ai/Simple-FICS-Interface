@@ -7,6 +7,7 @@ interface RootStore {
     gameStore: any;
     chatStore: any;
     soundStore?: any;
+    preferencesStore: any;
 }
 
 export interface FICSUser {
@@ -696,13 +697,16 @@ export class FICSStore {
                                 localTime = new Date(now.getTime() + (edtOffset * 60 * 1000));
                             }
                             
+                            // Detect message type for console coloring
+                            const metadata = this.detectConsoleMessageType(message.data);
                             
                             this.rootStore?.chatStore.addMessage('console', {
                                 channel: 'console',
                                 sender: 'FICS',
                                 content: message.data,
                                 timestamp: localTime,
-                                type: 'system'
+                                type: 'system',
+                                metadata
                             });
                         }
                         break;
@@ -884,5 +888,54 @@ export class FICSStore {
         
         this.clearingListType = null;
         this.clearingListBuffer = [];
+    }
+    
+    private detectConsoleMessageType(message: string): { consoleType?: string; channelNumber?: string } | undefined {
+        // Skip empty messages
+        if (!message || !message.trim()) return undefined;
+        
+        // Notification messages
+        if (message.includes('Notification:') || message.includes('has arrived.') || message.includes('has departed.')) {
+            return { consoleType: 'notification' };
+        }
+        
+        // Direct tells - various formats
+        if (message.match(/^\w+(?:\([A-Z*]+\))? tells you:/) || 
+            message.match(/^\w+(?:\([A-Z*]+\))? says:/) ||
+            message.includes('(told ') && !message.includes('players in channel')) {
+            return { consoleType: 'directTell' };
+        }
+        
+        // Channel tells (but not the echo when you send)
+        const channelMatch = message.match(/^\w+(?:\([A-Z*]+\))?\((\d+)\):/);
+        if (channelMatch) {
+            return { consoleType: 'channel', channelNumber: channelMatch[1] };
+        }
+        
+        // Shouts
+        if (message.match(/^\w+(?:\([A-Z*]+\))? shouts:/) || message.includes('shouts:')) {
+            return { consoleType: 'shout' };
+        }
+        
+        // C-Shouts
+        if (message.match(/^\w+(?:\([A-Z*]+\))? c-shouts:/) || message.includes('c-shouts:')) {
+            return { consoleType: 'cshout' };
+        }
+        
+        // Match requests/challenges
+        if (message.includes('Challenge:') || 
+            message.includes('seeks a match') ||
+            message.includes('would like to play') ||
+            message.includes('Accepting the match offer') ||
+            message.includes('Creating:')) {
+            return { consoleType: 'matchRequest' };
+        }
+        
+        // Seeks
+        if (message.includes('seeking') && message.includes('to respond')) {
+            return { consoleType: 'seek' };
+        }
+        
+        return undefined;
     }
 }
