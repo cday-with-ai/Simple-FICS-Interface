@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { PlayerName } from './PlayerName';
 
 interface LinkifiedTextProps {
   text: string;
@@ -42,10 +43,15 @@ const URL_REGEX = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z
 // Regex to match quoted FICS commands like "play 56", 'accept', "decline", etc.
 const COMMAND_REGEX = /["']([^"']+)["']/g;
 
+// Regex to match player names in seek messages
+// Matches: PlayerName (rating) seeking ... or PlayerName(C) (rating) seeking ...
+// Rating can be numbers or ++++ for unrated guests
+const SEEK_PLAYER_REGEX = /^(\w+(?:\([A-Z]\))?) \((?:\+{4}|\+*\d+)\) seeking/;
+
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
-  // Find all matches (URLs and commands) with their positions
+  // Find all matches (URLs, commands, and player names) with their positions
   const matches: Array<{
-    type: 'url' | 'command';
+    type: 'url' | 'command' | 'player';
     match: string;
     content: string;
     index: number;
@@ -63,6 +69,21 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       index: urlMatch.index,
       length: urlMatch[0].length
     });
+  }
+  
+  // Find player names in seek messages (only if onCommandClick is provided)
+  if (onCommandClick) {
+    const seekMatch = SEEK_PLAYER_REGEX.exec(text);
+    if (seekMatch) {
+      const playerName = seekMatch[1]; // Player name with optional (C) suffix
+      matches.push({
+        type: 'player',
+        match: playerName,
+        content: playerName.replace(/\([A-Z]\)$/, ''), // Remove (C) suffix for the command
+        index: 0,
+        length: playerName.length
+      });
+    }
   }
   
   // Find commands (only if onCommandClick is provided)
@@ -126,6 +147,13 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         >
           {match.match}
         </CommandLink>
+      );
+    } else if (match.type === 'player') {
+      parts.push(
+        <PlayerName
+          key={`player-${i}`}
+          name={match.content}
+        />
       );
     }
     
