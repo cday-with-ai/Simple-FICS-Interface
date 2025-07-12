@@ -94,6 +94,9 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // Check if this looks like moves command output
   const isMovesOutput = /\w+\s+\(\d+\)\s+vs\.\s+\w+\s+\(\d+\)/.test(text);
   
+  // Check if this is a game message (Game N: ...)
+  const isGameMessage = /^Game \d+:/.test(text);
+  
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
@@ -212,8 +215,52 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         length: player2.length
       });
     }
+  } else if (isGameMessage) {
+    // Parse player names from game messages
+    // Pattern 1: "Game N: playerName offers/declines/accepts..."
+    const actionRegex = /^Game \d+:\s+(\w+)\s+(?:offers|declines|accepts|requests|forfeits)/;
+    const actionMatch = actionRegex.exec(text);
+    if (actionMatch) {
+      const playerName = actionMatch[1];
+      const playerIndex = text.indexOf(playerName);
+      matches.push({
+        type: 'player',
+        match: playerName,
+        content: playerName,
+        index: playerIndex,
+        length: playerName.length
+      });
+    }
+    
+    // Pattern 2: "Game N (player1 vs. player2)..."
+    const vsRegex = /Game \d+\s+\((\w+)\s+vs\.\s+(\w+)\)/;
+    const vsMatch = vsRegex.exec(text);
+    if (vsMatch) {
+      const [fullMatch, player1, player2] = vsMatch;
+      const matchStart = vsMatch.index;
+      
+      // Add first player
+      const player1Index = text.indexOf(player1, matchStart);
+      matches.push({
+        type: 'player',
+        match: player1,
+        content: player1,
+        index: player1Index,
+        length: player1.length
+      });
+      
+      // Add second player
+      const player2Index = text.indexOf(player2, matchStart);
+      matches.push({
+        type: 'player',
+        match: player2,
+        content: player2,
+        index: player2Index,
+        length: player2.length
+      });
+    }
   } else {
-    // Find URLs (not in who/games/channel/moves output)
+    // Find URLs (not in special output formats)
     URL_REGEX.lastIndex = 0;
     let urlMatch;
     while ((urlMatch = URL_REGEX.exec(text)) !== null) {
@@ -228,7 +275,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
