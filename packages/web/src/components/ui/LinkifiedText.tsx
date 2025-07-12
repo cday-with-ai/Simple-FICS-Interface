@@ -204,16 +204,6 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   const isHistoryOutput = /^\s*\d+:\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+\w+/.test(text) ||
     /History for \w+:/.test(text);
   
-  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/)) {
-    console.log('History detection:', { 
-      text: text.substring(0, 50), 
-      isHistoryOutput,
-      isCommandMode,
-      isToldMessage,
-      looksLikeUserInput
-    });
-  }
-  
   // Check if this is journal output
   const isJournalOutput = /^\s*%\d+:\s+\w+/.test(text) ||
     /Journal for \w+:/.test(text);
@@ -253,6 +243,16 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     !text.match(/^\d+:\s+[+-=]/) && // Not a history entry
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
+  // Debug logging for history detection
+  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/)) {
+    console.log('History detection:', { 
+      text: text.substring(0, 50), 
+      isHistoryOutput,
+      isCommandMode,
+      isToldMessage,
+      looksLikeUserInput
+    });
+  }
   
   // Skip all special processing for "told" messages and user input (but not news items)
   if ((isToldMessage || looksLikeUserInput) && !isNewsIndexOutput) {
