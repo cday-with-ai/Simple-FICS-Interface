@@ -38,6 +38,10 @@ export class FICSStore {
     
     // Track login state
     private loginState: 'pre-login' | 'logging-in' | 'logged-in' = 'pre-login';
+    
+    // Track if we're clearing a list
+    private clearingListType: string | null = null;
+    private clearingListBuffer: string[] = [];
     private credentials: { username: string; password: string } | null = null;
 
     constructor() {
@@ -145,6 +149,18 @@ export class FICSStore {
     }
 
     sendCommand(command: string) {
+        // Handle special commands that need custom logic
+        const cmd = command.trim().toLowerCase();
+        
+        // Handle clear commands
+        if (cmd.startsWith('clear ')) {
+            const listType = cmd.substring(6); // Get everything after "clear "
+            if (['censor', 'noplay', 'gnotify', 'channel'].includes(listType)) {
+                this.executeClearList(listType);
+                return;
+            }
+        }
+        
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             // console.log('Sending command to FICS:', command);
             // Encode with timeseal protocol
@@ -219,6 +235,23 @@ export class FICSStore {
         t++;
         
         return n.slice(0, t);
+    }
+    
+    private executeClearList(listType: string) {
+        // First, get the list contents
+        this.sendCommand(`=${listType}`);
+        
+        // Track which list we're clearing
+        this.clearingListType = listType;
+        
+        // Show feedback to user
+        this.rootStore?.chatStore.addMessage('console', {
+            channel: 'console',
+            sender: 'System',
+            content: `Clearing ${listType} list...`,
+            timestamp: new Date(),
+            type: 'system'
+        });
     }
 
     private login(username: string, password: string) {
@@ -544,6 +577,34 @@ export class FICSStore {
                                      msgData.includes('has departed.')) {
                                 this.rootStore?.soundStore?.playAlert();
                             }
+                            
+                            // Handle list response when clearing
+                            if (this.clearingListType) {
+                                if (message.data.includes(`-- ${this.clearingListType} list:`)) {
+                                    this.handleListForClearing(message.data, this.clearingListType);
+                                } else if (this.clearingListBuffer.length >= 0) {
+                                    // We're collecting list names
+                                    const trimmedData = message.data.trim();
+                                    if (trimmedData) {
+                                        // Check if this line contains player names (not other messages)
+                                        if (!trimmedData.includes(':') && !trimmedData.startsWith('>') && 
+                                            !trimmedData.includes('tells you') && !trimmedData.includes('--')) {
+                                            // This looks like a line of player names
+                                            const names = trimmedData.split(/\s+/).filter((name: string) => name.length > 0);
+                                            for (const name of names) {
+                                                this.clearingListBuffer.push(name);
+                                                this.sendCommand(`-${this.clearingListType} ${name}`);
+                                            }
+                                        } else {
+                                            // We've hit the end of the list or another message type
+                                            this.finishClearingList();
+                                        }
+                                    } else {
+                                        // Empty line - end of list
+                                        this.finishClearingList();
+                                    }
+                                }
+                            }
                         }
                         
                         // Route raw messages to console
@@ -576,6 +637,13 @@ export class FICSStore {
             } catch (error) {
                 console.error('Error handling FICS message:', error, message);
             }
+        }
+        
+        // After processing all messages, check if we need to finish a list clear operation
+        // This handles the case where the list ends at the end of a message batch
+        if (this.clearingListType && this.clearingListBuffer.length > 0) {
+            // If we've processed messages and still have a buffer, it means the list has ended
+            this.finishClearingList();
         }
     }
 
@@ -698,5 +766,50 @@ export class FICSStore {
                 this.gameList = [...this.gameList.slice(-19), {id: Date.now(), data: line}];
             }
         });
+    }
+    
+    private handleListForClearing(data: string, listType: string) {
+        // This is called when we see the header line
+        // We need to collect subsequent lines until we have the full list
+        
+        if (data.includes(`-- ${listType} list:`)) {
+            // Check if it's an empty list (0 names)
+            const emptyMatch = data.match(/-- \w+ list: 0 names --/);
+            if (emptyMatch) {
+                // Reset the flag
+                this.clearingListType = null;
+                
+                this.rootStore?.chatStore.addMessage('console', {
+                    channel: 'console',
+                    sender: 'System',
+                    content: `${listType} list is already empty.`,
+                    timestamp: new Date(),
+                    type: 'system'
+                });
+                return;
+            }
+            
+            // Start collecting - we'll process the names from subsequent raw messages
+            this.clearingListBuffer = [];
+            return;
+        }
+    }
+    
+    private finishClearingList() {
+        if (!this.clearingListType || !this.clearingListBuffer) return;
+        
+        const removedCount = this.clearingListBuffer.length;
+        if (removedCount > 0) {
+            this.rootStore?.chatStore.addMessage('console', {
+                channel: 'console',
+                sender: 'System',
+                content: `Removed ${removedCount} players from ${this.clearingListType} list.`,
+                timestamp: new Date(),
+                type: 'system'
+            });
+        }
+        
+        this.clearingListType = null;
+        this.clearingListBuffer = [];
     }
 }

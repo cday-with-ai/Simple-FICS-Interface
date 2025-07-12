@@ -471,4 +471,119 @@ describe('FICSStore', () => {
             expect(sendCommandSpy).not.toHaveBeenCalledWith('date');
         });
     });
+
+    describe('Clear List Commands', () => {
+        beforeEach(() => {
+            // Set up connected state
+            ficsStore.connect();
+            jest.advanceTimersByTime(1);
+            const mockWs = (ficsStore as any).ws;
+            runInAction(() => {
+                (ficsStore as any).loginState = 'logged-in';
+            });
+        });
+
+        it('should handle clear censor command', () => {
+            const sendCommandSpy = jest.spyOn(ficsStore, 'sendCommand');
+            
+            ficsStore.sendCommand('clear censor');
+            
+            // Should have called sendCommand with =censor
+            expect(sendCommandSpy).toHaveBeenCalledWith('=censor');
+            
+            // Should show feedback message
+            expect(mockRootStore.chatStore.addMessage).toHaveBeenCalledWith('console', {
+                channel: 'console',
+                sender: 'System',
+                content: 'Clearing censor list...',
+                timestamp: expect.any(Date),
+                type: 'system'
+            });
+        });
+
+        it('should handle clear list with multiple players', () => {
+            const sendCommandSpy = jest.spyOn(ficsStore, 'sendCommand');
+            
+            // Trigger the clear command
+            ficsStore.sendCommand('clear noplay');
+            
+            // Clear previous calls
+            mockRootStore.chatStore.addMessage.mockClear();
+            
+            // Simulate the list response
+            const listResponse = ` -- noplay list: 3 names --
+player1 player2
+player3`;
+            
+            const mockWs = (ficsStore as any).ws;
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: listResponse + '\nfics%'
+                }));
+            }
+            
+            // Should have sent remove commands for each player
+            const removeCommands = sendCommandSpy.mock.calls.filter(call => 
+                call[0].startsWith('-noplay')
+            );
+            expect(removeCommands.length).toBe(3);
+            expect(removeCommands).toContainEqual(['-noplay player1']);
+            expect(removeCommands).toContainEqual(['-noplay player2']);
+            expect(removeCommands).toContainEqual(['-noplay player3']);
+            
+            // Check the completion message
+            expect(mockRootStore.chatStore.addMessage).toHaveBeenCalledWith('console', {
+                channel: 'console',
+                sender: 'System',
+                content: 'Removed 3 players from noplay list.',
+                timestamp: expect.any(Date),
+                type: 'system'
+            });
+        });
+
+        it('should handle empty list', () => {
+            ficsStore.sendCommand('clear gnotify');
+            
+            // Clear previous calls
+            mockRootStore.chatStore.addMessage.mockClear();
+            
+            // Simulate empty list response
+            const listResponse = ` -- gnotify list: 0 names --`;
+            
+            const mockWs = (ficsStore as any).ws;
+            if (mockWs && mockWs.onmessage) {
+                mockWs.onmessage(new MessageEvent('message', {
+                    data: listResponse + '\nfics%'
+                }));
+            }
+            
+            // Check the empty list message
+            expect(mockRootStore.chatStore.addMessage).toHaveBeenCalledWith('console', {
+                channel: 'console',
+                sender: 'System',
+                content: 'gnotify list is already empty.',
+                timestamp: expect.any(Date),
+                type: 'system'
+            });
+        });
+        
+        it('should not intercept non-list clear commands', () => {
+            const sendCommandSpy = jest.spyOn(ficsStore, 'sendCommand');
+            const mockWs = (ficsStore as any).ws;
+            const sendSpy = jest.spyOn(mockWs, 'send');
+            
+            // This should go through normally
+            ficsStore.sendCommand('clear screen');
+            
+            // Should have sent the command as-is (encoded)
+            expect(sendSpy).toHaveBeenCalled();
+            
+            // Should not show clearing message
+            expect(mockRootStore.chatStore.addMessage).not.toHaveBeenCalledWith('console', 
+                expect.objectContaining({
+                    content: expect.stringContaining('Clearing')
+                })
+            );
+        });
+    });
 });
