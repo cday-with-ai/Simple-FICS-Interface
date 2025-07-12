@@ -49,6 +49,19 @@ const HistoryLink = styled.span`
   }
 `;
 
+const JournalLink = styled.span`
+  color: inherit;
+  cursor: pointer;
+  display: inline-block;
+  width: 100%;
+  transition: all ${props => props.theme.transitions.fast};
+  
+  &:hover {
+    background-color: ${props => props.theme.colors.backgroundTertiary};
+    text-decoration: underline;
+  }
+`;
+
 // Comprehensive URL regex that matches various URL formats
 const URL_REGEX = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?|(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
 
@@ -94,8 +107,9 @@ let lastHistoryPlayer: string | null = null;
 let lastJournalPlayer: string | null = null;
 
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
-  // Debug log for history lines
-  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/)) {
+  // Debug log for history and journal lines
+  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/) || 
+      text.includes('Journal for') || text.match(/^%\d+:/)) {
     console.log('LinkifiedText processing:', { text: text.substring(0, 50), hasCommandClick: !!onCommandClick });
   }
   
@@ -107,6 +121,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     index: number;
     length: number;
     isHistoryLine?: boolean;
+    isJournalLine?: boolean;
   }> = [];
   
   // If we're not in command mode (no onCommandClick), only process URLs
@@ -243,11 +258,13 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     !text.match(/^\d+:\s+[+-=]/) && // Not a history entry
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
-  // Debug logging for history detection
-  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/)) {
-    console.log('History detection:', { 
+  // Debug logging for history and journal detection
+  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/) ||
+      text.includes('Journal for') || text.match(/^%\d+:/)) {
+    console.log('History/Journal detection:', { 
       text: text.substring(0, 50), 
       isHistoryOutput,
+      isJournalOutput,
       isCommandMode,
       isToldMessage,
       looksLikeUserInput
@@ -571,65 +588,38 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       console.log('No lastHistoryPlayer set for entry line');
     }
   } else if (isJournalOutput) {
+    console.log('In journal handling block', { text: text.substring(0, 50), lastJournalPlayer });
     // Handle journal header: "Journal for playerName:"
     const headerRegex = /Journal for (\w+):/;
     const headerMatch = headerRegex.exec(text);
     if (headerMatch) {
       const playerName = headerMatch[1];
       lastJournalPlayer = playerName; // Store for use in subsequent lines
-      const playerIndex = text.indexOf(playerName);
-      matches.push({
-        type: 'player',
-        match: playerName,
-        content: playerName,
-        index: playerIndex,
-        length: playerName.length
-      });
-    } else {
+      console.log('Journal header detected, player:', playerName);
+    } else if (lastJournalPlayer) {
       // Handle journal entries: "%N: player1 rating player2 rating ..."
-      // Players can have optional * prefix (guest games)
-      const journalRegex = /^(\s*)(%\d+):\s+(\*?\w+)\s+\d+\s+(\*?\w+)/;
+      console.log('Checking journal entry with lastJournalPlayer:', lastJournalPlayer);
+      const journalRegex = /^(\s*)(%\d+):/;
       const journalMatch = journalRegex.exec(text);
+      console.log('Journal regex match:', journalMatch);
       if (journalMatch) {
-        const [fullMatch, indent, gameNum, player1, player2] = journalMatch;
-        
-        // Add clickable game number if we have the journal player name
-        if (onCommandClick && lastJournalPlayer) {
-          const gameNumIndex = indent.length;
-          matches.push({
-            type: 'command',
-            match: gameNum + ':',
-            content: `examine ${lastJournalPlayer} ${gameNum}`,
-            index: gameNumIndex,
-            length: gameNum.length + 1  // Include the colon
-          });
-        }
-        
-        // Add both player names (strip * for the link but keep for display)
-        const player1Index = text.indexOf(player1, indent.length + gameNum.length);
-        const player1Name = player1.replace(/^\*/, ''); // Remove * prefix for the actual name
-        const player1StartIndex = player1.startsWith('*') ? player1Index + 1 : player1Index;
-        
+        const [fullMatch, indent, gameNum] = journalMatch;
+        console.log('Journal entry detected:', { gameNum, player: lastJournalPlayer, text });
+        // Make the entire line clickable
         matches.push({
-          type: 'player',
-          match: player1Name,
-          content: player1Name,
-          index: player1StartIndex,
-          length: player1Name.length
+          type: 'command',
+          match: text,
+          content: `examine ${lastJournalPlayer} ${gameNum}`,
+          index: 0,
+          length: text.length,
+          isJournalLine: true
         });
-        
-        const player2Index = text.indexOf(player2, player1Index + player1.length);
-        const player2Name = player2.replace(/^\*/, ''); // Remove * prefix for the actual name
-        const player2StartIndex = player2.startsWith('*') ? player2Index + 1 : player2Index;
-        
-        matches.push({
-          type: 'player',
-          match: player2Name,
-          content: player2Name,
-          index: player2StartIndex,
-          length: player2Name.length
-        });
+        console.log('Added journal line to matches:', matches[matches.length - 1]);
+      } else {
+        console.log('Journal entry not matched:', { text, lastJournalPlayer, journalMatch, trimmedText: text.trim() });
       }
+    } else {
+      console.log('No lastJournalPlayer set for entry line');
     }
   } else if (isSoughtOutput) {
     // Parse sought list entries: "N rating playerName time inc ..."
@@ -846,6 +836,19 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
           >
             {match.match}
           </HistoryLink>
+        );
+      } else if (match.isJournalLine) {
+        parts.push(
+          <JournalLink
+            key={`journal-${i}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCommandClick!(match.content);
+            }}
+            title={`Click to examine game: ${match.content}`}
+          >
+            {match.match}
+          </JournalLink>
         );
       } else {
         parts.push(
