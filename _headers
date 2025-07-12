@@ -5,17 +5,20 @@
 /*
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
 
 # Specific headers for the main index.html
 /index.html
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
   X-Content-Type-Options: nosniff
 
 # Headers for all JavaScript files
 /*.js
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
   Content-Type: application/javascript
   X-Content-Type-Options: nosniff
 
@@ -23,30 +26,55 @@
 /*.wasm
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
   Content-Type: application/wasm
   X-Content-Type-Options: nosniff
 
-# Specific Stockfish files (now at root level)
+# Headers for all assets
+/assets/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+# Specific Stockfish files (critical for analysis)
 /sf16-7.js
   Content-Type: application/javascript
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
+  Cache-Control: public, max-age=31536000
 
 /sf16-7.wasm
   Content-Type: application/wasm
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: same-origin
+  Cache-Control: public, max-age=31536000
 
-# Headers for assets (now at root level)
-/assets/*
+# Stockfish loader
+/stockfish-loader.js
+  Content-Type: application/javascript
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
 
 # Service Worker (now at root level)
 /sw.js
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
   Content-Type: application/javascript
   Service-Worker-Allowed: /
+
+# PWA files
+/manifest.webmanifest
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Content-Type: application/manifest+json
+
+/registerSW.js
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+  Content-Type: application/javascript
