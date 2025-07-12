@@ -1,7 +1,7 @@
 import React, {useCallback, useMemo, useState, useEffect} from 'react';
 import styled from 'styled-components';
 import {observer} from 'mobx-react-lite';
-import {useGameStore, usePreferencesStore, useAnalysisStore, useFICSStore} from '@fics/shared';
+import {useGameStore, usePreferencesStore, useAnalysisStore, useFICSStore, useSoundStore} from '@fics/shared';
 import {useLayout} from '../../theme/hooks';
 import {ChessBoardWithPieces} from './ChessBoardWithPieces';
 import {PlayerCard, GameClock} from './PlayerCard';
@@ -413,6 +413,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     const preferencesStore = usePreferencesStore();
     const analysisStore = useAnalysisStore();
     const ficsStore = useFICSStore();
+    const soundStore = useSoundStore();
     const layout = useLayout();
     const [isAnalysisActive, setIsAnalysisActive] = useState(false);
     const [isFENDialogOpen, setIsFENDialogOpen] = useState(false);
@@ -461,11 +462,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
             const success = gameStore.makeMove(from, to, promotion);
             if (!success) {
                 console.error('Invalid move:', from, to);
+                soundStore.playIllegal();
             }
         } catch (error) {
             console.error('Error making move:', error);
+            soundStore.playIllegal();
         }
-    }, [gameStore]);
+    }, [gameStore, soundStore]);
 
     // Handle drops (Crazyhouse)
     const handleDrop = useCallback((piece: string, to: string) => {
@@ -476,11 +479,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
             const success = gameStore.makeSANMove(`${piece.toUpperCase()}@${to}`);
             if (!success) {
                 console.error('Invalid drop:', piece, to);
+                soundStore.playIllegal();
             }
         } catch (error) {
             console.error('Error making drop:', error);
+            soundStore.playIllegal();
         }
-    }, [gameStore]);
+    }, [gameStore, soundStore]);
 
     // Handle captured piece selection
     const handleCapturedPieceClick = useCallback((piece: string) => {
