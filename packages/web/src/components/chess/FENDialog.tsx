@@ -1,8 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
-import { useRootStore } from '@fics/shared';
-import { VariantRules } from '@fics/shared/src/services/ChessAPI/ChessAPI.variants';
+import { useRootStore, VariantRules } from '@fics/shared';
 
 interface FENDialogProps {
   isOpen: boolean;

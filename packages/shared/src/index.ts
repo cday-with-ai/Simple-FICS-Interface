@@ -10,6 +10,7 @@ export {RootStore, createRootStore} from './models/RootStore';
 // Services
 export {ChessAPI, Move, PieceType, Color, Variant, GameResult} from './services/ChessAPI';
 export type {Piece, CastlingRights, MoveObject, Square, Board} from './services/ChessAPI';
+export {VariantRules} from './services/ChessAPI/ChessAPI.variants';
 export {FicsProtocol} from './services/FicsProtocol';
 export type {
     FicsMessage,
