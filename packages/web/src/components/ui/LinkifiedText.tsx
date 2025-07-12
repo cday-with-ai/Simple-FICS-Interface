@@ -204,7 +204,8 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   
   // Check if this looks like games command output
   const isGamesOutput = text.includes('games displayed') || 
-    /^\s*\d{1,3}\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text);
+    (/^\s*\d{1,3}\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text) &&
+     !isSoughtOutput); // Exclude sought output
   
   // Check if this looks like channel member list (in command output)
   // Must start with "Channel N" to avoid matching regular channel messages
