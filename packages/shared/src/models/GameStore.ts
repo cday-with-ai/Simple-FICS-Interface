@@ -767,12 +767,8 @@ export class GameStore {
                         this.moveHistory.push(move);
                         this._positionHistory.push(this.chessBoard.getFen());
                         
-                        // Play move sound when loading move history
-                        if (move.san.includes('x')) {
-                            this.rootStore?.soundStore?.playCapture();
-                        } else {
-                            this.rootStore?.soundStore?.playMove();
-                        }
+                        // Don't play sounds when loading move history
+                        // (this happens when observing a game in progress)
                     }
                 } catch (error) {
                     console.error('Error applying move from list:', moveStr, error);
