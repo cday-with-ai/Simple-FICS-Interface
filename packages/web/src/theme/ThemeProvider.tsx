@@ -1,5 +1,6 @@
 import React, {createContext, useContext, ReactNode, useEffect} from 'react';
 import {ThemeProvider as StyledThemeProvider} from 'styled-components';
+import {observer} from 'mobx-react-lite';
 import {usePreferencesStore} from '@fics/shared';
 import {Theme} from './tokens';
 import {themes, ThemeName, defaultTheme} from './themes';
@@ -38,7 +39,7 @@ interface ThemeProviderProps {
     children: ReactNode;
 }
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
+export const ThemeProvider: React.FC<ThemeProviderProps> = observer(({children}) => {
     const preferencesStore = usePreferencesStore();
 
     // Get current theme preference
@@ -115,4 +116,4 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({children}) => {
             </StyledThemeProvider>
         </ThemeContext.Provider>
     );
-};
+});
