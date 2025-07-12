@@ -107,9 +107,9 @@ const Square = styled.div<{
   `}
 `;
 
-const Coordinate = styled.div<{ $type: 'file' | 'rank'; $isLight: boolean }>`
+const Coordinate = styled.div<{ $type: 'file' | 'rank'; $isLight: boolean; $size: number }>`
   position: absolute;
-  font-size: 7px;
+  font-size: ${props => Math.max(6, Math.min(14, props.$size * 0.15))}px;
   font-weight: 600;
   color: ${props => props.$isLight 
     ? props.theme.colors.board.dark  // Use dark square color on light squares
@@ -796,12 +796,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
               <ChessPiece piece={piece} size={squareSize} />
             )}
             {showFileCoordinate && (
-              <Coordinate $type="file" $isLight={isLight}>
+              <Coordinate $type="file" $isLight={isLight} $size={squareSize}>
                 {flipped ? FILES[7 - fileIndex] : FILES[fileIndex]}
               </Coordinate>
             )}
             {showRankCoordinate && (
-              <Coordinate $type="rank" $isLight={isLight}>
+              <Coordinate $type="rank" $isLight={isLight} $size={squareSize}>
                 {flipped ? RANKS[7 - rankIndex] : RANKS[rankIndex]}
               </Coordinate>
             )}
