@@ -51,8 +51,14 @@ export default defineConfig({
                     shared: ['@fics/shared']
                 }
             }
-        }
+        },
+        // Copy Stockfish files to assets during build
+        copyPublicDir: true
     },
+
+    // Configure asset handling
+    publicDir: 'public',
+    assetsInclude: ['**/*.wasm'],
 
     // Resolve configuration for TypeScript paths
     resolve: {

@@ -5,10 +5,10 @@
   Cross-Origin-Opener-Policy: same-origin
 
 # Specific Stockfish files
-/sf16-7.js
+/assets/sf16-7.js
   Content-Type: application/javascript
   Cross-Origin-Resource-Policy: cross-origin
 
-/sf16-7.wasm
+/assets/sf16-7.wasm
   Content-Type: application/wasm
   Cross-Origin-Resource-Policy: cross-origin

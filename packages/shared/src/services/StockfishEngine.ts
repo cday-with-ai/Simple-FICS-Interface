@@ -112,7 +112,7 @@ class StockfishEngine {
                 if (typeof window.Stockfish !== 'function' && typeof window.Sf167Web !== 'function') {
                     console.log('Loading Stockfish from public assets...');
                     // Load the wrapper that properly imports the ES module
-                    await this.loadStockfishScript('/stockfish-loader.js');
+                    await this.loadStockfishScript('/assets/stockfish-loader.js');
 
                     // Wait a bit for the script to fully initialize
                     await new Promise(resolve => setTimeout(resolve, 100));
