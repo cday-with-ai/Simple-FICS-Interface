@@ -11,7 +11,9 @@ export default defineConfig({
             registerType: 'autoUpdate',
             workbox: {
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,wasm}']
-            }
+            },
+            filename: 'assets/sw.js',
+            strategies: 'generateSW'
         })
     ],
 
