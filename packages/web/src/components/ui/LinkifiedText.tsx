@@ -138,6 +138,11 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   const isBestListOutput = /^\s*\d+\.\s+\w+\s+\d{4}/.test(text) ||
     /^\s+\w+\s+\d{4}\s+\d+\.\s+\w+\s+\d{4}/.test(text);
   
+  // Check if this is news index output
+  const isNewsIndexOutput = /^\d{4}\s+\(\w{3},\s+\w{3}\s+\d+\)/.test(text) ||
+    text.includes('Index of new news items:') ||
+    text.includes('Index of the last few news items:');
+  
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
@@ -551,6 +556,28 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         });
       }
     }
+  } else if (isNewsIndexOutput) {
+    // Skip the header line
+    if (text.includes('Index of new news items:') || text.includes('Index of the last few news items:')) {
+      // This is the header, don't process it
+    } else {
+      // Parse news entries: "NNNN (Day, Mon DD) Description"
+      const newsRegex = /^(\d{4})\s+\(/;
+      const newsMatch = newsRegex.exec(text);
+      if (newsMatch) {
+        const newsNumber = newsMatch[1];
+        
+        if (onCommandClick) {
+          matches.push({
+            type: 'command',
+            match: newsNumber,
+            content: `news ${newsNumber}`,
+            index: 0,
+            length: newsNumber.length
+          });
+        }
+      }
+    }
   } else {
     // Find URLs (not in special output formats)
     URL_REGEX.lastIndex = 0;
@@ -567,7 +594,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput && !isJournalOutput && !isSoughtOutput && !isBestListOutput) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput && !isJournalOutput && !isSoughtOutput && !isBestListOutput && !isNewsIndexOutput) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
