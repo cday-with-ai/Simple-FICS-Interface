@@ -202,6 +202,10 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
      !text.match(/^\d{4}\s+\(/) && // Exclude news items
      !text.match(/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/)); // Exclude sought output
   
+  // Check if this is sought/seek list output
+  const isSoughtOutput = /^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text) &&
+    !text.includes('games displayed');
+  
   // Check if this looks like games command output
   const isGamesOutput = text.includes('games displayed') || 
     (/^\s*\d{1,3}\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text) &&
@@ -240,10 +244,6 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // Check if this is journal output
   const isJournalOutput = /^\s*%\d+:\s+\w+/.test(text) ||
     /Journal for \w+:/.test(text);
-  
-  // Check if this is sought/seek list output
-  const isSoughtOutput = /^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text) &&
-    !text.includes('games displayed');
   
   // Check if this is best list output
   const isBestListOutput = /^\s*\d+\.\s+\w+\s+\d{4}/.test(text) ||
