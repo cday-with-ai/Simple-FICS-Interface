@@ -222,8 +222,8 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     !text.match(/^\d+\s+\(/) && // Not any numbered list with parentheses
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
-  // Skip all special processing for "told" messages and user input
-  if (isToldMessage || looksLikeUserInput) {
+  // Skip all special processing for "told" messages and user input (but not news items)
+  if ((isToldMessage || looksLikeUserInput) && !isNewsIndexOutput) {
     // Only process URLs for these messages
     URL_REGEX.lastIndex = 0;
     let urlMatch;
