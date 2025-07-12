@@ -62,6 +62,7 @@ describe('PreferencesStore', () => {
                 boardTheme: 'brown',
                 pieceSet: 'standard',
                 showCoordinates: true,
+                showLegalMoves: true,
                 boardFlipped: false,
                 animateMoves: true,
                 animationDuration: 250,
