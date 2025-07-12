@@ -213,14 +213,53 @@ export class VariantRules {
      * Generates a Chess960 starting position
      */
     static generateChess960Position(): string {
-        // Simplified Chess960 generation
-        // Full implementation would follow these rules:
+        // Generate a random Chess960 position following these rules:
         // 1. King must be between rooks
         // 2. Bishops must be on opposite colors
         // 3. All 960 positions should be equally likely
 
-        // For now, return position 518 (standard chess starting position)
-        return 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        const backRank = ['', '', '', '', '', '', '', ''];
+        
+        // Place bishops on opposite colored squares
+        const lightSquares = [1, 3, 5, 7]; // b, d, f, h files
+        const darkSquares = [0, 2, 4, 6];  // a, c, e, g files
+        
+        const lightBishopSquare = lightSquares[Math.floor(Math.random() * lightSquares.length)];
+        const darkBishopSquare = darkSquares[Math.floor(Math.random() * darkSquares.length)];
+        
+        backRank[lightBishopSquare] = 'B';
+        backRank[darkBishopSquare] = 'B';
+        
+        // Find empty squares for remaining pieces
+        const emptySquares = [];
+        for (let i = 0; i < 8; i++) {
+            if (backRank[i] === '') {
+                emptySquares.push(i);
+            }
+        }
+        
+        // Place queen randomly on one of the remaining squares
+        const queenSquare = emptySquares.splice(Math.floor(Math.random() * emptySquares.length), 1)[0];
+        backRank[queenSquare] = 'Q';
+        
+        // Place knights randomly on two of the remaining squares
+        const knight1Square = emptySquares.splice(Math.floor(Math.random() * emptySquares.length), 1)[0];
+        const knight2Square = emptySquares.splice(Math.floor(Math.random() * emptySquares.length), 1)[0];
+        backRank[knight1Square] = 'N';
+        backRank[knight2Square] = 'N';
+        
+        // The remaining three squares are for rook-king-rook
+        // King must be between rooks
+        emptySquares.sort((a, b) => a - b); // Sort remaining squares
+        backRank[emptySquares[0]] = 'R';   // First rook
+        backRank[emptySquares[1]] = 'K';   // King (middle)
+        backRank[emptySquares[2]] = 'R';   // Second rook
+        
+        // Create FEN string
+        const whiteBackRank = backRank.join('');
+        const blackBackRank = backRank.map(piece => piece.toLowerCase()).join('');
+        
+        return `${blackBackRank}/pppppppp/8/8/8/8/PPPPPPPP/${whiteBackRank} w KQkq - 0 1`;
     }
 
     /**
