@@ -211,13 +211,15 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // User messages typically don't have special FICS formatting
   // Be more specific to avoid catching FICS output
   const looksLikeUserInput = text.length > 10 && // Not too short
-    !text.match(/^[\s\d]/) && // Doesn't start with whitespace or numbers
+    !text.match(/^\s/) && // Doesn't start with whitespace
     !text.match(/^Channel\s+\d+/) && // Not a channel list
     !text.match(/^[A-Z]/) && // FICS output often starts with capitals
     !text.match(/^\w+\s+\(\d+\)/) && // Not a player (rating) format
     !text.match(/^Game\s+\d+/) && // Not a game message
     !text.includes('displayed') && // Not a list footer
     !text.match(/^--/) && // Not a list header
+    !text.match(/^\d{4}\s+\(\w{3},/) && // Not a news item
+    !text.match(/^\d+\s+\(/) && // Not any numbered list with parentheses
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
   // Skip all special processing for "told" messages and user input
