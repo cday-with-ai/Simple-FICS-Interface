@@ -45,8 +45,8 @@ const COMMAND_REGEX = /["']([^"']+)["']/g;
 
 // Regex to match player names in seek messages
 // Matches: PlayerName (rating) seeking ... or PlayerName(C) (rating) seeking ...
-// Rating can be numbers or ++++ for unrated guests
-const SEEK_PLAYER_REGEX = /^(\w+(?:\([A-Z]\))?) \((?:\+{4}|\+*\d+)\) seeking/;
+// Rating can be numbers, ++++ for unrated guests, or ---- for provisional
+const SEEK_PLAYER_REGEX = /^(\w+(?:\([A-Z]\))?) \((?:\+{4}|-{4}|\+*\d+)\) seeking/;
 
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
   // Find all matches (URLs, commands, and player names) with their positions
