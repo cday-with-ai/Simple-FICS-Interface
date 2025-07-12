@@ -70,6 +70,9 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // Check if this looks like channel member list (in command output)
   const isChannelOutput = /^\s*Channel\s+\d+\s+"[^"]+":/.test(text);
   
+  // Check if this looks like moves command output
+  const isMovesOutput = /\w+\s+\(\d+\)\s+vs\.\s+\w+\s+\(\d+\)/.test(text);
+  
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
@@ -152,8 +155,37 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         });
       }
     }
+  } else if (isMovesOutput) {
+    // Parse player names from moves header: player1 (rating) vs. player2 (rating)
+    const movesHeaderRegex = /(\w+)\s+\(\d+\)\s+vs\.\s+(\w+)\s+\(\d+\)/;
+    const headerMatch = movesHeaderRegex.exec(text);
+    
+    if (headerMatch) {
+      const [fullMatch, player1, player2] = headerMatch;
+      const matchStart = headerMatch.index;
+      
+      // Add first player
+      const player1Index = matchStart + fullMatch.indexOf(player1);
+      matches.push({
+        type: 'player',
+        match: player1,
+        content: player1,
+        index: player1Index,
+        length: player1.length
+      });
+      
+      // Add second player
+      const player2Index = matchStart + fullMatch.indexOf(player2);
+      matches.push({
+        type: 'player',
+        match: player2,
+        content: player2,
+        index: player2Index,
+        length: player2.length
+      });
+    }
   } else {
-    // Find URLs (not in who/games/channel output)
+    // Find URLs (not in who/games/channel/moves output)
     URL_REGEX.lastIndex = 0;
     let urlMatch;
     while ((urlMatch = URL_REGEX.exec(text)) !== null) {
@@ -168,7 +200,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
