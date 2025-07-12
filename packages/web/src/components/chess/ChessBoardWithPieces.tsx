@@ -125,25 +125,41 @@ const Coordinate = styled.div<{ $type: 'file' | 'rank'; $isLight: boolean }>`
   `}
 `;
 
-const DraggingPiece = styled.div<{ $x: number; $y: number; $size: number }>`
+const DraggingPiece = styled.div.attrs<{ $x: number; $y: number; $size: number }>(props => ({
+  style: {
+    transform: `translate(calc(${props.$x}px - 50%), calc(${props.$y}px - 50%))`,
+    width: `${props.$size}px`,
+    height: `${props.$size}px`
+  }
+}))<{ $x: number; $y: number; $size: number }>`
   position: fixed;
   left: 0;
   top: 0;
-  width: ${props => props.$size}px;
-  height: ${props => props.$size}px;
   pointer-events: none;
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: translate(
-    calc(${props => props.$x}px - 50%), 
-    calc(${props => props.$y}px - 50%)
-  );
   will-change: transform;
 `;
 
-const AnimatingPieceWrapper = styled.div<{ 
+const AnimatingPieceWrapper = styled.div.attrs<{ 
+  $fromX: number; 
+  $fromY: number; 
+  $toX: number; 
+  $toY: number; 
+  $progress: number;
+  $size: number;
+}>(props => ({
+  style: {
+    transform: `translate(
+      ${props.$fromX + (props.$toX - props.$fromX) * props.$progress}px,
+      ${props.$fromY + (props.$toY - props.$fromY) * props.$progress}px
+    )`,
+    width: `${props.$size}px`,
+    height: `${props.$size}px`
+  }
+}))<{ 
   $fromX: number; 
   $fromY: number; 
   $toX: number; 
@@ -154,17 +170,11 @@ const AnimatingPieceWrapper = styled.div<{
   position: absolute;
   left: 0;
   top: 0;
-  width: ${props => props.$size}px;
-  height: ${props => props.$size}px;
   pointer-events: none;
   z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: translate(
-    ${props => props.$fromX + (props.$toX - props.$fromX) * props.$progress}px,
-    ${props => props.$fromY + (props.$toY - props.$fromY) * props.$progress}px
-  );
   will-change: transform;
 `;
 

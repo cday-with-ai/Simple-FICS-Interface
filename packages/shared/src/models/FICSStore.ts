@@ -231,7 +231,7 @@ export class FICSStore {
     }
 
     private handleMessage(data: string) {
-        // console.log('FICS message received:', data);
+        console.log('FICS message received:', data);
         
         runInAction(() => {
             this.lastPing = Date.now();

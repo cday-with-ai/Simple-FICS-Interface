@@ -444,6 +444,15 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
         // Default to observing if we have a game but unclear state
         return 'observing';
     }, [gameStore.currentGame, gameStore.gameRelation]);
+    
+    // Determine if captured pieces should be shown
+    const showCapturedPieces = useMemo(() => {
+        // Always show for Crazyhouse variant
+        if (gameStore.currentGame?.variant === 'crazyhouse') return true;
+        
+        // Otherwise, use preference
+        return preferencesStore.preferences.showCapturedPieces;
+    }, [gameStore.currentGame?.variant, preferencesStore.preferences.showCapturedPieces]);
 
     // Handle moves
     const handleMove = useCallback((from: string, to: string, promotion?: string) => {
@@ -755,20 +764,22 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                             </ExtraCapturedSquare>
                         </BoardColumn>
 
-                        <PortraitCapturedPiecesContainer $squareSize={boardSize ? boardSize / 8 : 0}>
-                            <CapturedPiecesColumn $squareSize={boardSize ? boardSize / 8 : 0}>
-                                <CapturedPieces
-                                    orientation="vertical"
-                                    isWhitePieces={boardFlipped}
-                                    boardSize={boardSize}
-                                />
-                                <CapturedPieces
-                                    orientation="vertical"
-                                    isWhitePieces={!boardFlipped}
-                                    boardSize={boardSize}
-                                />
-                            </CapturedPiecesColumn>
-                        </PortraitCapturedPiecesContainer>
+                        {showCapturedPieces && (
+                            <PortraitCapturedPiecesContainer $squareSize={boardSize ? boardSize / 8 : 0}>
+                                <CapturedPiecesColumn $squareSize={boardSize ? boardSize / 8 : 0}>
+                                    <CapturedPieces
+                                        orientation="vertical"
+                                        isWhitePieces={boardFlipped}
+                                        boardSize={boardSize}
+                                    />
+                                    <CapturedPieces
+                                        orientation="vertical"
+                                        isWhitePieces={!boardFlipped}
+                                        boardSize={boardSize}
+                                    />
+                                </CapturedPiecesColumn>
+                            </PortraitCapturedPiecesContainer>
+                        )}
                     </BoardAndExtrasContainer>
                 </PortraitBoardSection>
             </ChessSection>
@@ -865,11 +876,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                             </BoardArea>
 
                             <PlayersColumn>
-                                <CapturedPieces
-                                    orientation="horizontal"
-                                    isWhitePieces={isTopPlayerWhite}
-                                    boardSize={boardSize}
-                                />
+                                {showCapturedPieces && (
+                                    <CapturedPieces
+                                        orientation="horizontal"
+                                        isWhitePieces={isTopPlayerWhite}
+                                        boardSize={boardSize}
+                                    />
+                                )}
                                 
                                 <PlayerWithClock>
                                     <ObservableClock
@@ -968,11 +981,13 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     />
                                 </PlayerWithClock>
                                 
-                                <CapturedPieces
-                                    orientation="horizontal"
-                                    isWhitePieces={!isTopPlayerWhite}
-                                    boardSize={boardSize}
-                                />
+                                {showCapturedPieces && (
+                                    <CapturedPieces
+                                        orientation="horizontal"
+                                        isWhitePieces={!isTopPlayerWhite}
+                                        boardSize={boardSize}
+                                    />
+                                )}
                             </PlayersColumn>
                         </LandscapeBoardSection>
                     </ChessSection>

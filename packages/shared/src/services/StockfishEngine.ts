@@ -239,7 +239,10 @@ class StockfishEngine {
      * Handle messages from the engine
      */
     private handleMessage(line: string): void {
-        console.log('Stockfish message:', line);
+        // Only log important messages, not every analysis update
+        if (!line.startsWith('info ') && !line.startsWith('bestmove ')) {
+            console.log('Stockfish message:', line);
+        }
 
         // Handle UCI handshake
         if (line === 'uciok') {
@@ -316,16 +319,11 @@ class StockfishEngine {
      * Analyze a position
      */
     analyzePosition(fen: string, options: AnalysisOptions = {}): void {
-        console.log("Call to analyzePosition with fen:", fen);
-        console.log("Engine ready state:", {isReady: this.isReady, uciReady: this.uciReady, hasEngine: !!this.engine});
-
         if (!this.isReady || !this.uciReady) {
-            console.log('Engine not ready, storing pending analysis');
             this.pendingAnalysis = {fen, options};
             return;
         }
         if (this.engine) {
-            console.log('Sending UCI commands for analysis...');
             this.engine.uci('stop');
             this.engine.uci('setoption name MultiPV value 1');
             this.engine.uci(`position fen ${fen}`);
@@ -339,13 +337,11 @@ class StockfishEngine {
      * Stop current analysis
      */
     stopAnalysis(): void {
-        console.log("Call to stop analysis.");
         if (this.engine) {
             // Clear any pending analysis first
             this.pendingAnalysis = null;
             // Send stop command
             this.engine.uci('stop');
-            console.log("Sent stop command to engine");
         }
     }
 

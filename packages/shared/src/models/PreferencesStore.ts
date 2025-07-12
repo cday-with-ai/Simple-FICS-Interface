@@ -29,6 +29,9 @@ export interface Preferences {
     chessOrientation: ChessOrientation;
     autoViewMode: boolean; // Whether to automatically select view mode based on screen size
 
+    // Game display preferences
+    showCapturedPieces: boolean;
+    
     // Sound preferences
     enableSounds: boolean;
     moveSound: boolean;
@@ -72,6 +75,7 @@ const DEFAULT_PREFERENCES: Preferences = {
     viewMode: 'chess-and-chat',
     chessOrientation: 'landscape',
     autoViewMode: true,
+    showCapturedPieces: false, // Off by default
     enableSounds: true,
     moveSound: true,
     captureSound: true,

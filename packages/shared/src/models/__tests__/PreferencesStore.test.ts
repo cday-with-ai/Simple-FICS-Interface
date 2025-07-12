@@ -73,6 +73,7 @@ describe('PreferencesStore', () => {
                 viewMode: 'chess-and-chat',
                 chessOrientation: 'landscape',
                 autoViewMode: true,
+                showCapturedPieces: false,
                 enableSounds: true,
                 moveSound: true,
                 captureSound: true,
