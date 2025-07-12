@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
+import { VariantRules } from '@fics/shared/src/services/ChessAPI/ChessAPI.variants';
 
 interface FENDialogProps {
   isOpen: boolean;
@@ -161,12 +162,13 @@ export const FENDialog: React.FC<FENDialogProps> = observer(({ isOpen, onClose }
     }
   }, [fen, gameStore, onClose]);
   
-  const handlePreset = useCallback((presetFen: string) => {
-    setFen(presetFen);
+  const handlePreset = useCallback((presetFen: string | (() => string)) => {
+    const actualFen = typeof presetFen === 'function' ? presetFen() : presetFen;
+    setFen(actualFen);
     setError('');
     // Immediately load the preset position
     try {
-      const success = gameStore.loadPosition(presetFen);
+      const success = gameStore.loadPosition(actualFen);
       if (success) {
         onClose();
         setFen('');
@@ -186,8 +188,10 @@ export const FENDialog: React.FC<FENDialogProps> = observer(({ isOpen, onClose }
     }
   }, [fen, handleSetPosition, onClose]);
   
-  // Preset position
+  // Preset positions
   const presets = [
+    { name: 'Starting Position', fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' },
+    { name: 'Random Chess960', fen: () => VariantRules.generateChess960Position() },
     { name: 'Sicilian Dragon', fen: 'r1bqkb1r/pp2pp1p/2np1np1/8/3PP3/2N2N2/PPP2PPP/R1BQKB1R w KQkq - 0 7' },
   ];
   
