@@ -356,9 +356,8 @@ export class FICSStore {
                         
                         if (this.credentials) {
                             this.sendCommand(this.credentials.username);
-                        } else {
-                            this.sendCommand('guest');
                         }
+                        // Don't auto-login as guest - wait for user input
                         break;
                         
                     case 'password':

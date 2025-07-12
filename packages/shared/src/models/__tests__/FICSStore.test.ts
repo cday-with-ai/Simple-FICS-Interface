@@ -130,7 +130,7 @@ describe('FICSStore', () => {
             expect(sendCommandSpy).toHaveBeenCalledWith('testpass');
         });
 
-        it('should connect as guest', async () => {
+        it('should not auto-login when no credentials provided', async () => {
             const sendCommandSpy = jest.spyOn(ficsStore, 'sendCommand');
 
             ficsStore.connect();
@@ -144,7 +144,11 @@ describe('FICSStore', () => {
                 }));
             }
 
-            expect(sendCommandSpy).toHaveBeenCalledWith('guest');
+            // Should NOT send any command when no credentials provided
+            expect(sendCommandSpy).not.toHaveBeenCalled();
+            
+            // Login state should be set to logging-in
+            expect(ficsStore['loginState']).toBe('logging-in');
         });
 
         it('should handle connection errors', () => {
