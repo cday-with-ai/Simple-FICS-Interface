@@ -108,6 +108,12 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     // Also match lines that are part of a list (multiple player names in columns)
     /^(?:\s*\w+\s+){2,}\w+\s*$/.test(text);
   
+  // Check if this is a finger note line (numbered lines with player interactions)
+  const isFingerNote = /^\s*\d+:\s*\w+(?:\[\d+\])?\s+(?:tells you:|says:|at\s+)/.test(text);
+  
+  // Check if this is a finger header
+  const isFingerHeader = /^\s*Finger of\s+\w+/.test(text);
+  
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
@@ -327,6 +333,39 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         });
       }
     }
+  } else if (isFingerNote) {
+    // Parse player names from finger notes
+    // Pattern 1: "N: PlayerName tells you:"
+    // Pattern 2: "N: PlayerName[channel] says:"
+    // Pattern 3: "N: PlayerName at date:"
+    const noteRegex = /^\s*\d+:\s*(\w+)(?:\[\d+\])?\s+(?:tells you:|says:|at\s+)/;
+    const noteMatch = noteRegex.exec(text);
+    if (noteMatch) {
+      const playerName = noteMatch[1];
+      const playerIndex = text.indexOf(playerName);
+      matches.push({
+        type: 'player',
+        match: playerName,
+        content: playerName,
+        index: playerIndex,
+        length: playerName.length
+      });
+    }
+  } else if (isFingerHeader) {
+    // Parse player name from "Finger of playerName(*):" header
+    const headerRegex = /^\s*Finger of\s+(\w+)/;
+    const headerMatch = headerRegex.exec(text);
+    if (headerMatch) {
+      const playerName = headerMatch[1];
+      const playerIndex = text.indexOf(playerName);
+      matches.push({
+        type: 'player',
+        match: playerName,
+        content: playerName,
+        index: playerIndex,
+        length: playerName.length
+      });
+    }
   } else {
     // Find URLs (not in special output formats)
     URL_REGEX.lastIndex = 0;
@@ -343,7 +382,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
