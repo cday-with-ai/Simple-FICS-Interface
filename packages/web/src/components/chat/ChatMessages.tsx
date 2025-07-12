@@ -320,23 +320,12 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
                 {isYou ? group.sender : <PlayerName name={group.sender} />}
               </Sender>
               <Content>
-                {group.messages.map((msg, i) => {
-                  // For channel messages with newlines (continuations), treat as single block
-                  if (activeTab.type === 'channel' && msg.content.includes('\n')) {
-                    return (
-                      <React.Fragment key={msg.id}>
-                        {i > 0 && '\n'}
-                        {msg.content}
-                      </React.Fragment>
-                    );
-                  }
-                  return (
-                    <React.Fragment key={msg.id}>
-                      {i > 0 && '\n'}
-                      <LinkifiedText text={msg.content} />
-                    </React.Fragment>
-                  );
-                })}
+                {group.messages.map((msg, i) => (
+                  <React.Fragment key={msg.id}>
+                    {i > 0 && '\n'}
+                    <LinkifiedText text={msg.content} />
+                  </React.Fragment>
+                ))}
               </Content>
             </MessageRow>
           </MessageGroup>

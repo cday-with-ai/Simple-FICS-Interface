@@ -90,6 +90,62 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     length: number;
   }> = [];
   
+  // If we're not in command mode (no onCommandClick), only process URLs
+  const isCommandMode = !!onCommandClick;
+  
+  // Early return for non-command mode - only process URLs
+  if (!isCommandMode) {
+    // Find URLs only
+    URL_REGEX.lastIndex = 0;
+    let urlMatch;
+    while ((urlMatch = URL_REGEX.exec(text)) !== null) {
+      matches.push({
+        type: 'url',
+        match: urlMatch[0],
+        content: urlMatch[0],
+        index: urlMatch.index,
+        length: urlMatch[0].length
+      });
+    }
+    
+    // Build the result with just URLs
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    
+    matches.forEach((match, i) => {
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      
+      let href = match.content;
+      if (!match.content.match(/^(?:https?|ftp):\/\//)) {
+        if (match.content.includes('.')) {
+          href = 'https://' + match.content;
+        }
+      }
+      
+      parts.push(
+        <Link
+          key={`url-${i}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {match.content}
+        </Link>
+      );
+      
+      lastIndex = match.index + match.length;
+    });
+    
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
+    return <span className={className}>{parts.length > 0 ? parts : text}</span>;
+  }
+  
   // Check if this looks like a who command output
   const isWhoOutput = text.includes('players displayed') || 
     /^\s*(?:\d{3,4}|----|\+{4})/.test(text);
