@@ -82,7 +82,7 @@ export const PromotionDialog: React.FC<PromotionDialogProps> = ({
         {pieces.map(piece => (
           <PieceOption
             key={piece}
-            onClick={() => onSelect(piece)}
+            onClick={() => onSelect(piece.toLowerCase())}
           >
             <ChessPiece piece={getPieceNotation(piece)} size={50} />
           </PieceOption>
