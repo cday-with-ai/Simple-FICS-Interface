@@ -232,8 +232,8 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       });
     }
     
-    // Pattern 2: "Game N (player1 vs. player2)..."
-    const vsRegex = /Game \d+\s+\((\w+)\s+vs\.\s+(\w+)\)/;
+    // Pattern 2: "Game N (player1 vs. player2)..." - note the space before parentheses
+    const vsRegex = /Game \d+\s*\((\w+)\s+vs\.\s+(\w+)\)/;
     const vsMatch = vsRegex.exec(text);
     if (vsMatch) {
       const [fullMatch, player1, player2] = vsMatch;
