@@ -19,7 +19,7 @@ function initECO(): boolean {
         lookupByFenMap.set(o.fen, `${o.eco} ${o.openingName}`);
         lookupByMovesMap.set(o.moves, `${o.eco} ${o.openingName}`);
     });
-    console.log("ECO database initialized with " + lookupArray.length + " openings");
+    // ECO database initialized
     return true;
 }
 

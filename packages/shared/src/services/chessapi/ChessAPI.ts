@@ -726,7 +726,6 @@ export class ChessAPI {
             // The color that made the capture gets the piece
             const capturingColor = this.activeColor;
             this.capturedPieces[capturingColor].push(capturedType);
-            console.log(`Captured ${capturedType} by ${capturingColor}. Total captured:`, this.capturedPieces);
         }
 
         // Switch active color
@@ -856,7 +855,6 @@ export class ChessAPI {
      */
     getCapturedPieces(color: Color): PieceType[] {
         const pieces = [...this.capturedPieces[color]];
-        console.log(`getCapturedPieces(${color}):`, pieces);
         return pieces;
     }
 
