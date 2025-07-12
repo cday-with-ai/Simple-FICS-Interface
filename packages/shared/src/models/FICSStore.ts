@@ -6,6 +6,7 @@ import {GameStart, GameEnd, MovesList} from '../services/FicsProtocol.types';
 interface RootStore {
     gameStore: any;
     chatStore: any;
+    soundStore?: any;
 }
 
 export interface FICSUser {
@@ -402,6 +403,8 @@ export class FICSStore {
 
                     case 'gameStart':
                         this.handleGameStart(message.data);
+                        // Play start sound when a game starts (playing or observing)
+                        this.rootStore?.soundStore?.playStart();
                         break;
 
                     case 'channelTell':
@@ -472,6 +475,8 @@ export class FICSStore {
 
                     case 'gameEnd':
                         this.handleGameEnd(message.data);
+                        // Play end sound when a game ends
+                        this.rootStore?.soundStore?.playEnd();
                         break;
                         
                     case 'unobserve':
@@ -498,13 +503,48 @@ export class FICSStore {
                             timestamp: new Date(),
                             type: 'system'
                         });
+                        // Play illegal move sound
+                        this.rootStore?.soundStore?.playIllegal();
                         break;
 
+                    case 'drawOffer':
+                        // Handle draw offer
+                        this.rootStore?.chatStore.addMessage('console', {
+                            channel: 'console',
+                            sender: 'FICS',
+                            content: `${message.data.username} offers you a draw.`,
+                            timestamp: new Date(),
+                            type: 'system'
+                        });
+                        // Play draw sound
+                        this.rootStore?.soundStore?.playDraw();
+                        break;
+                    
                     case 'raw':
                     default:
                         // Check if it's a seek or game list message
                         if (message.data) {
                             this.handleSeekOrGame(message.data);
+                            
+                            // Check for specific patterns in raw messages
+                            const msgData = message.data.toLowerCase();
+                            
+                            // Check for abort
+                            if (msgData.includes('abort') && msgData.includes('request')) {
+                                this.rootStore?.soundStore?.playAbort();
+                            }
+                            // Check for match/challenge requests
+                            else if (msgData.includes('challenge') || 
+                                     (msgData.includes('match') && msgData.includes('request'))) {
+                                this.rootStore?.soundStore?.playChallenge();
+                            }
+                            // Check for notifications/alerts
+                            else if (msgData.includes('notification') || 
+                                     msgData.includes('alert') ||
+                                     msgData.includes('arrived') ||
+                                     msgData.includes('departed')) {
+                                this.rootStore?.soundStore?.playAlert();
+                            }
                         }
                         
                         // Route raw messages to console

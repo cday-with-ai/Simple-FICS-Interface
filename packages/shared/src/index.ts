@@ -4,6 +4,7 @@ export {FICSStore} from './models/FICSStore';
 export {ChatStore} from './models/ChatStore';
 export {PreferencesStore} from './models/PreferencesStore';
 export {AnalysisStore} from './models/AnalysisStore';
+export {SoundStore} from './models/SoundStore';
 export {RootStore, createRootStore} from './models/RootStore';
 
 // Services
@@ -22,6 +23,8 @@ export type {
 } from './services/FicsProtocol';
 export {default as StockfishEngine} from './services/StockfishEngine';
 export type {AnalysisResult, AnalysisOptions, AnalysisCallback} from './services/StockfishEngine';
+export {SoundService, getSoundService} from './services/SoundService';
+export type {SoundType, SoundServiceInterface} from './services/SoundService';
 
 // Contexts (React integration)
 export {
@@ -31,7 +34,8 @@ export {
     useFICSStore,
     useChatStore,
     usePreferencesStore,
-    useAnalysisStore
+    useAnalysisStore,
+    useSoundStore
 } from './contexts/RootStoreContext';
 
 // Types

@@ -8,6 +8,7 @@ import {lookupFromMoveList, lookupFromFEN} from '../services/Eco';
 interface RootStore {
     ficsStore: any;
     preferencesStore?: any;
+    soundStore?: any;
 }
 
 export interface Player {
@@ -136,6 +137,13 @@ export class GameStore {
                     this._positionHistory.push(this._position);
                     // Update captured pieces
                     this.updateCapturedPieces();
+                    
+                    // Play move sound - check if it's a capture
+                    if (move.san.includes('x')) {
+                        this.rootStore?.soundStore?.playCapture();
+                    } else {
+                        this.rootStore?.soundStore?.playMove();
+                    }
                 });
 
                 // Send move to FICS if connected
@@ -164,6 +172,13 @@ export class GameStore {
                     this._positionHistory.push(this._position);
                     // Update captured pieces
                     this.updateCapturedPieces();
+                    
+                    // Play move sound - check if it's a capture
+                    if (move.san.includes('x')) {
+                        this.rootStore?.soundStore?.playCapture();
+                    } else {
+                        this.rootStore?.soundStore?.playMove();
+                    }
                 });
                 return true;
             }
@@ -280,6 +295,13 @@ export class GameStore {
                             this.moveHistory.push(move);
                             this.currentMoveIndex = this.moveHistory.length - 1;
                             console.log('Added move to history:', move.san, 'Total moves:', this.moveHistory.length);
+                            
+                            // Play move sound - check if it's a capture
+                            if (style12.prettyMove.includes('x')) {
+                                this.rootStore?.soundStore?.playCapture();
+                            } else {
+                                this.rootStore?.soundStore?.playMove();
+                            }
                         }
                     }
                 }
@@ -744,6 +766,13 @@ export class GameStore {
                     if (move) {
                         this.moveHistory.push(move);
                         this._positionHistory.push(this.chessBoard.getFen());
+                        
+                        // Play move sound when loading move history
+                        if (move.san.includes('x')) {
+                            this.rootStore?.soundStore?.playCapture();
+                        } else {
+                            this.rootStore?.soundStore?.playMove();
+                        }
                     }
                 } catch (error) {
                     console.error('Error applying move from list:', moveStr, error);

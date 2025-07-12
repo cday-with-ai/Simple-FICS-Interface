@@ -35,3 +35,4 @@ export const useFICSStore = () => useRootStore().ficsStore;
 export const useChatStore = () => useRootStore().chatStore;
 export const usePreferencesStore = () => useRootStore().preferencesStore;
 export const useAnalysisStore = () => useRootStore().analysisStore;
+export const useSoundStore = () => useRootStore().soundStore;

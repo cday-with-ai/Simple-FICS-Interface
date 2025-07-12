@@ -4,6 +4,7 @@ import {FICSStore} from './FICSStore';
 import {ChatStore} from './ChatStore';
 import {PreferencesStore} from './PreferencesStore';
 import {AnalysisStore} from './AnalysisStore';
+import {SoundStore} from './SoundStore';
 
 export class RootStore {
     gameStore: GameStore;
@@ -11,6 +12,7 @@ export class RootStore {
     chatStore: ChatStore;
     preferencesStore: PreferencesStore;
     analysisStore: AnalysisStore;
+    soundStore: SoundStore;
 
     constructor() {
         makeAutoObservable(this, {
@@ -18,7 +20,8 @@ export class RootStore {
             ficsStore: false,
             chatStore: false,
             preferencesStore: false,
-            analysisStore: false
+            analysisStore: false,
+            soundStore: false
         });
 
         this.gameStore = new GameStore();
@@ -26,6 +29,7 @@ export class RootStore {
         this.chatStore = new ChatStore();
         this.preferencesStore = new PreferencesStore();
         this.analysisStore = new AnalysisStore();
+        this.soundStore = new SoundStore();
 
         // Set the root store reference after construction
         (this.gameStore as any).rootStore = this;
@@ -33,6 +37,10 @@ export class RootStore {
         (this.chatStore as any).rootStore = this;
         (this.preferencesStore as any).rootStore = this;
         (this.analysisStore as any).rootStore = this;
+        (this.soundStore as any).rootStore = this;
+        
+        // Initialize sound store after all stores are connected
+        this.soundStore.initialize();
     }
 
     dispose() {
