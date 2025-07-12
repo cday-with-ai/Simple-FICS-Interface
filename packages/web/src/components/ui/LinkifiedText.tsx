@@ -70,6 +70,9 @@ const VALID_FICS_COMMANDS = new Set([
 // Rating can be numbers, ++++ for unrated guests, or ---- for provisional
 const SEEK_PLAYER_REGEX = /^(\w+(?:\([A-Z]\))?) \((?:\+{4}|-{4}|\+*\d+)\) seeking/;
 
+// Store the last seen history player name
+let lastHistoryPlayer: string | null = null;
+
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
   // Find all matches (URLs, commands, and player names) with their positions
   const matches: Array<{
@@ -376,6 +379,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     const headerMatch = headerRegex.exec(text);
     if (headerMatch) {
       const playerName = headerMatch[1];
+      lastHistoryPlayer = playerName; // Store for use in subsequent lines
       const playerIndex = text.indexOf(playerName);
       matches.push({
         type: 'player',
@@ -391,8 +395,17 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       if (historyMatch) {
         const [fullMatch, indent, gameNum, opponent] = historyMatch;
         
-        // Skip game numbers for now - we would need the player name from the header
-        // to construct the correct "examine playerName gameNum" command
+        // Add clickable game number if we have the player name
+        if (onCommandClick && lastHistoryPlayer) {
+          const gameNumIndex = indent.length;
+          matches.push({
+            type: 'command',
+            match: gameNum + ':',
+            content: `examine ${lastHistoryPlayer} ${gameNum}`,
+            index: gameNumIndex,
+            length: gameNum.length + 1  // Include the colon
+          });
+        }
         
         // Add opponent name
         const opponentIndex = text.indexOf(opponent);
