@@ -171,9 +171,8 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   const isPlayerList = /^(?:Present company includes:|Your arrival was noted by:)/.test(text);
   
   // Check if this is a list output (like censor, noplay, etc.)
-  const isListOutput = /^\s*--\s+\w+\s+list:/.test(text) || 
-    // Also match lines that are part of a list (multiple player names in columns)
-    /^(?:\s*\w+\s+){2,}\w+\s*$/.test(text);
+  // Only match the header line, not content lines (too many false positives)
+  const isListOutput = /^\s*--\s+\w+\s+list:/.test(text);
   
   // Check if this is a finger note line (numbered lines with player interactions)
   const isFingerNote = /^\s*\d+:\s*\w+(?:\[\d+\])?\s+(?:tells you:|says:|at\s+)/.test(text);
@@ -205,8 +204,34 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // Check if this is a notification message
   const isNotificationMessage = /^Notification:\s+\w+\s+has\s+(?:arrived|departed)/.test(text);
   
+  // Check if this is a "told" confirmation message (skip player detection for these)
+  const isToldMessage = /^\(told \d+ players? in channel \d+/.test(text) || /^\(told \w+\)/.test(text);
+  
+  // Check if this looks like user input (not FICS output) - these often get echoed in console
+  // User messages typically don't have special FICS formatting
+  const looksLikeUserInput = !text.match(/^[\s\d\W]/) && // Doesn't start with whitespace, numbers, or symbols
+    !text.includes(':') && // No colons (common in FICS output)
+    !text.match(/^\w+\s+\(\d+\)/) && // Not a player (rating) format
+    !text.match(/^Game\s+\d+/) && // Not a game message
+    text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
+  
+  // Skip all special processing for "told" messages and user input
+  if (isToldMessage || looksLikeUserInput) {
+    // Only process URLs for these messages
+    URL_REGEX.lastIndex = 0;
+    let urlMatch;
+    while ((urlMatch = URL_REGEX.exec(text)) !== null) {
+      matches.push({
+        type: 'url',
+        match: urlMatch[0],
+        content: urlMatch[0],
+        index: urlMatch.index,
+        length: urlMatch[0].length
+      });
+    }
+  }
   // For who output, find player names
-  if (isWhoOutput && !isGamesOutput) {
+  else if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
     const whoPlayerRegex = /(?:^|\s)((?:\d{3,4}|----|\+{4})\s*)([.^:#&]?)([A-Za-z]\w*)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;
     let whoMatch;
