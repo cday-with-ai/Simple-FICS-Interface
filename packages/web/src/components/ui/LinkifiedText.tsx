@@ -93,14 +93,6 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // If we're not in command mode (no onCommandClick), only process URLs
   const isCommandMode = !!onCommandClick;
   
-  // Debug news items
-  if (text.match(/^\d{4}\s+\(/)) {
-    console.log('NEWS DEBUG:', {
-      text: text.substring(0, 50),
-      isCommandMode,
-      onCommandClick: !!onCommandClick
-    });
-  }
   
   // Early return for non-command mode - only process URLs
   if (!isCommandMode) {
@@ -157,7 +149,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   
   // Check if this looks like a who command output
   const isWhoOutput = text.includes('players displayed') || 
-    /^\s*(?:\d{3,4}|----|\+{4})/.test(text);
+    (/^\s*(?:\d{3,4}|----|\+{4})/.test(text) && !text.match(/^\d{4}\s+\(/)); // Exclude news items
   
   // Check if this looks like games command output
   const isGamesOutput = text.includes('games displayed') || 
@@ -231,15 +223,6 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     !text.match(/^\d+\s+\(/) && // Not any numbered list with parentheses
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
-  // Debug for news items
-  if (text.match(/^\d{4}\s+\(/)) {
-    console.log('NEWS PROCESSING:', {
-      isNewsIndexOutput,
-      isToldMessage,
-      looksLikeUserInput,
-      willSkip: (isToldMessage || looksLikeUserInput) && !isNewsIndexOutput
-    });
-  }
   
   // Skip all special processing for "told" messages and user input (but not news items)
   if ((isToldMessage || looksLikeUserInput) && !isNewsIndexOutput) {
@@ -683,7 +666,6 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       }
     }
   } else if (isNewsIndexOutput) {
-    console.log('NEWS SECTION REACHED:', { text: text.substring(0, 50) });
     // Skip the header line
     if (text.includes('Index of new news items:') || text.includes('Index of the last few news items:')) {
       // This is the header, don't process it
@@ -691,12 +673,10 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       // Parse news entries: "NNNN (Day, Mon DD) Description"
       const newsRegex = /^(\d{4})\s+\(/;
       const newsMatch = newsRegex.exec(text);
-      console.log('NEWS MATCH:', newsMatch);
       if (newsMatch) {
         const newsNumber = newsMatch[1];
         
         if (onCommandClick) {
-          console.log('ADDING NEWS COMMAND:', newsNumber);
           matches.push({
             type: 'command',
             match: newsNumber,
@@ -704,8 +684,6 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
             index: 0,
             length: newsNumber.length
           });
-        } else {
-          console.log('NO onCommandClick for news!');
         }
       }
     }
