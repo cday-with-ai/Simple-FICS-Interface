@@ -256,6 +256,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     !text.match(/^\d{4}\s+\(\w{3},/) && // Not a news item
     !text.match(/^\d+\s+\(/) && // Not any numbered list with parentheses
     !text.match(/^\d+:\s+[+-=]/) && // Not a history entry
+    !text.match(/^%\d+:/) && // Not a journal entry
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
   // Debug logging for history and journal detection
