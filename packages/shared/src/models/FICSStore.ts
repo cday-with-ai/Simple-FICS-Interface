@@ -528,20 +528,22 @@ export class FICSStore {
                             // Check for specific patterns in raw messages
                             const msgData = message.data.toLowerCase();
                             
-                            // Check for abort
+                            // Check for abort request
                             if (msgData.includes('abort') && msgData.includes('request')) {
                                 this.rootStore?.soundStore?.playAbort();
                             }
-                            // Check for match/challenge requests
-                            else if (msgData.includes('challenge') || 
-                                     (msgData.includes('match') && msgData.includes('request'))) {
+                            // Check for match/challenge requests - be more specific to avoid false positives
+                            else if (msgData.startsWith('challenge:') || 
+                                     msgData.includes('challenges you') ||
+                                     msgData.includes('your seek has been posted') ||
+                                     (msgData.includes('seeking') && msgData.includes('match'))) {
                                 this.rootStore?.soundStore?.playChallenge();
                             }
-                            // Check for notifications/alerts
-                            else if (msgData.includes('notification') || 
-                                     msgData.includes('alert') ||
-                                     msgData.includes('arrived') ||
-                                     msgData.includes('departed')) {
+                            // Check for notifications/alerts - check for player notifications
+                            else if (msgData.includes('notification:') || 
+                                     msgData.includes('[alert]') ||
+                                     msgData.includes('has arrived.') || 
+                                     msgData.includes('has departed.')) {
                                 this.rootStore?.soundStore?.playAlert();
                             }
                         }
