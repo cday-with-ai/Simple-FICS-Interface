@@ -488,9 +488,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
   // Handle square click
   const handleSquareClick = useCallback((square: string, event?: React.MouseEvent) => {
-    console.log('Square clicked:', square, 'interactive:', interactive, 'piece:', pieces.get(square));
     if (!interactive) {
-      console.log('Click ignored - not interactive');
       return;
     }
 
@@ -563,12 +561,10 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             // Ensure ChessAPI is synchronized with current position
             const currentPosition = gameStore.position;
             if (gameStore.chessBoard.getFen() !== currentPosition) {
-              console.log('Syncing ChessAPI with position:', currentPosition);
               gameStore.chessBoard.loadFen(currentPosition);
             }
             
             const legalMoves = gameStore.chessBoard.getLegalMoves(square);
-            console.log(`Legal moves for ${square}:`, legalMoves.map(m => m.to));
             const moveTargets = new Set(legalMoves.map(move => move.to));
             setPossibleMoves(moveTargets);
           } catch (error) {
@@ -591,7 +587,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
         // Ensure ChessAPI is synchronized with current position
         const currentPosition = gameStore.position;
         if (gameStore.chessBoard.getFen() !== currentPosition) {
-          console.log('Syncing ChessAPI with position:', currentPosition);
           gameStore.chessBoard.loadFen(currentPosition);
         }
         
@@ -604,7 +599,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
           // Only show legal moves if preference is enabled
           if (preferencesStore.preferences.showLegalMoves) {
             const legalMoves = gameStore.chessBoard.getLegalMoves(square);
-            console.log(`Legal moves for ${square}:`, legalMoves.map(m => m.to));
             const moveTargets = new Set(legalMoves.map(move => move.to));
             setPossibleMoves(moveTargets);
           } else {
@@ -612,7 +606,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
           }
         } else {
           // Don't allow selecting opponent's pieces in normal play
-          console.log(`Cannot select opponent's piece ${piece} at ${square} when it's ${currentTurn}'s turn`);
           setPossibleMoves(new Set());
           setSelectedSquare(null);
         }
@@ -625,7 +618,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
   // Unified mouse handler for both click and drag
   const handleMouseDown = useCallback((e: React.MouseEvent, square: string, piece: string | undefined) => {
-    console.log('Mouse down on', square, 'piece:', piece, 'interactive:', interactive);
     if (!interactive) return;
 
     const startX = e.clientX;
@@ -642,7 +634,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       const deltaY = Math.abs(moveEvent.clientY - startY);
       
       if ((deltaX > 3 || deltaY > 3) && piece && !dragStarted) {
-        console.log('Starting drag for', piece, 'at', square);
         hasMoved = true;
         dragStarted = true;
         startDrag(square, piece, moveEvent, actualSquareSize);
@@ -657,20 +648,16 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     };
 
     const handleMouseUp = (upEvent: MouseEvent) => {
-      console.log('Mouse up - dragStarted:', dragStarted, 'hasMoved:', hasMoved, 'draggedPiece:', !!draggedPiece);
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
       
       if (dragStarted) {
-        console.log('Handling drag end');
         // Handle drag end
         handleDragEnd(upEvent, square, piece!);
       } else if (!hasMoved) {
-        console.log('Handling click');
         // Handle click
         handleSquareClick(square, e);
       } else {
-        console.log('Cleaning up drag state (no valid end condition)');
         setDraggedPiece(null);
         setSelectedSquare(null);
         setPossibleMoves(new Set());
@@ -683,7 +670,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
   // Start drag operation
   const startDrag = useCallback((square: string, piece: string, currentEvent: MouseEvent, squareSize: number) => {
-    console.log('startDrag called with:', { square, piece, x: currentEvent.clientX, y: currentEvent.clientY, squareSize });
     setSelectedSquare(square);
     
     // Calculate and show legal moves during drag if preference is enabled
@@ -692,7 +678,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
         // Ensure ChessAPI is synchronized with current position
         const currentPosition = gameStore.position;
         if (gameStore.chessBoard.getFen() !== currentPosition) {
-          console.log('Syncing ChessAPI for drag - position:', currentPosition);
           gameStore.chessBoard.loadFen(currentPosition);
         }
         
@@ -703,7 +688,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
         
         if (isPieceOwnedByCurrentPlayer) {
           const legalMoves = gameStore.chessBoard.getLegalMoves(square);
-          console.log(`Legal moves for drag from ${square}:`, legalMoves.map(m => m.to));
           const moveTargets = new Set(legalMoves.map(move => move.to));
           setPossibleMoves(moveTargets);
         } else {
@@ -724,30 +708,19 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       y: currentEvent.clientY, 
       size: squareSize 
     };
-    console.log('Setting draggedPiece to:', dragState);
     setDraggedPiece(dragState);
   }, [preferencesStore.preferences.showLegalMoves, gameStore]);
 
   // Handle drag end
   const handleDragEnd = useCallback((upEvent: MouseEvent, fromSquare: string, piece: string) => {
-    console.log('=== DRAG END START ===');
-    console.log('Drag end - from:', fromSquare, 'piece:', piece);
-    
     try {
       // Find which square the mouse is over
-      console.log('Finding target square...');
       const elements = document.elementsFromPoint(upEvent.clientX, upEvent.clientY);
       const squareElement = elements.find(el => el.getAttribute('data-square'));
       const targetSquare = squareElement?.getAttribute('data-square');
-      
-      console.log('Target square:', targetSquare);
 
       if (targetSquare && targetSquare !== fromSquare) {
-        console.log('Attempting move from', fromSquare, 'to', targetSquare);
-        
-        console.log('Checking if promotion...');
         if (isPromotion(piece, fromSquare, targetSquare)) {
-          console.log('Promotion move detected');
           // Handle promotion
           const color = piece === piece.toUpperCase() ? 'white' : 'black';
           
@@ -756,15 +729,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             const promotionPiece = preferencesStore.preferences.autoPromotionPiece;
             // If it's not our turn, set as premove
             if (!gameStore.isMyTurn) {
-              console.log('Setting premove with promotion');
               gameStore.setPremove(fromSquare, targetSquare, promotionPiece);
             } else {
-              console.log('Making promotion move');
               setUserMoveInProgress(true);
               onMove?.(fromSquare, targetSquare, promotionPiece);
             }
           } else {
-            console.log('Showing promotion dialog');
             // Show promotion dialog
             setPromotionState({
               from: fromSquare,
@@ -774,29 +744,22 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             });
           }
         } else {
-          console.log('Regular move');
           // If it's not our turn in playing mode, set as premove
           if (gameStore.isPlaying && !gameStore.isMyTurn) {
-            console.log('Setting premove');
             gameStore.setPremove(fromSquare, targetSquare);
           } else {
-            console.log('Making move via onMove');
             setUserMoveInProgress(true);
             onMove?.(fromSquare, targetSquare);
           }
         }
-      } else {
-        console.log('No valid target or same square');
       }
     } catch (error) {
       console.error('Error in handleDragEnd:', error);
     }
 
-    console.log('Cleaning up drag state');
     setDraggedPiece(null);
     setSelectedSquare(null);
     setPossibleMoves(new Set());
-    console.log('=== DRAG END COMPLETE ===');
   }, [onMove, isPromotion, gameStore, preferencesStore.preferences.autoPromotionPiece]);
 
   const squares = useMemo(() => {
