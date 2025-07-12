@@ -285,6 +285,8 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       isHistoryOutput,
       isJournalOutput,
       isSoughtOutput,
+      isWhoOutput,
+      isGamesOutput,
       isCommandMode,
       isToldMessage,
       looksLikeUserInput
@@ -308,6 +310,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   // For who output, find player names
   else if (isWhoOutput && !isGamesOutput) {
+    console.log('Processing as WHO output:', { text: text.substring(0, 50) });
     // Pattern to match player entries: rating/symbols + player name + optional flags
     const whoPlayerRegex = /(?:^|\s)((?:\d{3,4}|----|\+{4})\s*)([.^:#&]?)([A-Za-z]\w*)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;
     let whoMatch;
