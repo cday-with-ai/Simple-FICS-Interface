@@ -180,6 +180,11 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
   const messages = activeTab?.messages || [];
   const currentUsername = ficsStore.username || 'You';
   
+  // Handler for clicking FICS commands in messages
+  const handleCommandClick = (command: string) => {
+    ficsStore.sendCommand(command);
+  };
+  
   // Auto-scroll effect - use a key that changes with messages
   useEffect(() => {
     if (containerRef.current && messages.length > 0) {
@@ -276,7 +281,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
             onMouseEnter={() => onMessageHover?.(message.timestamp)}
             onMouseLeave={() => onMessageHover?.(null)}
           >
-            <LinkifiedText text={message.content} />
+            <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
           </MessageRow>
         ))}
       </MessagesContainer>
@@ -296,7 +301,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
               {group.messages.map((msg, i) => (
                 <React.Fragment key={msg.id}>
                   {i > 0 && '\n'}
-                  <LinkifiedText text={msg.content} />
+                  <LinkifiedText text={msg.content} onCommandClick={handleCommandClick} />
                 </React.Fragment>
               ))}
             </SystemMessage>
@@ -317,7 +322,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
                 {group.messages.map((msg, i) => (
                   <React.Fragment key={msg.id}>
                     {i > 0 && '\n'}
-                    <LinkifiedText text={msg.content} />
+                    <LinkifiedText text={msg.content} onCommandClick={handleCommandClick} />
                   </React.Fragment>
                 ))}
               </Content>

@@ -4,6 +4,7 @@ import styled from 'styled-components';
 interface LinkifiedTextProps {
   text: string;
   className?: string;
+  onCommandClick?: (command: string) => void;
 }
 
 const Link = styled.a`
@@ -22,57 +23,121 @@ const Link = styled.a`
   }
 `;
 
+const CommandLink = styled.span`
+  color: ${props => props.theme.colors.primary};
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color ${props => props.theme.transitions.fast};
+  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  
+  &:hover {
+    color: ${props => props.theme.colors.primaryHover};
+    text-decoration: none;
+  }
+`;
+
 // Comprehensive URL regex that matches various URL formats
 const URL_REGEX = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?|(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
 
-export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className }) => {
+// Regex to match quoted FICS commands like "play 56", 'accept', "decline", etc.
+const COMMAND_REGEX = /["']([^"']+)["']/g;
+
+export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
+  // Find all matches (URLs and commands) with their positions
+  const matches: Array<{
+    type: 'url' | 'command';
+    match: string;
+    content: string;
+    index: number;
+    length: number;
+  }> = [];
+  
+  // Find URLs
+  URL_REGEX.lastIndex = 0;
+  let urlMatch;
+  while ((urlMatch = URL_REGEX.exec(text)) !== null) {
+    matches.push({
+      type: 'url',
+      match: urlMatch[0],
+      content: urlMatch[0],
+      index: urlMatch.index,
+      length: urlMatch[0].length
+    });
+  }
+  
+  // Find commands (only if onCommandClick is provided)
+  if (onCommandClick) {
+    COMMAND_REGEX.lastIndex = 0;
+    let commandMatch;
+    while ((commandMatch = COMMAND_REGEX.exec(text)) !== null) {
+      matches.push({
+        type: 'command',
+        match: commandMatch[0], // Full match with quotes
+        content: commandMatch[1], // Command without quotes
+        index: commandMatch.index,
+        length: commandMatch[0].length
+      });
+    }
+  }
+  
+  // Sort matches by position
+  matches.sort((a, b) => a.index - b.index);
+  
+  // Build the result
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
-  let match;
   
-  // Reset regex state
-  URL_REGEX.lastIndex = 0;
-  
-  while ((match = URL_REGEX.exec(text)) !== null) {
-    const url = match[0];
-    const index = match.index;
-    
-    // Add text before the URL
-    if (index > lastIndex) {
-      parts.push(text.substring(lastIndex, index));
+  matches.forEach((match, i) => {
+    // Add text before this match
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
     }
     
-    // Prepare the href - add protocol if missing
-    let href = url;
-    if (!url.match(/^(?:https?|ftp):\/\//)) {
-      // Check if it looks like a domain (has dots)
-      if (url.includes('.')) {
-        href = 'https://' + url;
+    if (match.type === 'url') {
+      // Prepare the href - add protocol if missing
+      let href = match.content;
+      if (!match.content.match(/^(?:https?|ftp):\/\//)) {
+        // Check if it looks like a domain (has dots)
+        if (match.content.includes('.')) {
+          href = 'https://' + match.content;
+        }
       }
+      
+      parts.push(
+        <Link
+          key={`url-${i}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {match.content}
+        </Link>
+      );
+    } else if (match.type === 'command') {
+      parts.push(
+        <CommandLink
+          key={`cmd-${i}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCommandClick!(match.content);
+          }}
+          title={`Click to send: ${match.content}`}
+        >
+          {match.match}
+        </CommandLink>
+      );
     }
     
-    // Add the link
-    parts.push(
-      <Link
-        key={index}
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {url}
-      </Link>
-    );
-    
-    lastIndex = index + url.length;
-  }
+    lastIndex = match.index + match.length;
+  });
   
   // Add any remaining text
   if (lastIndex < text.length) {
     parts.push(text.substring(lastIndex));
   }
   
-  // If no links were found, return the original text
+  // If no matches were found, return the original text
   if (parts.length === 0) {
     return <span className={className}>{text}</span>;
   }
