@@ -13,6 +13,7 @@ export interface Preferences {
     boardTheme: 'brown' | 'blue' | 'green' | 'purple';
     pieceSet: 'standard' | 'modern' | 'classic';
     showCoordinates: boolean;
+    showLegalMoves: boolean;
     boardFlipped: boolean;
     animateMoves: boolean;
     animationDuration: number; // in milliseconds
@@ -64,6 +65,7 @@ const DEFAULT_PREFERENCES: Preferences = {
     boardTheme: 'brown',
     pieceSet: 'standard',
     showCoordinates: true,
+    showLegalMoves: true,
     boardFlipped: false,
     animateMoves: true,
     animationDuration: 250, // 0.25 seconds

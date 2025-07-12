@@ -557,21 +557,25 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       } else if (piece) {
         // Select a different piece
         setSelectedSquare(square);
-        // Calculate legal moves for the selected piece
-        try {
-          // Ensure ChessAPI is synchronized with current position
-          const currentPosition = gameStore.position;
-          if (gameStore.chessBoard.getFen() !== currentPosition) {
-            console.log('Syncing ChessAPI with position:', currentPosition);
-            gameStore.chessBoard.loadFen(currentPosition);
+        // Calculate legal moves for the selected piece if preference is enabled
+        if (preferencesStore.preferences.showLegalMoves) {
+          try {
+            // Ensure ChessAPI is synchronized with current position
+            const currentPosition = gameStore.position;
+            if (gameStore.chessBoard.getFen() !== currentPosition) {
+              console.log('Syncing ChessAPI with position:', currentPosition);
+              gameStore.chessBoard.loadFen(currentPosition);
+            }
+            
+            const legalMoves = gameStore.chessBoard.getLegalMoves(square);
+            console.log(`Legal moves for ${square}:`, legalMoves.map(m => m.to));
+            const moveTargets = new Set(legalMoves.map(move => move.to));
+            setPossibleMoves(moveTargets);
+          } catch (error) {
+            console.error('Error getting legal moves:', error);
+            setPossibleMoves(new Set());
           }
-          
-          const legalMoves = gameStore.chessBoard.getLegalMoves(square);
-          console.log(`Legal moves for ${square}:`, legalMoves.map(m => m.to));
-          const moveTargets = new Set(legalMoves.map(move => move.to));
-          setPossibleMoves(moveTargets);
-        } catch (error) {
-          console.error('Error getting legal moves:', error);
+        } else {
           setPossibleMoves(new Set());
         }
       } else {
@@ -597,10 +601,15 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
         const isPieceOwnedByCurrentPlayer = (isWhitePiece && currentTurn === 'w') || (!isWhitePiece && currentTurn === 'b');
         
         if (isPieceOwnedByCurrentPlayer) {
-          const legalMoves = gameStore.chessBoard.getLegalMoves(square);
-          console.log(`Legal moves for ${square}:`, legalMoves.map(m => m.to));
-          const moveTargets = new Set(legalMoves.map(move => move.to));
-          setPossibleMoves(moveTargets);
+          // Only show legal moves if preference is enabled
+          if (preferencesStore.preferences.showLegalMoves) {
+            const legalMoves = gameStore.chessBoard.getLegalMoves(square);
+            console.log(`Legal moves for ${square}:`, legalMoves.map(m => m.to));
+            const moveTargets = new Set(legalMoves.map(move => move.to));
+            setPossibleMoves(moveTargets);
+          } else {
+            setPossibleMoves(new Set());
+          }
         } else {
           // Don't allow selecting opponent's pieces in normal play
           console.log(`Cannot select opponent's piece ${piece} at ${square} when it's ${currentTurn}'s turn`);
@@ -677,6 +686,37 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     console.log('startDrag called with:', { square, piece, x: currentEvent.clientX, y: currentEvent.clientY, squareSize });
     setSelectedSquare(square);
     
+    // Calculate and show legal moves during drag if preference is enabled
+    if (preferencesStore.preferences.showLegalMoves) {
+      try {
+        // Ensure ChessAPI is synchronized with current position
+        const currentPosition = gameStore.position;
+        if (gameStore.chessBoard.getFen() !== currentPosition) {
+          console.log('Syncing ChessAPI for drag - position:', currentPosition);
+          gameStore.chessBoard.loadFen(currentPosition);
+        }
+        
+        // Check if this piece belongs to the current player to move
+        const isWhitePiece = piece === piece.toUpperCase();
+        const currentTurn = gameStore.chessBoard.getActiveColor();
+        const isPieceOwnedByCurrentPlayer = (isWhitePiece && currentTurn === 'w') || (!isWhitePiece && currentTurn === 'b');
+        
+        if (isPieceOwnedByCurrentPlayer) {
+          const legalMoves = gameStore.chessBoard.getLegalMoves(square);
+          console.log(`Legal moves for drag from ${square}:`, legalMoves.map(m => m.to));
+          const moveTargets = new Set(legalMoves.map(move => move.to));
+          setPossibleMoves(moveTargets);
+        } else {
+          setPossibleMoves(new Set());
+        }
+      } catch (error) {
+        console.error('Error getting legal moves for drag:', error);
+        setPossibleMoves(new Set());
+      }
+    } else {
+      setPossibleMoves(new Set());
+    }
+    
     const dragState = { 
       piece, 
       from: square, 
@@ -686,7 +726,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     };
     console.log('Setting draggedPiece to:', dragState);
     setDraggedPiece(dragState);
-  }, []);
+  }, [preferencesStore.preferences.showLegalMoves, gameStore]);
 
   // Handle drag end
   const handleDragEnd = useCallback((upEvent: MouseEvent, fromSquare: string, piece: string) => {
