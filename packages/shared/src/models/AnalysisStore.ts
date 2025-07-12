@@ -257,7 +257,9 @@ export class AnalysisStore {
         }
         
         // Check if board is flipped (black on bottom)
-        const isFlipped = this.rootStore?.preferencesStore?.preferences?.boardFlipped || false;
+        // Use the GameStore's shouldShowFlippedBoard which correctly handles
+        // playing, observing, and examining perspectives
+        const isFlipped = this.rootStore?.gameStore?.shouldShowFlippedBoard || false;
         
         // If black is on bottom, negate the evaluation
         if (isFlipped) {
