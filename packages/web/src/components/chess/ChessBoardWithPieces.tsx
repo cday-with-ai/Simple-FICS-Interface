@@ -120,11 +120,11 @@ const Coordinate = styled.div<{ $type: 'file' | 'rank'; $isLight: boolean; $size
   line-height: 1;
   
   ${props => props.$type === 'file' ? `
-    bottom: 1px;
-    right: 1px;
+    bottom: 2px;
+    right: 2px;
   ` : `
-    top: 1px;
-    left: 1px;
+    top: 2px;
+    left: 2px;
   `}
 `;
 
