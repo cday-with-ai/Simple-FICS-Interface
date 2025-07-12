@@ -158,7 +158,7 @@ export const FICSOutput: React.FC<FICSOutputProps> = ({ text, className, onComma
       let lastIdx = 0;
       
       PATTERNS.COMMAND.lastIndex = 0;
-      let cmdMatch;
+      let cmdMatch: RegExpExecArray | null;
       while ((cmdMatch = PATTERNS.COMMAND.exec(remainingText)) !== null) {
         if (cmdMatch.index > lastIdx) {
           commandParts.push(remainingText.substring(lastIdx, cmdMatch.index));
@@ -169,15 +169,15 @@ export const FICSOutput: React.FC<FICSOutputProps> = ({ text, className, onComma
             key={`cmd-${cmdMatch.index}`}
             onClick={(e) => {
               e.stopPropagation();
-              onCommandClick(cmdMatch[1]);
+              if (cmdMatch) onCommandClick(cmdMatch[1]);
             }}
-            title={`Click to send: ${cmdMatch[1]}`}
+            title={`Click to send: ${cmdMatch?.[1]}`}
           >
-            {cmdMatch[0]}
+            {cmdMatch?.[0]}
           </CommandLink>
         );
         
-        lastIdx = cmdMatch.index + cmdMatch[0].length;
+        lastIdx = cmdMatch.index + (cmdMatch[0]?.length || 0);
       }
       
       if (lastIdx < remainingText.length) {

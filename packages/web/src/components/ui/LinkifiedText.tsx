@@ -744,7 +744,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       if (newsMatch) {
         const newsNumber = newsMatch[1];
         
-        if (onCommandClick) {
+        if (onCommandClick != null) {
           matches.push({
             type: 'command',
             match: newsNumber,
@@ -787,7 +787,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput && !isJournalOutput && !isSoughtOutput && !isBestListOutput && !isNewsIndexOutput && !isNotificationMessage) {
+  if (onCommandClick != null && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput && !isJournalOutput && !isSoughtOutput && !isBestListOutput && !isNewsIndexOutput && !isNotificationMessage) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
@@ -802,7 +802,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find commands (only if onCommandClick is provided)
-  if (onCommandClick) {
+  if (onCommandClick != null) {
     // Find quoted commands
     COMMAND_REGEX.lastIndex = 0;
     let commandMatch;

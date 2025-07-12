@@ -466,7 +466,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     if (selectedCapturedPiece) {
       try {
         // Ensure ChessAPI is synchronized with current position
-        const currentPosition = gameStore.position;
+        const currentPosition = gameStore.currentPosition;
         if (gameStore.chessBoard.getFen() !== currentPosition) {
           gameStore.chessBoard.loadFen(currentPosition);
         }
@@ -559,7 +559,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
         if (preferencesStore.preferences.showLegalMoves) {
           try {
             // Ensure ChessAPI is synchronized with current position
-            const currentPosition = gameStore.position;
+            const currentPosition = gameStore.currentPosition;
             if (gameStore.chessBoard.getFen() !== currentPosition) {
               gameStore.chessBoard.loadFen(currentPosition);
             }
@@ -585,7 +585,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       // Calculate legal moves for the selected piece
       try {
         // Ensure ChessAPI is synchronized with current position
-        const currentPosition = gameStore.position;
+        const currentPosition = gameStore.currentPosition;
         if (gameStore.chessBoard.getFen() !== currentPosition) {
           gameStore.chessBoard.loadFen(currentPosition);
         }
@@ -676,7 +676,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     if (preferencesStore.preferences.showLegalMoves) {
       try {
         // Ensure ChessAPI is synchronized with current position
-        const currentPosition = gameStore.position;
+        const currentPosition = gameStore.currentPosition;
         if (gameStore.chessBoard.getFen() !== currentPosition) {
           gameStore.chessBoard.loadFen(currentPosition);
         }
