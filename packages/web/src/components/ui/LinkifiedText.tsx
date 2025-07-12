@@ -156,7 +156,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   
   // Check if this looks like channel member list (in command output)
   // Must start with "Channel N" to avoid matching regular channel messages
-  const isChannelOutput = /^Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(text);
+  const isChannelOutput = /^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(text);
   
   // Check if this looks like moves command output
   const isMovesOutput = /\w+\s+\(\d+\)\s+vs\.\s+\w+\s+\(\d+\)/.test(text);
@@ -209,10 +209,15 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   
   // Check if this looks like user input (not FICS output) - these often get echoed in console
   // User messages typically don't have special FICS formatting
-  const looksLikeUserInput = !text.match(/^[\s\d\W]/) && // Doesn't start with whitespace, numbers, or symbols
-    !text.includes(':') && // No colons (common in FICS output)
+  // Be more specific to avoid catching FICS output
+  const looksLikeUserInput = text.length > 10 && // Not too short
+    !text.match(/^[\s\d]/) && // Doesn't start with whitespace or numbers
+    !text.match(/^Channel\s+\d+/) && // Not a channel list
+    !text.match(/^[A-Z]/) && // FICS output often starts with capitals
     !text.match(/^\w+\s+\(\d+\)/) && // Not a player (rating) format
     !text.match(/^Game\s+\d+/) && // Not a game message
+    !text.includes('displayed') && // Not a list footer
+    !text.match(/^--/) && // Not a list header
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
   // Skip all special processing for "told" messages and user input
