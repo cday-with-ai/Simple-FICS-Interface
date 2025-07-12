@@ -161,6 +161,79 @@ export class FICSStore {
             }
         }
         
+        // Handle set theme command
+        if (cmd.startsWith('set theme ')) {
+            const theme = cmd.substring(10).trim(); // Get everything after "set theme "
+            if (['light', 'dark', 'system'].includes(theme)) {
+                this.rootStore?.preferencesStore.updatePreference('theme', theme as 'light' | 'dark' | 'system');
+                this.rootStore?.chatStore.addMessage('console', {
+                    channel: 'console',
+                    sender: 'System',
+                    content: `Theme set to ${theme}.`,
+                    timestamp: new Date(),
+                    type: 'system'
+                });
+                return;
+            } else {
+                this.rootStore?.chatStore.addMessage('console', {
+                    channel: 'console',
+                    sender: 'System',
+                    content: `Invalid theme. Use: set theme light|dark|system`,
+                    timestamp: new Date(),
+                    type: 'system'
+                });
+                return;
+            }
+        }
+        
+        // Handle set orient command
+        if (cmd === 'set orient' || cmd === 'set flip') {
+            this.rootStore?.preferencesStore.toggleBoardFlip();
+            const flipped = this.rootStore?.preferencesStore.boardFlipped;
+            this.rootStore?.chatStore.addMessage('console', {
+                channel: 'console',
+                sender: 'System',
+                content: `Board orientation ${flipped ? 'flipped' : 'normal'}.`,
+                timestamp: new Date(),
+                type: 'system'
+            });
+            return;
+        }
+        
+        // Handle set mode command
+        if (cmd.startsWith('set mode ')) {
+            const mode = cmd.substring(9).trim(); // Get everything after "set mode "
+            const modeMap: Record<string, 'chess-only' | 'chat-only' | 'chess-and-chat'> = {
+                'chess': 'chess-only',
+                'chess-only': 'chess-only',
+                'chat': 'chat-only',
+                'chat-only': 'chat-only',
+                'both': 'chess-and-chat',
+                'chess-and-chat': 'chess-and-chat'
+            };
+            
+            if (mode in modeMap) {
+                this.rootStore?.preferencesStore.updatePreference('viewMode', modeMap[mode]);
+                this.rootStore?.chatStore.addMessage('console', {
+                    channel: 'console',
+                    sender: 'System',
+                    content: `View mode set to ${modeMap[mode]}.`,
+                    timestamp: new Date(),
+                    type: 'system'
+                });
+                return;
+            } else {
+                this.rootStore?.chatStore.addMessage('console', {
+                    channel: 'console',
+                    sender: 'System',
+                    content: `Invalid mode. Use: set mode chess|chat|both`,
+                    timestamp: new Date(),
+                    type: 'system'
+                });
+                return;
+            }
+        }
+        
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             // console.log('Sending command to FICS:', command);
             // Encode with timeseal protocol
