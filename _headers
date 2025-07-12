@@ -1,52 +1,14 @@
 # This file is for cloudflare pages.
-# The headers are set so stockfish can load with SharedArrayBuffer support.
-
-# Set COOP/COEP headers for all files to enable SharedArrayBuffer
+# The headers are set so stockfish can load.
 /*
-  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Embedder-Policy: credentialless
   Cross-Origin-Opener-Policy: same-origin
 
-# Specific headers for the main index.html
-/index.html
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-  X-Content-Type-Options: nosniff
-
-# Headers for all JavaScript files
-/*.js
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-  Content-Type: application/javascript
-  X-Content-Type-Options: nosniff
-
-# Headers for WebAssembly files
-/*.wasm
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-  Content-Type: application/wasm
-  X-Content-Type-Options: nosniff
-
-# Specific Stockfish files (now at root level)
+# Specific Stockfish files
 /sf16-7.js
   Content-Type: application/javascript
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Resource-Policy: same-origin
+  Cross-Origin-Resource-Policy: cross-origin
 
 /sf16-7.wasm
   Content-Type: application/wasm
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Resource-Policy: same-origin
-
-# Headers for assets (now at root level)
-/assets/*
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-
-# Service Worker (now at root level)
-/sw.js
-  Cross-Origin-Embedder-Policy: require-corp
-  Cross-Origin-Opener-Policy: same-origin
-  Content-Type: application/javascript
-  Service-Worker-Allowed: /
+  Cross-Origin-Resource-Policy: cross-origin
