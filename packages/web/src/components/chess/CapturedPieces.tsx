@@ -85,7 +85,7 @@ export const CapturedPieces: React.FC<CapturedPiecesProps> = observer(({
   // Get captured pieces from game store
   const capturedPieces = gameStore.capturedPieces;
   const pieces = isWhitePieces ? capturedPieces.white : capturedPieces.black;
-  console.log(`CapturedPieces component - isWhitePieces: ${isWhitePieces}, pieces:`, pieces);
+  // Rendering captured pieces
   
   // Group pieces by type and count them
   const groupedPieces = useMemo(() => {

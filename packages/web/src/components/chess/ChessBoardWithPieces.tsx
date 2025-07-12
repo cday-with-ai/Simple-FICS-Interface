@@ -277,25 +277,20 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
     const calculateBoardSize = () => {
       if (!containerRef.current) {
-        console.log('calculateBoardSize: No container ref');
+        // No container ref yet
         return;
       }
 
       const parent = containerRef.current.parentElement;
       if (!parent) {
-        console.log('calculateBoardSize: No parent element');
+        // No parent element yet
         return;
       }
 
       const { width: parentWidth, height: parentHeight } = parent.getBoundingClientRect();
       const containerRect = containerRef.current.getBoundingClientRect();
 
-      console.log('calculateBoardSize debug:', {
-        parentSize: { width: parentWidth, height: parentHeight },
-        containerSize: { width: containerRect.width, height: containerRect.height },
-        currentCalculatedSize: calculatedSize,
-        parentElement: parent.className || parent.tagName,
-      });
+      // Board size calculation in progress
 
       // Add some padding to prevent edge overlap
       const padding = 16;

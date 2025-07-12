@@ -70,7 +70,7 @@ export class FICSStore {
                     this.connecting = false;
                 });
 
-                console.log('Connected to FICS WebSocket with timeseal');
+                // Connected to FICS WebSocket with timeseal
             };
 
             this.ws.onmessage = async (event) => {
@@ -146,7 +146,7 @@ export class FICSStore {
 
     sendCommand(command: string) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            console.log('Sending command to FICS:', command, 'Length:', command.length);
+            // console.log('Sending command to FICS:', command);
             // Encode with timeseal protocol
             const encoded = this.encodeTimeseal(command);
             this.ws.send(encoded);
@@ -231,8 +231,7 @@ export class FICSStore {
     }
 
     private handleMessage(data: string) {
-        console.log('FICS message received (length: ' + data.length + '):', data);
-        console.log('Current login state:', this.loginState);
+        // console.log('FICS message received:', data);
         
         runInAction(() => {
             this.lastPing = Date.now();
@@ -260,11 +259,7 @@ export class FICSStore {
         // After login, buffer messages until we see \nfics%
         this.messageBuffer += processData;
         
-        console.log('Buffer state:');
-        console.log('  Length:', this.messageBuffer.length);
-        console.log('  Contains \\n\\rfics%?', this.messageBuffer.includes('\n\rfics%'));
-        console.log('  Contains \\nfics%?', this.messageBuffer.includes('\nfics%'));
-        console.log('  Ends with:', JSON.stringify(this.messageBuffer.slice(-20)));
+        // Debug: Buffer state logging removed for cleaner console
         
         // Process complete messages ending with fics%
         // FICS uses \n\r before fics% on some systems
@@ -305,9 +300,9 @@ export class FICSStore {
             
             if (completeMessage) {
                 // Parse the complete message
-                console.log('Processing complete message:', JSON.stringify(completeMessage));
+                // Processing complete message
                 const messages = FicsProtocol.parseMessage(completeMessage);
-                console.log('Parsed messages:', messages.map(m => ({ type: m.type, data: m.data })));
+                // Parsed messages processed
                 this.processMessages(messages);
             }
             
@@ -330,7 +325,7 @@ export class FICSStore {
             }
         }
         
-        console.log('Remaining buffer:', this.messageBuffer.substring(0, 100));
+        // Buffer processing complete
     }
 
     private processMessages(messages: any[]) {
@@ -407,7 +402,7 @@ export class FICSStore {
                         break;
 
                     case 'channelTell':
-                        console.log('Handling channelTell:', message.data);
+                        // Handling channelTell
                         // Create channel tab if it doesn't exist
                         const channelId = `channel-${message.data.channelNumber}`;
                         this.rootStore?.chatStore.createTab(

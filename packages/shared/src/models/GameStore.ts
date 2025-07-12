@@ -294,7 +294,7 @@ export class GameStore {
                             );
                             this.moveHistory.push(move);
                             this.currentMoveIndex = this.moveHistory.length - 1;
-                            console.log('Added move to history:', move.san, 'Total moves:', this.moveHistory.length);
+                            // Move added to history
                             
                             // Play move sound - check if it's a capture
                             if (style12.prettyMove.includes('x')) {
