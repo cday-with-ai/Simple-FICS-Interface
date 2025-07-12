@@ -743,7 +743,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 <PortraitBottomInfo>
                                     <LastMoveInfo>
                                         {gameStore.premove ? 
-                                            `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`)}` :
+                                            `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
                                             (moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none')
                                         }
                                     </LastMoveInfo>
@@ -860,7 +860,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 <LandscapeBottomInfo>
                                     <LastMoveInfo>
                                         {gameStore.premove ? 
-                                            `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`)}` :
+                                            `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
                                             (moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none')
                                         }
                                     </LastMoveInfo>

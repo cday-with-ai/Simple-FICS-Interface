@@ -193,8 +193,8 @@ describe('Utility Functions', () => {
         it('should convert long algebraic to display SAN', () => {
             expect(longAlgebraicToDisplaySAN('e2e4')).toBe('e4');
             expect(longAlgebraicToDisplaySAN('g1f3')).toBe('f3');
-            expect(longAlgebraicToDisplaySAN('e7e8q')).toBe('e8=Q');
-            expect(longAlgebraicToDisplaySAN('a7a8n')).toBe('a8=N');
+            expect(longAlgebraicToDisplaySAN('e7e8q')).toBe('e8=♕');
+            expect(longAlgebraicToDisplaySAN('a7a8n')).toBe('a8=♘');
         });
 
         it('should handle invalid input', () => {
@@ -204,10 +204,10 @@ describe('Utility Functions', () => {
         });
 
         it('should uppercase promotion pieces', () => {
-            expect(longAlgebraicToDisplaySAN('e7e8q')).toBe('e8=Q');
-            expect(longAlgebraicToDisplaySAN('h7h8r')).toBe('h8=R');
-            expect(longAlgebraicToDisplaySAN('b7b8b')).toBe('b8=B');
-            expect(longAlgebraicToDisplaySAN('c7c8n')).toBe('c8=N');
+            expect(longAlgebraicToDisplaySAN('e7e8q')).toBe('e8=♕');
+            expect(longAlgebraicToDisplaySAN('h7h8r')).toBe('h8=♖');
+            expect(longAlgebraicToDisplaySAN('b7b8b')).toBe('b8=♗');
+            expect(longAlgebraicToDisplaySAN('c7c8n')).toBe('c8=♘');
         });
     });
 });

@@ -538,15 +538,36 @@ export function regexIndexOf(string: string, regex: RegExp, startpos?: number): 
  * @param move Long algebraic move like "e2e4" 
  * @returns Basic SAN like "e4" or "♘f3"
  */
-export function longAlgebraicToDisplaySAN(move: string): string {
+export function longAlgebraicToDisplaySAN(move: string, fen?: string): string {
     if (!move || move.length < 4) return move;
     
+    // If we have a FEN position, try to create a temporary ChessAPI instance to get proper SAN
+    if (fen) {
+        try {
+            // Import ChessAPI dynamically to avoid circular dependencies
+            const { ChessAPI } = require('../services/ChessAPI');
+            const tempBoard = new ChessAPI();
+            tempBoard.loadFen(fen);
+            
+            const from = move.substring(0, 2);
+            const to = move.substring(2, 4);
+            const promotion = move.substring(4);
+            
+            const moveObj = tempBoard.makeLongAlgebraicMove(from, to, promotion);
+            if (moveObj) {
+                return convertToUnicodeChessPieces(moveObj.san);
+            }
+        } catch (error) {
+            // Fall back to basic conversion if ChessAPI fails
+        }
+    }
+    
+    // Fallback implementation without board state
     const from = move.substring(0, 2);
     const to = move.substring(2, 4);
     const promotion = move.substring(4);
     
     // For basic display, just show destination
-    // In a full implementation, you'd need board state to determine piece type
     let san = to;
     
     // Handle promotion
@@ -554,5 +575,5 @@ export function longAlgebraicToDisplaySAN(move: string): string {
         san += '=' + promotion.toUpperCase();
     }
     
-    return san;
+    return convertToUnicodeChessPieces(san);
 }
