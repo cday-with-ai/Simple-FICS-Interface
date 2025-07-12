@@ -475,7 +475,11 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
   // Handle square click
   const handleSquareClick = useCallback((square: string, event?: React.MouseEvent) => {
-    if (!interactive) return;
+    console.log('Square clicked:', square, 'interactive:', interactive, 'piece:', pieces.get(square));
+    if (!interactive) {
+      console.log('Click ignored - not interactive');
+      return;
+    }
 
     const piece = pieces.get(square);
 
@@ -583,84 +587,109 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     }
   }, [selectedSquare, possibleMoves, pieces, onMove, onDrop, interactive, isPromotion, gameStore, preferencesStore.preferences.autoPromotionPiece, selectedCapturedPiece, onCapturedPieceSelect]);
 
-  // Handle drag start
-  const handleDragStart = useCallback((e: React.MouseEvent, square: string, piece: string) => {
+  // Unified mouse handler for both click and drag
+  const handleMouseDown = useCallback((e: React.MouseEvent, square: string, piece: string | undefined) => {
     if (!interactive) return;
 
-    e.preventDefault();
-    setSelectedSquare(square);
-    
-    // Get the square's position and ACTUAL size
-    const rect = e.currentTarget.getBoundingClientRect();
-    const actualSquareSize = rect.width; // Use the real square size!
-    const squareCenterX = rect.left + rect.width / 2;
-    const squareCenterY = rect.top + rect.height / 2;
-    
-    // Calculate offset from click position to square center
-    const offsetX = e.clientX - squareCenterX;
-    const offsetY = e.clientY - squareCenterY;
-    
-    // Start with piece at square center with actual size
-    setDraggedPiece({ piece, from: square, x: squareCenterX, y: squareCenterY, size: actualSquareSize });
+    const startX = e.clientX;
+    const startY = e.clientY;
+    let hasMoved = false;
+    let dragStarted = false;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      setDraggedPiece(prev => prev ? { 
-        ...prev, 
-        x: moveEvent.clientX - offsetX, 
-        y: moveEvent.clientY - offsetY 
-      } : null);
+      const deltaX = Math.abs(moveEvent.clientX - startX);
+      const deltaY = Math.abs(moveEvent.clientY - startY);
+      
+      if ((deltaX > 3 || deltaY > 3) && piece && !dragStarted) {
+        hasMoved = true;
+        dragStarted = true;
+        startDrag(e, square, piece, moveEvent);
+      } else if (dragStarted && draggedPiece) {
+        // Continue dragging
+        setDraggedPiece(prev => prev ? { 
+          ...prev, 
+          x: moveEvent.clientX, 
+          y: moveEvent.clientY 
+        } : null);
+      }
     };
 
     const handleMouseUp = (upEvent: MouseEvent) => {
-      // Find which square the mouse is over
-      const elements = document.elementsFromPoint(upEvent.clientX, upEvent.clientY);
-      const squareElement = elements.find(el => el.getAttribute('data-square'));
-      const targetSquare = squareElement?.getAttribute('data-square');
-
-      if (targetSquare && targetSquare !== square) {
-        if (isPromotion(piece, square, targetSquare)) {
-          // Handle promotion
-          const color = piece === piece.toUpperCase() ? 'white' : 'black';
-          
-          // In playing mode, use auto-promotion preference
-          if (gameStore.isPlaying) {
-            const promotionPiece = preferencesStore.preferences.autoPromotionPiece;
-            // If it's not our turn, set as premove
-            if (!gameStore.isMyTurn) {
-              gameStore.setPremove(square, targetSquare, promotionPiece);
-            } else {
-              onMove?.(square, targetSquare, promotionPiece);
-            }
-          } else {
-            // Show promotion dialog
-            setPromotionState({
-              from: square,
-              to: targetSquare,
-              color,
-              position: { x: upEvent.clientX, y: upEvent.clientY }
-            });
-          }
-        } else {
-          // If it's not our turn in playing mode, set as premove
-          if (gameStore.isPlaying && !gameStore.isMyTurn) {
-            gameStore.setPremove(square, targetSquare);
-          } else {
-            onMove?.(square, targetSquare);
-          }
-        }
-      }
-
-      setDraggedPiece(null);
-      setSelectedSquare(null);
-      setPossibleMoves(new Set());
-
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
+      
+      if (dragStarted && draggedPiece) {
+        // Handle drag end
+        handleDragEnd(upEvent, square, piece!);
+      } else if (!hasMoved) {
+        // Handle click
+        handleSquareClick(square, e);
+      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [onMove, interactive, isPromotion, gameStore.isPlaying, gameStore.isMyTurn, preferencesStore.preferences.autoPromotionPiece, gameStore]);
+  }, [interactive, handleSquareClick, draggedPiece]);
+
+  // Start drag operation
+  const startDrag = useCallback((originalEvent: React.MouseEvent, square: string, piece: string, currentEvent: MouseEvent) => {
+    setSelectedSquare(square);
+    
+    const rect = originalEvent.currentTarget.getBoundingClientRect();
+    const actualSquareSize = rect.width;
+    setDraggedPiece({ 
+      piece, 
+      from: square, 
+      x: currentEvent.clientX, 
+      y: currentEvent.clientY, 
+      size: actualSquareSize 
+    });
+  }, []);
+
+  // Handle drag end
+  const handleDragEnd = useCallback((upEvent: MouseEvent, fromSquare: string, piece: string) => {
+    // Find which square the mouse is over
+    const elements = document.elementsFromPoint(upEvent.clientX, upEvent.clientY);
+    const squareElement = elements.find(el => el.getAttribute('data-square'));
+    const targetSquare = squareElement?.getAttribute('data-square');
+
+    if (targetSquare && targetSquare !== fromSquare) {
+      if (isPromotion(piece, fromSquare, targetSquare)) {
+        // Handle promotion
+        const color = piece === piece.toUpperCase() ? 'white' : 'black';
+        
+        // In playing mode, use auto-promotion preference
+        if (gameStore.isPlaying) {
+          const promotionPiece = preferencesStore.preferences.autoPromotionPiece;
+          // If it's not our turn, set as premove
+          if (!gameStore.isMyTurn) {
+            gameStore.setPremove(fromSquare, targetSquare, promotionPiece);
+          } else {
+            onMove?.(fromSquare, targetSquare, promotionPiece);
+          }
+        } else {
+          // Show promotion dialog
+          setPromotionState({
+            from: fromSquare,
+            to: targetSquare,
+            color,
+            position: { x: upEvent.clientX, y: upEvent.clientY }
+          });
+        }
+      } else {
+        // If it's not our turn in playing mode, set as premove
+        if (gameStore.isPlaying && !gameStore.isMyTurn) {
+          gameStore.setPremove(fromSquare, targetSquare);
+        } else {
+          onMove?.(fromSquare, targetSquare);
+        }
+      }
+    }
+
+    setDraggedPiece(null);
+    setSelectedSquare(null);
+    setPossibleMoves(new Set());
+  }, [onMove, isPromotion, gameStore, preferencesStore.preferences.autoPromotionPiece]);
 
   const squares = useMemo(() => {
     const result = [];
@@ -690,8 +719,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             $isLastMoveSquare={!!isLastMoveSquare}
             $isSelected={isSelected}
             $isPossibleMove={isPossibleMove}
-            onClick={(e) => handleSquareClick(squareName, e)}
-            onMouseDown={(e) => piece && handleDragStart(e, squareName, piece)}
+            onMouseDown={(e) => handleMouseDown(e, squareName, piece)}
           >
             {piece && !isDraggedFrom && !isAnimating && (
               <ChessPiece piece={piece} size={squareSize} />
@@ -723,7 +751,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     draggedPiece,
     squareSize,
     handleSquareClick,
-    handleDragStart
+    handleMouseDown
   ]);
 
   return (
