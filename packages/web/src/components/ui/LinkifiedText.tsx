@@ -127,6 +127,10 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   const isJournalOutput = /^\s*%\d+:\s+\w+/.test(text) ||
     /Journal for \w+:/.test(text);
   
+  // Check if this is sought/seek list output
+  const isSoughtOutput = /^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text) &&
+    !text.includes('games displayed');
+  
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
@@ -485,6 +489,38 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         });
       }
     }
+  } else if (isSoughtOutput) {
+    // Parse sought list entries: "N rating playerName time inc ..."
+    const soughtRegex = /^\s*(\d+)\s+((?:\d{3,4}|----|\+{4}))\s+(\w+(?:\([A-Z]\))?)/;
+    const soughtMatch = soughtRegex.exec(text);
+    if (soughtMatch) {
+      const [fullMatch, gameNum, rating, playerName] = soughtMatch;
+      
+      // Add clickable game number
+      if (onCommandClick) {
+        const gameNumIndex = text.indexOf(gameNum);
+        matches.push({
+          type: 'command',
+          match: gameNum,
+          content: `play ${gameNum}`,
+          index: gameNumIndex,
+          length: gameNum.length
+        });
+      }
+      
+      // Add player name (remove (C) suffix if present for the actual name)
+      const playerDisplayName = playerName;
+      const playerActualName = playerName.replace(/\([A-Z]\)$/, '');
+      const playerIndex = text.indexOf(playerDisplayName);
+      
+      matches.push({
+        type: 'player',
+        match: playerActualName,
+        content: playerActualName,
+        index: playerIndex,
+        length: playerActualName.length
+      });
+    }
   } else {
     // Find URLs (not in special output formats)
     URL_REGEX.lastIndex = 0;
@@ -501,7 +537,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput && !isJournalOutput) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput && !isJournalOutput && !isSoughtOutput) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
