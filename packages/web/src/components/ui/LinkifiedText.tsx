@@ -97,6 +97,9 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // Check if this is a game message (Game N: ...)
   const isGameMessage = /^Game \d+:/.test(text);
   
+  // Check if this is a channel log message with timestamp
+  const isChannelLog = /^\:\[\d{2}:\d{2}:\d{2}\]/.test(text);
+  
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
@@ -259,6 +262,21 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         length: player2.length
       });
     }
+  } else if (isChannelLog) {
+    // Parse player names from channel log entries: :[HH:MM:SS] PlayerName: message
+    const logRegex = /^\:\[\d{2}:\d{2}:\d{2}\]\s+(\w+):/;
+    const logMatch = logRegex.exec(text);
+    if (logMatch) {
+      const playerName = logMatch[1];
+      const playerIndex = text.indexOf(playerName, logMatch.index);
+      matches.push({
+        type: 'player',
+        match: playerName,
+        content: playerName,
+        index: playerIndex,
+        length: playerName.length
+      });
+    }
   } else {
     // Find URLs (not in special output formats)
     URL_REGEX.lastIndex = 0;
@@ -275,7 +293,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
