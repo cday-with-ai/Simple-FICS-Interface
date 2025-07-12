@@ -63,8 +63,12 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   const isWhoOutput = text.includes('players displayed') || 
     /^\s*(?:\d{3,4}|----|\+{4})/.test(text);
   
+  // Check if this looks like games command output
+  const isGamesOutput = text.includes('games displayed') || 
+    /^\s*\d{1,3}\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(text);
+  
   // For who output, find player names
-  if (isWhoOutput) {
+  if (isWhoOutput && !isGamesOutput) {
     // Pattern to match player entries: rating/symbols + player name + optional flags
     const whoPlayerRegex = /(?:^|\s)((?:\d{3,4}|----|\+{4})\s*)([.^:#&]?)([A-Za-z]\w*)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;
     let whoMatch;
@@ -79,6 +83,47 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         content: playerName,
         index: playerStart,
         length: playerName.length
+      });
+    }
+  } else if (isGamesOutput) {
+    // Pattern to match game entries
+    // Format: game# rating1 player1 rating2 player2 [game_type time inc] ...
+    const gamesRegex = /^\s*(\d{1,3})\s+(?:\(Exam\.\s+)?(\d{3,4}|----|\+{4})\s+(\w+)\s+(\d{3,4}|----|\+{4})\s+(\w+)/gm;
+    let gameMatch;
+    while ((gameMatch = gamesRegex.exec(text)) !== null) {
+      const [fullMatch, gameNum, rating1, player1, rating2, player2] = gameMatch;
+      const lineStart = gameMatch.index;
+      
+      // Add game number as command
+      if (onCommandClick) {
+        const gameNumIndex = lineStart + fullMatch.indexOf(gameNum);
+        matches.push({
+          type: 'command',
+          match: gameNum,
+          content: `observe ${gameNum}`,
+          index: gameNumIndex,
+          length: gameNum.length
+        });
+      }
+      
+      // Add player names
+      const player1Index = lineStart + fullMatch.indexOf(player1);
+      const player2Index = lineStart + fullMatch.indexOf(player2);
+      
+      matches.push({
+        type: 'player',
+        match: player1,
+        content: player1,
+        index: player1Index,
+        length: player1.length
+      });
+      
+      matches.push({
+        type: 'player',
+        match: player2,
+        content: player2,
+        index: player2Index,
+        length: player2.length
       });
     }
   } else {
@@ -97,7 +142,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
