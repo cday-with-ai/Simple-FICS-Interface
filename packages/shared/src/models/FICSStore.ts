@@ -630,12 +630,14 @@ export class FICSStore {
     private handleGameEnd(gameEnd: GameEnd) {
         // Check if this is the game we're currently observing/playing
         if (this.rootStore?.gameStore.currentGame?.gameId === gameEnd.gameNumber) {
-            // Update the game result
+            // Update the game result and set the reason as the last move
             if (this.rootStore.gameStore.currentGame) {
                 this.rootStore.gameStore.currentGame.result = gameEnd.result;
+                this.rootStore.gameStore.currentGame.lastMove = gameEnd.reason;
             }
             
             // End the game and switch to freestyle for both observing and playing
+            // This will preserve the current game state (including our updated lastMove) in lastGameState
             if (this.rootStore.gameStore.isObserving || this.rootStore.gameStore.isPlaying) {
                 this.rootStore.gameStore.endGame();
             }
