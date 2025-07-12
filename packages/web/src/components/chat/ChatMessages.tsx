@@ -6,6 +6,7 @@ import { ChatMessage } from '@fics/shared';
 import { smartScrollToBottom } from '../../utils/chatScrolling';
 import { PlayerName } from '../ui/PlayerName';
 import { LinkifiedText } from '../ui/LinkifiedText';
+import { FICSOutput } from '../ui/FICSOutput';
 
 const MessagesContainer = styled.div`
   flex: 1;
@@ -281,7 +282,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
             onMouseEnter={() => onMessageHover?.(message.timestamp)}
             onMouseLeave={() => onMessageHover?.(null)}
           >
-            <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+            <FICSOutput text={message.content} onCommandClick={handleCommandClick} />
           </MessageRow>
         ))}
       </MessagesContainer>
