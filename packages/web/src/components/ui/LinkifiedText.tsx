@@ -441,7 +441,8 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       });
     } else {
       // Handle journal entries: "%N: player1 rating player2 rating ..."
-      const journalRegex = /^(\s*)(%\d+):\s+(\w+)\s+\d+\s+(\w+)/;
+      // Players can have optional * prefix (guest games)
+      const journalRegex = /^(\s*)(%\d+):\s+(\*?\w+)\s+\d+\s+(\*?\w+)/;
       const journalMatch = journalRegex.exec(text);
       if (journalMatch) {
         const [fullMatch, indent, gameNum, player1, player2] = journalMatch;
@@ -458,23 +459,29 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
           });
         }
         
-        // Add both player names
+        // Add both player names (strip * for the link but keep for display)
         const player1Index = text.indexOf(player1, indent.length + gameNum.length);
+        const player1Name = player1.replace(/^\*/, ''); // Remove * prefix for the actual name
+        const player1StartIndex = player1.startsWith('*') ? player1Index + 1 : player1Index;
+        
         matches.push({
           type: 'player',
-          match: player1,
-          content: player1,
-          index: player1Index,
-          length: player1.length
+          match: player1Name,
+          content: player1Name,
+          index: player1StartIndex,
+          length: player1Name.length
         });
         
         const player2Index = text.indexOf(player2, player1Index + player1.length);
+        const player2Name = player2.replace(/^\*/, ''); // Remove * prefix for the actual name
+        const player2StartIndex = player2.startsWith('*') ? player2Index + 1 : player2Index;
+        
         matches.push({
           type: 'player',
-          match: player2,
-          content: player2,
-          index: player2Index,
-          length: player2.length
+          match: player2Name,
+          content: player2Name,
+          index: player2StartIndex,
+          length: player2Name.length
         });
       }
     }
