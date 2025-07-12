@@ -198,7 +198,9 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   
   // Check if this looks like a who command output
   const isWhoOutput = text.includes('players displayed') || 
-    (/^\s*(?:\d{3,4}|----|\+{4})/.test(text) && !text.match(/^\d{4}\s+\(/)); // Exclude news items
+    (/^\s*(?:\d{3,4}|----|\+{4})/.test(text) && 
+     !text.match(/^\d{4}\s+\(/) && // Exclude news items
+     !text.match(/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/)); // Exclude sought output
   
   // Check if this looks like games command output
   const isGamesOutput = text.includes('games displayed') || 
