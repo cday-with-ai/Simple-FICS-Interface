@@ -595,6 +595,10 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     const startY = e.clientY;
     let hasMoved = false;
     let dragStarted = false;
+    
+    // Capture rect information early while currentTarget is still available
+    const rect = e.currentTarget.getBoundingClientRect();
+    const actualSquareSize = rect.width;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const deltaX = Math.abs(moveEvent.clientX - startX);
@@ -603,7 +607,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       if ((deltaX > 3 || deltaY > 3) && piece && !dragStarted) {
         hasMoved = true;
         dragStarted = true;
-        startDrag(e, square, piece, moveEvent);
+        startDrag(square, piece, moveEvent, actualSquareSize);
       } else if (dragStarted && draggedPiece) {
         // Continue dragging
         setDraggedPiece(prev => prev ? { 
@@ -632,17 +636,15 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   }, [interactive, handleSquareClick, draggedPiece]);
 
   // Start drag operation
-  const startDrag = useCallback((originalEvent: React.MouseEvent, square: string, piece: string, currentEvent: MouseEvent) => {
+  const startDrag = useCallback((square: string, piece: string, currentEvent: MouseEvent, squareSize: number) => {
     setSelectedSquare(square);
     
-    const rect = originalEvent.currentTarget.getBoundingClientRect();
-    const actualSquareSize = rect.width;
     setDraggedPiece({ 
       piece, 
       from: square, 
       x: currentEvent.clientX, 
       y: currentEvent.clientY, 
-      size: actualSquareSize 
+      size: squareSize 
     });
   }, []);
 
