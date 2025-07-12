@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import type { ViewMode, ChessOrientation } from '@fics/shared';
+import { useTheme } from '../../theme';
 
 const HeaderContainer = styled.header`
   height: 56px;
@@ -136,6 +137,7 @@ interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) => {
   const { preferencesStore } = useRootStore();
   const { viewMode, chessOrientation } = preferencesStore.preferences;
+  const { themePreference, setTheme } = useTheme();
   
   const handleViewModeChange = (mode: ViewMode) => {
     preferencesStore.updatePreference('viewMode', mode);
@@ -143,6 +145,10 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
   
   const handleOrientationChange = (orientation: ChessOrientation) => {
     preferencesStore.updatePreference('chessOrientation', orientation);
+  };
+  
+  const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
+    setTheme(theme);
   };
   
   // Orientation toggle is disabled in chat-only mode
@@ -162,6 +168,33 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
       </LogoSection>
       
       <ControlsSection>
+        <ToggleGroup>
+          <ToggleLabel>Theme:</ToggleLabel>
+          <ToggleContainer>
+            <ToggleButton
+              $isActive={themePreference === 'light'}
+              onClick={() => handleThemeChange('light')}
+              title="Light Theme"
+            >
+              ☀
+            </ToggleButton>
+            <ToggleButton
+              $isActive={themePreference === 'dark'}
+              onClick={() => handleThemeChange('dark')}
+              title="Dark Theme"
+            >
+              ☾
+            </ToggleButton>
+            <ToggleButton
+              $isActive={themePreference === 'system'}
+              onClick={() => handleThemeChange('system')}
+              title="System Theme"
+            >
+              ◐
+            </ToggleButton>
+          </ToggleContainer>
+        </ToggleGroup>
+        
         <ToggleGroup>
           <ToggleLabel>Orient:</ToggleLabel>
           <ToggleContainer>
