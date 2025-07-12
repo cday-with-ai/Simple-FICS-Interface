@@ -529,22 +529,27 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       });
     }
   } else if (isBestListOutput) {
-    // Parse best list entries which can have multiple entries per line
-    // Pattern: "N. PlayerName rating" or just "PlayerName rating"
-    const bestRegex = /(?:(\d+)\.\s+)?(\w+)\s+(\d{4})/g;
-    let bestMatch;
-    
-    while ((bestMatch = bestRegex.exec(text)) !== null) {
-      const [fullMatch, rank, playerName, rating] = bestMatch;
-      const playerIndex = bestMatch.index + (rank ? rank.length + 2 : 0); // Account for "N. "
+    // Skip header line that contains "Blitz", "Standard", "Lightning"
+    if (text.includes('Blitz') && text.includes('Standard') && text.includes('Lightning')) {
+      // This is the header line, don't process it
+    } else {
+      // Parse best list entries which can have multiple entries per line
+      // Pattern: "N. PlayerName rating" or just "PlayerName rating"
+      const bestRegex = /(?:(\d+)\.\s+)?(\w+)\s+(\d{4})/g;
+      let bestMatch;
       
-      matches.push({
-        type: 'player',
-        match: playerName,
-        content: playerName,
-        index: playerIndex,
-        length: playerName.length
-      });
+      while ((bestMatch = bestRegex.exec(text)) !== null) {
+        const [fullMatch, rank, playerName, rating] = bestMatch;
+        const playerIndex = bestMatch.index + (rank ? rank.length + 2 : 0); // Account for "N. "
+        
+        matches.push({
+          type: 'player',
+          match: playerName,
+          content: playerName,
+          index: playerIndex,
+          length: playerName.length
+        });
+      }
     }
   } else {
     // Find URLs (not in special output formats)
