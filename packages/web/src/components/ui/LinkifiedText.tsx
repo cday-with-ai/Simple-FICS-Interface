@@ -40,9 +40,6 @@ const CommandLink = styled.span`
 // Comprehensive URL regex that matches various URL formats
 const URL_REGEX = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?|(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
 
-// Regex to match player names in who command output
-// Matches ratings like 2889, ----, ++++, followed by optional symbols and player names
-const WHO_PLAYER_REGEX = /(?:^|\s)(?:\d{3,4}|----|\+{4})([.^:#&]?)(\w+)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;
 
 // Regex to match quoted FICS commands like "play 56", 'accept', "decline", etc.
 const COMMAND_REGEX = /["']([^"']+)["']/g;
@@ -64,21 +61,23 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   
   // Check if this looks like a who command output
   const isWhoOutput = text.includes('players displayed') || 
-    WHO_PLAYER_REGEX.test(text);
+    /^\s*(?:\d{3,4}|----|\+{4})/.test(text);
   
-  // Find URLs (skip if this is who output to avoid false positives)
-  if (!isWhoOutput) {
-    URL_REGEX.lastIndex = 0;
-    let urlMatch;
-    while ((urlMatch = URL_REGEX.exec(text)) !== null) {
-      matches.push({
-        type: 'url',
-        match: urlMatch[0],
-        content: urlMatch[0],
-        index: urlMatch.index,
-        length: urlMatch[0].length
-      });
+  // Find URLs
+  URL_REGEX.lastIndex = 0;
+  let urlMatch;
+  while ((urlMatch = URL_REGEX.exec(text)) !== null) {
+    // Skip if this looks like a player name in who output (has dots but no slashes)
+    if (isWhoOutput && !urlMatch[0].includes('/') && /^[.^:#&]?[a-zA-Z]/.test(urlMatch[0])) {
+      continue;
     }
+    matches.push({
+      type: 'url',
+      match: urlMatch[0],
+      content: urlMatch[0],
+      index: urlMatch.index,
+      length: urlMatch[0].length
+    });
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
@@ -91,28 +90,6 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         match: playerName,
         content: playerName.replace(/\([A-Z]\)$/, ''), // Remove (C) suffix for the command
         index: 0,
-        length: playerName.length
-      });
-    }
-  }
-  
-  // Find player names in who output
-  if (isWhoOutput) {
-    WHO_PLAYER_REGEX.lastIndex = 0;
-    let whoMatch;
-    while ((whoMatch = WHO_PLAYER_REGEX.exec(text)) !== null) {
-      const fullMatch = whoMatch[0];
-      const symbol = whoMatch[1] || '';
-      const playerName = whoMatch[2];
-      
-      // Calculate the actual position of the player name
-      const playerIndex = whoMatch.index + fullMatch.indexOf(playerName);
-      
-      matches.push({
-        type: 'player',
-        match: playerName,
-        content: playerName,
-        index: playerIndex,
         length: playerName.length
       });
     }

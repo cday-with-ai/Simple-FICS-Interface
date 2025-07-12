@@ -282,7 +282,7 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
             onMouseEnter={() => onMessageHover?.(message.timestamp)}
             onMouseLeave={() => onMessageHover?.(null)}
           >
-            <FICSOutput text={message.content} onCommandClick={handleCommandClick} />
+            <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
           </MessageRow>
         ))}
       </MessagesContainer>

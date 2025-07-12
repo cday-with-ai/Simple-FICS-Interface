@@ -59,7 +59,7 @@ export const FICSOutput: React.FC<FICSOutputProps> = ({ text, className, onComma
   
   const isSeekOutput = PATTERNS.SEEK_PLAYER.test(text);
   
-  // For who output, parse it line by line
+  // For who output, parse it line by line but preserve formatting
   if (isWhoOutput) {
     const lines = text.split('\n');
     
@@ -79,43 +79,55 @@ export const FICSOutput: React.FC<FICSOutputProps> = ({ text, className, onComma
             );
           }
           
-          // Parse player entries in the line
+          // Parse player names while preserving column spacing
           const parts: React.ReactNode[] = [];
           let lastIndex = 0;
           
-          // Split line into columns (3 columns per line in who output)
-          const columns = line.match(/(?:\d{3,4}|----|\+{4})[.^:#&]?\w+(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?\s*/g) || [];
+          // Find all player names in the line
+          // Match pattern: optional symbols followed by player name
+          const playerRegex = /([.^:#&]?)([A-Za-z]\w*)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;
+          let match;
           
-          columns.forEach((column, colIndex) => {
-            const columnStart = line.indexOf(column, lastIndex);
+          while ((match = playerRegex.exec(line)) !== null) {
+            const [fullMatch, symbol, playerName] = match;
+            const matchStart = match.index;
             
-            // Add any text before this column
-            if (columnStart > lastIndex) {
-              parts.push(line.substring(lastIndex, columnStart));
-            }
-            
-            // Parse the column: rating + optional symbol + player name + optional flags
-            const match = column.match(/^((?:\d{3,4}|----|\+{4}))([.^:#&]?)(\w+)((?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?)/);
-            
-            if (match) {
-              const [fullMatch, rating, symbol, playerName, flags] = match;
+            // Check if this is preceded by a rating to confirm it's a player
+            const beforeMatch = line.substring(Math.max(0, matchStart - 6), matchStart);
+            if (beforeMatch.match(/(?:\d{3,4}|----|\+{4})\s*$/)) {
+              // Add text before the player name (including rating and symbol)
+              if (matchStart > lastIndex) {
+                parts.push(line.substring(lastIndex, matchStart));
+              }
+              
+              // Add the symbol if present
+              if (symbol) {
+                parts.push(symbol);
+              }
+              
+              // Add the clickable player name
               parts.push(
-                <React.Fragment key={`${lineIndex}-${colIndex}`}>
-                  {rating}{symbol}
-                  <PlayerName name={playerName} />
-                  {flags}
-                </React.Fragment>
+                <PlayerName key={`${lineIndex}-${match.index}`} name={playerName} />
               );
-            } else {
-              parts.push(column);
+              
+              // Update lastIndex to after the player name (not the full match)
+              lastIndex = matchStart + symbol.length + playerName.length;
             }
-            
-            lastIndex = columnStart + column.length;
-          });
+          }
           
           // Add any remaining text
           if (lastIndex < line.length) {
             parts.push(line.substring(lastIndex));
+          }
+          
+          // If no players found, return the line as-is
+          if (parts.length === 0) {
+            return (
+              <React.Fragment key={lineIndex}>
+                {lineIndex > 0 && '\n'}
+                {line}
+              </React.Fragment>
+            );
           }
           
           return (
