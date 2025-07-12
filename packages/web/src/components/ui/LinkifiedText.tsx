@@ -43,6 +43,9 @@ const URL_REGEX = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z
 // Regex to match quoted FICS commands like "play 56", 'accept', "decline", etc.
 const COMMAND_REGEX = /["']([^"']+)["']/g;
 
+// Regex to match bracketed commands like [next], [more], [back], etc.
+const BRACKET_COMMAND_REGEX = /\[(\w+)\]/g;
+
 // Valid FICS commands (lowercase for case-insensitive comparison)
 const VALID_FICS_COMMANDS = new Set([
   'abort', 'accept', 'addlist', 'adjourn', 'alias', 'allobservers', 'assess',
@@ -575,6 +578,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   
   // Find commands (only if onCommandClick is provided)
   if (onCommandClick) {
+    // Find quoted commands
     COMMAND_REGEX.lastIndex = 0;
     let commandMatch;
     while ((commandMatch = COMMAND_REGEX.exec(text)) !== null) {
@@ -595,6 +599,23 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
           content: commandMatch[1], // Command without quotes
           index: commandMatch.index,
           length: commandMatch[0].length
+        });
+      }
+    }
+    
+    // Find bracketed commands like [next], [more], etc.
+    BRACKET_COMMAND_REGEX.lastIndex = 0;
+    let bracketMatch;
+    while ((bracketMatch = BRACKET_COMMAND_REGEX.exec(text)) !== null) {
+      const command = bracketMatch[1].toLowerCase();
+      // Common navigation commands in help pages
+      if (['next', 'more', 'back', 'prev', 'previous', 'done', 'quit'].includes(command)) {
+        matches.push({
+          type: 'command',
+          match: bracketMatch[0], // Full match with brackets
+          content: command, // Command without brackets
+          index: bracketMatch.index,
+          length: bracketMatch[0].length
         });
       }
     }
