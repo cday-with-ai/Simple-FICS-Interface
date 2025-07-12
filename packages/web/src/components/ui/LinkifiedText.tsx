@@ -9,31 +9,30 @@ interface LinkifiedTextProps {
 }
 
 const Link = styled.a`
-  color: ${props => props.theme.colors.primary};
-  text-decoration: underline;
+  color: inherit;
+  text-decoration: none;
   cursor: pointer;
-  transition: color ${props => props.theme.transitions.fast};
+  transition: all ${props => props.theme.transitions.fast};
   
   &:hover {
-    color: ${props => props.theme.colors.primaryHover};
-    text-decoration: none;
+    color: ${props => props.theme.colors.primary};
+    text-decoration: underline;
   }
   
   &:visited {
-    color: ${props => props.theme.colors.primary}aa;
+    color: inherit;
   }
 `;
 
 const CommandLink = styled.span`
-  color: ${props => props.theme.colors.primary};
-  text-decoration: underline;
+  color: inherit;
+  text-decoration: none;
   cursor: pointer;
-  transition: color ${props => props.theme.transitions.fast};
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  transition: all ${props => props.theme.transitions.fast};
   
   &:hover {
-    color: ${props => props.theme.colors.primaryHover};
-    text-decoration: none;
+    color: ${props => props.theme.colors.primary};
+    text-decoration: underline;
   }
 `;
 
