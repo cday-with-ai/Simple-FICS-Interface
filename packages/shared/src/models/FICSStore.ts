@@ -155,7 +155,7 @@ export class FICSStore {
         // Handle clear commands
         if (cmd.startsWith('clear ')) {
             const listType = cmd.substring(6); // Get everything after "clear "
-            if (['censor', 'noplay', 'gnotify', 'channel'].includes(listType)) {
+            if (['censor', 'noplay', 'gnotify', 'notify', 'channel'].includes(listType)) {
                 this.executeClearList(listType);
                 return;
             }

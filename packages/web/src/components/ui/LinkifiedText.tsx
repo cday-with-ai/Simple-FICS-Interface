@@ -49,7 +49,7 @@ const BRACKET_COMMAND_REGEX = /\[(\w+)\]/g;
 // Valid FICS commands (lowercase for case-insensitive comparison)
 const VALID_FICS_COMMANDS = new Set([
   'abort', 'accept', 'addlist', 'adjourn', 'alias', 'allobservers', 'assess',
-  'clear', // Special command for clearing lists
+  'clear', // Special command for clearing lists (censor, noplay, notify, gnotify, channel)
   'backward', 'bell', 'best', 'boards', 'bsetup', 'bugwho', 'cbest',
   'clearmessages', 'convert_bcf', 'convert_elo', 'convert_uscf', 'copygame',
   'crank', 'cshout', 'date', 'decline', 'draw', 'examine', 'finger', 'flag',
