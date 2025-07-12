@@ -72,6 +72,8 @@ const SEEK_PLAYER_REGEX = /^(\w+(?:\([A-Z]\))?) \((?:\+{4}|-{4}|\+*\d+)\) seekin
 
 // Store the last seen history player name
 let lastHistoryPlayer: string | null = null;
+// Store the last seen journal player name
+let lastJournalPlayer: string | null = null;
 
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
   // Find all matches (URLs, commands, and player names) with their positions
@@ -120,6 +122,10 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   // Check if this is history output
   const isHistoryOutput = /^\s*\d+:\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+\w+/.test(text) ||
     /History for \w+:/.test(text);
+  
+  // Check if this is journal output
+  const isJournalOutput = /^\s*%\d+:\s+\w+/.test(text) ||
+    /Journal for \w+:/.test(text);
   
   // For who output, find player names
   if (isWhoOutput && !isGamesOutput) {
@@ -418,6 +424,60 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         });
       }
     }
+  } else if (isJournalOutput) {
+    // Handle journal header: "Journal for playerName:"
+    const headerRegex = /Journal for (\w+):/;
+    const headerMatch = headerRegex.exec(text);
+    if (headerMatch) {
+      const playerName = headerMatch[1];
+      lastJournalPlayer = playerName; // Store for use in subsequent lines
+      const playerIndex = text.indexOf(playerName);
+      matches.push({
+        type: 'player',
+        match: playerName,
+        content: playerName,
+        index: playerIndex,
+        length: playerName.length
+      });
+    } else {
+      // Handle journal entries: "%N: player1 rating player2 rating ..."
+      const journalRegex = /^(\s*)(%\d+):\s+(\w+)\s+\d+\s+(\w+)/;
+      const journalMatch = journalRegex.exec(text);
+      if (journalMatch) {
+        const [fullMatch, indent, gameNum, player1, player2] = journalMatch;
+        
+        // Add clickable game number if we have the journal player name
+        if (onCommandClick && lastJournalPlayer) {
+          const gameNumIndex = indent.length;
+          matches.push({
+            type: 'command',
+            match: gameNum + ':',
+            content: `examine ${lastJournalPlayer} ${gameNum}`,
+            index: gameNumIndex,
+            length: gameNum.length + 1  // Include the colon
+          });
+        }
+        
+        // Add both player names
+        const player1Index = text.indexOf(player1, indent.length + gameNum.length);
+        matches.push({
+          type: 'player',
+          match: player1,
+          content: player1,
+          index: player1Index,
+          length: player1.length
+        });
+        
+        const player2Index = text.indexOf(player2, player1Index + player1.length);
+        matches.push({
+          type: 'player',
+          match: player2,
+          content: player2,
+          index: player2Index,
+          length: player2.length
+        });
+      }
+    }
   } else {
     // Find URLs (not in special output formats)
     URL_REGEX.lastIndex = 0;
@@ -434,7 +494,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   
   // Find player names in seek messages (only if onCommandClick is provided)
-  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput) {
+  if (onCommandClick && !isWhoOutput && !isGamesOutput && !isChannelOutput && !isMovesOutput && !isGameMessage && !isChannelLog && !isPlayerList && !isListOutput && !isFingerNote && !isFingerHeader && !isHistoryOutput && !isJournalOutput) {
     const seekMatch = SEEK_PLAYER_REGEX.exec(text);
     if (seekMatch) {
       const playerName = seekMatch[1]; // Player name with optional (C) suffix
