@@ -4,7 +4,7 @@
 
 Simply open `index.html` in your browser or serve it through your web server (like Cloudflare).
 
-The app is built to the `dist/` directory, and `index.html` references all assets there with relative paths.
+The app is built to `packages/web/dist/`, and the root `index.html` references all assets there with relative paths.
 
 ## Building the App
 
@@ -13,10 +13,10 @@ The app is built to the `dist/` directory, and `index.html` references all asset
 yarn install
 
 # Build the web app
-yarn build
+yarn build:web
 ```
 
-This will build the app to the `dist/` directory in the project root.
+This will build the app to `packages/web/dist/`.
 
 ## Development
 
@@ -34,4 +34,4 @@ When deploying through services like Cloudflare, ensure these headers are set fo
 - `Cross-Origin-Embedder-Policy: require-corp`
 - `Cross-Origin-Opener-Policy: same-origin`
 
-The app expects all assets to be served from the `dist/` directory relative to `index.html`.
+The app assets (pieces, fonts, etc.) are properly organized in `packages/web/public/` and get built to `packages/web/dist/`. There are no duplicate assets at the root level.

@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "web": "yarn workspace @fics/web start",
-    "build": "yarn workspace @fics/web build",
+    "build:web": "yarn workspace @fics/web build",
     "mobile": "yarn workspace @fics/mobile start",
     "ios": "yarn workspace @fics/mobile ios",
     "android": "yarn workspace @fics/mobile android",
