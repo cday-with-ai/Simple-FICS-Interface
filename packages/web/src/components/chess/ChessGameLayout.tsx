@@ -312,7 +312,7 @@ const LandscapePlayersColumn = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0;
+    gap: ${props => props.theme.spacing[2]};
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
     flex-shrink: 0;

@@ -1373,7 +1373,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0;
+    gap: ${e=>e.theme.spacing[2]};
     width: 280px;
     padding: ${e=>e.theme.spacing[3]} 0;
     flex-shrink: 0;
