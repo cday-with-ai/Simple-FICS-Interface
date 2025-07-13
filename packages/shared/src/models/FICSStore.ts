@@ -373,7 +373,7 @@ export class FICSStore {
         if (processData.includes('seeking') && processData.includes('to respond')) {
             console.log(`[${messageId}] Parsed into ${messages.length} messages`);
             messages.forEach((msg, idx) => {
-                console.log(`[${messageId}] Message ${idx}:`, msg.type, msg.data?.substring?.(0, 50) || msg.data);
+                console.log(`[${messageId}] Message ${idx}:`, msg.type, typeof msg.data === 'string' ? msg.data.substring(0, 50) : msg.data);
             });
         }
         this.processMessages(messages);

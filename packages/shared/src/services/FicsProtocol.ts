@@ -21,6 +21,12 @@ export class FicsProtocol {
 
         const messages: FicsMessage[] = [];
 
+        // Debug seek messages
+        if (msg.includes('seeking') && msg.includes('to respond')) {
+            console.log('FicsProtocol.parseMessage input:', msg);
+            console.log('Input length:', msg.length);
+        }
+
         // Normalize line endings from \r\n or \n\r to just \n
         msg = msg.replace(/\r\n/g, '\n').replace(/\n\r/g, '\n').replace(/\r/g, '\n');
         
