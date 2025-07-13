@@ -24,17 +24,18 @@ const InputField = styled.input`
   flex: 1;
   padding: ${props => props.theme.spacing[2]};
   border: 1px solid ${props => props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.md};
+  border-radius: ${props => props.theme.borderRadius.container};
   background-color: ${props => props.theme.colors.background};
   color: ${props => props.theme.colors.text};
   font-size: ${props => props.theme.typography.fontSize.sm};
   font-family: ${props => props.theme.typography.fontFamilyMono};
+  box-shadow: ${props => props.theme.shadows.container};
   outline: none;
   transition: all ${props => props.theme.transitions.fast};
   
   &:focus {
     border-color: ${props => props.theme.colors.primary};
-    box-shadow: 0 0 0 2px ${props => props.theme.colors.primary}20;
+    box-shadow: ${props => props.theme.shadows.container}, 0 0 0 2px ${props => props.theme.colors.primary}20;
   }
   
   &:disabled {

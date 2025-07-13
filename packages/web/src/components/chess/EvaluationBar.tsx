@@ -14,9 +14,9 @@ const BarContainer = styled.div<{ $orientation: 'vertical' | 'horizontal' }>`
   position: relative;
   background-color: #f5f5f5;
   border: 1px solid #444;
-  border-radius: 6px;
+  border-radius: ${props => props.theme.borderRadius.container};
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: ${props => props.theme.shadows.container};
   ${props => props.$orientation === 'vertical' ? `
     width: 18px;
     height: 100%;

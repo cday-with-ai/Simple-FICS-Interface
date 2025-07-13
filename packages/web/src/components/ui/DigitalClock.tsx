@@ -96,7 +96,7 @@ export const GameClock = styled(DigitalClock).attrs({size: 'large'})`
     ${TimeDisplay} {
         text-align: center;
         box-shadow: ${({theme}) => theme.shadows.container};
-        border-radius: 10px;
+        border-radius: ${({theme}) => theme.borderRadius.container};
         background: ${({theme}) => theme.colors.surface};
         font-size: 20px;
         

@@ -20,7 +20,7 @@ const MoveListContainer = styled.div`
   flex-direction: column;
   height: 100%;
   background-color: ${props => props.theme.colors.surface};
-  border-radius: 10px;
+  border-radius: ${props => props.theme.borderRadius.container};
   box-shadow: ${props => props.theme.shadows.container};
   overflow: hidden;
 `;

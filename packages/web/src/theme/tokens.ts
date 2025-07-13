@@ -177,6 +177,7 @@ export interface ThemeBorderRadius {
     lg: string;
     xl: string;
     full: string;
+    container: string;
 }
 
 // Main theme interface
@@ -271,6 +272,7 @@ export const baseTokens = {
         lg: '8px',
         xl: '12px',
         full: '9999px',
+        container: '10px',
     } as ThemeBorderRadius,
 
     breakpoints: {

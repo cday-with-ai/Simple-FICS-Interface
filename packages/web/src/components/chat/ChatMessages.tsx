@@ -11,9 +11,10 @@ import { FICSOutput } from '../ui/FICSOutput';
 const MessagesWrapper = styled.div`
   flex: 1;
   background-color: ${props => props.theme.colors.background};
-  border-radius: 12px;
+  border-radius: ${props => props.theme.borderRadius.container};
   margin: ${props => props.theme.spacing[1]};
   border: 1px solid ${props => props.theme.colors.border};
+  box-shadow: ${props => props.theme.shadows.container};
   overflow: hidden;
   display: flex;
   flex-direction: column;
