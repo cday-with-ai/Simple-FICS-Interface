@@ -355,6 +355,11 @@ const LandscapeControlsContainer = styled.div`
         background-color: transparent !important;
         margin-bottom: 0;
     }
+    
+    /* Remove top padding from MoveList header (nav buttons) */
+    div[class*="MoveListHeader"] {
+        padding-top: 0 !important;
+    }
 `;
 
 const LandscapePlayerWithClock = styled.div`

@@ -13,8 +13,10 @@ export interface ChatMessage {
     timestamp: Date | string | number;  // Allow flexibility for MobX serialization
     type: 'message' | 'system' | 'whisper' | 'announcement';
     metadata?: {
-        consoleType?: 'notification' | 'channel' | 'directTell' | 'shout' | 'cshout' | 'matchRequest' | 'seek';
+        consoleType?: 'notification' | 'channel' | 'directTell' | 'shout' | 'cshout' | 'matchRequest' | 'seek' | 
+                       'finger' | 'who' | 'history' | 'journal' | 'sought' | 'games' | 'channelList' | 'news';
         channelNumber?: string;
+        parsedMessage?: any; // ParsedMessage from FicsProtocol
     };
 }
 

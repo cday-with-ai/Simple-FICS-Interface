@@ -6,6 +6,7 @@ import { ChatMessage } from '@fics/shared';
 import { smartScrollToBottom } from '../../utils/chatScrolling';
 import { PlayerName } from '../ui/PlayerName';
 import { LinkifiedText } from '../ui/LinkifiedText';
+import { InteractiveText } from '../ui/InteractiveText';
 import { FICSOutput } from '../ui/FICSOutput';
 
 const MessagesWrapper = styled.div`
@@ -313,10 +314,18 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
             >
               {messageColor ? (
                 <span style={{ color: messageColor }}>
-                  <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+                  {message.metadata?.parsedMessage ? (
+                    <InteractiveText parsedMessage={message.metadata.parsedMessage} />
+                  ) : (
+                    <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+                  )}
                 </span>
               ) : (
-                <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+                message.metadata?.parsedMessage ? (
+                  <InteractiveText parsedMessage={message.metadata.parsedMessage} />
+                ) : (
+                  <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
+                )
               )}
             </MessageRow>
           );

@@ -473,7 +473,7 @@ export class FICSStore {
                             sender: this.stripTitles(message.data.username),
                             content: this.rootStore?.preferencesStore.preferences.openChannelsInTabs 
                                 ? message.data.message 
-                                : `(${message.data.channelNumber}): ${this.stripTitles(message.data.username)}: ${message.data.message}`,
+                                : message.data.content || `(${message.data.channelNumber}): ${this.stripTitles(message.data.username)}: ${message.data.message}`,
                             timestamp: channelLocalTime,
                             type: 'message',
                             metadata: {
