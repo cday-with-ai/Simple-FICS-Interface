@@ -60,6 +60,12 @@ export class FICSStore {
     }
 
     connect(credentials?: { username: string; password: string }) {
+        // Don't create multiple connections
+        if (this.connected || this.connecting || this.ws) {
+            console.log('Connection already exists or in progress');
+            return;
+        }
+        
         this.connecting = true;
         this.error = null;
         this.credentials = credentials || null;
@@ -340,17 +346,7 @@ export class FICSStore {
         this.sendCommand('guest');
     }
 
-    private messageCounter = 0;
-    
     private handleMessage(data: string) {
-        const messageId = ++this.messageCounter;
-        // Skip logging noisy [G] messages - check trimmed version and regex for any position
-        if (!data.trim().startsWith('[G]') && !data.match(/\[G\]/)) {
-            console.log(`[${messageId}] FICS message received:`, data);
-            if (data.includes('seeking') && data.includes('to respond')) {
-                console.log(`[${messageId}] Processing at:`, new Date().toISOString());
-            }
-        }
         
         runInAction(() => {
             this.lastPing = Date.now();
@@ -370,12 +366,6 @@ export class FICSStore {
         // Process all messages immediately
         // FICS sends complete messages, so we don't need buffering
         const messages = FicsProtocol.parseMessage(processData);
-        if (processData.includes('seeking') && processData.includes('to respond')) {
-            console.log(`[${messageId}] Parsed into ${messages.length} messages`);
-            messages.forEach((msg, idx) => {
-                console.log(`[${messageId}] Message ${idx}:`, msg.type, typeof msg.data === 'string' ? msg.data.substring(0, 50) : msg.data);
-            });
-        }
         this.processMessages(messages);
     }
 

@@ -140,6 +140,7 @@ export interface ThemeShadows {
     xl: string;
     focus: string;
     board: string;
+    container: string;
 }
 
 export interface ThemeBreakpoints {
@@ -261,6 +262,7 @@ export const baseTokens = {
         xl: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
         focus: '0 0 0 3px rgba(66, 153, 225, 0.5)',
         board: '0 4px 8px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1)',
+        container: '0 4px 6px rgba(0, 0, 0, 0.75)',
     } as ThemeShadows,
     
     borderRadius: {

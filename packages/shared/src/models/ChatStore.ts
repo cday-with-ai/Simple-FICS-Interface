@@ -62,13 +62,13 @@ export class ChatStore {
 
             const targetTab = this.tabs.get(tabId)!;
             
-            // Check for duplicate consecutive messages (common with FICS seeks)
-            if (targetTab.messages.length > 0) {
-                const lastMessage = targetTab.messages[targetTab.messages.length - 1];
+            // Check for duplicate messages (common with FICS seeks)
+            // Look at the last few messages, not just the last one
+            const recentMessages = targetTab.messages.slice(-5); // Check last 5 messages
+            for (const recentMsg of recentMessages) {
                 // If the content is identical and timestamps are within 1 second, skip
-                if (lastMessage.content === message.content && 
-                    Math.abs(new Date(lastMessage.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000) {
-                    console.log('Skipping duplicate message:', message.content.substring(0, 50));
+                if (recentMsg.content === message.content && 
+                    Math.abs(new Date(recentMsg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000) {
                     return; // Skip duplicate
                 }
             }

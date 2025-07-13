@@ -25,11 +25,8 @@ const CardContainer = styled.div<{ $isActive: boolean; $orientation: 'horizontal
     ? props.theme.colors.surface 
     : props.theme.colors.backgroundTertiary
   };
-  border-radius: ${props => props.theme.borderRadius.md};
-  box-shadow: ${props => props.$isActive 
-    ? props.theme.shadows.md 
-    : props.theme.shadows.sm
-  };
+  border-radius: 10px;
+  box-shadow: ${props => props.theme.shadows.container};
   border: 2px solid transparent;
   transition: all ${props => props.theme.transitions.fast};
   width: 100%;

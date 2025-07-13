@@ -95,12 +95,13 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
 export const GameClock = styled(DigitalClock).attrs({size: 'large'})`
     ${TimeDisplay} {
         text-align: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+        box-shadow: ${({theme}) => theme.shadows.container};
+        border-radius: 10px;
         background: ${({theme}) => theme.colors.surface};
         font-size: 20px;
         
         &:hover {
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25), 0 2px 3px rgba(0, 0, 0, 0.15);
+            box-shadow: ${({theme}) => theme.shadows.container};
         }
     }
 `;

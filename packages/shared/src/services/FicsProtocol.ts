@@ -21,11 +21,6 @@ export class FicsProtocol {
 
         const messages: FicsMessage[] = [];
 
-        // Debug seek messages
-        if (msg.includes('seeking') && msg.includes('to respond')) {
-            console.log('FicsProtocol.parseMessage input:', msg);
-            console.log('Input length:', msg.length);
-        }
 
         // Normalize line endings from \r\n or \n\r to just \n
         msg = msg.replace(/\r\n/g, '\n').replace(/\n\r/g, '\n').replace(/\r/g, '\n');
@@ -132,11 +127,29 @@ export class FicsProtocol {
                 lineProcessed = true;
             }
 
-            // Parse direct tells
+            // Parse direct tells with continuation lines
             if (!lineProcessed) {
-                const directTell = this.parseDirectTell(line);
-                if (directTell) {
-                    messages.push({type: 'directTell', data: directTell});
+                const directTellMatch = line.match(/^([a-zA-Z0-9_\[\]()* -]+) tells you:\s*(.*)/);
+                if (directTellMatch) {
+                    let fullMessage = directTellMatch[2];
+                    let j = i + 1;
+                    
+                    // Look for continuation lines
+                    while (j < remainingLines.length && remainingLines[j].trim().startsWith('\\')) {
+                        // Remove the leading \ and append the rest
+                        fullMessage += '\n' + remainingLines[j].replace(/^\\\s*/, '');
+                        j++;
+                    }
+                    
+                    messages.push({
+                        type: 'directTell',
+                        data: {
+                            username: directTellMatch[1],
+                            message: fullMessage
+                        }
+                    });
+                    
+                    i = j - 1; // Skip the continuation lines
                     lineProcessed = true;
                 }
             }
@@ -165,19 +178,38 @@ export class FicsProtocol {
             // If this line wasn't processed by any specific parser, add it as raw
             // Handle continuation lines for raw messages
             if (!lineProcessed && line.trim().length > 0 && line.trim() !== 'fics%') {
-                // Check if this is a multi-line raw message (like channel member lists)
-                let fullMessage = line;
-                let j = i + 1;
-                
-                // Look ahead for continuation lines
-                while (j < remainingLines.length && remainingLines[j].trim().startsWith('\\')) {
-                    // Keep the original line with backslash for display
-                    fullMessage += '\n' + remainingLines[j];
-                    j++;
+                // Special handling for concatenated seek messages
+                // Sometimes FICS sends multiple seek messages on one line
+                if (line.includes('seeking') && line.includes('to respond')) {
+                    // Split concatenated seek messages
+                    // Pattern: "name (rating) seeking ... to respond)name2 (rating2) seeking..."
+                    const seekPattern = /(\w+\s+\((?:\d+|\+{4})\)\s+seeking.*?\("play\s+\d+"\s+to\s+respond\))/g;
+                    const seekMatches = line.match(seekPattern);
+                    
+                    if (seekMatches && seekMatches.length > 1) {
+                        // Multiple seeks found - add each as a separate message
+                        for (const seekMatch of seekMatches) {
+                            messages.push({type: 'raw', data: seekMatch.trim()});
+                        }
+                        lineProcessed = true;
+                    }
                 }
                 
-                messages.push({type: 'raw', data: fullMessage});
-                i = j - 1; // Skip the continuation lines we've already processed
+                if (!lineProcessed) {
+                    // Check if this is a multi-line raw message (like channel member lists)
+                    let fullMessage = line;
+                    let j = i + 1;
+                    
+                    // Look ahead for continuation lines
+                    while (j < remainingLines.length && remainingLines[j].trim().startsWith('\\')) {
+                        // Keep the original line with backslash for display
+                        fullMessage += '\n' + remainingLines[j];
+                        j++;
+                    }
+                    
+                    messages.push({type: 'raw', data: fullMessage});
+                    i = j - 1; // Skip the continuation lines we've already processed
+                }
             }
             
             i++;
@@ -353,16 +385,6 @@ export class FicsProtocol {
         return null;
     }
 
-    private static parseDirectTell(msg: string): DirectTell | null {
-        const match = msg.match(/^([a-zA-Z0-9_\[\]()* -]+) tells you:\s*(.*)/);
-        if (match) {
-            return {
-                username: match[1],
-                message: match[2]
-            };
-        }
-        return null;
-    }
 
     private static parseGameEnd(msg: string): GameEnd | null {
         const match = msg.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+) vs\. ([a-zA-Z0-9_\[\]*-]+)\) ([^}]+)\}\s*(.+)/);

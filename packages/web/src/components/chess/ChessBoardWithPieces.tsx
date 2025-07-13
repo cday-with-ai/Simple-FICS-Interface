@@ -32,8 +32,8 @@ const BoardContainer = styled.div<{ $size: number }>`
   width: ${props => props.$size}px;
   height: ${props => props.$size}px;
   position: relative;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  box-shadow: ${props => props.theme.shadows.container};
   overflow: hidden;
   user-select: none;
 `;
