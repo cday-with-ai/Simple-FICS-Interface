@@ -732,20 +732,20 @@ export class FICSStore {
                             }
                             
                             // Handle multi-line channel member lists
-                            if (message.data.match(/^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/)) {
+                            if (rawContent.match(/^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/)) {
                                 // Start of a channel list
                                 this.isCollectingChannelList = true;
-                                this.channelListBuffer = [message.data];
+                                this.channelListBuffer = [rawContent];
                                 // Don't display yet
                                 break;
-                            } else if (this.isCollectingChannelList && message.data.trim().startsWith('\\')) {
+                            } else if (this.isCollectingChannelList && rawContent.trim().startsWith('\\')) {
                                 // Continuation line
-                                this.channelListBuffer.push(message.data);
+                                this.channelListBuffer.push(rawContent);
                                 // Don't display yet
                                 break;
-                            } else if (this.isCollectingChannelList && message.data.match(/^\d+\s+players?\s+are\s+in\s+channel\s+\d+\./)) {
+                            } else if (this.isCollectingChannelList && rawContent.match(/^\d+\s+players?\s+are\s+in\s+channel\s+\d+\./)) {
                                 // End of channel list
-                                this.channelListBuffer.push(message.data);
+                                this.channelListBuffer.push(rawContent);
                                 
                                 // Now display the complete channel list
                                 const completeMessage = this.channelListBuffer.join('\n');
@@ -817,13 +817,21 @@ export class FICSStore {
                                 localTime = new Date(now.getTime() + (edtOffset * 60 * 1000));
                             }
                             
+                            // For raw messages with ParsedMessage structure
+                            const messageContent = typeof message.data === 'string' ? message.data : message.data.content;
+                            
                             // Detect message type for console coloring
-                            const metadata = this.detectConsoleMessageType(message.data);
+                            const metadata = this.detectConsoleMessageType(messageContent);
+                            
+                            // If message.data is a ParsedMessage, include it in metadata
+                            if (typeof message.data === 'object' && message.data.elements) {
+                                metadata.parsedMessage = message.data;
+                            }
                             
                             this.rootStore?.chatStore.addMessage('console', {
                                 channel: 'console',
                                 sender: 'FICS',
-                                content: message.data,
+                                content: messageContent,
                                 timestamp: localTime,
                                 type: 'system',
                                 metadata

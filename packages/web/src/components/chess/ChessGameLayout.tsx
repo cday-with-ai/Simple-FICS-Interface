@@ -338,8 +338,8 @@ const LandscapeControlsContainer = styled.div`
     
     /* Add specific margins only where needed */
     & > div:nth-child(2) {
-        /* GameControls - remove its padding */
-        padding: 0 !important;
+        /* GameControls - override its padding */
+        padding: ${props => props.theme.spacing[1]} !important;
         margin-bottom: ${props => props.theme.spacing[1]};
     }
     
