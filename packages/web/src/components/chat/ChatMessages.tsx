@@ -8,10 +8,22 @@ import { PlayerName } from '../ui/PlayerName';
 import { LinkifiedText } from '../ui/LinkifiedText';
 import { FICSOutput } from '../ui/FICSOutput';
 
+const MessagesWrapper = styled.div`
+  flex: 1;
+  background-color: ${props => props.theme.colors.background};
+  border-radius: 12px;
+  margin: ${props => props.theme.spacing[1]};
+  border: 1px solid ${props => props.theme.colors.border};
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+`;
+
 const MessagesContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: ${props => props.theme.spacing[2]};
+  overflow-x: hidden;
+  padding: ${props => props.theme.spacing[3]};
   min-height: 0;
   
   /* Custom scrollbar */
@@ -215,24 +227,28 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
 
   if (!activeTab) {
     return (
-      <MessagesContainer className="chat-messages-container">
-        <EmptyState>No active chat</EmptyState>
-      </MessagesContainer>
+      <MessagesWrapper>
+        <MessagesContainer className="chat-messages-container">
+          <EmptyState>No active chat</EmptyState>
+        </MessagesContainer>
+      </MessagesWrapper>
     );
   }
 
   if (messages.length === 0) {
     return (
-      <MessagesContainer className="chat-messages-container">
-        <EmptyState>
-          {activeTab.type === 'channel' 
-            ? `No messages in (${activeTab.name}) yet`
-            : activeTab.type === 'private'
-            ? `No messages with ${activeTab.name} yet`
-            : 'Connecting to freechess.org...'
-          }
-        </EmptyState>
-      </MessagesContainer>
+      <MessagesWrapper>
+        <MessagesContainer className="chat-messages-container">
+          <EmptyState>
+            {activeTab.type === 'channel' 
+              ? `No messages in (${activeTab.name}) yet`
+              : activeTab.type === 'private'
+              ? `No messages with ${activeTab.name} yet`
+              : 'Connecting to freechess.org...'
+            }
+          </EmptyState>
+        </MessagesContainer>
+      </MessagesWrapper>
     );
   }
 
@@ -270,8 +286,9 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
   // For console tab, show raw messages without grouping
   if (activeTab.type === 'console') {
     return (
-      <MessagesContainer ref={containerRef} className="chat-messages-container">
-        {messages.map((message) => {
+      <MessagesWrapper>
+        <MessagesContainer ref={containerRef} className="chat-messages-container">
+          {messages.map((message) => {
           // Get console color if metadata is present
           let messageColor: string | undefined;
           if (message.metadata?.consoleType) {
@@ -303,14 +320,16 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
             </MessageRow>
           );
         })}
-      </MessagesContainer>
+        </MessagesContainer>
+      </MessagesWrapper>
     );
   }
 
   // For other tabs, use the grouped display
   return (
-    <MessagesContainer ref={containerRef} className="chat-messages-container">
-      {groupedMessages.map((group, groupIndex) => {
+    <MessagesWrapper>
+      <MessagesContainer ref={containerRef} className="chat-messages-container">
+        {groupedMessages.map((group, groupIndex) => {
         const firstMessage = group.messages[0];
         const isYou = group.sender.toLowerCase() === currentUsername.toLowerCase();
         
@@ -361,7 +380,8 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
           </MessageGroup>
         );
       })}
-    </MessagesContainer>
+      </MessagesContainer>
+    </MessagesWrapper>
   );
 });
 

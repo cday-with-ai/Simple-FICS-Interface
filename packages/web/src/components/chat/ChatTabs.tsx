@@ -5,7 +5,7 @@ import { useRootStore } from '@fics/shared';
 
 const TabsContainer = styled.div`
   display: flex;
-  background-color: ${props => props.theme.colors.backgroundTertiary};
+  background-color: ${props => props.theme.colors.surface};
   border-bottom: 1px solid ${props => props.theme.colors.border};
   overflow-x: auto;
   min-height: 32px;
@@ -32,10 +32,12 @@ const Tab = styled.div<{ $active: boolean; $hasUnread: boolean; $dragging?: bool
   display: flex;
   align-items: center;
   gap: ${props => props.theme.spacing[1]};
-  padding: ${props => props.theme.spacing[1]} ${props => props.theme.spacing[1]};
+  padding: ${props => props.theme.spacing[1]} ${props => props.theme.spacing[2]};
+  margin-right: ${props => props.theme.spacing[2]};
   border: none;
+  border-radius: ${props => props.theme.borderRadius.lg} ${props => props.theme.borderRadius.lg} 0 0;
   background-color: ${props => props.$active 
-    ? props.theme.colors.surface 
+    ? props.theme.colors.background 
     : 'transparent'
   };
   color: ${props => props.$active 
@@ -57,8 +59,8 @@ const Tab = styled.div<{ $active: boolean; $hasUnread: boolean; $dragging?: bool
   
   &:hover {
     background-color: ${props => props.$active 
-      ? props.theme.colors.surface
-      : props.theme.colors.backgroundSecondary
+      ? props.theme.colors.background
+      : props.theme.colors.backgroundTertiary
     };
     color: ${props => props.theme.colors.text};
   }

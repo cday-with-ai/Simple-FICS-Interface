@@ -83,8 +83,11 @@ export class FicsProtocol {
 
         // Now process line by line for other line-based messages
         const remainingLines = remainingMsg.split('\n').filter(line => line.trim().length > 0);
-
-        for (const line of remainingLines) {
+        
+        // Process raw messages with continuation lines
+        let i = 0;
+        while (i < remainingLines.length) {
+            const line = remainingLines[i];
             // Skip lines that were already processed
             if (line.trim().startsWith('<12>') ||
                 (movesList && (line.includes('Movelist for game') || line.match(/^\[.*\]$/) || line.match(/^\d+\./))) ||
@@ -154,10 +157,24 @@ export class FicsProtocol {
             }
 
             // If this line wasn't processed by any specific parser, add it as raw
-            // Skip FICS prompts, empty lines, and \ continuation lines
-            if (!lineProcessed && line.trim().length > 0 && line.trim() !== 'fics%' && !line.trim().startsWith('\\')) {
-                messages.push({type: 'raw', data: line});
+            // Handle continuation lines for raw messages
+            if (!lineProcessed && line.trim().length > 0 && line.trim() !== 'fics%') {
+                // Check if this is a multi-line raw message (like channel member lists)
+                let fullMessage = line;
+                let j = i + 1;
+                
+                // Look ahead for continuation lines
+                while (j < remainingLines.length && remainingLines[j].trim().startsWith('\\')) {
+                    // Keep the original line with backslash for display
+                    fullMessage += '\n' + remainingLines[j];
+                    j++;
+                }
+                
+                messages.push({type: 'raw', data: fullMessage});
+                i = j - 1; // Skip the continuation lines we've already processed
             }
+            
+            i++;
         }
 
         // If no messages were parsed from any line, return the original as raw
@@ -558,7 +575,8 @@ export class FicsProtocol {
     // Message cleanup methods
     static cleanupMessage(msg: string): string {
         msg = msg.replaceAll("\n\r", "\n");
-        msg = msg.replaceAll('\n\\', '\n');
+        // Don't remove backslashes - they indicate continuation lines
+        // msg = msg.replaceAll('\n\\', '\n');
 
         if (!msg.endsWith("\n")) msg += "\n";
         if (msg.startsWith("\n")) msg = msg.substring(1);

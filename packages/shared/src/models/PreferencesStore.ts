@@ -67,6 +67,8 @@ export interface Preferences {
     showTimestamps: boolean;
     chatFontSize: 'small' | 'medium' | 'large';
     highlightMentions: boolean;
+    openChannelsInTabs: boolean;
+    openTellsInTabs: boolean;
 
     // Game preferences
     autoAcceptRematch: boolean;
@@ -113,6 +115,8 @@ const DEFAULT_PREFERENCES: Preferences = {
     showTimestamps: true,
     chatFontSize: 'medium',
     highlightMentions: true,
+    openChannelsInTabs: true,
+    openTellsInTabs: true,
     autoAcceptRematch: false,
     confirmResign: true,
     defaultTimeControl: '15 0',

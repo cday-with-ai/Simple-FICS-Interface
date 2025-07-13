@@ -39,7 +39,7 @@ export class GameStore {
     evaluation: { score: number; depth: number; pv: string } | null = null;
     rootStore?: RootStore;
     _position: string = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-    private _capturedPieces: { white: string[]; black: string[] } = { white: [], black: [] };
+    _capturedPieces: { white: string[]; black: string[] } = { white: [], black: [] };
     private _positionHistory: string[] = []; // Store FEN for each position
     private _lastKnownOpening: string | null = null; // Store the last matched opening
     
@@ -332,6 +332,11 @@ export class GameStore {
                 this.gameRelation = style12.relation;
                 this.shouldFlipBoard = style12.flipBoard;
                 
+                // Turn off analysis when switching to playing mode
+                if (this.isPlaying && this.isAnalyzing) {
+                    this.isAnalyzing = false;
+                }
+                
                 // Cache playing color on first move when playing
                 if (this.isPlaying && this._playingColor === null) {
                     // Determine color based on relation and whose turn it is
@@ -422,10 +427,12 @@ export class GameStore {
     }
     
     private updateCapturedPieces() {
-        this._capturedPieces = {
-            white: this.chessBoard.getCapturedPieces(Color.WHITE),
-            black: this.chessBoard.getCapturedPieces(Color.BLACK)
-        };
+        runInAction(() => {
+            this._capturedPieces = {
+                white: this.chessBoard.getCapturedPieces(Color.WHITE),
+                black: this.chessBoard.getCapturedPieces(Color.BLACK)
+            };
+        });
     }
     
     get lastMove() {

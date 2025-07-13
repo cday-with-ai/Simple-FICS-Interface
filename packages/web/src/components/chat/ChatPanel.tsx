@@ -57,6 +57,9 @@ const Content = styled.div`
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  padding: ${props => props.theme.spacing[2]};
+  padding-top: 0;
+  padding-bottom: 0;
 `;
 
 export const ChatPanel: React.FC<ChatPanelProps> = observer(({ className, compact = false }) => {

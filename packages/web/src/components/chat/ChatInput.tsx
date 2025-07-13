@@ -14,15 +14,17 @@ const InputContainer = styled.div`
   display: flex;
   gap: ${props => props.theme.spacing[2]};
   padding: ${props => props.theme.spacing[2]};
-  background-color: ${props => props.theme.colors.backgroundTertiary};
-  border-top: 1px solid ${props => props.theme.colors.border};
+  padding-top: ${props => props.theme.spacing[1]};
+  background-color: transparent;
+  margin: ${props => props.theme.spacing[2]};
+  margin-top: 0;
 `;
 
 const InputField = styled.input`
   flex: 1;
   padding: ${props => props.theme.spacing[2]};
   border: 1px solid ${props => props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.sm};
+  border-radius: ${props => props.theme.borderRadius.md};
   background-color: ${props => props.theme.colors.background};
   color: ${props => props.theme.colors.text};
   font-size: ${props => props.theme.typography.fontSize.sm};
@@ -48,7 +50,7 @@ const InputField = styled.input`
 const SendButton = styled.button`
   padding: ${props => props.theme.spacing[2]} ${props => props.theme.spacing[3]};
   border: none;
-  border-radius: ${props => props.theme.borderRadius.sm};
+  border-radius: ${props => props.theme.borderRadius.md};
   background-color: ${props => props.theme.colors.primary};
   color: ${props => props.theme.colors.textInverse};
   font-size: ${props => props.theme.typography.fontSize.sm};

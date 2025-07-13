@@ -246,7 +246,9 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   
   // Check if this looks like channel member list (in command output)
   // Must start with "Channel N" to avoid matching regular channel messages
-  const isChannelOutput = /^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(text);
+  // Also match continuation lines that start with \ and contain player names
+  const isChannelOutput = /^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(text) || 
+    /^\s*\\\s+\w+/.test(text);
   
   // Check if this looks like moves command output
   const isMovesOutput = /\w+\s+\(\d+\)\s+vs\.\s+\w+\s+\(\d+\)/.test(text);
@@ -413,11 +415,10 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       console.log('Games entry not matched:', { text, gamesMatch, trimmedText: text.trim() });
     }
   } else if (isChannelOutput) {
-    // Find the colon that separates channel info from member list
-    const colonIndex = text.indexOf(':');
-    if (colonIndex !== -1) {
-      // Parse player names after the colon
-      const membersPart = text.substring(colonIndex + 1);
+    // Check if this is a continuation line (starts with \)
+    if (text.trim().startsWith('\\')) {
+      // Parse player names from continuation line
+      const membersPart = text.substring(text.indexOf('\\') + 1);
       // Match player names with optional {}, (TD), (U), (*) suffixes
       // Handles: playerName, {playerName}, playerName(TD), {playerName(TD)}
       const memberRegex = /\{?(\w+)(?:\([A-Z*]+\))?\}?/g;
@@ -428,10 +429,10 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         // Skip if it's just whitespace or empty
         if (!playerName || playerName.trim() === '') continue;
         
-        // Calculate the actual position of the player name (not the curly brace)
+        // Calculate the actual position of the player name
         const fullMatch = memberMatch[0];
         const nameStartInMatch = fullMatch.indexOf(playerName);
-        const playerIndex = colonIndex + 1 + memberMatch.index + nameStartInMatch;
+        const playerIndex = text.indexOf('\\') + 1 + memberMatch.index + nameStartInMatch;
         
         matches.push({
           type: 'player',
@@ -440,6 +441,36 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
           index: playerIndex,
           length: playerName.length
         });
+      }
+    } else {
+      // Find the colon that separates channel info from member list
+      const colonIndex = text.indexOf(':');
+      if (colonIndex !== -1) {
+        // Parse player names after the colon
+        const membersPart = text.substring(colonIndex + 1);
+        // Match player names with optional {}, (TD), (U), (*) suffixes
+        // Handles: playerName, {playerName}, playerName(TD), {playerName(TD)}
+        const memberRegex = /\{?(\w+)(?:\([A-Z*]+\))?\}?/g;
+        let memberMatch;
+        
+        while ((memberMatch = memberRegex.exec(membersPart)) !== null) {
+          const playerName = memberMatch[1];
+          // Skip if it's just whitespace or empty
+          if (!playerName || playerName.trim() === '') continue;
+          
+          // Calculate the actual position of the player name (not the curly brace)
+          const fullMatch = memberMatch[0];
+          const nameStartInMatch = fullMatch.indexOf(playerName);
+          const playerIndex = colonIndex + 1 + memberMatch.index + nameStartInMatch;
+          
+          matches.push({
+            type: 'player',
+            match: playerName,
+            content: playerName,
+            index: playerIndex,
+            length: playerName.length
+          });
+        }
       }
     }
   } else if (isMovesOutput) {

@@ -47,6 +47,10 @@ export class FICSStore {
     private clearingListType: string | null = null;
     private clearingListBuffer: string[] = [];
     private credentials: { username: string; password: string } | null = null;
+    
+    // Track multi-line channel member lists
+    private channelListBuffer: string[] = [];
+    private isCollectingChannelList = false;
 
     constructor() {
         makeAutoObservable(this);
@@ -516,13 +520,17 @@ export class FICSStore {
 
                     case 'channelTell':
                         // Handling channelTell
-                        // Create channel tab if it doesn't exist
                         const channelId = `channel-${message.data.channelNumber}`;
-                        this.rootStore?.chatStore.createTab(
-                            channelId,
-                            message.data.channelNumber,
-                            'channel'
-                        );
+                        
+                        // Check if we should open channels in tabs
+                        if (this.rootStore?.preferencesStore.preferences.openChannelsInTabs) {
+                            // Create channel tab if it doesn't exist
+                            this.rootStore?.chatStore.createTab(
+                                channelId,
+                                message.data.channelNumber,
+                                'channel'
+                            );
+                        }
                         
                         // Create corrected timestamp
                         const channelNow = new Date();
@@ -534,11 +542,14 @@ export class FICSStore {
                             channelLocalTime = new Date(channelNow.getTime() + (edtOffset * 60 * 1000));
                         }
                         
-                        // Add message to channel
-                        this.rootStore?.chatStore.addMessage(channelId, {
-                            channel: channelId,
+                        // Add message to appropriate location
+                        const targetId = this.rootStore?.preferencesStore.preferences.openChannelsInTabs ? channelId : 'console';
+                        this.rootStore?.chatStore.addMessage(targetId, {
+                            channel: targetId,
                             sender: this.stripTitles(message.data.username),
-                            content: message.data.message,
+                            content: this.rootStore?.preferencesStore.preferences.openChannelsInTabs 
+                                ? message.data.message 
+                                : `(${message.data.channelNumber}): ${this.stripTitles(message.data.username)}: ${message.data.message}`,
                             timestamp: channelLocalTime,
                             type: 'message',
                             metadata: {
@@ -552,13 +563,17 @@ export class FICSStore {
                     case 'directTell':
                         // Strip titles from username
                         const cleanUsername = this.stripTitles(message.data.username);
-                        // Create private tab if it doesn't exist
                         const privateTabId = cleanUsername.toLowerCase();
-                        this.rootStore?.chatStore.createTab(
-                            privateTabId,
-                            cleanUsername,
-                            'private'
-                        );
+                        
+                        // Check if we should open tells in tabs
+                        if (this.rootStore?.preferencesStore.preferences.openTellsInTabs) {
+                            // Create private tab if it doesn't exist
+                            this.rootStore?.chatStore.createTab(
+                                privateTabId,
+                                cleanUsername,
+                                'private'
+                            );
+                        }
                         
                         // Create corrected timestamp
                         const privateNow = new Date();
@@ -570,13 +585,19 @@ export class FICSStore {
                             privateLocalTime = new Date(privateNow.getTime() + (edtOffset * 60 * 1000));
                         }
                         
-                        // Add message to private chat
-                        this.rootStore?.chatStore.addMessage(privateTabId, {
-                            channel: privateTabId,
+                        // Add message to appropriate location
+                        const tellTargetId = this.rootStore?.preferencesStore.preferences.openTellsInTabs ? privateTabId : 'console';
+                        this.rootStore?.chatStore.addMessage(tellTargetId, {
+                            channel: tellTargetId,
                             sender: cleanUsername,
-                            content: message.data.message,
+                            content: this.rootStore?.preferencesStore.preferences.openTellsInTabs 
+                                ? message.data.message 
+                                : `${cleanUsername} tells you: ${message.data.message}`,
                             timestamp: privateLocalTime,
-                            type: 'whisper'
+                            type: 'whisper',
+                            metadata: {
+                                consoleType: 'directTell'
+                            }
                         });
                         break;
 
@@ -700,6 +721,78 @@ export class FICSStore {
                                 });
                                 // Don't show ping messages in console
                                 break;
+                            }
+                            
+                            // Handle multi-line channel member lists
+                            if (message.data.match(/^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/)) {
+                                // Start of a channel list
+                                this.isCollectingChannelList = true;
+                                this.channelListBuffer = [message.data];
+                                // Don't display yet
+                                break;
+                            } else if (this.isCollectingChannelList && message.data.trim().startsWith('\\')) {
+                                // Continuation line
+                                this.channelListBuffer.push(message.data);
+                                // Don't display yet
+                                break;
+                            } else if (this.isCollectingChannelList && message.data.match(/^\d+\s+players?\s+are\s+in\s+channel\s+\d+\./)) {
+                                // End of channel list
+                                this.channelListBuffer.push(message.data);
+                                
+                                // Now display the complete channel list
+                                const completeMessage = this.channelListBuffer.join('\n');
+                                this.isCollectingChannelList = false;
+                                this.channelListBuffer = [];
+                                
+                                // Create timestamp and force it to be in local timezone
+                                const now = new Date();
+                                const isInGMT = now.getTimezoneOffset() === 0;
+                                let localTime = now;
+                                
+                                if (isInGMT) {
+                                    const edtOffset = -4 * 60; // EDT is UTC-4 (240 minutes behind UTC)
+                                    localTime = new Date(now.getTime() + (edtOffset * 60 * 1000));
+                                }
+                                
+                                // Detect message type for console coloring
+                                const metadata = this.detectConsoleMessageType(completeMessage);
+                                
+                                this.rootStore?.chatStore.addMessage('console', {
+                                    channel: 'console',
+                                    sender: 'FICS',
+                                    content: completeMessage,
+                                    timestamp: localTime,
+                                    type: 'system',
+                                    metadata
+                                });
+                                break;
+                            } else if (this.isCollectingChannelList) {
+                                // Something went wrong, flush the buffer
+                                this.isCollectingChannelList = false;
+                                // Display what we have so far
+                                for (const bufferedMsg of this.channelListBuffer) {
+                                    const now = new Date();
+                                    const isInGMT = now.getTimezoneOffset() === 0;
+                                    let localTime = now;
+                                    
+                                    if (isInGMT) {
+                                        const edtOffset = -4 * 60;
+                                        localTime = new Date(now.getTime() + (edtOffset * 60 * 1000));
+                                    }
+                                    
+                                    const metadata = this.detectConsoleMessageType(bufferedMsg);
+                                    
+                                    this.rootStore?.chatStore.addMessage('console', {
+                                        channel: 'console',
+                                        sender: 'FICS',
+                                        content: bufferedMsg,
+                                        timestamp: localTime,
+                                        type: 'system',
+                                        metadata
+                                    });
+                                }
+                                this.channelListBuffer = [];
+                                // Continue with current message
                             }
                             
                             // Create timestamp and force it to be in local timezone

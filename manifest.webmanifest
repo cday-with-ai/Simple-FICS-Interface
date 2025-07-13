@@ -1,1 +1,1 @@
-{"name":"@fics/web","short_name":"@fics/web","start_url":"/","display":"standalone","background_color":"#ffffff","lang":"en","scope":"/"}
+{"name":"Simple FICS Interface","short_name":"FICS Chess","start_url":"/","display":"standalone","background_color":"#ffffff","lang":"en","scope":"/","description":"A responsive chess interface for FICS","theme_color":"#1e40af","icons":[{"src":"/simpleficsinterface.svg","sizes":"any","type":"image/svg+xml"}]}

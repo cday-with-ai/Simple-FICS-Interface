@@ -21,9 +21,9 @@ const lightColors: ThemeColors = {
     backgroundTertiary: '#f3f4f6',
 
     // Surface colors
-    surface: '#ffffff',
-    surfaceElevated: '#ffffff',
-    surfaceHover: '#f9fafb',
+    surface: '#f3f4f6',
+    surfaceElevated: '#f9fafb',
+    surfaceHover: '#e5e7eb',
 
     // Text colors
     text: '#111827',

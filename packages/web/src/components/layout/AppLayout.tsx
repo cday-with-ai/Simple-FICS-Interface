@@ -13,7 +13,7 @@ const LayoutContainer = styled.div`
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background-color: ${props => props.theme.colors.background};
+  background-color: ${props => props.theme.colors.surface};
 `;
 
 const MainContent = styled.main`
