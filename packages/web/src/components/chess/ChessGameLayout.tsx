@@ -328,15 +328,20 @@ const LandscapeControlsContainer = styled.div`
     padding: ${props => props.theme.spacing[3]};
     width: 280px;
     
-    /* Remove individual shadows and backgrounds from child components */
-    & > div[class*="CardContainer"] {
-        box-shadow: none;
-        background-color: transparent;
+    /* Remove all borders, shadows and backgrounds from child components */
+    & > * {
+        box-shadow: none !important;
+        background-color: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
     }
     
-    & > div[class*="MoveListContainer"] {
-        box-shadow: none;
-        background-color: transparent;
+    /* Specifically target nested components */
+    div[class*="CardContainer"],
+    div[class*="MoveListContainer"],
+    div[class*="PlayerCard"] {
+        box-shadow: none !important;
+        background-color: transparent !important;
         margin-bottom: 0;
     }
 `;
@@ -967,15 +972,15 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     />
                                 )}
                                 
+                                <ObservableClock
+                                    player={topPlayer}
+                                    isActive={isTopPlayerTurn}
+                                    size="small"
+                                    compact={true}
+                                    variant="landscape"
+                                />
+                                
                                 <LandscapeControlsContainer>
-                                    <LandscapePlayerWithClock>
-                                    <ObservableClock
-                                        player={topPlayer}
-                                        isActive={isTopPlayerTurn}
-                                        size="small"
-                                        compact={true}
-                                        variant="landscape"
-                                    />
                                     <PlayerCard
                                         name={topPlayer.name}
                                         rating={topPlayer.rating}
@@ -986,7 +991,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         hideClockInCard={true}
                                         compact={true}
                                     />
-                                </LandscapePlayerWithClock>
 
                                 <GameControls
                                     perspective={perspective}
@@ -1045,7 +1049,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     }}
                                 />
 
-                                <LandscapePlayerWithClock>
                                     <PlayerCard
                                         name={bottomPlayer.name}
                                         rating={bottomPlayer.rating}
@@ -1056,15 +1059,15 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         hideClockInCard={true}
                                         compact={true}
                                     />
-                                    <ObservableClock
-                                        player={bottomPlayer}
-                                        isActive={!isTopPlayerTurn}
-                                        size="small"
-                                        compact={true}
-                                        variant="landscape"
-                                    />
-                                </LandscapePlayerWithClock>
                                 </LandscapeControlsContainer>
+                                
+                                <ObservableClock
+                                    player={bottomPlayer}
+                                    isActive={!isTopPlayerTurn}
+                                    size="small"
+                                    compact={true}
+                                    variant="landscape"
+                                />
                                 
                                 {showCapturedPieces && (
                                     <CapturedPieces
