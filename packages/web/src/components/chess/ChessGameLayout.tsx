@@ -325,7 +325,7 @@ const LandscapeControlsContainer = styled.div`
     background-color: ${props => props.theme.colors.surface};
     border-radius: ${props => props.theme.borderRadius.container};
     box-shadow: ${props => props.theme.shadows.container};
-    padding: ${props => props.theme.spacing[3]};
+    padding: 0 ${props => props.theme.spacing[3]};
     width: 280px;
     
     /* Remove all borders, shadows and backgrounds from child components */
