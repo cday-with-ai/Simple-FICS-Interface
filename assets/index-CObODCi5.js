@@ -1384,7 +1384,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     background-color: ${e=>e.theme.colors.surface};
     border-radius: ${e=>e.theme.borderRadius.container};
     box-shadow: ${e=>e.theme.shadows.container};
-    padding: 0 ${e=>e.theme.spacing[3]};
+    padding: 0 ${e=>e.theme.spacing[1]};
     width: 280px;
     
     /* Remove all borders, shadows and backgrounds from child components */
