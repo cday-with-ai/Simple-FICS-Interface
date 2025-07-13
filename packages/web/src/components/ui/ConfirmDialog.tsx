@@ -68,10 +68,10 @@ const Button = styled.button<{ $variant: 'primary' | 'secondary' }>`
       background-color: ${props.theme.colors.error}dd;
     }
   ` : `
-    background-color: ${props.theme.colors.backgroundTertiary};
-    color: ${props.theme.colors.text};
+    background-color: ${props.theme.colors.primary};
+    color: ${props.theme.colors.textInverse};
     &:hover {
-      background-color: ${props.theme.colors.border};
+      background-color: ${props.theme.colors.primaryHover};
     }
   `}
 `;

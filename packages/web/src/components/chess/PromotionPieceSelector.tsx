@@ -17,9 +17,9 @@ const Container = styled.div`
 const Button = styled.button<{ $size: 'small' | 'medium' }>`
   width: ${props => props.$size === 'small' ? '36px' : '44px'};
   height: ${props => props.$size === 'small' ? '36px' : '44px'};
-  border: 1px solid ${props => props.theme.colors.border};
+  border: none;
   border-radius: ${props => props.theme.borderRadius.md};
-  background-color: ${props => props.theme.colors.backgroundTertiary};
+  background-color: ${props => props.theme.colors.primary};
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -28,8 +28,7 @@ const Button = styled.button<{ $size: 'small' | 'medium' }>`
   padding: 4px;
   
   &:hover {
-    background-color: ${props => props.theme.colors.backgroundTertiary};
-    border-color: ${props => props.theme.colors.primary};
+    background-color: ${props => props.theme.colors.primaryHover};
   }
   
   &:active {
@@ -56,9 +55,9 @@ const Dropdown = styled.div<{ $isOpen: boolean }>`
 const PieceOption = styled.button<{ $size: 'small' | 'medium' }>`
   width: ${props => props.$size === 'small' ? '32px' : '40px'};
   height: ${props => props.$size === 'small' ? '32px' : '40px'};
-  border: 1px solid ${props => props.theme.colors.border};
+  border: none;
   border-radius: ${props => props.theme.borderRadius.sm};
-  background-color: ${props => props.theme.colors.backgroundSecondary};
+  background-color: ${props => props.theme.colors.primary};
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -67,8 +66,7 @@ const PieceOption = styled.button<{ $size: 'small' | 'medium' }>`
   transition: all ${props => props.theme.transitions.fast};
   
   &:hover {
-    background-color: ${props => props.theme.colors.backgroundTertiary};
-    border-color: ${props => props.theme.colors.primary};
+    background-color: ${props => props.theme.colors.primaryHover};
     transform: scale(1.1);
   }
   

@@ -308,6 +308,23 @@ const HorizontalPlayerWithClock = styled.div`
     width: 100%;
 `;
 
+const LandscapePlayersColumn = styled.div`
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+    width: 280px;
+    padding: ${props => props.theme.spacing[3]} 0;
+    flex-shrink: 0;
+`;
+
+const LandscapePlayerWithClock = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: ${props => props.theme.spacing[1]};
+    align-items: flex-start;
+`;
+
 const PortraitPlayerInfo = styled.div`
     display: flex;
     flex-direction: row;
@@ -323,6 +340,12 @@ const CompactMoveList = styled(MoveList)`
     height: 135px;
     min-height: 135px;
     margin: ${props => props.theme.spacing[2]} 0;
+`;
+
+const LandscapeCompactMoveList = styled(MoveList)`
+    height: 135px;
+    min-height: 135px;
+    margin: 0;
 `;
 
 const PortraitClock = styled(GameClock)`
@@ -909,7 +932,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 )}
                             </BoardArea>
 
-                            <PlayersColumn>
+                            <LandscapePlayersColumn>
                                 {showCapturedPieces && (
                                     <CapturedPieces
                                         orientation="horizontal"
@@ -919,7 +942,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     />
                                 )}
                                 
-                                <PlayerWithClock>
+                                <LandscapePlayerWithClock>
                                     <ObservableClock
                                         player={topPlayer}
                                         isActive={isTopPlayerTurn}
@@ -937,7 +960,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         hideClockInCard={true}
                                         compact={true}
                                     />
-                                </PlayerWithClock>
+                                </LandscapePlayerWithClock>
 
                                 <GameControls
                                     perspective={perspective}
@@ -954,7 +977,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     isDrawOffered={isDrawOffered}
                                 />
 
-                                <CompactMoveList
+                                <LandscapeCompactMoveList
                                     moves={gameStore.moveHistory}
                                     currentMoveIndex={gameStore.currentMoveIndex}
                                     onMoveClick={handleMoveClick}
@@ -996,7 +1019,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     }}
                                 />
 
-                                <PlayerWithClock>
+                                <LandscapePlayerWithClock>
                                     <PlayerCard
                                         name={bottomPlayer.name}
                                         rating={bottomPlayer.rating}
@@ -1014,7 +1037,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         compact={true}
                                         variant="landscape"
                                     />
-                                </PlayerWithClock>
+                                </LandscapePlayerWithClock>
                                 
                                 {showCapturedPieces && (
                                     <CapturedPieces
@@ -1024,7 +1047,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         onPieceClick={handleCapturedPieceClick}
                                     />
                                 )}
-                            </PlayersColumn>
+                            </LandscapePlayersColumn>
                         </LandscapeBoardSection>
                     </ChessSection>
                 </>

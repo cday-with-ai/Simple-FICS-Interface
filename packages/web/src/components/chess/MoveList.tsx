@@ -49,14 +49,14 @@ const NavButton = styled.button`
   justify-content: center;
   border: none;
   border-radius: ${props => props.theme.borderRadius.sm};
-  background-color: ${props => props.theme.colors.backgroundTertiary};
-  color: ${props => props.theme.colors.text};
+  background-color: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.textInverse};
   cursor: pointer;
   transition: all ${props => props.theme.transitions.fast};
   font-size: 10px;
   
   &:hover {
-    background-color: ${props => props.theme.colors.border};
+    background-color: ${props => props.theme.colors.primaryHover};
   }
   
   &:active {

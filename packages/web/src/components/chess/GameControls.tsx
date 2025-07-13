@@ -59,10 +59,10 @@ const ControlButton = styled.button<{ $variant?: 'primary' | 'danger' | 'seconda
         `;
       default:
         return `
-          background-color: ${props.theme.colors.backgroundTertiary};
-          color: ${props.theme.colors.text};
+          background-color: ${props.theme.colors.primary};
+          color: ${props.theme.colors.textInverse};
           &:hover {
-            background-color: ${props.theme.colors.border};
+            background-color: ${props.theme.colors.primaryHover};
           }
         `;
     }
@@ -101,9 +101,11 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
       <ControlButton onClick={onDraw} $variant="secondary">
         Draw
       </ControlButton>
-      <ControlButton onClick={onResign} $variant="secondary">
-        Resign
-      </ControlButton>
+      {gameStore.currentGame && gameStore.currentGame.moveNumber >= 2 && (
+        <ControlButton onClick={onResign} $variant="secondary">
+          Resign
+        </ControlButton>
+      )}
       <ControlButton onClick={onFlipBoard} $variant="secondary">
         Flip
       </ControlButton>

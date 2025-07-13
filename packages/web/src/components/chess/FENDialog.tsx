@@ -105,15 +105,14 @@ const PresetButton = styled.button`
   margin-bottom: ${props => props.theme.spacing[2]};
   border-radius: ${props => props.theme.borderRadius.sm};
   font-size: ${props => props.theme.typography.fontSize.xs};
-  background-color: ${props => props.theme.colors.surface};
-  color: ${props => props.theme.colors.text};
-  border: 1px solid ${props => props.theme.colors.border};
+  background-color: ${props => props.theme.colors.primary};
+  color: ${props => props.theme.colors.textInverse};
+  border: none;
   cursor: pointer;
   transition: all 0.2s;
   
   &:hover {
-    background-color: ${props => props.theme.colors.surfaceHover};
-    border-color: ${props => props.theme.colors.primary};
+    background-color: ${props => props.theme.colors.primaryHover};
   }
 `;
 

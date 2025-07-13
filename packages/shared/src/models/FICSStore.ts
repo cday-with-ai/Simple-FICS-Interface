@@ -37,9 +37,6 @@ export class FICSStore {
     private readonly timesealConnect = "TIMESEAL2|openseal|simpleficsinterface|";
     private readonly timesealKey = "Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
     
-    // Message buffer for handling FICS protocol delimiter
-    private messageBuffer = "";
-    
     // Track login state
     private loginState: 'pre-login' | 'logging-in' | 'logged-in' = 'pre-login';
     
@@ -152,7 +149,6 @@ export class FICSStore {
             this.user = null;
             this.error = null;
             this.loginState = 'pre-login';
-            this.messageBuffer = '';
         });
     }
 
@@ -344,10 +340,16 @@ export class FICSStore {
         this.sendCommand('guest');
     }
 
+    private messageCounter = 0;
+    
     private handleMessage(data: string) {
+        const messageId = ++this.messageCounter;
         // Skip logging noisy [G] messages - check trimmed version and regex for any position
         if (!data.trim().startsWith('[G]') && !data.match(/\[G\]/)) {
-            console.log('FICS message received:', data);
+            console.log(`[${messageId}] FICS message received:`, data);
+            if (data.includes('seeking') && data.includes('to respond')) {
+                console.log(`[${messageId}] Processing at:`, new Date().toISOString());
+            }
         }
         
         runInAction(() => {
@@ -365,84 +367,16 @@ export class FICSStore {
         // Use cleaned message for processing
         const processData = cleanedMessage;
 
-        // Don't buffer messages until we're actually logged in
-        if (this.loginState !== 'logged-in') {
-            // Process the message immediately without buffering
-            const messages = FicsProtocol.parseMessage(processData);
-            this.processMessages(messages);
-            return;
+        // Process all messages immediately
+        // FICS sends complete messages, so we don't need buffering
+        const messages = FicsProtocol.parseMessage(processData);
+        if (processData.includes('seeking') && processData.includes('to respond')) {
+            console.log(`[${messageId}] Parsed into ${messages.length} messages`);
+            messages.forEach((msg, idx) => {
+                console.log(`[${messageId}] Message ${idx}:`, msg.type, msg.data?.substring?.(0, 50) || msg.data);
+            });
         }
-
-        // After login, buffer messages until we see \nfics%
-        this.messageBuffer += processData;
-        
-        // Debug: Buffer state logging removed for cleaner console
-        
-        // Process complete messages ending with fics%
-        // FICS uses \n\r before fics% on some systems
-        const delimiters = ['\n\rfics%', '\nfics%', '\rfics%'];
-        let delimiterIndex = -1;
-        let delimiterLength = 0;
-        
-        // Find which delimiter is present
-        for (const delim of delimiters) {
-            const index = this.messageBuffer.indexOf(delim);
-            if (index !== -1) {
-                delimiterIndex = index;
-                delimiterLength = delim.length;
-                break;
-            }
-        }
-        
-        // Also check for just 'fics%' at the start of buffer (for cases where \n was in previous chunk)
-        if (delimiterIndex === -1 && this.messageBuffer.startsWith('fics%')) {
-            delimiterIndex = 0;
-            delimiterLength = 5;
-        }
-        
-        while (delimiterIndex !== -1) {
-            let completeMessage;
-            
-            if (delimiterIndex === 0 && delimiterLength === 5) {
-                // Handle case where fics% is at the start
-                completeMessage = '';
-                this.messageBuffer = this.messageBuffer.substring(5);
-            } else {
-                // Extract the complete message (up to but not including the delimiter)
-                completeMessage = this.messageBuffer.substring(0, delimiterIndex);
-                
-                // Remove the processed message and delimiter from the buffer
-                this.messageBuffer = this.messageBuffer.substring(delimiterIndex + delimiterLength);
-            }
-            
-            if (completeMessage) {
-                // Parse the complete message
-                // Processing complete message
-                const messages = FicsProtocol.parseMessage(completeMessage);
-                // Parsed messages processed
-                this.processMessages(messages);
-            }
-            
-            // Look for the next delimiter
-            delimiterIndex = -1;
-            delimiterLength = 0;
-            
-            for (const delim of delimiters) {
-                const index = this.messageBuffer.indexOf(delim);
-                if (index !== -1) {
-                    delimiterIndex = index;
-                    delimiterLength = delim.length;
-                    break;
-                }
-            }
-            
-            if (delimiterIndex === -1 && this.messageBuffer.startsWith('fics%')) {
-                delimiterIndex = 0;
-                delimiterLength = 5;
-            }
-        }
-        
-        // Buffer processing complete
+        this.processMessages(messages);
     }
 
     private processMessages(messages: any[]) {
@@ -1033,8 +967,10 @@ export class FICSStore {
         // Check for finger output - various patterns that appear in finger command output
         if (
             message.match(/^\s*\d+:/) || // Finger notes with or without space (e.g., "1:" or " 1:")
-            message.match(/^Finger of \w+/) || // Header (e.g., "Finger of MAd(*)(SR)(TM):")
+            message.match(/^\s*Finger of \w+(?:\([^)]+\))*/) || // Header (e.g., "Finger of MAd(*)(SR)(TM):" or "Finger of GuestZLKY(U):")
             message.match(/^On for:/) || // Online status
+            message.match(/^Idle:/) || // Idle time
+            message.match(/^Sanctions\s*:/) || // Sanctions line
             message.match(/^Last disconnected:/) || // Last disconnected
             message.match(/^\s+rating\s+RD/) || // Rating header
             message.match(/^(Blitz|Standard|Lightning|Wild|Bughouse|Crazyhouse|Suicide|Atomic|Losers)\s+\d+/) || // Rating lines

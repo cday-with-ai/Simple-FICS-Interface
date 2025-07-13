@@ -146,14 +146,6 @@ let lastHistoryPlayer: string | null = null;
 let lastJournalPlayer: string | null = null;
 
 export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, onCommandClick }) => {
-  // Debug log for history, journal, sought, games, and seek lines
-  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/) || 
-      text.includes('Journal for') || text.match(/^%\d+:/) ||
-      text.match(/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/) ||
-      (text.includes(' - ') && text.includes('(') && text.match(/^\s*\d+\s+/)) ||
-      text.includes('seeking') && text.includes('to respond')) {
-    console.log('LinkifiedText processing:', { text: text.substring(0, 50), hasCommandClick: !!onCommandClick });
-  }
   
   // Find all matches (URLs, commands, and player names) with their positions
   const matches: Array<{
@@ -315,47 +307,23 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
     !text.match(/^%\d+:/) && // Not a journal entry
     text.split(/\s+/).length > 3; // Has multiple words (likely a sentence)
   
-  // Debug logging for history, journal, sought, games, and seek detection
-  if (text.includes('History for') || text.match(/^\d+:\s+[+-=]/) ||
-      text.includes('Journal for') || text.match(/^%\d+:/) ||
-      text.match(/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/) ||
-      (text.includes(' - ') && text.includes('(') && text.match(/^\s*\d+\s+/)) ||
-      (text.includes('seeking') && text.includes('to respond'))) {
-    console.log('History/Journal/Sought/Games/Seek detection:', { 
-      text: text.substring(0, 50), 
-      isHistoryOutput,
-      isJournalOutput,
-      isSoughtOutput,
-      isWhoOutput,
-      isGamesOutput,
-      isSeekMessage,
-      isCommandMode,
-      isToldMessage,
-      looksLikeUserInput
-    });
-  }
   
   // Handle individual seek messages first (before normal command detection)
   if (isSeekMessage) {
-    console.log('In seek message handling block', { text: text.substring(0, 50) });
-    const seekRegex = /\w+\s+\((?:\d+|\+{4})\)\s+seeking.*\("play\s+(\d+)"\s+to\s+respond\)/;
-    const seekMatch = seekRegex.exec(text);
-    console.log('Seek regex match:', seekMatch);
-    if (seekMatch) {
+    // Handle multiple seek messages concatenated together
+    const seekRegex = /\w+\s+\((?:\d+|\+{4})\)\s+seeking.*?\("play\s+(\d+)"\s+to\s+respond\)/g;
+    let seekMatch;
+    while ((seekMatch = seekRegex.exec(text)) !== null) {
       const gameNum = seekMatch[1];
-      console.log('Seek message detected:', { gameNum, text });
-      // Make the entire line clickable
+      // Make each seek message clickable
       matches.push({
         type: 'command',
-        match: text,
+        match: seekMatch[0],
         content: `play ${gameNum}`,
-        index: 0,
-        length: text.length,
+        index: seekMatch.index,
+        length: seekMatch[0].length,
         isSeekLine: true
       });
-      console.log('Added seek line to matches:', matches[matches.length - 1]);
-    } else {
-      console.log('Seek message not matched:', { text, seekMatch, trimmedText: text.trim() });
     }
   }
   // Skip all special processing for "told" messages and user input (but not news items)
@@ -375,7 +343,6 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
   }
   // For who output, find player names
   else if (isWhoOutput && !isGamesOutput) {
-    console.log('Processing as WHO output:', { text: text.substring(0, 50) });
     // Pattern to match player entries: rating/symbols + player name + optional flags
     const whoPlayerRegex = /(?:^|\s)((?:\d{3,4}|----|\+{4})\s*)([.^:#&]?)([A-Za-z]\w*)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;
     let whoMatch;
@@ -393,14 +360,11 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       });
     }
   } else if (isGamesOutput) {
-    console.log('In games handling block', { text: text.substring(0, 50) });
     // Pattern to match game entries: game# rating1 player1 rating2 player2 ...
     const gamesRegex = /^\s*(\d{1,3})\s+(?:\d{3,4}|----|\+{4})\s+\w+\s+(?:\d{3,4}|----|\+{4})\s+\w+/;
     const gamesMatch = gamesRegex.exec(text);
-    console.log('Games regex match:', gamesMatch);
     if (gamesMatch) {
       const gameNum = gamesMatch[1];
-      console.log('Games entry detected:', { gameNum, text });
       // Make the entire line clickable
       matches.push({
         type: 'command',
@@ -410,9 +374,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         length: text.length,
         isGamesLine: true
       });
-      console.log('Added games line to matches:', matches[matches.length - 1]);
     } else {
-      console.log('Games entry not matched:', { text, gamesMatch, trimmedText: text.trim() });
     }
   } else if (isChannelOutput) {
     // Check if this is a continuation line (starts with \)
@@ -650,25 +612,20 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
       });
     }
   } else if (isHistoryOutput) {
-    console.log('In history handling block', { text: text.substring(0, 50), lastHistoryPlayer });
     // Handle history header: "History for playerName:"
     const headerRegex = /History for (\w+):/;
     const headerMatch = headerRegex.exec(text);
     if (headerMatch) {
       const playerName = headerMatch[1];
       lastHistoryPlayer = playerName; // Store for use in subsequent lines
-      console.log('History header detected, player:', playerName);
     } else if (lastHistoryPlayer) {
       // Handle history entries: "N: +/- rating color rating opponent ..."
-      console.log('Checking history entry with lastHistoryPlayer:', lastHistoryPlayer);
       // The regex needs to be more flexible to match the actual format
       // Format: "N: +/- rating [W/B/N] rating opponent [ game_type ] ECO result Date"
       const entryRegex = /^\s*(\d+):\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+(\w+)/;
       const entryMatch = entryRegex.exec(text);
-      console.log('Entry regex match:', entryMatch);
       if (entryMatch) {
         const gameNumber = entryMatch[1];
-        console.log('History entry detected:', { gameNumber, player: lastHistoryPlayer, text });
         // Make the entire line clickable
         matches.push({
           type: 'command',
@@ -678,31 +635,23 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
           length: text.length,
           isHistoryLine: true
         });
-        console.log('Added history line to matches:', matches[matches.length - 1]);
       } else {
-        console.log('History entry not matched:', { text, lastHistoryPlayer, entryMatch, trimmedText: text.trim() });
       }
     } else {
-      console.log('No lastHistoryPlayer set for entry line');
     }
   } else if (isJournalOutput) {
-    console.log('In journal handling block', { text: text.substring(0, 50), lastJournalPlayer });
     // Handle journal header: "Journal for playerName:"
     const headerRegex = /Journal for (\w+):/;
     const headerMatch = headerRegex.exec(text);
     if (headerMatch) {
       const playerName = headerMatch[1];
       lastJournalPlayer = playerName; // Store for use in subsequent lines
-      console.log('Journal header detected, player:', playerName);
     } else if (lastJournalPlayer) {
       // Handle journal entries: "%N: player1 rating player2 rating ..."
-      console.log('Checking journal entry with lastJournalPlayer:', lastJournalPlayer);
       const journalRegex = /^(\s*)(%\d+):/;
       const journalMatch = journalRegex.exec(text);
-      console.log('Journal regex match:', journalMatch);
       if (journalMatch) {
         const [fullMatch, indent, gameNum] = journalMatch;
-        console.log('Journal entry detected:', { gameNum, player: lastJournalPlayer, text });
         // Make the entire line clickable
         matches.push({
           type: 'command',
@@ -712,22 +661,16 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
           length: text.length,
           isJournalLine: true
         });
-        console.log('Added journal line to matches:', matches[matches.length - 1]);
       } else {
-        console.log('Journal entry not matched:', { text, lastJournalPlayer, journalMatch, trimmedText: text.trim() });
       }
     } else {
-      console.log('No lastJournalPlayer set for entry line');
     }
   } else if (isSoughtOutput) {
-    console.log('In sought handling block', { text: text.substring(0, 50) });
     // Parse sought list entries: "N rating playerName time inc ..."
     const soughtRegex = /^\s*(\d+)\s+(?:\d{3,4}|----|\+{4})\s+\w+/;
     const soughtMatch = soughtRegex.exec(text);
-    console.log('Sought regex match:', soughtMatch);
     if (soughtMatch) {
       const gameNum = soughtMatch[1];
-      console.log('Sought entry detected:', { gameNum, text });
       // Make the entire line clickable
       matches.push({
         type: 'command',
@@ -737,9 +680,7 @@ export const LinkifiedText: React.FC<LinkifiedTextProps> = ({ text, className, o
         length: text.length,
         isSoughtLine: true
       });
-      console.log('Added sought line to matches:', matches[matches.length - 1]);
     } else {
-      console.log('Sought entry not matched:', { text, soughtMatch, trimmedText: text.trim() });
     }
   } else if (isBestListOutput) {
     // Skip header line that contains "Blitz", "Standard", "Lightning"

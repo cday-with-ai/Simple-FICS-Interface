@@ -60,12 +60,24 @@ export class ChatStore {
                 this.createTab(tabId, message.channel, 'channel');
             }
 
+            const targetTab = this.tabs.get(tabId)!;
+            
+            // Check for duplicate consecutive messages (common with FICS seeks)
+            if (targetTab.messages.length > 0) {
+                const lastMessage = targetTab.messages[targetTab.messages.length - 1];
+                // If the content is identical and timestamps are within 1 second, skip
+                if (lastMessage.content === message.content && 
+                    Math.abs(new Date(lastMessage.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000) {
+                    console.log('Skipping duplicate message:', message.content.substring(0, 50));
+                    return; // Skip duplicate
+                }
+            }
+
             const fullMessage: ChatMessage = {
                 ...message,
                 id: `${Date.now()}-${Math.random()}`
             };
 
-            const targetTab = this.tabs.get(tabId)!;
             targetTab.messages.push(fullMessage);
 
             // Keep message history manageable
