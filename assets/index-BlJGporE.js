@@ -1399,6 +1399,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     height: 135px;
     min-height: 135px;
     margin: 0;
+    margin-bottom: ${e=>e.theme.spacing[3]};
 `;m(ut)`
     height: 100%;
     flex-shrink: 0;

@@ -346,6 +346,7 @@ const LandscapeCompactMoveList = styled(MoveList)`
     height: 135px;
     min-height: 135px;
     margin: 0;
+    margin-bottom: ${props => props.theme.spacing[3]};
 `;
 
 const PortraitClock = styled(GameClock)`
