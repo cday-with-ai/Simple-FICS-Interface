@@ -321,7 +321,7 @@ const LandscapePlayersColumn = styled.div`
 const LandscapeControlsContainer = styled.div`
     display: flex;
     flex-direction: column;
-    gap: ${props => props.theme.spacing[2]};
+    gap: ${props => props.theme.spacing[1]};
     background-color: ${props => props.theme.colors.surface};
     border-radius: ${props => props.theme.borderRadius.container};
     box-shadow: ${props => props.theme.shadows.container};

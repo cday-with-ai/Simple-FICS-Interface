@@ -6,12 +6,90 @@ import {
     DirectTell,
     GameEnd,
     MovesList,
-    TimesealConfig
+    TimesealConfig,
+    InteractiveElement,
+    ParsedMessage,
+    SeekAnnouncementData,
+    WhoOutputData,
+    FingerOutputData,
+    HistoryOutputData,
+    JournalOutputData,
+    SoughtOutputData,
+    GamesOutputData,
+    ChannelListOutputData,
+    NewsOutputData
 } from './FicsProtocol.types';
 
 export class FicsProtocol {
     private static readonly TIMESEAL_CONNECT = "TIMESEAL2|openseal|simpleficsinterface|";
     private static readonly TIMESEAL_KEY = "Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
+
+    // Helper methods for creating interactive elements
+    private static createPlayerElement(text: string, start: number): InteractiveElement {
+        return {
+            type: 'player',
+            text,
+            action: `finger ${text}`,
+            start,
+            end: start + text.length
+        };
+    }
+
+    private static createCommandElement(text: string, command: string, start: number): InteractiveElement {
+        return {
+            type: 'command',
+            text,
+            action: command,
+            start,
+            end: start + text.length
+        };
+    }
+
+    private static createGameNumberElement(text: string, gameNumber: number, start: number): InteractiveElement {
+        return {
+            type: 'gameNumber',
+            text,
+            action: `observe ${gameNumber}`,
+            start,
+            end: start + text.length
+        };
+    }
+
+    private static createSeekNumberElement(text: string, seekNumber: number, start: number): InteractiveElement {
+        return {
+            type: 'seekNumber',
+            text,
+            action: `play ${seekNumber}`,
+            start,
+            end: start + text.length
+        };
+    }
+
+    private static createUrlElement(text: string, start: number): InteractiveElement {
+        let url = text;
+        if (!text.match(/^(?:https?|ftp):\/\//)) {
+            url = 'https://' + text;
+        }
+        return {
+            type: 'url',
+            text,
+            action: url,
+            start,
+            end: start + text.length
+        };
+    }
+
+    private static findUrlsInText(text: string): InteractiveElement[] {
+        const elements: InteractiveElement[] = [];
+        const urlRegex = /(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/gi;
+        let match;
+        
+        while ((match = urlRegex.exec(text)) !== null) {
+            elements.push(this.createUrlElement(match[0], match.index));
+        }
+        
+        return elements;
+    }
 
     // Message parsing methods
     static parseMessage(msg: string): FicsMessage[] {
@@ -489,6 +567,127 @@ export class FicsProtocol {
         }
 
         return gameNumbers;
+    }
+
+    private static parseSeekAnnouncement(line: string): ParsedMessage<SeekAnnouncementData> | null {
+        const match = line.match(/(\w+)\s+\(((?:\d+|\+{4}))\)\s+seeking\s+(\d+)\s+(\d+)\s+(rated|unrated)\s+(\w+)(?:\s+.*?)?\s*\("play\s+(\d+)"\s+to\s+respond\)/);
+        if (!match) return null;
+
+        const [fullMatch, player, rating, time, increment, ratedStr, gameType, , seekNumber] = match;
+        const elements: InteractiveElement[] = [];
+        
+        // Add player element
+        const playerIndex = line.indexOf(player);
+        elements.push(this.createPlayerElement(player, playerIndex));
+        
+        // Add play command element
+        const playText = `play ${seekNumber}`;
+        const playIndex = line.indexOf(playText);
+        if (playIndex !== -1) {
+            elements.push(this.createSeekNumberElement(playText, parseInt(seekNumber), playIndex));
+        }
+
+        return {
+            content: line,
+            elements,
+            metadata: {
+                player,
+                rating,
+                seekNumber: parseInt(seekNumber),
+                gameType,
+                time: parseInt(time),
+                increment: parseInt(increment),
+                rated: ratedStr === 'rated'
+            }
+        };
+    }
+
+    private static parseNotification(line: string): ParsedMessage<{ type: string; player?: string }> | null {
+        const arrivalMatch = line.match(/^Notification:\s+(\w+)\s+has\s+arrived\./);
+        if (arrivalMatch) {
+            const player = arrivalMatch[1];
+            const elements: InteractiveElement[] = [];
+            
+            const playerIndex = line.indexOf(player);
+            elements.push(this.createPlayerElement(player, playerIndex));
+            
+            return {
+                content: line,
+                elements,
+                metadata: { type: 'arrival', player }
+            };
+        }
+        
+        const departureMatch = line.match(/^Notification:\s+(\w+)\s+has\s+departed\./);
+        if (departureMatch) {
+            const player = departureMatch[1];
+            const elements: InteractiveElement[] = [];
+            
+            const playerIndex = line.indexOf(player);
+            elements.push(this.createPlayerElement(player, playerIndex));
+            
+            return {
+                content: line,
+                elements,
+                metadata: { type: 'departure', player }
+            };
+        }
+        
+        return null;
+    }
+
+    private static parseShout(line: string): ParsedMessage<{ username: string; message: string }> | null {
+        const match = line.match(/^(\w+)\s+shouts:\s+(.*)$/);
+        if (!match) return null;
+        
+        const [, username, message] = match;
+        const elements: InteractiveElement[] = [];
+        
+        // Add player element
+        elements.push(this.createPlayerElement(username, 0));
+        
+        // Add URLs in the message
+        const urlElements = this.findUrlsInText(message);
+        // Adjust URL positions to account for username and "shouts: "
+        const offset = line.indexOf(message);
+        urlElements.forEach(el => {
+            el.start += offset;
+            el.end += offset;
+        });
+        elements.push(...urlElements);
+        
+        return {
+            content: line,
+            elements,
+            metadata: { username, message }
+        };
+    }
+
+    private static parseCShout(line: string): ParsedMessage<{ username: string; message: string }> | null {
+        const match = line.match(/^(\w+)\s+c-shouts:\s+(.*)$/);
+        if (!match) return null;
+        
+        const [, username, message] = match;
+        const elements: InteractiveElement[] = [];
+        
+        // Add player element
+        elements.push(this.createPlayerElement(username, 0));
+        
+        // Add URLs in the message
+        const urlElements = this.findUrlsInText(message);
+        // Adjust URL positions
+        const offset = line.indexOf(message);
+        urlElements.forEach(el => {
+            el.start += offset;
+            el.end += offset;
+        });
+        elements.push(...urlElements);
+        
+        return {
+            content: line,
+            elements,
+            metadata: { username, message }
+        };
     }
 
     // Command building methods
