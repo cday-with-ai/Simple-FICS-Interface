@@ -318,11 +318,35 @@ const LandscapePlayersColumn = styled.div`
     flex-shrink: 0;
 `;
 
+const LandscapeControlsContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: ${props => props.theme.spacing[2]};
+    background-color: ${props => props.theme.colors.surface};
+    border-radius: ${props => props.theme.borderRadius.container};
+    box-shadow: ${props => props.theme.shadows.container};
+    padding: ${props => props.theme.spacing[3]};
+    width: 280px;
+    
+    /* Remove individual shadows and backgrounds from child components */
+    & > div[class*="CardContainer"] {
+        box-shadow: none;
+        background-color: transparent;
+    }
+    
+    & > div[class*="MoveListContainer"] {
+        box-shadow: none;
+        background-color: transparent;
+        margin-bottom: 0;
+    }
+`;
+
 const LandscapePlayerWithClock = styled.div`
     display: flex;
     flex-direction: column;
     gap: ${props => props.theme.spacing[1]};
     align-items: flex-start;
+    width: 100%;
 `;
 
 const PortraitPlayerInfo = styled.div`
@@ -346,7 +370,7 @@ const LandscapeCompactMoveList = styled(MoveList)`
     height: 135px;
     min-height: 135px;
     margin: 0;
-    margin-bottom: ${props => props.theme.spacing[3]};
+    margin-bottom: ${props => props.theme.spacing[2]};
 `;
 
 const PortraitClock = styled(GameClock)`
@@ -943,7 +967,8 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     />
                                 )}
                                 
-                                <LandscapePlayerWithClock>
+                                <LandscapeControlsContainer>
+                                    <LandscapePlayerWithClock>
                                     <ObservableClock
                                         player={topPlayer}
                                         isActive={isTopPlayerTurn}
@@ -1039,6 +1064,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         variant="landscape"
                                     />
                                 </LandscapePlayerWithClock>
+                                </LandscapeControlsContainer>
                                 
                                 {showCapturedPieces && (
                                     <CapturedPieces

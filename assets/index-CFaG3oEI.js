@@ -1377,11 +1377,33 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     width: 280px;
     padding: ${e=>e.theme.spacing[3]} 0;
     flex-shrink: 0;
+`,fl=m.div`
+    display: flex;
+    flex-direction: column;
+    gap: ${e=>e.theme.spacing[2]};
+    background-color: ${e=>e.theme.colors.surface};
+    border-radius: ${e=>e.theme.borderRadius.container};
+    box-shadow: ${e=>e.theme.shadows.container};
+    padding: ${e=>e.theme.spacing[3]};
+    width: 280px;
+    
+    /* Remove individual shadows and backgrounds from child components */
+    & > div[class*="CardContainer"] {
+        box-shadow: none;
+        background-color: transparent;
+    }
+    
+    & > div[class*="MoveListContainer"] {
+        box-shadow: none;
+        background-color: transparent;
+        margin-bottom: 0;
+    }
 `,$r=m.div`
     display: flex;
     flex-direction: column;
     gap: ${e=>e.theme.spacing[1]};
     align-items: flex-start;
+    width: 100%;
 `,vr=m.div`
     display: flex;
     flex-direction: row;
@@ -1395,11 +1417,11 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     height: 135px;
     min-height: 135px;
     margin: ${e=>e.theme.spacing[2]} 0;
-`;const fl=m(Wt)`
+`;const gl=m(Wt)`
     height: 135px;
     min-height: 135px;
     margin: 0;
-    margin-bottom: ${e=>e.theme.spacing[3]};
+    margin-bottom: ${e=>e.theme.spacing[2]};
 `;m(ut)`
     height: 100%;
     flex-shrink: 0;
@@ -1436,7 +1458,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     gap: ${e=>e.theme.spacing[1]};
     justify-content: center;
     width: 100%;
-`;const gl=m.div`
+`;const yl=m.div`
     margin-top: ${e=>e.theme.spacing[1]};
     max-width: min(calc(100vh - 120px), calc(100vw - 400px));
     width: 100%;
@@ -1449,15 +1471,15 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     align-items: center;
 `;m.div`
     min-height: 28px;
-`;const yl=m.div`
+`;const xl=m.div`
     margin-top: 0;
     width: 100%;
     padding: 0 30px;
-`,xl=m.div`
+`,bl=m.div`
     display: flex;
     align-items: flex-start;
     padding-top: ${e=>{const t=e.$squareSize||0,n=24,r=40,o=(e.$squareSize||0)*.25;return t+n+r+8-o}}px;
-`,Do=Z(({className:e,hasChat:t=!1})=>{const n=bn(),r=Ye(),o=Mt(),i=Er(),a=Uo();Ft();const[d,c]=h.useState(!1),[l,p]=h.useState(!1),[u,f]=h.useState(0),[g,v]=h.useState(!1),[b,k]=h.useState(!1),[y,j]=h.useState(null),R=r.preferences.chessOrientation==="landscape",P=n.currentPosition||"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",M=h.useMemo(()=>!n.currentGame||n.currentGame.gameId<0?"freestyle":n.isPlaying?"playing":n.isObserving?"observing":n.isExamining?"examining":"observing",[n.currentGame,n.gameRelation]),D=h.useMemo(()=>n.currentGame?.variant==="crazyhouse"?!0:r.preferences.showCapturedPieces,[n.currentGame?.variant,r.preferences.showCapturedPieces]),N=h.useCallback((F,J,Y)=>{try{n.makeMove(F,J,Y)||(console.error("Invalid move:",F,J),a.playIllegal())}catch(oe){console.error("Error making move:",oe),a.playIllegal()}},[n,a]),_=h.useCallback((F,J)=>{try{const Y=F.toLowerCase();n.makeSANMove(`${F.toUpperCase()}@${J}`)||(console.error("Invalid drop:",F,J),a.playIllegal())}catch(Y){console.error("Error making drop:",Y),a.playIllegal()}},[n,a]),H=h.useCallback(F=>{j(y===F?null:F)},[y]);h.useMemo(()=>{if(n.currentGameInfo){const{white:F,black:J,timeControl:Y,variant:oe}=n.currentGameInfo;return`Game ${n.currentGame?.gameId||"?"} • ${oe} ${Y}`}return"No active game"},[n.currentGameInfo,n.currentGame]);const x=(()=>{const F=n.moveHistory.length;if(F>0){const J=n.moveHistory[F-1],Y=Math.ceil(F/2),oe=F%2===1,ie=rn(J.san);return`${Y}.${oe?"":".."} ${ie}`}return"Starting position"})(),$=n.currentOpening,w=n.currentGame,S=w||n.lastGameState,I=S?.white||{name:"White",rating:1500,time:900},B=S?.black||{name:"Black",rating:1500,time:900},U=!w||w.turn==="w",K=n.shouldShowFlippedBoard,le=K?I:B,q=K?B:I,se=K,ee=K?U:!U,ae=h.useCallback(F=>{n.goToMove(F)},[n]);h.useEffect(()=>{o.initialize()},[o]),h.useEffect(()=>{b&&n.isPlaying&&n.currentGame&&i.sendCommand("draw")},[n.moveHistory.length,b,n.isPlaying,i]),h.useEffect(()=>{(!n.currentGame||!n.isPlaying)&&k(!1)},[n.currentGame,n.isPlaying]),h.useEffect(()=>{d&&o.isEngineReady?o.startAnalysis(P):o.stopAnalysis()},[d,P,o]);const be=h.useCallback(()=>{c(F=>!F)},[]),Se=h.useCallback(()=>{p(!0)},[]),$e=h.useCallback(()=>{r.updatePreference("boardFlipped",!r.preferences.boardFlipped)},[r]),C=h.useCallback(()=>{n.currentGame&&i.sendCommand(`unobs ${n.currentGame.gameId}`)},[i,n.currentGame]),A=h.useCallback(()=>{i.sendCommand("unexamine")},[i]),T=h.useCallback(()=>{v(!0)},[]),L=h.useCallback(()=>{i.sendCommand("resign"),v(!1)},[i]),z=h.useCallback(()=>{i.sendCommand("draw"),k(!b)},[i,b]),E=h.useCallback(()=>{i.sendCommand("abort")},[i]),W=()=>s.jsxs(s.Fragment,{children:[s.jsx(pr,{$orientation:"portrait",children:s.jsx(ll,{children:s.jsxs(dl,{children:[d&&s.jsx(xl,{$squareSize:u?u/8:0,children:s.jsx(yn,{orientation:"vertical",boardSize:u})}),s.jsxs(ul,{children:[s.jsx(mr,{$size:u?u/8:0}),s.jsxs("div",{style:{display:"flex",flexDirection:"column",alignItems:"center"},id:"board-container",children:[s.jsxs(sl,{children:[s.jsxs(fr,{children:["Game #",S?.gameId||"?"]}),s.jsx(gr,{children:S?.timeControl||"?"}),s.jsxs(al,{children:[M==="playing"&&s.jsxs(s.Fragment,{children:[n.moveHistory.length<=1&&s.jsx(me,{onClick:E,$variant:"secondary",children:"Abort"}),s.jsx(me,{onClick:z,$variant:"secondary",children:"Draw"}),s.jsx(me,{onClick:T,$variant:"secondary",children:"Resign"}),s.jsx(zn,{color:n.playingColor||"white",size:"small"})]}),M==="observing"&&s.jsxs(s.Fragment,{children:[s.jsx(me,{onClick:C,$variant:"secondary",children:"Unobserve"}),s.jsx(me,{onClick:be,$variant:"secondary",children:"Analysis"})]}),M==="examining"&&s.jsxs(s.Fragment,{children:[s.jsx(me,{onClick:A,$variant:"secondary",children:"Unexamine"}),s.jsx(me,{onClick:be,$variant:"secondary",children:"Analysis"})]}),M==="freestyle"&&s.jsxs(s.Fragment,{children:[s.jsx(me,{onClick:be,$variant:"secondary",children:"Analysis"}),s.jsx(me,{onClick:$e,$variant:"secondary",children:"Flip"}),s.jsx(me,{onClick:Se,$variant:"secondary",children:"FEN"})]})]})]}),s.jsxs(vr,{children:[s.jsx(et,{player:le,isActive:ee,size:"small",compact:!0}),s.jsx(wr,{children:s.jsx(Ze,{name:le.name,rating:le.rating,time:0,isActive:ee,isWhite:se,orientation:"horizontal",hideClockInCard:!0,compact:!0})})]}),s.jsx(br,{$orientation:"portrait",children:s.jsx(gn,{position:P,flipped:K,showCoordinates:!0,onMove:N,onDrop:_,interactive:M==="playing"||M==="freestyle"||M==="examining",lastMove:n.lastMove||void 0,onSizeCalculated:f,selectedCapturedPiece:y,onCapturedPieceSelect:j})}),s.jsxs(vr,{children:[s.jsx(et,{player:q,isActive:!ee,size:"small",compact:!0}),s.jsx(wr,{children:s.jsx(Ze,{name:q.name,rating:q.rating,time:0,isActive:!ee,isWhite:!se,orientation:"horizontal",hideClockInCard:!0,compact:!0})})]}),s.jsxs(cl,{children:[s.jsx(yr,{children:n.premove?`Premove: ${In(`${n.premove.from}${n.premove.to}${n.premove.promotion||""}`,P)}`:x!=="Starting position"?`Last move: ${x}`:"Last move: none"}),$&&s.jsx(xr,{children:$})]}),d&&s.jsx(yl,{children:s.jsx(xn,{})})]}),s.jsx(mr,{$size:u?u/8:0})]}),D&&s.jsx(nl,{$squareSize:u?u/8:0,children:s.jsxs(rl,{$squareSize:u?u/8:0,children:[s.jsx(tt,{orientation:"vertical",isWhitePieces:K,boardSize:u,onPieceClick:H}),s.jsx(tt,{orientation:"vertical",isWhitePieces:!K,boardSize:u,onPieceClick:H})]})})]})})}),s.jsx(hl,{$orientation:"portrait",children:s.jsx(Wt,{moves:n.moveHistory,currentMoveIndex:n.currentMoveIndex,onMoveClick:ae,disableAutoScroll:!0,onNavigate:F=>{if(n.isExamining)switch(F){case"first":i.sendCommand("back 500");break;case"prev":i.sendCommand("back");break;case"next":i.sendCommand("forward");break;case"last":i.sendCommand("forward 500");break}else switch(F){case"first":n.goToStart();break;case"prev":n.goToPreviousMove();break;case"next":n.goToNextMove();break;case"last":n.goToEnd();break}}})})]});return s.jsxs(Zc,{className:e,$orientation:R?"landscape":"portrait",$hasChat:t,children:[R?s.jsx(s.Fragment,{children:s.jsx(pr,{$orientation:"landscape",children:s.jsxs(pl,{$hasAnalysis:d,children:[s.jsxs(el,{children:[s.jsxs(ol,{children:[s.jsxs(fr,{children:["Game #",S?.gameId||"?"]}),s.jsx(gr,{children:S?.timeControl||"?"})]}),s.jsxs(tl,{children:[d&&s.jsx(yn,{orientation:"vertical"}),s.jsx(br,{$orientation:"landscape",children:s.jsx(gn,{position:P,flipped:K,showCoordinates:!0,onMove:N,onDrop:_,interactive:M==="playing"||M==="freestyle"||M==="examining",lastMove:n.lastMove||void 0,onSizeCalculated:f,selectedCapturedPiece:y,onCapturedPieceSelect:j})})]}),s.jsxs(il,{children:[s.jsx(yr,{children:n.premove?`Premove: ${In(`${n.premove.from}${n.premove.to}${n.premove.promotion||""}`,P)}`:x!=="Starting position"?`Last move: ${x}`:"Last move: none"}),$&&s.jsx(xr,{children:$})]}),d&&s.jsx(gl,{children:s.jsx(xn,{})})]}),s.jsxs(ml,{children:[D&&s.jsx(tt,{orientation:"horizontal",isWhitePieces:se,boardSize:u,onPieceClick:H}),s.jsxs($r,{children:[s.jsx(et,{player:le,isActive:ee,size:"small",compact:!0,variant:"landscape"}),s.jsx(Ze,{name:le.name,rating:le.rating,time:0,isActive:ee,isWhite:se,orientation:"vertical",hideClockInCard:!0,compact:!0})]}),s.jsx(Lo,{perspective:M,canAbort:n.moveHistory.length<=1,onAnalysis:be,onFlipBoard:$e,onSetupFEN:Se,onUnobserve:C,onUnexamine:A,onResign:T,onDraw:z,onAbort:E,isAnalysisActive:d,isDrawOffered:b}),s.jsx(fl,{moves:n.moveHistory,currentMoveIndex:n.currentMoveIndex,onMoveClick:ae,showHeader:!1,onNavigate:F=>{if(n.isExamining)switch(F){case"first":i.sendCommand("backward 999");break;case"prev":i.sendCommand("backward");break;case"next":i.sendCommand("forward");break;case"last":i.sendCommand("forward 999");break}else switch(F){case"first":n.goToStart();break;case"prev":n.goToPreviousMove();break;case"next":n.goToNextMove();break;case"last":n.goToEnd();break}}}),s.jsxs($r,{children:[s.jsx(Ze,{name:q.name,rating:q.rating,time:0,isActive:!ee,isWhite:!se,orientation:"vertical",hideClockInCard:!0,compact:!0}),s.jsx(et,{player:q,isActive:!ee,size:"small",compact:!0,variant:"landscape"})]}),D&&s.jsx(tt,{orientation:"horizontal",isWhitePieces:!se,boardSize:u,onPieceClick:H})]})]})})}):W(),s.jsx(Io,{isOpen:l,onClose:()=>p(!1)}),s.jsx(Qc,{isOpen:g,title:"Resign Game",message:"Are you sure you want to resign?",confirmText:"Yes, Resign",cancelText:"Cancel",onConfirm:L,onCancel:()=>v(!1)})]})});Do.displayName="ChessGameLayout";const bl=m.div`
+`,Do=Z(({className:e,hasChat:t=!1})=>{const n=bn(),r=Ye(),o=Mt(),i=Er(),a=Uo();Ft();const[d,c]=h.useState(!1),[l,p]=h.useState(!1),[u,f]=h.useState(0),[g,v]=h.useState(!1),[b,k]=h.useState(!1),[y,j]=h.useState(null),R=r.preferences.chessOrientation==="landscape",P=n.currentPosition||"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",M=h.useMemo(()=>!n.currentGame||n.currentGame.gameId<0?"freestyle":n.isPlaying?"playing":n.isObserving?"observing":n.isExamining?"examining":"observing",[n.currentGame,n.gameRelation]),D=h.useMemo(()=>n.currentGame?.variant==="crazyhouse"?!0:r.preferences.showCapturedPieces,[n.currentGame?.variant,r.preferences.showCapturedPieces]),N=h.useCallback((F,J,Y)=>{try{n.makeMove(F,J,Y)||(console.error("Invalid move:",F,J),a.playIllegal())}catch(oe){console.error("Error making move:",oe),a.playIllegal()}},[n,a]),_=h.useCallback((F,J)=>{try{const Y=F.toLowerCase();n.makeSANMove(`${F.toUpperCase()}@${J}`)||(console.error("Invalid drop:",F,J),a.playIllegal())}catch(Y){console.error("Error making drop:",Y),a.playIllegal()}},[n,a]),H=h.useCallback(F=>{j(y===F?null:F)},[y]);h.useMemo(()=>{if(n.currentGameInfo){const{white:F,black:J,timeControl:Y,variant:oe}=n.currentGameInfo;return`Game ${n.currentGame?.gameId||"?"} • ${oe} ${Y}`}return"No active game"},[n.currentGameInfo,n.currentGame]);const x=(()=>{const F=n.moveHistory.length;if(F>0){const J=n.moveHistory[F-1],Y=Math.ceil(F/2),oe=F%2===1,ie=rn(J.san);return`${Y}.${oe?"":".."} ${ie}`}return"Starting position"})(),$=n.currentOpening,w=n.currentGame,S=w||n.lastGameState,I=S?.white||{name:"White",rating:1500,time:900},B=S?.black||{name:"Black",rating:1500,time:900},U=!w||w.turn==="w",K=n.shouldShowFlippedBoard,le=K?I:B,q=K?B:I,se=K,ee=K?U:!U,ae=h.useCallback(F=>{n.goToMove(F)},[n]);h.useEffect(()=>{o.initialize()},[o]),h.useEffect(()=>{b&&n.isPlaying&&n.currentGame&&i.sendCommand("draw")},[n.moveHistory.length,b,n.isPlaying,i]),h.useEffect(()=>{(!n.currentGame||!n.isPlaying)&&k(!1)},[n.currentGame,n.isPlaying]),h.useEffect(()=>{d&&o.isEngineReady?o.startAnalysis(P):o.stopAnalysis()},[d,P,o]);const be=h.useCallback(()=>{c(F=>!F)},[]),Se=h.useCallback(()=>{p(!0)},[]),$e=h.useCallback(()=>{r.updatePreference("boardFlipped",!r.preferences.boardFlipped)},[r]),C=h.useCallback(()=>{n.currentGame&&i.sendCommand(`unobs ${n.currentGame.gameId}`)},[i,n.currentGame]),A=h.useCallback(()=>{i.sendCommand("unexamine")},[i]),T=h.useCallback(()=>{v(!0)},[]),L=h.useCallback(()=>{i.sendCommand("resign"),v(!1)},[i]),z=h.useCallback(()=>{i.sendCommand("draw"),k(!b)},[i,b]),E=h.useCallback(()=>{i.sendCommand("abort")},[i]),W=()=>s.jsxs(s.Fragment,{children:[s.jsx(pr,{$orientation:"portrait",children:s.jsx(ll,{children:s.jsxs(dl,{children:[d&&s.jsx(bl,{$squareSize:u?u/8:0,children:s.jsx(yn,{orientation:"vertical",boardSize:u})}),s.jsxs(ul,{children:[s.jsx(mr,{$size:u?u/8:0}),s.jsxs("div",{style:{display:"flex",flexDirection:"column",alignItems:"center"},id:"board-container",children:[s.jsxs(sl,{children:[s.jsxs(fr,{children:["Game #",S?.gameId||"?"]}),s.jsx(gr,{children:S?.timeControl||"?"}),s.jsxs(al,{children:[M==="playing"&&s.jsxs(s.Fragment,{children:[n.moveHistory.length<=1&&s.jsx(me,{onClick:E,$variant:"secondary",children:"Abort"}),s.jsx(me,{onClick:z,$variant:"secondary",children:"Draw"}),s.jsx(me,{onClick:T,$variant:"secondary",children:"Resign"}),s.jsx(zn,{color:n.playingColor||"white",size:"small"})]}),M==="observing"&&s.jsxs(s.Fragment,{children:[s.jsx(me,{onClick:C,$variant:"secondary",children:"Unobserve"}),s.jsx(me,{onClick:be,$variant:"secondary",children:"Analysis"})]}),M==="examining"&&s.jsxs(s.Fragment,{children:[s.jsx(me,{onClick:A,$variant:"secondary",children:"Unexamine"}),s.jsx(me,{onClick:be,$variant:"secondary",children:"Analysis"})]}),M==="freestyle"&&s.jsxs(s.Fragment,{children:[s.jsx(me,{onClick:be,$variant:"secondary",children:"Analysis"}),s.jsx(me,{onClick:$e,$variant:"secondary",children:"Flip"}),s.jsx(me,{onClick:Se,$variant:"secondary",children:"FEN"})]})]})]}),s.jsxs(vr,{children:[s.jsx(et,{player:le,isActive:ee,size:"small",compact:!0}),s.jsx(wr,{children:s.jsx(Ze,{name:le.name,rating:le.rating,time:0,isActive:ee,isWhite:se,orientation:"horizontal",hideClockInCard:!0,compact:!0})})]}),s.jsx(br,{$orientation:"portrait",children:s.jsx(gn,{position:P,flipped:K,showCoordinates:!0,onMove:N,onDrop:_,interactive:M==="playing"||M==="freestyle"||M==="examining",lastMove:n.lastMove||void 0,onSizeCalculated:f,selectedCapturedPiece:y,onCapturedPieceSelect:j})}),s.jsxs(vr,{children:[s.jsx(et,{player:q,isActive:!ee,size:"small",compact:!0}),s.jsx(wr,{children:s.jsx(Ze,{name:q.name,rating:q.rating,time:0,isActive:!ee,isWhite:!se,orientation:"horizontal",hideClockInCard:!0,compact:!0})})]}),s.jsxs(cl,{children:[s.jsx(yr,{children:n.premove?`Premove: ${In(`${n.premove.from}${n.premove.to}${n.premove.promotion||""}`,P)}`:x!=="Starting position"?`Last move: ${x}`:"Last move: none"}),$&&s.jsx(xr,{children:$})]}),d&&s.jsx(xl,{children:s.jsx(xn,{})})]}),s.jsx(mr,{$size:u?u/8:0})]}),D&&s.jsx(nl,{$squareSize:u?u/8:0,children:s.jsxs(rl,{$squareSize:u?u/8:0,children:[s.jsx(tt,{orientation:"vertical",isWhitePieces:K,boardSize:u,onPieceClick:H}),s.jsx(tt,{orientation:"vertical",isWhitePieces:!K,boardSize:u,onPieceClick:H})]})})]})})}),s.jsx(hl,{$orientation:"portrait",children:s.jsx(Wt,{moves:n.moveHistory,currentMoveIndex:n.currentMoveIndex,onMoveClick:ae,disableAutoScroll:!0,onNavigate:F=>{if(n.isExamining)switch(F){case"first":i.sendCommand("back 500");break;case"prev":i.sendCommand("back");break;case"next":i.sendCommand("forward");break;case"last":i.sendCommand("forward 500");break}else switch(F){case"first":n.goToStart();break;case"prev":n.goToPreviousMove();break;case"next":n.goToNextMove();break;case"last":n.goToEnd();break}}})})]});return s.jsxs(Zc,{className:e,$orientation:R?"landscape":"portrait",$hasChat:t,children:[R?s.jsx(s.Fragment,{children:s.jsx(pr,{$orientation:"landscape",children:s.jsxs(pl,{$hasAnalysis:d,children:[s.jsxs(el,{children:[s.jsxs(ol,{children:[s.jsxs(fr,{children:["Game #",S?.gameId||"?"]}),s.jsx(gr,{children:S?.timeControl||"?"})]}),s.jsxs(tl,{children:[d&&s.jsx(yn,{orientation:"vertical"}),s.jsx(br,{$orientation:"landscape",children:s.jsx(gn,{position:P,flipped:K,showCoordinates:!0,onMove:N,onDrop:_,interactive:M==="playing"||M==="freestyle"||M==="examining",lastMove:n.lastMove||void 0,onSizeCalculated:f,selectedCapturedPiece:y,onCapturedPieceSelect:j})})]}),s.jsxs(il,{children:[s.jsx(yr,{children:n.premove?`Premove: ${In(`${n.premove.from}${n.premove.to}${n.premove.promotion||""}`,P)}`:x!=="Starting position"?`Last move: ${x}`:"Last move: none"}),$&&s.jsx(xr,{children:$})]}),d&&s.jsx(yl,{children:s.jsx(xn,{})})]}),s.jsxs(ml,{children:[D&&s.jsx(tt,{orientation:"horizontal",isWhitePieces:se,boardSize:u,onPieceClick:H}),s.jsxs(fl,{children:[s.jsxs($r,{children:[s.jsx(et,{player:le,isActive:ee,size:"small",compact:!0,variant:"landscape"}),s.jsx(Ze,{name:le.name,rating:le.rating,time:0,isActive:ee,isWhite:se,orientation:"vertical",hideClockInCard:!0,compact:!0})]}),s.jsx(Lo,{perspective:M,canAbort:n.moveHistory.length<=1,onAnalysis:be,onFlipBoard:$e,onSetupFEN:Se,onUnobserve:C,onUnexamine:A,onResign:T,onDraw:z,onAbort:E,isAnalysisActive:d,isDrawOffered:b}),s.jsx(gl,{moves:n.moveHistory,currentMoveIndex:n.currentMoveIndex,onMoveClick:ae,showHeader:!1,onNavigate:F=>{if(n.isExamining)switch(F){case"first":i.sendCommand("backward 999");break;case"prev":i.sendCommand("backward");break;case"next":i.sendCommand("forward");break;case"last":i.sendCommand("forward 999");break}else switch(F){case"first":n.goToStart();break;case"prev":n.goToPreviousMove();break;case"next":n.goToNextMove();break;case"last":n.goToEnd();break}}}),s.jsxs($r,{children:[s.jsx(Ze,{name:q.name,rating:q.rating,time:0,isActive:!ee,isWhite:!se,orientation:"vertical",hideClockInCard:!0,compact:!0}),s.jsx(et,{player:q,isActive:!ee,size:"small",compact:!0,variant:"landscape"})]})]}),D&&s.jsx(tt,{orientation:"horizontal",isWhitePieces:!se,boardSize:u,onPieceClick:H})]})]})})}):W(),s.jsx(Io,{isOpen:l,onClose:()=>p(!1)}),s.jsx(Qc,{isOpen:g,title:"Resign Game",message:"Are you sure you want to resign?",confirmText:"Yes, Resign",cancelText:"Cancel",onConfirm:L,onCancel:()=>v(!1)})]})});Do.displayName="ChessGameLayout";const $l=m.div`
   display: flex;
   background-color: ${e=>e.theme.colors.surface};
   border-bottom: 1px solid ${e=>e.theme.colors.border};
@@ -1480,7 +1502,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     background-color: ${e=>e.theme.colors.border};
     border-radius: 2px;
   }
-`,$l=m.div`
+`,vl=m.div`
   display: flex;
   align-items: center;
   gap: ${e=>e.theme.spacing[1]};
@@ -1519,9 +1541,9 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
       background-color: ${e.theme.colors.primary};
     }
   `}
-`,vl=m.span`
-  font-weight: ${e=>e.theme.typography.fontWeight.medium};
 `,wl=m.span`
+  font-weight: ${e=>e.theme.typography.fontWeight.medium};
+`,kl=m.span`
   background-color: ${e=>e.theme.colors.primary};
   color: ${e=>e.theme.colors.textInverse};
   font-size: ${e=>e.theme.typography.fontSize.xs};
@@ -1533,7 +1555,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   display: flex;
   align-items: center;
   justify-content: center;
-`,kl=m.button`
+`,Cl=m.button`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1554,10 +1576,10 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     background-color: ${e=>e.theme.colors.border};
     color: ${e=>e.theme.colors.text};
   }
-`,Cl=m.span`
+`,Sl=m.span`
   font-size: 12px;
   opacity: 0.7;
-`,Oo=Z(()=>{const{chatStore:e}=Ae(),t=e.sortedTabs,[n,r]=re.useState(null),[o,i]=re.useState(null),a=(u,f)=>{r(f),u.dataTransfer.effectAllowed="move"},d=(u,f)=>{u.preventDefault(),u.dataTransfer.dropEffect="move",i(f)},c=()=>{i(null)},l=(u,f)=>{u.preventDefault(),n&&n!==f&&e.reorderTabs(n,f),r(null),i(null)},p=()=>{r(null),i(null)};return s.jsx(bl,{children:t.map(u=>s.jsxs($l,{$active:u.id===e.activeTabId,$hasUnread:u.unreadCount>0,$dragging:u.id===n,$dragOver:u.id===o,draggable:!0,onDragStart:f=>a(f,u.id),onDragOver:f=>d(f,u.id),onDragLeave:c,onDrop:f=>l(f,u.id),onDragEnd:p,onClick:()=>e.setActiveTab(u.id),children:[u.type!=="console"&&s.jsx(Cl,{$type:u.type}),s.jsx(vl,{children:u.type==="channel"?`(${u.name})`:u.name}),u.unreadCount>0&&s.jsx(wl,{children:u.unreadCount>99?"99+":u.unreadCount}),u.id!=="console"&&s.jsx(kl,{onClick:f=>{f.stopPropagation(),e.closeTab(u.id)},title:"Close tab",children:"×"})]},u.id))})});Oo.displayName="ChatTabs";function Sl(e,t=10){return e.scrollHeight<=e.clientHeight+1||e.scrollTop===0&&e.scrollHeight<=e.clientHeight+t?!0:e.scrollHeight-e.scrollTop<=e.clientHeight+t}function Pl(e){e.scrollTop=e.scrollHeight}function jl(e,t=10){Sl(e,t)&&Pl(e)}const kr=m.a`
+`,Oo=Z(()=>{const{chatStore:e}=Ae(),t=e.sortedTabs,[n,r]=re.useState(null),[o,i]=re.useState(null),a=(u,f)=>{r(f),u.dataTransfer.effectAllowed="move"},d=(u,f)=>{u.preventDefault(),u.dataTransfer.dropEffect="move",i(f)},c=()=>{i(null)},l=(u,f)=>{u.preventDefault(),n&&n!==f&&e.reorderTabs(n,f),r(null),i(null)},p=()=>{r(null),i(null)};return s.jsx($l,{children:t.map(u=>s.jsxs(vl,{$active:u.id===e.activeTabId,$hasUnread:u.unreadCount>0,$dragging:u.id===n,$dragOver:u.id===o,draggable:!0,onDragStart:f=>a(f,u.id),onDragOver:f=>d(f,u.id),onDragLeave:c,onDrop:f=>l(f,u.id),onDragEnd:p,onClick:()=>e.setActiveTab(u.id),children:[u.type!=="console"&&s.jsx(Sl,{$type:u.type}),s.jsx(wl,{children:u.type==="channel"?`(${u.name})`:u.name}),u.unreadCount>0&&s.jsx(kl,{children:u.unreadCount>99?"99+":u.unreadCount}),u.id!=="console"&&s.jsx(Cl,{onClick:f=>{f.stopPropagation(),e.closeTab(u.id)},title:"Close tab",children:"×"})]},u.id))})});Oo.displayName="ChatTabs";function Pl(e,t=10){return e.scrollHeight<=e.clientHeight+1||e.scrollTop===0&&e.scrollHeight<=e.clientHeight+t?!0:e.scrollHeight-e.scrollTop<=e.clientHeight+t}function jl(e){e.scrollTop=e.scrollHeight}function Rl(e,t=10){Pl(e,t)&&jl(e)}const kr=m.a`
   color: inherit;
   text-decoration: none;
   cursor: pointer;
@@ -1571,7 +1593,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   &:visited {
     color: inherit;
   }
-`,Rl=m.span`
+`,El=m.span`
   color: inherit;
   text-decoration: none;
   cursor: pointer;
@@ -1579,17 +1601,6 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   
   &:hover {
     color: ${e=>e.theme.colors.primary};
-    text-decoration: underline;
-  }
-`,El=m.span`
-  color: inherit;
-  cursor: pointer;
-  display: inline-block;
-  width: 100%;
-  transition: all ${e=>e.theme.transitions.fast};
-  
-  &:hover {
-    background-color: ${e=>e.theme.colors.backgroundTertiary};
     text-decoration: underline;
   }
 `,Ml=m.span`
@@ -1636,7 +1647,18 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
     background-color: ${e=>e.theme.colors.backgroundTertiary};
     text-decoration: underline;
   }
-`,je=/(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?|(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/gi,Cr=/["']([^"']+)["']/g,Sr=/\[(\w+)\]/g,Pr=new Set(["abort","accept","addlist","adjourn","alias","allobservers","assess","clear","set","backward","bell","best","boards","bsetup","bugwho","cbest","clearmessages","convert_bcf","convert_elo","convert_uscf","copygame","crank","cshout","date","decline","draw","examine","finger","flag","flip","fmessage","follow","forward","games","getgame","gnotify","goboard","handles","hbest","help","history","hrank","inchannel","index","info","it","jkill","jsave","kibitz","limits","llogons","logons","mailhelp","mailmess","mailmoves","mailoldmoves","mailsource","mailstored","match","messages","mexamine","moretime","moves","news","next","observe","oldmoves","open","password","pause","pending","pfollow","play","pobserve","promote","pstat","qtell","quit","rank","refresh","resign","resume","revert","say","seek","servers","set","shout","showadmins","showlist","simabort","simallabort","simadjourn","simalladjourn","simgames","simmatch","simnext","simobserve","simopen","simpass","simprev","smoves","smposition","sought","sposition","statistics","stored","style","sublist","switch","takeback","tell","time","unalias","unexamine","unobserve","unpause","unseek","uptime","variables","whisper","who","withdraw","xkibitz","xtell","xwhisper","znotify"]),Il=/^(\w+(?:\([A-Z]\))?) \((?:\+{4}|-{4}|\+*\d+)\) seeking/;let tn=null,nn=null;const nt=({text:e,className:t,onCommandClick:n})=>{const r=[];if(!!!n){je.lastIndex=0;let x;for(;(x=je.exec(e))!==null;)r.push({type:"url",match:x[0],content:x[0],index:x.index,length:x[0].length});const $=[];let w=0;return r.forEach((S,I)=>{S.index>w&&$.push(e.substring(w,S.index));let B=S.content;S.content.match(/^(?:https?|ftp):\/\//)||S.content.includes(".")&&(B="https://"+S.content),$.push(s.jsx(kr,{href:B,target:"_blank",rel:"noopener noreferrer",onClick:U=>U.stopPropagation(),children:S.content},`url-${I}`)),w=S.index+S.length}),w<e.length&&$.push(e.substring(w)),s.jsx("span",{className:t,children:$.length>0?$:e})}const i=e.includes("players displayed")||/^\s*(?:\d{3,4}|----|\+{4})/.test(e)&&!e.match(/^\d{4}\s+\(/)&&!e.match(/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/),a=/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+(?:\([A-Z]\))?\s+\d+\s+\d+\s+(?:unrated|rated)/.test(e)&&!e.includes("games displayed")&&!e.includes(" - "),d=e.includes("games displayed")||/^\s*\d{1,3}\s+(?:\d{3,4}|----|\+{4})\s+\w+\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(e)&&e.includes(" - ")&&e.includes("(")&&!a,c=/^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(e)||/^\s*\\\s+\w+/.test(e),l=/\w+\s+\(\d+\)\s+vs\.\s+\w+\s+\(\d+\)/.test(e),p=/^Game \d+:/.test(e),u=/^\:\[\d{2}:\d{2}:\d{2}\]/.test(e),f=/^(?:Present company includes:|Your arrival was noted by:)/.test(e),g=/^\s*--\s+\w+\s+list:/.test(e),v=/^\s*\d+:\s*\w+(?:\[\d+\])?\s+(?:tells you:|says:|at\s+)/.test(e),b=/^\s*Finger of\s+\w+/.test(e),k=/^\s*\d+:\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+\w+/.test(e)||/History for \w+:/.test(e),y=/^\s*%\d+:\s+\w+/.test(e)||/Journal for \w+:/.test(e),j=/\w+\s+\((?:\d+|\+{4})\)\s+seeking.*\("play\s+(\d+)"\s+to\s+respond\)/.test(e),R=/^\s*\d+\.\s+\w+\s+\d{4}/.test(e)||/^\s+\w+\s+\d{4}\s+\d+\.\s+\w+\s+\d{4}/.test(e),P=/^\d{4}\s+\(\w{3},\s+\w{3}\s+\d+\)/.test(e)||e.includes("Index of new news items:")||e.includes("Index of the last few news items:"),M=/^Notification:\s+\w+\s+has\s+(?:arrived|departed)/.test(e),D=/^\(told \d+ players? in channel \d+/.test(e)||/^\(told \w+\)/.test(e),N=e.length>10&&!e.match(/^\s/)&&!e.match(/^Channel\s+\d+/)&&!e.match(/^[A-Z]/)&&!e.match(/^\w+\s+\(\d+\)/)&&!e.match(/^Game\s+\d+/)&&!e.includes("displayed")&&!e.match(/^--/)&&!e.match(/^\d{4}\s+\(\w{3},/)&&!e.match(/^\d+\s+\(/)&&!e.match(/^\d+:\s+[+-=]/)&&!e.match(/^%\d+:/)&&e.split(/\s+/).length>3;if(j){const x=/\w+\s+\((?:\d+|\+{4})\)\s+seeking.*?\("play\s+(\d+)"\s+to\s+respond\)/g;let $;for(;($=x.exec(e))!==null;){const w=$[1];r.push({type:"command",match:$[0],content:`play ${w}`,index:$.index,length:$[0].length,isSeekLine:!0})}}else if((D||N)&&!P){je.lastIndex=0;let x;for(;(x=je.exec(e))!==null;)r.push({type:"url",match:x[0],content:x[0],index:x.index,length:x[0].length})}else if(i&&!d){const x=/(?:^|\s)((?:\d{3,4}|----|\+{4})\s*)([.^:#&]?)([A-Za-z]\w*)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;let $;for(;($=x.exec(e))!==null;){const[w,S,I,B]=$,U=$.index+$[0].indexOf(B);r.push({type:"player",match:B,content:B,index:U,length:B.length})}}else if(d){const $=/^\s*(\d{1,3})\s+(?:\d{3,4}|----|\+{4})\s+\w+\s+(?:\d{3,4}|----|\+{4})\s+\w+/.exec(e);if($){const w=$[1];r.push({type:"command",match:e,content:`observe ${w}`,index:0,length:e.length,isGamesLine:!0})}}else if(c)if(e.trim().startsWith("\\")){const x=e.substring(e.indexOf("\\")+1),$=/\{?(\w+)(?:\([A-Z*]+\))?\}?/g;let w;for(;(w=$.exec(x))!==null;){const S=w[1];if(!S||S.trim()==="")continue;const B=w[0].indexOf(S),U=e.indexOf("\\")+1+w.index+B;r.push({type:"player",match:S,content:S,index:U,length:S.length})}}else{const x=e.indexOf(":");if(x!==-1){const $=e.substring(x+1),w=/\{?(\w+)(?:\([A-Z*]+\))?\}?/g;let S;for(;(S=w.exec($))!==null;){const I=S[1];if(!I||I.trim()==="")continue;const U=S[0].indexOf(I),K=x+1+S.index+U;r.push({type:"player",match:I,content:I,index:K,length:I.length})}}}else if(l){const $=/(\w+)\s+\(\d+\)\s+vs\.\s+(\w+)\s+\(\d+\)/.exec(e);if($){const[w,S,I]=$,B=$.index,U=B+w.indexOf(S);r.push({type:"player",match:S,content:S,index:U,length:S.length});const K=B+w.indexOf(I);r.push({type:"player",match:I,content:I,index:K,length:I.length})}}else if(p){const $=/^Game \d+:\s+(\w+)\s+(?:offers|declines|accepts|requests|forfeits)/.exec(e);if($){const I=$[1],B=e.indexOf(I);r.push({type:"player",match:I,content:I,index:B,length:I.length})}const S=/Game \d+\s*\((\w+)\s+vs\.\s+(\w+)\)/.exec(e);if(S){const[I,B,U]=S,K=S.index,le=e.indexOf(B,K);r.push({type:"player",match:B,content:B,index:le,length:B.length});const q=e.indexOf(U,K);r.push({type:"player",match:U,content:U,index:q,length:U.length})}}else if(u){const $=/^\:\[\d{2}:\d{2}:\d{2}\]\s+(\w+):/.exec(e);if($){const S=$[1],I=e.indexOf(S,$.index);r.push({type:"player",match:S,content:S,index:I,length:S.length})}je.lastIndex=0;let w;for(;(w=je.exec(e))!==null;)r.push({type:"url",match:w[0],content:w[0],index:w.index,length:w[0].length})}else if(f){const x=e.indexOf(":");if(x!==-1){const $=e.substring(x+1),w=/(\w+)(?=\s|\.|\.|$)/g;let S;for(;(S=w.exec($))!==null;){const I=S[1],B=x+1+S.index;r.push({type:"player",match:I,content:I,index:B,length:I.length})}}}else if(g){if(!e.includes(" list:")){const x=/\b(\w+)\b/g;let $;for(;($=x.exec(e))!==null;){const w=$[1];r.push({type:"player",match:w,content:w,index:$.index,length:w.length})}}}else if(v){const $=/^\s*\d+:\s*(\w+)(?:\[\d+\])?\s+(?:tells you:|says:|at\s+)/.exec(e);if($){const w=$[1],S=e.indexOf(w);r.push({type:"player",match:w,content:w,index:S,length:w.length})}}else if(b){const $=/^\s*Finger of\s+(\w+)/.exec(e);if($){const w=$[1],S=e.indexOf(w);r.push({type:"player",match:w,content:w,index:S,length:w.length})}}else if(k){const $=/History for (\w+):/.exec(e);if($)tn=$[1];else if(tn){const S=/^\s*(\d+):\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+(\w+)/.exec(e);if(S){const I=S[1];r.push({type:"command",match:e,content:`examine ${tn} ${I}`,index:0,length:e.length,isHistoryLine:!0})}}}else if(y){const $=/Journal for (\w+):/.exec(e);if($)nn=$[1];else if(nn){const S=/^(\s*)(%\d+):/.exec(e);if(S){const[I,B,U]=S;r.push({type:"command",match:e,content:`examine ${nn} ${U}`,index:0,length:e.length,isJournalLine:!0})}}}else if(a){const $=/^\s*(\d+)\s+(?:\d{3,4}|----|\+{4})\s+\w+/.exec(e);if($){const w=$[1];r.push({type:"command",match:e,content:`play ${w}`,index:0,length:e.length,isSoughtLine:!0})}}else if(R){if(!(e.includes("Blitz")&&e.includes("Standard")&&e.includes("Lightning"))){const x=/(?:(\d+)\.\s+)?(\w+)\s+(\d{4})/g;let $;for(;($=x.exec(e))!==null;){const[w,S,I,B]=$,U=$.index+(S?S.length+2:0);r.push({type:"player",match:I,content:I,index:U,length:I.length})}}}else if(P){if(!(e.includes("Index of new news items:")||e.includes("Index of the last few news items:"))){const $=/^(\d{4})\s+\(/.exec(e);if($){const w=$[1];n!=null&&r.push({type:"command",match:w,content:`news ${w}`,index:0,length:w.length})}}}else if(M){const $=/^Notification:\s+(\w+)\s+has\s+(?:arrived|departed)/.exec(e);if($){const w=$[1],S=e.indexOf(w);r.push({type:"player",match:w,content:w,index:S,length:w.length})}}else{je.lastIndex=0;let x;for(;(x=je.exec(e))!==null;)r.push({type:"url",match:x[0],content:x[0],index:x.index,length:x[0].length})}if(n!=null&&!i&&!d&&!c&&!l&&!p&&!u&&!f&&!g&&!v&&!b&&!k&&!y&&!a&&!R&&!P&&!M){const x=Il.exec(e);if(x){const $=x[1];r.push({type:"player",match:$,content:$.replace(/\([A-Z]\)$/,""),index:0,length:$.length})}}if(n!=null){Cr.lastIndex=0;let x;for(;(x=Cr.exec(e))!==null;){const S=x[1].trim().split(/\s+/),I=S[0].toLowerCase();(Pr.has(I)||S.length>1&&Pr.has(I)&&S[1].startsWith("/"))&&r.push({type:"command",match:x[0],content:x[1],index:x.index,length:x[0].length})}Sr.lastIndex=0;let $;for(;($=Sr.exec(e))!==null;){const w=$[1].toLowerCase();["next","more","back","prev","previous","done","quit"].includes(w)&&r.push({type:"command",match:$[0],content:w,index:$.index,length:$[0].length})}}r.sort((x,$)=>x.index-$.index);const _=[];let H=0;return r.forEach((x,$)=>{if(x.index>H&&_.push(e.substring(H,x.index)),x.type==="url"){let w=x.content;x.content.match(/^(?:https?|ftp):\/\//)||x.content.includes(".")&&(w="https://"+x.content),_.push(s.jsx(kr,{href:w,target:"_blank",rel:"noopener noreferrer",onClick:S=>S.stopPropagation(),children:x.content},`url-${$}`))}else x.type==="command"?x.isHistoryLine?_.push(s.jsx(El,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to examine game: ${x.content}`,children:x.match},`hist-${$}`)):x.isJournalLine?_.push(s.jsx(Ml,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to examine game: ${x.content}`,children:x.match},`journal-${$}`)):x.isSoughtLine?_.push(s.jsx(Ll,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to play game: ${x.content}`,children:x.match},`sought-${$}`)):x.isGamesLine?_.push(s.jsx(zl,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to observe game: ${x.content}`,children:x.match},`games-${$}`)):x.isSeekLine?_.push(s.jsx(Tl,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to accept challenge: ${x.content}`,children:x.match},`seek-${$}`)):_.push(s.jsx(Rl,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to send: ${x.content}`,children:x.match},`cmd-${$}`)):x.type==="player"&&_.push(s.jsx(Bt,{name:x.content},`player-${$}`));H=x.index+x.length}),H<e.length&&_.push(e.substring(H)),_.length===0?s.jsx("span",{className:t,children:e}):s.jsx("span",{className:t,children:_})};nt.displayName="LinkifiedText";const gt=m.div`
+`,Il=m.span`
+  color: inherit;
+  cursor: pointer;
+  display: inline-block;
+  width: 100%;
+  transition: all ${e=>e.theme.transitions.fast};
+  
+  &:hover {
+    background-color: ${e=>e.theme.colors.backgroundTertiary};
+    text-decoration: underline;
+  }
+`,je=/(?:(?:https?|ftp):\/\/)?(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?|(?:www\.)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:\/[^\s]*)?/gi,Cr=/["']([^"']+)["']/g,Sr=/\[(\w+)\]/g,Pr=new Set(["abort","accept","addlist","adjourn","alias","allobservers","assess","clear","set","backward","bell","best","boards","bsetup","bugwho","cbest","clearmessages","convert_bcf","convert_elo","convert_uscf","copygame","crank","cshout","date","decline","draw","examine","finger","flag","flip","fmessage","follow","forward","games","getgame","gnotify","goboard","handles","hbest","help","history","hrank","inchannel","index","info","it","jkill","jsave","kibitz","limits","llogons","logons","mailhelp","mailmess","mailmoves","mailoldmoves","mailsource","mailstored","match","messages","mexamine","moretime","moves","news","next","observe","oldmoves","open","password","pause","pending","pfollow","play","pobserve","promote","pstat","qtell","quit","rank","refresh","resign","resume","revert","say","seek","servers","set","shout","showadmins","showlist","simabort","simallabort","simadjourn","simalladjourn","simgames","simmatch","simnext","simobserve","simopen","simpass","simprev","smoves","smposition","sought","sposition","statistics","stored","style","sublist","switch","takeback","tell","time","unalias","unexamine","unobserve","unpause","unseek","uptime","variables","whisper","who","withdraw","xkibitz","xtell","xwhisper","znotify"]),Nl=/^(\w+(?:\([A-Z]\))?) \((?:\+{4}|-{4}|\+*\d+)\) seeking/;let tn=null,nn=null;const nt=({text:e,className:t,onCommandClick:n})=>{const r=[];if(!!!n){je.lastIndex=0;let x;for(;(x=je.exec(e))!==null;)r.push({type:"url",match:x[0],content:x[0],index:x.index,length:x[0].length});const $=[];let w=0;return r.forEach((S,I)=>{S.index>w&&$.push(e.substring(w,S.index));let B=S.content;S.content.match(/^(?:https?|ftp):\/\//)||S.content.includes(".")&&(B="https://"+S.content),$.push(s.jsx(kr,{href:B,target:"_blank",rel:"noopener noreferrer",onClick:U=>U.stopPropagation(),children:S.content},`url-${I}`)),w=S.index+S.length}),w<e.length&&$.push(e.substring(w)),s.jsx("span",{className:t,children:$.length>0?$:e})}const i=e.includes("players displayed")||/^\s*(?:\d{3,4}|----|\+{4})/.test(e)&&!e.match(/^\d{4}\s+\(/)&&!e.match(/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+/),a=/^\s*\d+\s+(?:\d{3,4}|----|\+{4})\s+\w+(?:\([A-Z]\))?\s+\d+\s+\d+\s+(?:unrated|rated)/.test(e)&&!e.includes("games displayed")&&!e.includes(" - "),d=e.includes("games displayed")||/^\s*\d{1,3}\s+(?:\d{3,4}|----|\+{4})\s+\w+\s+(?:\d{3,4}|----|\+{4})\s+\w+/.test(e)&&e.includes(" - ")&&e.includes("(")&&!a,c=/^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/.test(e)||/^\s*\\\s+\w+/.test(e),l=/\w+\s+\(\d+\)\s+vs\.\s+\w+\s+\(\d+\)/.test(e),p=/^Game \d+:/.test(e),u=/^\:\[\d{2}:\d{2}:\d{2}\]/.test(e),f=/^(?:Present company includes:|Your arrival was noted by:)/.test(e),g=/^\s*--\s+\w+\s+list:/.test(e),v=/^\s*\d+:\s*\w+(?:\[\d+\])?\s+(?:tells you:|says:|at\s+)/.test(e),b=/^\s*Finger of\s+\w+/.test(e),k=/^\s*\d+:\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+\w+/.test(e)||/History for \w+:/.test(e),y=/^\s*%\d+:\s+\w+/.test(e)||/Journal for \w+:/.test(e),j=/\w+\s+\((?:\d+|\+{4})\)\s+seeking.*\("play\s+(\d+)"\s+to\s+respond\)/.test(e),R=/^\s*\d+\.\s+\w+\s+\d{4}/.test(e)||/^\s+\w+\s+\d{4}\s+\d+\.\s+\w+\s+\d{4}/.test(e),P=/^\d{4}\s+\(\w{3},\s+\w{3}\s+\d+\)/.test(e)||e.includes("Index of new news items:")||e.includes("Index of the last few news items:"),M=/^Notification:\s+\w+\s+has\s+(?:arrived|departed)/.test(e),D=/^\(told \d+ players? in channel \d+/.test(e)||/^\(told \w+\)/.test(e),N=e.length>10&&!e.match(/^\s/)&&!e.match(/^Channel\s+\d+/)&&!e.match(/^[A-Z]/)&&!e.match(/^\w+\s+\(\d+\)/)&&!e.match(/^Game\s+\d+/)&&!e.includes("displayed")&&!e.match(/^--/)&&!e.match(/^\d{4}\s+\(\w{3},/)&&!e.match(/^\d+\s+\(/)&&!e.match(/^\d+:\s+[+-=]/)&&!e.match(/^%\d+:/)&&e.split(/\s+/).length>3;if(j){const x=/\w+\s+\((?:\d+|\+{4})\)\s+seeking.*?\("play\s+(\d+)"\s+to\s+respond\)/g;let $;for(;($=x.exec(e))!==null;){const w=$[1];r.push({type:"command",match:$[0],content:`play ${w}`,index:$.index,length:$[0].length,isSeekLine:!0})}}else if((D||N)&&!P){je.lastIndex=0;let x;for(;(x=je.exec(e))!==null;)r.push({type:"url",match:x[0],content:x[0],index:x.index,length:x[0].length})}else if(i&&!d){const x=/(?:^|\s)((?:\d{3,4}|----|\+{4})\s*)([.^:#&]?)([A-Za-z]\w*)(?:\([A-Z*]+\))?(?:\([A-Z]{2}\))?/g;let $;for(;($=x.exec(e))!==null;){const[w,S,I,B]=$,U=$.index+$[0].indexOf(B);r.push({type:"player",match:B,content:B,index:U,length:B.length})}}else if(d){const $=/^\s*(\d{1,3})\s+(?:\d{3,4}|----|\+{4})\s+\w+\s+(?:\d{3,4}|----|\+{4})\s+\w+/.exec(e);if($){const w=$[1];r.push({type:"command",match:e,content:`observe ${w}`,index:0,length:e.length,isGamesLine:!0})}}else if(c)if(e.trim().startsWith("\\")){const x=e.substring(e.indexOf("\\")+1),$=/\{?(\w+)(?:\([A-Z*]+\))?\}?/g;let w;for(;(w=$.exec(x))!==null;){const S=w[1];if(!S||S.trim()==="")continue;const B=w[0].indexOf(S),U=e.indexOf("\\")+1+w.index+B;r.push({type:"player",match:S,content:S,index:U,length:S.length})}}else{const x=e.indexOf(":");if(x!==-1){const $=e.substring(x+1),w=/\{?(\w+)(?:\([A-Z*]+\))?\}?/g;let S;for(;(S=w.exec($))!==null;){const I=S[1];if(!I||I.trim()==="")continue;const U=S[0].indexOf(I),K=x+1+S.index+U;r.push({type:"player",match:I,content:I,index:K,length:I.length})}}}else if(l){const $=/(\w+)\s+\(\d+\)\s+vs\.\s+(\w+)\s+\(\d+\)/.exec(e);if($){const[w,S,I]=$,B=$.index,U=B+w.indexOf(S);r.push({type:"player",match:S,content:S,index:U,length:S.length});const K=B+w.indexOf(I);r.push({type:"player",match:I,content:I,index:K,length:I.length})}}else if(p){const $=/^Game \d+:\s+(\w+)\s+(?:offers|declines|accepts|requests|forfeits)/.exec(e);if($){const I=$[1],B=e.indexOf(I);r.push({type:"player",match:I,content:I,index:B,length:I.length})}const S=/Game \d+\s*\((\w+)\s+vs\.\s+(\w+)\)/.exec(e);if(S){const[I,B,U]=S,K=S.index,le=e.indexOf(B,K);r.push({type:"player",match:B,content:B,index:le,length:B.length});const q=e.indexOf(U,K);r.push({type:"player",match:U,content:U,index:q,length:U.length})}}else if(u){const $=/^\:\[\d{2}:\d{2}:\d{2}\]\s+(\w+):/.exec(e);if($){const S=$[1],I=e.indexOf(S,$.index);r.push({type:"player",match:S,content:S,index:I,length:S.length})}je.lastIndex=0;let w;for(;(w=je.exec(e))!==null;)r.push({type:"url",match:w[0],content:w[0],index:w.index,length:w[0].length})}else if(f){const x=e.indexOf(":");if(x!==-1){const $=e.substring(x+1),w=/(\w+)(?=\s|\.|\.|$)/g;let S;for(;(S=w.exec($))!==null;){const I=S[1],B=x+1+S.index;r.push({type:"player",match:I,content:I,index:B,length:I.length})}}}else if(g){if(!e.includes(" list:")){const x=/\b(\w+)\b/g;let $;for(;($=x.exec(e))!==null;){const w=$[1];r.push({type:"player",match:w,content:w,index:$.index,length:w.length})}}}else if(v){const $=/^\s*\d+:\s*(\w+)(?:\[\d+\])?\s+(?:tells you:|says:|at\s+)/.exec(e);if($){const w=$[1],S=e.indexOf(w);r.push({type:"player",match:w,content:w,index:S,length:w.length})}}else if(b){const $=/^\s*Finger of\s+(\w+)/.exec(e);if($){const w=$[1],S=e.indexOf(w);r.push({type:"player",match:w,content:w,index:S,length:w.length})}}else if(k){const $=/History for (\w+):/.exec(e);if($)tn=$[1];else if(tn){const S=/^\s*(\d+):\s+[+-=]\s+\d+\s+[WBN]\s+\d+\s+(\w+)/.exec(e);if(S){const I=S[1];r.push({type:"command",match:e,content:`examine ${tn} ${I}`,index:0,length:e.length,isHistoryLine:!0})}}}else if(y){const $=/Journal for (\w+):/.exec(e);if($)nn=$[1];else if(nn){const S=/^(\s*)(%\d+):/.exec(e);if(S){const[I,B,U]=S;r.push({type:"command",match:e,content:`examine ${nn} ${U}`,index:0,length:e.length,isJournalLine:!0})}}}else if(a){const $=/^\s*(\d+)\s+(?:\d{3,4}|----|\+{4})\s+\w+/.exec(e);if($){const w=$[1];r.push({type:"command",match:e,content:`play ${w}`,index:0,length:e.length,isSoughtLine:!0})}}else if(R){if(!(e.includes("Blitz")&&e.includes("Standard")&&e.includes("Lightning"))){const x=/(?:(\d+)\.\s+)?(\w+)\s+(\d{4})/g;let $;for(;($=x.exec(e))!==null;){const[w,S,I,B]=$,U=$.index+(S?S.length+2:0);r.push({type:"player",match:I,content:I,index:U,length:I.length})}}}else if(P){if(!(e.includes("Index of new news items:")||e.includes("Index of the last few news items:"))){const $=/^(\d{4})\s+\(/.exec(e);if($){const w=$[1];n!=null&&r.push({type:"command",match:w,content:`news ${w}`,index:0,length:w.length})}}}else if(M){const $=/^Notification:\s+(\w+)\s+has\s+(?:arrived|departed)/.exec(e);if($){const w=$[1],S=e.indexOf(w);r.push({type:"player",match:w,content:w,index:S,length:w.length})}}else{je.lastIndex=0;let x;for(;(x=je.exec(e))!==null;)r.push({type:"url",match:x[0],content:x[0],index:x.index,length:x[0].length})}if(n!=null&&!i&&!d&&!c&&!l&&!p&&!u&&!f&&!g&&!v&&!b&&!k&&!y&&!a&&!R&&!P&&!M){const x=Nl.exec(e);if(x){const $=x[1];r.push({type:"player",match:$,content:$.replace(/\([A-Z]\)$/,""),index:0,length:$.length})}}if(n!=null){Cr.lastIndex=0;let x;for(;(x=Cr.exec(e))!==null;){const S=x[1].trim().split(/\s+/),I=S[0].toLowerCase();(Pr.has(I)||S.length>1&&Pr.has(I)&&S[1].startsWith("/"))&&r.push({type:"command",match:x[0],content:x[1],index:x.index,length:x[0].length})}Sr.lastIndex=0;let $;for(;($=Sr.exec(e))!==null;){const w=$[1].toLowerCase();["next","more","back","prev","previous","done","quit"].includes(w)&&r.push({type:"command",match:$[0],content:w,index:$.index,length:$[0].length})}}r.sort((x,$)=>x.index-$.index);const _=[];let H=0;return r.forEach((x,$)=>{if(x.index>H&&_.push(e.substring(H,x.index)),x.type==="url"){let w=x.content;x.content.match(/^(?:https?|ftp):\/\//)||x.content.includes(".")&&(w="https://"+x.content),_.push(s.jsx(kr,{href:w,target:"_blank",rel:"noopener noreferrer",onClick:S=>S.stopPropagation(),children:x.content},`url-${$}`))}else x.type==="command"?x.isHistoryLine?_.push(s.jsx(Ml,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to examine game: ${x.content}`,children:x.match},`hist-${$}`)):x.isJournalLine?_.push(s.jsx(Ll,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to examine game: ${x.content}`,children:x.match},`journal-${$}`)):x.isSoughtLine?_.push(s.jsx(zl,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to play game: ${x.content}`,children:x.match},`sought-${$}`)):x.isGamesLine?_.push(s.jsx(Tl,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to observe game: ${x.content}`,children:x.match},`games-${$}`)):x.isSeekLine?_.push(s.jsx(Il,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to accept challenge: ${x.content}`,children:x.match},`seek-${$}`)):_.push(s.jsx(El,{onClick:w=>{w.stopPropagation(),n(x.content)},title:`Click to send: ${x.content}`,children:x.match},`cmd-${$}`)):x.type==="player"&&_.push(s.jsx(Bt,{name:x.content},`player-${$}`));H=x.index+x.length}),H<e.length&&_.push(e.substring(H)),_.length===0?s.jsx("span",{className:t,children:e}):s.jsx("span",{className:t,children:_})};nt.displayName="LinkifiedText";const gt=m.div`
   flex: 1;
   background-color: ${e=>e.theme.colors.background};
   border-radius: ${e=>e.theme.borderRadius.container};
@@ -1681,7 +1703,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   opacity: 0;
   transition: opacity 0.2s ease;
   min-width: 50px;
-`,Nl=m.div`
+`,Al=m.div`
   margin-bottom: ${e=>e.theme.spacing[1]};
   
   &:last-child {
@@ -1733,7 +1755,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   padding: 0 4px;
   z-index: 1;
   font-weight: ${e=>e.theme.typography.fontWeight.bold};
-`;const Al=m.span`
+`;const Dl=m.span`
   color: ${e=>e.$isYou?e.theme.colors.primary:e.theme.colors.text};
   font-weight: ${e=>e.theme.typography.fontWeight.semibold};
   flex-shrink: 0;
@@ -1741,7 +1763,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   &::after {
     content: ':';
   }
-`,Dl=m.span`
+`,Ol=m.span`
   word-break: break-word;
   white-space: pre-wrap;
   flex: 1;
@@ -1753,15 +1775,15 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   color: ${e=>e.theme.colors.textTertiary};
   font-size: ${e=>e.theme.typography.fontSize.sm};
   font-style: italic;
-`,Ol=m.div`
+`,Fl=m.div`
   color: ${e=>e.theme.colors.textSecondary};
   font-style: italic;
   text-align: center;
   margin: ${e=>e.theme.spacing[2]} 0;
   font-size: ${e=>e.theme.typography.fontSize.sm};
-`,Fo=Z(({onMessageHover:e})=>{const{chatStore:t,ficsStore:n,preferencesStore:r}=Ae(),o=h.useRef(null),i=t.activeTab,a=i?.messages||[],d=n.username||"You",c=p=>{n.sendCommand(p)};if(h.useEffect(()=>{if(o.current&&a.length>0){const p=o.current,u=setTimeout(()=>{i?.type==="console"?p.scrollTop=p.scrollHeight:jl(p,50)},50);return()=>clearTimeout(u)}},[a.length,a[a.length-1]?.id]),h.useEffect(()=>{if(o.current&&a.length>0){const p=o.current;requestAnimationFrame(()=>{p.scrollTop=p.scrollHeight})}},[i?.id]),!i)return s.jsx(gt,{children:s.jsx(yt,{className:"chat-messages-container",children:s.jsx(Rr,{children:"No active chat"})})});if(a.length===0)return s.jsx(gt,{children:s.jsx(yt,{className:"chat-messages-container",children:s.jsx(Rr,{children:i.type==="channel"?`No messages in (${i.name}) yet`:i.type==="private"?`No messages with ${i.name} yet`:"Connecting to freechess.org..."})})});const l=[];return a.forEach((p,u)=>{const f=u>0?a[u-1]:null,g=f?new Date(p.timestamp).getTime()-new Date(f.timestamp).getTime():1/0;f&&f.sender===p.sender&&f.type===p.type&&g<6e4?l[l.length-1].messages.push(p):l.push({sender:p.sender,timestamp:new Date(p.timestamp),messages:[p]})}),i.type==="console"?s.jsx(gt,{children:s.jsx(yt,{ref:o,className:"chat-messages-container",children:a.map(p=>{let u;if(p.metadata?.consoleType){const f=r.getConsoleColor(p.metadata.consoleType,p.metadata.channelNumber);f&&(u=f)}return s.jsx(jr,{$type:p.type,$color:u,onMouseEnter:()=>e?.(p.timestamp),onMouseLeave:()=>e?.(null),children:u?s.jsx("span",{style:{color:u},children:s.jsx(nt,{text:p.content,onCommandClick:c})}):s.jsx(nt,{text:p.content,onCommandClick:c})},p.id)})})}):s.jsx(gt,{children:s.jsx(yt,{ref:o,className:"chat-messages-container",children:l.map((p,u)=>{const f=p.messages[0],g=p.sender.toLowerCase()===d.toLowerCase();if(f.type==="system")return s.jsx(Ol,{children:p.messages.map((b,k)=>s.jsxs(re.Fragment,{children:[k>0&&`
-`,s.jsx(nt,{text:b.content,onCommandClick:c})]},b.id))},u);let v;if(i.type==="channel"&&f.metadata?.consoleType==="channel"){const b=r.getConsoleColor(f.metadata.consoleType,f.metadata.channelNumber);b&&(v=b)}return s.jsx(Nl,{onMouseEnter:()=>e?.(p.timestamp),onMouseLeave:()=>e?.(null),children:s.jsxs(jr,{$type:f.type,$color:v,children:[s.jsx(Al,{$isYou:g,children:g?p.sender:s.jsx(Bt,{name:p.sender})}),s.jsx(Dl,{children:p.messages.map((b,k)=>s.jsxs(re.Fragment,{children:[k>0&&`
-`,s.jsx(nt,{text:b.content})]},b.id))})]})},u)})})})});Fo.displayName="ChatMessages";const Fl=m.div`
+`,Fo=Z(({onMessageHover:e})=>{const{chatStore:t,ficsStore:n,preferencesStore:r}=Ae(),o=h.useRef(null),i=t.activeTab,a=i?.messages||[],d=n.username||"You",c=p=>{n.sendCommand(p)};if(h.useEffect(()=>{if(o.current&&a.length>0){const p=o.current,u=setTimeout(()=>{i?.type==="console"?p.scrollTop=p.scrollHeight:Rl(p,50)},50);return()=>clearTimeout(u)}},[a.length,a[a.length-1]?.id]),h.useEffect(()=>{if(o.current&&a.length>0){const p=o.current;requestAnimationFrame(()=>{p.scrollTop=p.scrollHeight})}},[i?.id]),!i)return s.jsx(gt,{children:s.jsx(yt,{className:"chat-messages-container",children:s.jsx(Rr,{children:"No active chat"})})});if(a.length===0)return s.jsx(gt,{children:s.jsx(yt,{className:"chat-messages-container",children:s.jsx(Rr,{children:i.type==="channel"?`No messages in (${i.name}) yet`:i.type==="private"?`No messages with ${i.name} yet`:"Connecting to freechess.org..."})})});const l=[];return a.forEach((p,u)=>{const f=u>0?a[u-1]:null,g=f?new Date(p.timestamp).getTime()-new Date(f.timestamp).getTime():1/0;f&&f.sender===p.sender&&f.type===p.type&&g<6e4?l[l.length-1].messages.push(p):l.push({sender:p.sender,timestamp:new Date(p.timestamp),messages:[p]})}),i.type==="console"?s.jsx(gt,{children:s.jsx(yt,{ref:o,className:"chat-messages-container",children:a.map(p=>{let u;if(p.metadata?.consoleType){const f=r.getConsoleColor(p.metadata.consoleType,p.metadata.channelNumber);f&&(u=f)}return s.jsx(jr,{$type:p.type,$color:u,onMouseEnter:()=>e?.(p.timestamp),onMouseLeave:()=>e?.(null),children:u?s.jsx("span",{style:{color:u},children:s.jsx(nt,{text:p.content,onCommandClick:c})}):s.jsx(nt,{text:p.content,onCommandClick:c})},p.id)})})}):s.jsx(gt,{children:s.jsx(yt,{ref:o,className:"chat-messages-container",children:l.map((p,u)=>{const f=p.messages[0],g=p.sender.toLowerCase()===d.toLowerCase();if(f.type==="system")return s.jsx(Fl,{children:p.messages.map((b,k)=>s.jsxs(re.Fragment,{children:[k>0&&`
+`,s.jsx(nt,{text:b.content,onCommandClick:c})]},b.id))},u);let v;if(i.type==="channel"&&f.metadata?.consoleType==="channel"){const b=r.getConsoleColor(f.metadata.consoleType,f.metadata.channelNumber);b&&(v=b)}return s.jsx(Al,{onMouseEnter:()=>e?.(p.timestamp),onMouseLeave:()=>e?.(null),children:s.jsxs(jr,{$type:f.type,$color:v,children:[s.jsx(Dl,{$isYou:g,children:g?p.sender:s.jsx(Bt,{name:p.sender})}),s.jsx(Ol,{children:p.messages.map((b,k)=>s.jsxs(re.Fragment,{children:[k>0&&`
+`,s.jsx(nt,{text:b.content})]},b.id))})]})},u)})})})});Fo.displayName="ChatMessages";const Bl=m.div`
   display: flex;
   gap: ${e=>e.theme.spacing[2]};
   padding: ${e=>e.theme.spacing[2]};
@@ -1769,7 +1791,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   background-color: transparent;
   margin: ${e=>e.theme.spacing[2]};
   margin-top: 0;
-`,Bl=m.input`
+`,Wl=m.input`
   flex: 1;
   padding: ${e=>e.theme.spacing[2]};
   border: 1px solid ${e=>e.theme.colors.border};
@@ -1795,7 +1817,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   &::placeholder {
     color: ${e=>e.theme.colors.textTertiary};
   }
-`,Wl=m.button`
+`,Hl=m.button`
   padding: ${e=>e.theme.spacing[2]} ${e=>e.theme.spacing[3]};
   border: none;
   border-radius: ${e=>e.theme.borderRadius.md};
@@ -1823,7 +1845,7 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   &:focus-visible {
     box-shadow: 0 0 0 2px ${e=>e.theme.colors.primary}40;
   }
-`,Bo=({value:e,onChange:t,onSend:n,onHistoryNavigate:r,placeholder:o="Type a message...",disabled:i=!1})=>{const a=h.useRef(null),d=l=>{l.key==="Enter"&&!l.shiftKey?(l.preventDefault(),e.trim()&&n(e.trim())):l.key==="ArrowUp"&&!e?(l.preventDefault(),r?.("up")):l.key==="ArrowDown"&&(l.preventDefault(),r?.("down"))},c=()=>{e.trim()&&n(e.trim())};return s.jsxs(Fl,{children:[s.jsx(Bl,{ref:a,type:"text",value:e,onChange:l=>t(l.target.value),onKeyDown:d,placeholder:o,disabled:i,autoComplete:"off",spellCheck:"true"}),s.jsx(Wl,{onClick:c,disabled:i||!e.trim(),title:"Send message (Enter)",children:"Send"})]})};Bo.displayName="ChatInput";const Hl=m.div`
+`,Bo=({value:e,onChange:t,onSend:n,onHistoryNavigate:r,placeholder:o="Type a message...",disabled:i=!1})=>{const a=h.useRef(null),d=l=>{l.key==="Enter"&&!l.shiftKey?(l.preventDefault(),e.trim()&&n(e.trim())):l.key==="ArrowUp"&&!e?(l.preventDefault(),r?.("up")):l.key==="ArrowDown"&&(l.preventDefault(),r?.("down"))},c=()=>{e.trim()&&n(e.trim())};return s.jsxs(Bl,{children:[s.jsx(Wl,{ref:a,type:"text",value:e,onChange:l=>t(l.target.value),onKeyDown:d,placeholder:o,disabled:i,autoComplete:"off",spellCheck:"true"}),s.jsx(Hl,{onClick:c,disabled:i||!e.trim(),title:"Send message (Enter)",children:"Send"})]})};Bo.displayName="ChatInput";const _l=m.div`
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -1832,28 +1854,28 @@ Please change the parent <Route path="${y}"> to <Route path="${y==="/"?"*":`${y}
   box-shadow: ${e=>e.theme.shadows.container};
   overflow: hidden;
   min-height: ${e=>e.$compact?"200px":"300px"};
-`,_l=m.div`
+`,Gl=m.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: ${e=>e.theme.spacing[2]};
   background-color: ${e=>e.theme.colors.backgroundTertiary};
   border-bottom: 1px solid ${e=>e.theme.colors.border};
-`,Gl=m.h3`
+`,Ul=m.h3`
   margin: 0;
   font-size: ${e=>e.theme.typography.fontSize.md};
   font-weight: ${e=>e.theme.typography.fontWeight.semibold};
   color: ${e=>e.theme.colors.text};
-`,Ul=m.span`
-  font-size: ${e=>e.theme.typography.fontSize.sm};
-  color: ${e=>e.theme.colors.textSecondary};
-  margin-left: auto;
 `,ql=m.span`
   font-size: ${e=>e.theme.typography.fontSize.sm};
   color: ${e=>e.theme.colors.textSecondary};
   margin-left: auto;
+`,Yl=m.span`
+  font-size: ${e=>e.theme.typography.fontSize.sm};
+  color: ${e=>e.theme.colors.textSecondary};
+  margin-left: auto;
   margin-right: ${e=>e.theme.spacing[4]};
-`,Yl=m.div`
+`,Vl=m.div`
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -1874,23 +1896,23 @@ seek <time> <inc> - Seek a game
 quit - Disconnect from FICS
 
 Local commands:
-/help - Show this help`,timestamp:new Date,type:"system"}),i("");return}if(n.addMessage("console",{channel:"console",sender:"You",content:f,timestamp:new Date,type:"message"}),f.startsWith("/")||f.startsWith("\\"))r.sendCommand(f.substring(1));else{const g=n.activeTab;if(!g)return;if(g.type==="channel"){const v=g.id.replace("channel-","");r.sendCommand(`tell ${v} ${f}`)}else g.type==="private"?r.sendCommand(`tell ${g.id} ${f}`):r.sendCommand(f)}i("")}},u=f=>{const g=n.navigateHistory(f);g!==null&&i(g)};return s.jsxs(Hl,{className:e,$compact:t,children:[!t&&s.jsxs(_l,{children:[s.jsx(Gl,{children:"Chat"}),r.averagePing!==null&&s.jsxs(ql,{children:["Ping: ",r.averagePing,"ms"]}),c&&s.jsxs(Ul,{children:["Received: ",new Date(c).toLocaleTimeString()]})]}),s.jsxs(Yl,{children:[s.jsx(Oo,{}),s.jsx(Fo,{onMessageHover:l}),s.jsx(Bo,{value:o,onChange:i,onSend:p,onHistoryNavigate:u,placeholder:n.activeTab?.type==="channel"?`Message (${n.activeTab.name})...`:n.activeTab?.type==="private"?`Message ${n.activeTab.name}...`:"Enter command..."})]})]})});Wo.displayName="ChatPanel";const Vl=m.div`
+/help - Show this help`,timestamp:new Date,type:"system"}),i("");return}if(n.addMessage("console",{channel:"console",sender:"You",content:f,timestamp:new Date,type:"message"}),f.startsWith("/")||f.startsWith("\\"))r.sendCommand(f.substring(1));else{const g=n.activeTab;if(!g)return;if(g.type==="channel"){const v=g.id.replace("channel-","");r.sendCommand(`tell ${v} ${f}`)}else g.type==="private"?r.sendCommand(`tell ${g.id} ${f}`):r.sendCommand(f)}i("")}},u=f=>{const g=n.navigateHistory(f);g!==null&&i(g)};return s.jsxs(_l,{className:e,$compact:t,children:[!t&&s.jsxs(Gl,{children:[s.jsx(Ul,{children:"Chat"}),r.averagePing!==null&&s.jsxs(Yl,{children:["Ping: ",r.averagePing,"ms"]}),c&&s.jsxs(ql,{children:["Received: ",new Date(c).toLocaleTimeString()]})]}),s.jsxs(Vl,{children:[s.jsx(Oo,{}),s.jsx(Fo,{onMessageHover:l}),s.jsx(Bo,{value:o,onChange:i,onSend:p,onHistoryNavigate:u,placeholder:n.activeTab?.type==="channel"?`Message (${n.activeTab.name})...`:n.activeTab?.type==="private"?`Message ${n.activeTab.name}...`:"Enter command..."})]})]})});Wo.displayName="ChatPanel";const Kl=m.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   background-color: ${e=>e.theme.colors.surface};
-`,Kl=m.main`
+`,Xl=m.main`
   flex: 1;
   display: flex;
   overflow: hidden;
   position: relative;
-`,Xl=m.div`
+`,Jl=m.div`
   flex: 1;
   display: ${e=>e.$isVisible?"flex":"none"};
   overflow: hidden;
-`,Jl=m.div`
+`,Ql=m.div`
   width: ${e=>e.$fullWidth?"100%":e.$isVisible?"600px":"0"};
   display: ${e=>e.$isVisible?"flex":"none"};
   flex-direction: column;
@@ -1902,7 +1924,7 @@ Local commands:
   @media (max-width: 768px) {
     width: ${e=>e.$isVisible?"100%":"0"};
   }
-`,Ql=m.div`
+`,Zl=m.div`
   width: ${e=>e.$isVisible?"4px":"0"};
   display: ${e=>e.$isVisible?"block":"none"};
   background-color: ${e=>e.theme.colors.border};
@@ -1921,7 +1943,7 @@ Local commands:
     left: -2px;
     right: -2px;
   }
-`,Ho=Z(()=>{const{preferencesStore:e}=Ae(),{viewMode:t,autoViewMode:n}=e.preferences,r=Ft(),[o,i]=h.useState(600),[a,d]=h.useState(!1);h.useEffect(()=>{n&&(r.isMobile||r.isTablet?e.updatePreference("viewMode","chess-only"):e.updatePreference("viewMode","chess-and-chat"))},[r.isMobile,r.isTablet,n,e]);const c=f=>{f.preventDefault(),d(!0)};h.useEffect(()=>{if(!a)return;const f=v=>{const b=window.innerWidth-v.clientX;i(Math.max(300,Math.min(600,b))),window.dispatchEvent(new Event("resize"))},g=()=>{d(!1)};return document.addEventListener("mousemove",f),document.addEventListener("mouseup",g),()=>{document.removeEventListener("mousemove",f),document.removeEventListener("mouseup",g)}},[a]);const l=t==="chess-only"||t==="chess-and-chat",p=t==="chat-only"||t==="chess-and-chat",u=t==="chess-and-chat"&&!r.isMobile;return s.jsxs(Vl,{children:[s.jsx(jo,{}),s.jsxs(Kl,{children:[s.jsx(Xl,{$isVisible:l,children:s.jsx(Do,{hasChat:p})}),u&&s.jsx(Ql,{$isVisible:!0,onMouseDown:c,style:{cursor:a?"col-resize":"ew-resize"}}),s.jsx(Jl,{$isVisible:p,$fullWidth:t==="chat-only",style:{width:t==="chat-only"?void 0:p&&!r.isMobile?`${o}px`:void 0},children:s.jsx(Wo,{})})]})]})});Ho.displayName="AppLayout";const Zl=Ia`
+`,Ho=Z(()=>{const{preferencesStore:e}=Ae(),{viewMode:t,autoViewMode:n}=e.preferences,r=Ft(),[o,i]=h.useState(600),[a,d]=h.useState(!1);h.useEffect(()=>{n&&(r.isMobile||r.isTablet?e.updatePreference("viewMode","chess-only"):e.updatePreference("viewMode","chess-and-chat"))},[r.isMobile,r.isTablet,n,e]);const c=f=>{f.preventDefault(),d(!0)};h.useEffect(()=>{if(!a)return;const f=v=>{const b=window.innerWidth-v.clientX;i(Math.max(300,Math.min(600,b))),window.dispatchEvent(new Event("resize"))},g=()=>{d(!1)};return document.addEventListener("mousemove",f),document.addEventListener("mouseup",g),()=>{document.removeEventListener("mousemove",f),document.removeEventListener("mouseup",g)}},[a]);const l=t==="chess-only"||t==="chess-and-chat",p=t==="chat-only"||t==="chess-and-chat",u=t==="chess-and-chat"&&!r.isMobile;return s.jsxs(Kl,{children:[s.jsx(jo,{}),s.jsxs(Xl,{children:[s.jsx(Jl,{$isVisible:l,children:s.jsx(Do,{hasChat:p})}),u&&s.jsx(Zl,{$isVisible:!0,onMouseDown:c,style:{cursor:a?"col-resize":"ew-resize"}}),s.jsx(Ql,{$isVisible:p,$fullWidth:t==="chat-only",style:{width:t==="chat-only"?void 0:p&&!r.isMobile?`${o}px`:void 0},children:s.jsx(Wo,{})})]})]})});Ho.displayName="AppLayout";const ed=Ia`
     * {
         margin: 0;
         padding: 0;
@@ -2075,4 +2097,4 @@ Local commands:
             box-shadow: none !important;
         }
     }
-`,ed=()=>s.jsx(qo,{children:s.jsxs(Aa,{children:[s.jsx(Zl,{}),s.jsx(xs,{children:s.jsx(Vi,{children:s.jsx(Hr,{path:"/",element:s.jsx(qa,{children:s.jsx(Ho,{})})})})})]})}),_o=document.getElementById("root");if(!_o)throw new Error("Root element not found");const td=Mr(_o);td.render(s.jsx(ed,{}));
+`,td=()=>s.jsx(qo,{children:s.jsxs(Aa,{children:[s.jsx(ed,{}),s.jsx(xs,{children:s.jsx(Vi,{children:s.jsx(Hr,{path:"/",element:s.jsx(qa,{children:s.jsx(Ho,{})})})})})]})}),_o=document.getElementById("root");if(!_o)throw new Error("Root element not found");const nd=Mr(_o);nd.render(s.jsx(td,{}));
