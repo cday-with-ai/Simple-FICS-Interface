@@ -94,7 +94,7 @@ export class FicsProtocol {
     // Message parsing methods
     static parseMessage(msg: string): FicsMessage[] {
         if (msg == null || msg === undefined) {
-            return [{type: 'raw', data: ''}];
+            return [{type: 'raw', data: { content: '', elements: [] }}];
         }
 
         const messages: FicsMessage[] = [];
@@ -219,11 +219,27 @@ export class FicsProtocol {
                         j++;
                     }
                     
+                    const elements: InteractiveElement[] = [];
+                    
+                    // Add player element
+                    elements.push(this.createPlayerElement(directTellMatch[1], line.indexOf(directTellMatch[1])));
+                    
+                    // Add URLs in the message
+                    const messageOffset = line.indexOf(fullMessage);
+                    const urlElements = this.findUrlsInText(fullMessage);
+                    urlElements.forEach(el => {
+                        el.start += messageOffset;
+                        el.end += messageOffset;
+                    });
+                    elements.push(...urlElements);
+                    
                     messages.push({
                         type: 'directTell',
                         data: {
                             username: directTellMatch[1],
-                            message: fullMessage
+                            message: fullMessage,
+                            content: line,
+                            elements
                         }
                     });
                     
@@ -253,26 +269,123 @@ export class FicsProtocol {
                 lineProcessed = true;
             }
 
-            // If this line wasn't processed by any specific parser, add it as raw
-            // Handle continuation lines for raw messages
+            // Try to parse specific message types before treating as raw
             if (!lineProcessed && line.trim().length > 0 && line.trim() !== 'fics%') {
-                // Special handling for concatenated seek messages
-                // Sometimes FICS sends multiple seek messages on one line
+                // Check for seek announcements
                 if (line.includes('seeking') && line.includes('to respond')) {
                     // Split concatenated seek messages
-                    // Pattern: "name (rating) seeking ... to respond)name2 (rating2) seeking..."
                     const seekPattern = /(\w+\s+\((?:\d+|\+{4})\)\s+seeking.*?\("play\s+\d+"\s+to\s+respond\))/g;
                     const seekMatches = line.match(seekPattern);
                     
-                    if (seekMatches && seekMatches.length > 1) {
-                        // Multiple seeks found - add each as a separate message
+                    if (seekMatches) {
+                        // Add each seek as a separate parsed message
                         for (const seekMatch of seekMatches) {
-                            messages.push({type: 'raw', data: seekMatch.trim()});
+                            const parsed = this.parseSeekAnnouncement(seekMatch.trim());
+                            if (parsed) {
+                                messages.push({type: 'seekAnnouncement', data: parsed});
+                            }
                         }
                         lineProcessed = true;
                     }
                 }
                 
+                // Check for notifications
+                if (!lineProcessed && line.startsWith('Notification:')) {
+                    const parsed = this.parseNotification(line);
+                    if (parsed) {
+                        messages.push({type: 'notification', data: parsed});
+                        lineProcessed = true;
+                    }
+                }
+                
+                // Check for shouts
+                if (!lineProcessed && line.includes(' shouts:')) {
+                    const parsed = this.parseShout(line);
+                    if (parsed) {
+                        messages.push({type: 'shout', data: parsed});
+                        lineProcessed = true;
+                    }
+                }
+                
+                // Check for c-shouts
+                if (!lineProcessed && line.includes(' c-shouts:')) {
+                    const parsed = this.parseCShout(line);
+                    if (parsed) {
+                        messages.push({type: 'cshout', data: parsed});
+                        lineProcessed = true;
+                    }
+                }
+                
+                // Check for finger output start
+                if (!lineProcessed && line.match(/^\s*Finger of\s+\w+/)) {
+                    // Collect all lines for this finger output
+                    const fingerLines = [line];
+                    let j = i + 1;
+                    while (j < remainingLines.length && 
+                           !remainingLines[j].match(/^fics%/) &&
+                           !remainingLines[j].match(/^\s*Finger of\s+\w+/)) {
+                        fingerLines.push(remainingLines[j]);
+                        j++;
+                    }
+                    
+                    const parsed = this.parseFingerOutput(fingerLines);
+                    if (parsed) {
+                        messages.push({type: 'fingerOutput', data: parsed});
+                        i = j - 1; // Skip processed lines
+                        lineProcessed = true;
+                    }
+                }
+                
+                // Check for history output start
+                if (!lineProcessed && line.match(/History for \w+:/)) {
+                    // Collect all lines for this history output
+                    const historyLines = [line];
+                    let j = i + 1;
+                    while (j < remainingLines.length && 
+                           remainingLines[j].match(/^\s*\d+:\s+[+-=]/)) {
+                        historyLines.push(remainingLines[j]);
+                        j++;
+                    }
+                    
+                    const parsed = this.parseHistoryOutput(historyLines);
+                    if (parsed) {
+                        messages.push({type: 'historyOutput', data: parsed});
+                        i = j - 1; // Skip processed lines
+                        lineProcessed = true;
+                    }
+                }
+                
+                // Check for who output (tricky because it doesn't have a clear header)
+                if (!lineProcessed && (line.match(/^\s*(?:\d{3,4}|----|\+{4})\s+\w+/) || 
+                                       line.includes('players displayed'))) {
+                    // Look back to collect all who lines
+                    const whoLines = [];
+                    let k = i;
+                    // Go backwards to find start
+                    while (k >= 0 && remainingLines[k].match(/^\s*(?:\d{3,4}|----|\+{4})\s+\w+/)) {
+                        k--;
+                    }
+                    k++; // Move to first who line
+                    
+                    // Collect forward
+                    while (k <= i || (k < remainingLines.length && 
+                           (remainingLines[k].match(/^\s*(?:\d{3,4}|----|\+{4})\s+\w+/) ||
+                            remainingLines[k].includes('players displayed')))) {
+                        whoLines.push(remainingLines[k]);
+                        k++;
+                    }
+                    
+                    if (whoLines.length > 0) {
+                        const parsed = this.parseWhoOutput(whoLines);
+                        if (parsed) {
+                            messages.push({type: 'whoOutput', data: parsed});
+                            i = k - 1; // Skip processed lines
+                            lineProcessed = true;
+                        }
+                    }
+                }
+                
+                // If still not processed, treat as raw
                 if (!lineProcessed) {
                     // Check if this is a multi-line raw message (like channel member lists)
                     let fullMessage = line;
@@ -285,7 +398,16 @@ export class FicsProtocol {
                         j++;
                     }
                     
-                    messages.push({type: 'raw', data: fullMessage});
+                    // For raw messages, still try to find interactive elements
+                    const elements = this.findUrlsInText(fullMessage);
+                    
+                    messages.push({
+                        type: 'raw', 
+                        data: {
+                            content: fullMessage,
+                            elements
+                        }
+                    });
                     i = j - 1; // Skip the continuation lines we've already processed
                 }
             }
@@ -295,7 +417,13 @@ export class FicsProtocol {
 
         // If no messages were parsed from any line, return the original as raw
         if (messages.length === 0) {
-            messages.push({type: 'raw', data: msg});
+            messages.push({
+                type: 'raw', 
+                data: {
+                    content: msg,
+                    elements: this.findUrlsInText(msg)
+                }
+            });
         }
 
         return messages;
@@ -426,12 +554,28 @@ export class FicsProtocol {
                     j++;
                 }
                 
+                const elements: InteractiveElement[] = [];
+                
+                // Add player element
+                elements.push(this.createPlayerElement(channelMatch[1], line.indexOf(channelMatch[1])));
+                
+                // Add URLs in the message
+                const messageOffset = line.indexOf(fullMessage);
+                const urlElements = this.findUrlsInText(fullMessage);
+                urlElements.forEach(el => {
+                    el.start += messageOffset;
+                    el.end += messageOffset;
+                });
+                elements.push(...urlElements);
+                
                 messages.push({
                     type: 'channelTell',
                     data: {
                         username: channelMatch[1],
                         channelNumber: channelMatch[2],
-                        message: fullMessage
+                        message: fullMessage,
+                        content: line,
+                        elements
                     }
                 });
                 
@@ -687,6 +831,153 @@ export class FicsProtocol {
             content: line,
             elements,
             metadata: { username, message }
+        };
+    }
+
+    private static parseFingerOutput(lines: string[]): ParsedMessage<FingerOutputData> | null {
+        // Look for finger header
+        const headerMatch = lines[0].match(/^\s*Finger of\s+(\w+)(?:\([^)]*\))?/);
+        if (!headerMatch) return null;
+        
+        const player = headerMatch[1];
+        const sections: FingerOutputData['sections'] = [];
+        const elements: InteractiveElement[] = [];
+        let content = lines.join('\n');
+        
+        // Add player element in header
+        elements.push(this.createPlayerElement(player, lines[0].indexOf(player)));
+        
+        // Parse sections and find interactive elements
+        let currentSection: FingerOutputData['sections'][0] | null = null;
+        let offset = 0;
+        
+        for (const line of lines) {
+            if (line.match(/^\s*Finger of\s+\w+/)) {
+                currentSection = { type: 'header', content: line };
+                sections.push(currentSection);
+            } else if (line.includes('Sanctions :')) {
+                currentSection = { type: 'sanctions', content: line };
+                sections.push(currentSection);
+            } else if (line.includes('rating:') || line.includes('RD:')) {
+                if (!currentSection || currentSection.type !== 'ratings') {
+                    currentSection = { type: 'ratings', content: line };
+                    sections.push(currentSection);
+                } else {
+                    currentSection.content += '\n' + line;
+                }
+            } else if (line.match(/^\s*\d+:\s*\w+/)) {
+                // Finger notes with player names
+                const noteMatch = line.match(/^\s*\d+:\s*(\w+)/);
+                if (noteMatch) {
+                    const notePlayer = noteMatch[1];
+                    const playerIndex = offset + line.indexOf(notePlayer);
+                    elements.push(this.createPlayerElement(notePlayer, playerIndex));
+                }
+                if (!currentSection || currentSection.type !== 'notes') {
+                    currentSection = { type: 'notes', content: line };
+                    sections.push(currentSection);
+                } else {
+                    currentSection.content += '\n' + line;
+                }
+            }
+            
+            offset += line.length + 1; // +1 for newline
+        }
+        
+        return {
+            content,
+            elements,
+            metadata: { player, sections }
+        };
+    }
+
+    private static parseWhoOutput(lines: string[]): ParsedMessage<WhoOutputData> | null {
+        const players: WhoOutputData['players'] = [];
+        const elements: InteractiveElement[] = [];
+        const content = lines.join('\n');
+        
+        let offset = 0;
+        for (const line of lines) {
+            // Skip headers and footers
+            if (line.includes('players displayed') || line.trim() === '') {
+                offset += line.length + 1;
+                continue;
+            }
+            
+            // Parse player line: "1234 PlayerName(C) ..."
+            const match = line.match(/^\s*(\d{3,4}|----|\+{4})\s+(\w+)(?:\([^)]*\))?/);
+            if (match) {
+                const [, rating, handle] = match;
+                const playerIndex = offset + line.indexOf(handle);
+                
+                players.push({
+                    handle,
+                    blitz: rating !== '----' && rating !== '++++' ? parseInt(rating) : undefined
+                });
+                
+                elements.push(this.createPlayerElement(handle, playerIndex));
+            }
+            
+            offset += line.length + 1;
+        }
+        
+        return {
+            content,
+            elements,
+            metadata: { players, totalPlayers: players.length }
+        };
+    }
+
+    private static parseHistoryOutput(lines: string[]): ParsedMessage<HistoryOutputData> | null {
+        // Look for history header
+        const headerMatch = lines[0].match(/History for (\w+):/);
+        if (!headerMatch) return null;
+        
+        const player = headerMatch[1];
+        const entries: HistoryOutputData['entries'] = [];
+        const elements: InteractiveElement[] = [];
+        const content = lines.join('\n');
+        
+        // Add player element in header
+        elements.push(this.createPlayerElement(player, lines[0].indexOf(player)));
+        
+        let offset = 0;
+        for (const line of lines) {
+            // Parse history entry: "1: + 1234 W 1234 opponent ..."
+            const entryMatch = line.match(/^\s*(\d+):\s+([+-=])\s+(\d+)\s+([WBN])\s+(\d+)\s+(\w+)/);
+            if (entryMatch) {
+                const [, index, result, rating, color, opponentRating, opponent] = entryMatch;
+                
+                entries.push({
+                    index: parseInt(index),
+                    result: result as '+' | '-' | '=',
+                    rating: parseInt(rating),
+                    color: color as 'W' | 'B',
+                    opponentRating: parseInt(opponentRating),
+                    opponent,
+                    moves: 0, // Will be parsed from rest of line
+                    date: '' // Will be parsed from rest of line
+                });
+                
+                // Add opponent as clickable
+                const opponentIndex = offset + line.indexOf(opponent, 20); // Start search after ratings
+                elements.push(this.createPlayerElement(opponent, opponentIndex));
+                
+                // Make the whole line clickable to examine the game
+                elements.push(this.createCommandElement(
+                    line.trim(),
+                    `examine ${player} ${index}`,
+                    offset
+                ));
+            }
+            
+            offset += line.length + 1;
+        }
+        
+        return {
+            content,
+            elements,
+            metadata: { player, entries }
         };
     }
 

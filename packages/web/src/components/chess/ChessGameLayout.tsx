@@ -321,7 +321,7 @@ const LandscapePlayersColumn = styled.div`
 const LandscapeControlsContainer = styled.div`
     display: flex;
     flex-direction: column;
-    gap: ${props => props.theme.spacing[1]};
+    gap: 0;
     background-color: ${props => props.theme.colors.surface};
     border-radius: ${props => props.theme.borderRadius.container};
     box-shadow: ${props => props.theme.shadows.container};
@@ -334,6 +334,17 @@ const LandscapeControlsContainer = styled.div`
         background-color: transparent !important;
         border: none !important;
         border-radius: 0 !important;
+    }
+    
+    /* Add specific margins only where needed */
+    & > div:nth-child(2) {
+        /* GameControls - remove its padding */
+        padding: 0 !important;
+        margin-bottom: ${props => props.theme.spacing[1]};
+    }
+    
+    & > div:nth-child(3) {
+        margin-bottom: ${props => props.theme.spacing[1]};
     }
     
     /* Specifically target nested components */

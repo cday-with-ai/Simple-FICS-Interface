@@ -576,10 +576,92 @@ export class FICSStore {
                         this.rootStore?.soundStore?.playDraw();
                         break;
                     
+                    case 'seekAnnouncement':
+                        // Handle seek announcement with interactive elements
+                        if (message.data) {
+                            // Play challenge sound
+                            this.rootStore?.soundStore?.playChallenge();
+                            
+                            // Add to console with parsed data
+                            this.rootStore?.chatStore.addMessage('console', {
+                                channel: 'console',
+                                sender: 'FICS',
+                                content: message.data.content,
+                                timestamp: new Date(),
+                                type: 'system',
+                                metadata: {
+                                    consoleType: 'seek',
+                                    parsedMessage: message.data
+                                }
+                            });
+                        }
+                        break;
+                        
+                    case 'notification':
+                        // Handle player arrival/departure notifications
+                        if (message.data) {
+                            this.rootStore?.soundStore?.playAlert();
+                            
+                            this.rootStore?.chatStore.addMessage('console', {
+                                channel: 'console',
+                                sender: 'FICS',
+                                content: message.data.content,
+                                timestamp: new Date(),
+                                type: 'system',
+                                metadata: {
+                                    consoleType: 'notification',
+                                    parsedMessage: message.data
+                                }
+                            });
+                        }
+                        break;
+                        
+                    case 'shout':
+                    case 'cshout':
+                        // Handle shouts with interactive elements
+                        if (message.data) {
+                            this.rootStore?.chatStore.addMessage('console', {
+                                channel: 'console',
+                                sender: 'FICS',
+                                content: message.data.content,
+                                timestamp: new Date(),
+                                type: 'system',
+                                metadata: {
+                                    consoleType: message.type,
+                                    parsedMessage: message.data
+                                }
+                            });
+                        }
+                        break;
+                        
+                    case 'fingerOutput':
+                    case 'whoOutput':
+                    case 'historyOutput':
+                    case 'journalOutput':
+                    case 'soughtOutput':
+                    case 'gamesOutput':
+                    case 'channelListOutput':
+                    case 'newsOutput':
+                        // Handle structured outputs with interactive elements
+                        if (message.data) {
+                            this.rootStore?.chatStore.addMessage('console', {
+                                channel: 'console',
+                                sender: 'FICS',
+                                content: message.data.content,
+                                timestamp: new Date(),
+                                type: 'system',
+                                metadata: {
+                                    consoleType: message.type.replace('Output', ''),
+                                    parsedMessage: message.data
+                                }
+                            });
+                        }
+                        break;
+                    
                     case 'raw':
                     default:
-                        // Check if it's a seek or game list message
-                        if (message.data) {
+                        // Check if it's a seek or game list message (for old compatibility)
+                        if (message.data && typeof message.data === 'string') {
                             this.handleSeekOrGame(message.data);
                             
                             // Check for specific patterns in raw messages
@@ -635,8 +717,10 @@ export class FICSStore {
                         
                         // Check for ping response before routing to console
                         if (message.type === 'raw' && message.data !== null && message.data !== undefined) {
+                            const rawContent = typeof message.data === 'string' ? message.data : message.data.content;
+                            
                             // Check if this is a ping response
-                            const pingMatch = message.data.match(/Average ping time for (\w+) is (\d+)ms\./);
+                            const pingMatch = rawContent.match(/Average ping time for (\w+) is (\d+)ms\./);
                             if (pingMatch && this.waitingForPing) {
                                 runInAction(() => {
                                     this.averagePing = parseInt(pingMatch[2]);
