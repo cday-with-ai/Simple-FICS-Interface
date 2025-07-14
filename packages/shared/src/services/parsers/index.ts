@@ -12,6 +12,7 @@ import { FingerParser } from './output/FingerParser';
 import { HistoryParser } from './output/HistoryParser';
 import { NewsParser } from './output/NewsParser';
 import { ChannelListParser } from './output/ChannelListParser';
+import { ChannelLogParser } from './output/ChannelLogParser';
 
 // Game parsers
 import { Style12Parser } from './game/Style12Parser';
@@ -73,6 +74,7 @@ export const MESSAGE_PARSERS: Parser[] = [
     new HistoryParser(),       // priority: 80
     new NewsParser(),          // priority: 80
     new ChannelListParser(),   // priority: 80
+    new ChannelLogParser(),    // priority: 80
     new OutgoingTellParser(),  // priority: 80
     
     // Game announcements and requests

@@ -26,3 +26,9 @@ coverage/
 temp
 temp/**
 /packages/shared/coverage/
+
+# Scripts folder (for brainstorming docs)
+scripts/
+
+# User preferences for Claude
+USER_PREFERENCES.md

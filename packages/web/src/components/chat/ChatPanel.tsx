@@ -243,9 +243,9 @@ Local commands:
           onHistoryNavigate={handleHistoryNavigation}
           placeholder={
             chatStore.activeTab?.type === 'channel' 
-              ? `Message (${chatStore.activeTab.name})...`
+              ? `tell ${chatStore.activeTab.name} ...`
               : chatStore.activeTab?.type === 'private'
-              ? `Message ${chatStore.activeTab.name}...`
+              ? `tell ${chatStore.activeTab.name} ...`
               : 'Enter command...'
           }
         />

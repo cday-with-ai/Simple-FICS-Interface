@@ -98,6 +98,7 @@ export type FicsMessage =
     | { type: 'soughtOutput'; data: ParsedMessage<SoughtOutputData> }
     | { type: 'gamesOutput'; data: ParsedMessage<GamesOutputData> }
     | { type: 'channelListOutput'; data: ParsedMessage<ChannelListOutputData> }
+    | { type: 'channelLog'; data: ParsedMessage<ChannelLogOutputData> }
     | { type: 'newsOutput'; data: ParsedMessage<NewsOutputData> }
     | { type: 'inOutput'; data: ParsedMessage<InOutputData> }
     | { type: 'notification'; data: ParsedMessage<{ type: string; player?: string }> }
@@ -225,6 +226,16 @@ export interface ChannelListOutputData {
         number: number;
         name: string;
         members?: number;
+    }>;
+}
+
+export interface ChannelLogOutputData {
+    channel: string;
+    duration: string;
+    entries: Array<{
+        timestamp: string;
+        username: string;
+        message: string;
     }>;
 }
 
