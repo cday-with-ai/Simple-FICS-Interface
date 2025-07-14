@@ -326,7 +326,7 @@ const LandscapeControlsContainer = styled.div`
     border-radius: ${props => props.theme.borderRadius.container};
     box-shadow: ${props => props.theme.shadows.container};
     padding: 0 ${props => props.theme.spacing[1]};
-    width: 280px;
+    width: 180px;
     
     /* Remove all borders, shadows and backgrounds from child components */
     & > * {
@@ -388,8 +388,8 @@ const CompactMoveList = styled(MoveList)`
 `;
 
 const LandscapeCompactMoveList = styled(MoveList)`
-    height: 135px;
-    min-height: 135px;
+    height: 100px;
+    min-height: 100px;
     margin: 0;
     margin-bottom: ${props => props.theme.spacing[2]};
 `;

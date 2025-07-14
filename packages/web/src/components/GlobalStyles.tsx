@@ -15,7 +15,6 @@ export const GlobalStyles = createGlobalStyle`
         height: 100%;
         font-family: ${({theme}) => theme.typography.fontFamily};
         font-size: ${({theme}) => theme.typography.fontSize.md};
-        line-height: ${({theme}) => theme.typography.lineHeight.normal};
         color: ${({theme}) => theme.colors.text};
         background: ${({theme}) => theme.colors.background};
         overflow: hidden;

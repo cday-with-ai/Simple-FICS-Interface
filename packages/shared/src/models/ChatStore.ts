@@ -14,7 +14,7 @@ export interface ChatMessage {
     type: 'message' | 'system' | 'whisper' | 'announcement';
     metadata?: {
         consoleType?: 'notification' | 'channel' | 'directTell' | 'shout' | 'cshout' | 'matchRequest' | 'seek' | 
-                       'finger' | 'who' | 'history' | 'journal' | 'sought' | 'games' | 'channelList' | 'news';
+                       'finger' | 'who' | 'history' | 'journal' | 'sought' | 'games' | 'channelList' | 'news' | 'in';
         channelNumber?: string;
         parsedMessage?: any; // ParsedMessage from FicsProtocol
     };

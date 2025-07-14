@@ -4,10 +4,8 @@ import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import { ChatMessage } from '@fics/shared';
 import { smartScrollToBottom } from '../../utils/chatScrolling';
-import { PlayerName } from '../ui/PlayerName';
-import { LinkifiedText } from '../ui/LinkifiedText';
-import { InteractiveText } from '../ui/InteractiveText';
-import { FICSOutput } from '../ui/FICSOutput';
+import { Message } from './Message';
+import './renderers'; // Import to register all renderers
 
 const MessagesWrapper = styled.div`
   flex: 1;
@@ -50,95 +48,12 @@ const MessagesContainer = styled.div`
   }
 `;
 
-const Timestamp = styled.span`
-  color: ${props => props.theme.colors.textTertiary};
-  font-size: 10px;
-  flex-shrink: 0;
-  user-select: none;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  min-width: 50px;
-`;
-
 const MessageGroup = styled.div`
   margin-bottom: ${props => props.theme.spacing[1]};
   
   &:last-child {
     margin-bottom: 0;
   }
-  
-  &:hover ${Timestamp} {
-    opacity: 1;
-  }
-`;
-
-const InlineMessageRow = styled.div`
-  display: flex;
-  align-items: baseline;
-  gap: ${props => props.theme.spacing[1]};
-`;
-
-const MessageRow = styled.div<{ $type: ChatMessage['type']; $color?: string }>`
-  display: flex;
-  align-items: baseline;
-  gap: ${props => props.theme.spacing[1]};
-  font-size: 11px;
-  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  line-height: 1.3;
-  white-space: pre-wrap;
-  word-break: break-all;
-  position: relative;
-  flex: 1;
-  
-  ${props => props.$color ? `
-    color: ${props.$color} !important;
-  ` : props.$type === 'system' ? `
-    color: ${props.theme.colors.textSecondary};
-  ` : props.$type === 'whisper' ? `
-    color: ${props.theme.colors.primary};
-  ` : props.$type === 'announcement' ? `
-    color: ${props.theme.colors.warning};
-    font-weight: ${props.theme.typography.fontWeight.semibold};
-  ` : `
-    color: ${props.theme.colors.text};
-  `}
-`;
-
-const ConsoleMessageWrapper = styled.div`
-  position: relative;
-  
-  &:hover ${Timestamp} {
-    opacity: 1;
-  }
-`;
-
-const ConsoleTimestamp = styled(Timestamp)`
-  position: absolute;
-  left: 0;
-  top: 0;
-  background: ${props => props.theme.colors.background};
-  padding: 0 4px;
-  z-index: 1;
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-`;
-
-const Sender = styled.span<{ $isYou?: boolean }>`
-  color: ${props => props.$isYou 
-    ? props.theme.colors.primary 
-    : props.theme.colors.text
-  };
-  font-weight: ${props => props.theme.typography.fontWeight.semibold};
-  flex-shrink: 0;
-  
-  &::after {
-    content: ':';
-  }
-`;
-
-const Content = styled.span`
-  word-break: break-word;
-  white-space: pre-wrap;
-  flex: 1;
 `;
 
 const EmptyState = styled.div`
@@ -157,6 +72,14 @@ const SystemMessage = styled.div`
   text-align: center;
   margin: ${props => props.theme.spacing[2]} 0;
   font-size: ${props => props.theme.typography.fontSize.sm};
+`;
+
+const MessageWrapper = styled.div`
+  margin-bottom: 2px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const formatTimestamp = (timestamp: Date | string | number): string => {
@@ -290,46 +213,16 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
     return (
       <MessagesWrapper>
         <MessagesContainer ref={containerRef} className="chat-messages-container">
-          {messages.map((message) => {
-          // Get console color if metadata is present
-          let messageColor: string | undefined;
-          if (message.metadata?.consoleType) {
-            const color = preferencesStore.getConsoleColor(
-              message.metadata.consoleType,
-              message.metadata.channelNumber
-            );
-            if (color) {
-              messageColor = color;
-            }
-            
-          }
-          
-          return (
-            <MessageRow 
-              key={message.id}
-              $type={message.type}
-              $color={messageColor}
-              onMouseEnter={() => onMessageHover?.(message.timestamp)}
-              onMouseLeave={() => onMessageHover?.(null)}
-            >
-              {messageColor ? (
-                <span style={{ color: messageColor }}>
-                  {message.metadata?.parsedMessage ? (
-                    <InteractiveText parsedMessage={message.metadata.parsedMessage} />
-                  ) : (
-                    <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
-                  )}
-                </span>
-              ) : (
-                message.metadata?.parsedMessage ? (
-                  <InteractiveText parsedMessage={message.metadata.parsedMessage} />
-                ) : (
-                  <LinkifiedText text={message.content} onCommandClick={handleCommandClick} />
-                )
-              )}
-            </MessageRow>
-          );
-        })}
+          {messages.map((message) => (
+            <MessageWrapper key={message.id}>
+              <Message
+                message={message}
+                currentUsername={currentUsername}
+                onCommandClick={handleCommandClick}
+                onHover={onMessageHover}
+              />
+            </MessageWrapper>
+          ))}
         </MessagesContainer>
       </MessagesWrapper>
     );
@@ -340,56 +233,66 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
     <MessagesWrapper>
       <MessagesContainer ref={containerRef} className="chat-messages-container">
         {groupedMessages.map((group, groupIndex) => {
-        const firstMessage = group.messages[0];
-        const isYou = group.sender.toLowerCase() === currentUsername.toLowerCase();
-        
-        if (firstMessage.type === 'system') {
-          return (
-            <SystemMessage key={groupIndex}>
-              {group.messages.map((msg, i) => (
-                <React.Fragment key={msg.id}>
-                  {i > 0 && '\n'}
-                  <LinkifiedText text={msg.content} onCommandClick={handleCommandClick} />
-                </React.Fragment>
-              ))}
-            </SystemMessage>
-          );
-        }
-        
-        // Get channel color if this is a channel message
-        let messageColor: string | undefined;
-        if (activeTab.type === 'channel' && firstMessage.metadata?.consoleType === 'channel') {
-          const color = preferencesStore.getConsoleColor(
-            firstMessage.metadata.consoleType,
-            firstMessage.metadata.channelNumber
-          );
-          if (color) {
-            messageColor = color;
-          }
-        }
-        
-        return (
-          <MessageGroup 
-            key={groupIndex}
-            onMouseEnter={() => onMessageHover?.(group.timestamp)}
-            onMouseLeave={() => onMessageHover?.(null)}
-          >
-            <MessageRow $type={firstMessage.type} $color={messageColor}>
-              <Sender $isYou={isYou}>
-                {isYou ? group.sender : <PlayerName name={group.sender} />}
-              </Sender>
-              <Content>
-                {group.messages.map((msg, i) => (
-                  <React.Fragment key={msg.id}>
-                    {i > 0 && '\n'}
-                    <LinkifiedText text={msg.content} />
-                  </React.Fragment>
+          const firstMessage = group.messages[0];
+          
+          if (firstMessage.type === 'system') {
+            return (
+              <SystemMessage key={groupIndex}>
+                {group.messages.map((msg) => (
+                  <MessageWrapper key={msg.id}>
+                    <Message
+                      message={msg}
+                      currentUsername={currentUsername}
+                      onCommandClick={handleCommandClick}
+                      onHover={onMessageHover}
+                    />
+                  </MessageWrapper>
                 ))}
-              </Content>
-            </MessageRow>
-          </MessageGroup>
-        );
-      })}
+              </SystemMessage>
+            );
+          }
+          
+          return (
+            <MessageGroup key={groupIndex}>
+              {group.messages.map((msg, i) => {
+                // For grouped messages, we only show subsequent messages' content
+                // The first message shows sender info
+                if (i === 0) {
+                  return (
+                    <MessageWrapper key={msg.id}>
+                      <Message
+                        message={msg}
+                        currentUsername={currentUsername}
+                        onCommandClick={handleCommandClick}
+                        onHover={onMessageHover}
+                      />
+                    </MessageWrapper>
+                  );
+                } else {
+                  // For subsequent messages in a group, create a content-only message
+                  const contentOnlyMessage = {
+                    ...msg,
+                    sender: '', // Hide sender for grouped messages
+                    metadata: {
+                      ...msg.metadata,
+                      isGroupedMessage: true
+                    }
+                  };
+                  return (
+                    <MessageWrapper key={msg.id}>
+                      <Message
+                        message={contentOnlyMessage}
+                        currentUsername={currentUsername}
+                        onCommandClick={handleCommandClick}
+                        onHover={onMessageHover}
+                      />
+                    </MessageWrapper>
+                  );
+                }
+              })}
+            </MessageGroup>
+          );
+        })}
       </MessagesContainer>
     </MessagesWrapper>
   );

@@ -84,10 +84,20 @@ export const CapturedPieces: React.FC<CapturedPiecesProps> = observer(({
 }) => {
   const { gameStore } = useRootStore();
   
-  // Get captured pieces from game store
-  const capturedPieces = gameStore.capturedPieces;
-  const pieces = isWhitePieces ? capturedPieces.white : capturedPieces.black;
-  // Rendering captured pieces
+  // For crazyhouse/bughouse, use holdings if available, otherwise use captured pieces
+  const pieces = useMemo(() => {
+    const isCrazyhouse = gameStore.currentGame?.variant === 'crazyhouse';
+    if (isCrazyhouse) {
+      // Use holdings for crazyhouse
+      const holdings = isWhitePieces ? gameStore.whiteHoldings : gameStore.blackHoldings;
+      // Convert holdings string to array (e.g., "PPN" -> ["p", "p", "n"])
+      return holdings.toLowerCase().split('');
+    } else {
+      // Use captured pieces for regular chess
+      const capturedPieces = gameStore.capturedPieces;
+      return isWhitePieces ? capturedPieces.white : capturedPieces.black;
+    }
+  }, [gameStore.currentGame?.variant, gameStore.whiteHoldings, gameStore.blackHoldings, gameStore.capturedPieces, isWhitePieces]);
   
   // Group pieces by type and count them
   const groupedPieces = useMemo(() => {

@@ -2,7 +2,7 @@ import React from 'react';
 import { observer } from 'mobx-react-lite';
 import styled from 'styled-components';
 import { GameClock } from './PlayerCard';
-import { Player } from '@fics/shared';
+import { Player, useGameStore } from '@fics/shared';
 
 // Import the styled components from ChessGameLayout
 const PortraitClock = styled(GameClock)`
@@ -26,15 +26,7 @@ const PortraitClock = styled(GameClock)`
 
 const LandscapeClock = styled(GameClock)`
     margin-left: ${props => props.theme.spacing[3]};
-
-    span {
-        padding: 0 ${props => props.theme.spacing[2]};
-        font-size: 14px;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+    width: fit-content;
 `;
 
 interface ObservableClockProps {
@@ -54,12 +46,14 @@ export const ObservableClock: React.FC<ObservableClockProps> = observer(({
     compact = true,
     variant = 'portrait'
 }) => {
+    const gameStore = useGameStore();
     const ClockComponent = variant === 'landscape' ? LandscapeClock : PortraitClock;
     
     return (
         <ClockComponent
             time={player.time}
             isActive={isActive}
+            isFinished={gameStore.isGameOver}
             showTenths={player.time < 10}
             lowTimeThreshold={30}
             size={size}

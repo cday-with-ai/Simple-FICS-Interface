@@ -43,6 +43,10 @@ export class GameStore {
     private _positionHistory: string[] = []; // Store FEN for each position
     private _lastKnownOpening: string | null = null; // Store the last matched opening
     
+    // Holdings for bughouse/crazyhouse variants
+    whiteHoldings: string = '';
+    blackHoldings: string = '';
+    
     // Premove state
     premove: { from: string; to: string; promotion?: string } | null = null;
     
@@ -86,6 +90,8 @@ export class GameStore {
         this._lastKnownOpening = null;
         this._playingColor = null; // Reset playing color
         this._lastBoardOrientation = null; // Reset cached board orientation for new game
+        this.whiteHoldings = ''; // Reset holdings for new game
+        this.blackHoldings = ''; // Reset holdings for new game
 
         // Convert variant string to enum
         const variant = this.getVariantFromString(gameState.variant);
@@ -249,7 +255,7 @@ export class GameStore {
                         moveNumber: style12.moveNumber,
                         lastMove: style12.prettyMove !== 'none' ? style12.prettyMove : undefined,
                         variant: 'standard', // Will be updated from game start
-                        timeControl: `${style12.initialTime/60} ${style12.incrementTime}`
+                        timeControl: `${style12.initialTime} ${style12.incrementTime}`
                     };
                     
                     // Initialize clock base times
@@ -345,6 +351,14 @@ export class GameStore {
                     } else if (style12.relation === -1) {
                         this._playingColor = style12.colorToMove === 'W' ? 'black' : 'white';
                     }
+                }
+                
+                // Update holdings for bughouse/crazyhouse variants
+                if (style12.whiteHoldings !== undefined) {
+                    this.whiteHoldings = style12.whiteHoldings;
+                }
+                if (style12.blackHoldings !== undefined) {
+                    this.blackHoldings = style12.blackHoldings;
                 }
                 
                 // Start or restart clock

@@ -10,7 +10,9 @@ export type ChessOrientation = 'landscape' | 'portrait';
 
 // Console message color configuration
 export interface ConsoleColors {
+    // Communication
     notification: string;
+    channelTell: string;      // Default channel tell color
     channel1: string;
     channel2: string;
     channel10: string;
@@ -25,11 +27,165 @@ export interface ConsoleColors {
     directTell: string;
     shout: string;
     cshout: string;
+    
+    // Game related
+    style12: string;
+    gameStart: string;
+    gameEnd: string;
+    movesList: string;
+    illegalMove: string;
+    drawOffer: string;
+    unobserve: string;
+    
+    // Match/seek related
     matchRequest: string;
     seek: string;
+    seekAnnouncement: string;
+    
+    // Output commands
     fingerNotes: string;
+    fingerOutput: string;
     history: string;
+    historyOutput: string;
     journal: string;
+    journalOutput: string;
+    games: string;
+    gamesOutput: string;
+    who: string;
+    whoOutput: string;
+    sought: string;
+    soughtOutput: string;
+    in: string;
+    inOutput: string;
+    newsOutput: string;
+    channelListOutput: string;
+    
+    // System messages
+    login: string;
+    password: string;
+    sessionStart: string;
+    system: string;
+    raw: string;
+}
+
+// Font family configuration for console messages
+export interface ConsoleFonts {
+    // Communication
+    notification?: string;
+    channelTell?: string;
+    channel1?: string;
+    channel2?: string;
+    channel10?: string;
+    channel24?: string;
+    channel36?: string;
+    channel39?: string;
+    channel40?: string;
+    channel41?: string;
+    channel49?: string;
+    channel50?: string;
+    channel88?: string;
+    directTell?: string;
+    shout?: string;
+    cshout?: string;
+    
+    // Game related
+    style12?: string;
+    gameStart?: string;
+    gameEnd?: string;
+    movesList?: string;
+    illegalMove?: string;
+    drawOffer?: string;
+    unobserve?: string;
+    
+    // Match/seek related
+    matchRequest?: string;
+    seek?: string;
+    seekAnnouncement?: string;
+    
+    // Output commands
+    fingerNotes?: string;
+    fingerOutput?: string;
+    history?: string;
+    historyOutput?: string;
+    journal?: string;
+    journalOutput?: string;
+    games?: string;
+    gamesOutput?: string;
+    who?: string;
+    whoOutput?: string;
+    sought?: string;
+    soughtOutput?: string;
+    in?: string;
+    inOutput?: string;
+    newsOutput?: string;
+    channelListOutput?: string;
+    
+    // System messages
+    login?: string;
+    password?: string;
+    sessionStart?: string;
+    system?: string;
+    raw?: string;
+}
+
+// Font style configuration for console messages
+export interface ConsoleFontStyles {
+    // Communication
+    notification?: string;
+    channelTell?: string;
+    channel1?: string;
+    channel2?: string;
+    channel10?: string;
+    channel24?: string;
+    channel36?: string;
+    channel39?: string;
+    channel40?: string;
+    channel41?: string;
+    channel49?: string;
+    channel50?: string;
+    channel88?: string;
+    directTell?: string;
+    shout?: string;
+    cshout?: string;
+    
+    // Game related
+    style12?: string;
+    gameStart?: string;
+    gameEnd?: string;
+    movesList?: string;
+    illegalMove?: string;
+    drawOffer?: string;
+    unobserve?: string;
+    
+    // Match/seek related
+    matchRequest?: string;
+    seek?: string;
+    seekAnnouncement?: string;
+    
+    // Output commands
+    fingerNotes?: string;
+    fingerOutput?: string;
+    history?: string;
+    historyOutput?: string;
+    journal?: string;
+    journalOutput?: string;
+    games?: string;
+    gamesOutput?: string;
+    who?: string;
+    whoOutput?: string;
+    sought?: string;
+    soughtOutput?: string;
+    in?: string;
+    inOutput?: string;
+    newsOutput?: string;
+    channelListOutput?: string;
+    
+    // System messages
+    login?: string;
+    password?: string;
+    sessionStart?: string;
+    system?: string;
+    raw?: string;
 }
 
 export interface Preferences {
@@ -87,6 +243,17 @@ export interface Preferences {
     consoleColorsLight: ConsoleColors;
     consoleColorsDark: ConsoleColors;
     
+    // Console font preferences
+    consoleFontsLight: ConsoleFonts;
+    consoleFontsDark: ConsoleFonts;
+    
+    // Console font style preferences
+    consoleFontStylesLight: ConsoleFontStyles;
+    consoleFontStylesDark: ConsoleFontStyles;
+    
+    // FICS preferences
+    postLoginCommands: string; // Multi-line string of commands to send after login
+    
     // Internal preferences (for theme system)
     lastSystemThemeCheck?: number;
 }
@@ -131,8 +298,14 @@ const DEFAULT_PREFERENCES: Preferences = {
         { label: 'Censor', command: '+censor {player}' },
         { label: 'No Play', command: '+noplay {player}' }
     ],
+    postLoginCommands: `set style 12
+set prompt
+set bell off
+set interface Simple FICS Interface`,
     consoleColorsLight: {
+        // Communication
         notification: '#0066cc',  // Blue
+        channelTell: '#555555',   // Default gray for unlisted channels
         channel1: '#008000',      // Green
         channel2: '#800080',      // Purple  
         channel10: '#4d4d00',     // Dark Yellow
@@ -147,14 +320,50 @@ const DEFAULT_PREFERENCES: Preferences = {
         directTell: '#0066cc',    // Blue
         shout: '#006600',         // Dark Green
         cshout: '#990099',        // Magenta
+        
+        // Game related
+        style12: '#333333',       // Dark Gray (low visibility for board updates)
+        gameStart: '#008000',     // Green
+        gameEnd: '#cc0000',       // Red
+        movesList: '#4682b4',     // SteelBlue
+        illegalMove: '#dc143c',   // Crimson
+        drawOffer: '#ff8c00',     // DarkOrange
+        unobserve: '#696969',     // DimGray
+        
+        // Match/seek related
         matchRequest: '#ff0000',  // Bright Red
         seek: '#666666',          // Gray
-        fingerNotes: '#8b008b',   // DarkMagenta (more visible)
+        seekAnnouncement: '#666666', // Gray
+        
+        // Output commands (kept original + new)
+        fingerNotes: '#8b008b',   // DarkMagenta
+        fingerOutput: '#8b008b',  // DarkMagenta
         history: '#2e8b57',       // SeaGreen
-        journal: '#b8860b'        // DarkGoldenrod
+        historyOutput: '#2e8b57', // SeaGreen
+        journal: '#b8860b',       // DarkGoldenrod
+        journalOutput: '#b8860b', // DarkGoldenrod
+        games: '#1e90ff',         // DodgerBlue
+        gamesOutput: '#1e90ff',   // DodgerBlue
+        who: '#ff6347',           // Tomato
+        whoOutput: '#ff6347',     // Tomato
+        sought: '#9932cc',        // DarkOrchid
+        soughtOutput: '#9932cc',  // DarkOrchid
+        in: '#008b8b',            // DarkCyan
+        inOutput: '#008b8b',      // DarkCyan
+        newsOutput: '#4169e1',    // RoyalBlue
+        channelListOutput: '#20b2aa', // LightSeaGreen
+        
+        // System messages
+        login: '#2f4f4f',         // DarkSlateGray
+        password: '#2f4f4f',      // DarkSlateGray
+        sessionStart: '#228b22',  // ForestGreen
+        system: '#696969',        // DimGray
+        raw: '#000000'            // Black
     },
     consoleColorsDark: {
+        // Communication
         notification: '#66b3ff',  // Light Blue
+        channelTell: '#888888',   // Light gray for unlisted channels
         channel1: '#66ff66',      // Light Green
         channel2: '#cc99ff',      // Light Purple
         channel10: '#ffff66',     // Light Yellow
@@ -169,12 +378,54 @@ const DEFAULT_PREFERENCES: Preferences = {
         directTell: '#66b3ff',    // Light Blue
         shout: '#99ff99',         // Bright Green
         cshout: '#ff66ff',        // Bright Magenta
+        
+        // Game related
+        style12: '#666666',       // Medium Gray (low visibility for board updates)
+        gameStart: '#66ff66',     // Light Green
+        gameEnd: '#ff6666',       // Light Red
+        movesList: '#87ceeb',     // SkyBlue
+        illegalMove: '#ff6b6b',   // Light Crimson
+        drawOffer: '#ffb347',     // Light Orange
+        unobserve: '#999999',     // Light Gray
+        
+        // Match/seek related
         matchRequest: '#ff6666',  // Bright Red
         seek: '#999999',          // Light Gray
-        fingerNotes: '#9370db',   // Medium Purple
+        seekAnnouncement: '#999999', // Light Gray
+        
+        // Output commands
+        fingerNotes: '#dda0dd',   // Plum
+        fingerOutput: '#dda0dd',  // Plum
         history: '#66cdaa',       // MediumAquamarine
-        journal: '#ffd700'        // Gold
-    }
+        historyOutput: '#66cdaa', // MediumAquamarine
+        journal: '#ffd700',       // Gold
+        journalOutput: '#ffd700', // Gold
+        games: '#87ceeb',         // SkyBlue
+        gamesOutput: '#87ceeb',   // SkyBlue
+        who: '#ffa07a',           // LightSalmon
+        whoOutput: '#ffa07a',     // LightSalmon
+        sought: '#dda0dd',        // Plum
+        soughtOutput: '#dda0dd',  // Plum
+        in: '#40e0d0',            // Turquoise
+        inOutput: '#40e0d0',      // Turquoise
+        newsOutput: '#87cefa',    // LightSkyBlue
+        channelListOutput: '#40e0d0', // Turquoise
+        
+        // System messages
+        login: '#708090',         // SlateGray
+        password: '#708090',      // SlateGray
+        sessionStart: '#90ee90',  // LightGreen
+        system: '#999999',        // Light Gray
+        raw: '#cccccc'            // Very Light Gray
+    },
+    
+    // Default fonts are empty - inherit from parent
+    consoleFontsLight: {},
+    consoleFontsDark: {},
+    
+    // Default font styles are empty - normal style
+    consoleFontStylesLight: {},
+    consoleFontStylesDark: {}
 };
 
 export class PreferencesStore {
@@ -221,8 +472,28 @@ export class PreferencesStore {
                             ...(parsed.consoleColorsDark || {})
                         };
                         
+                        // Ensure console fonts and styles
+                        validatedPreferences.consoleFontsLight = {
+                            ...DEFAULT_PREFERENCES.consoleFontsLight,
+                            ...(parsed.consoleFontsLight || {})
+                        };
+                        validatedPreferences.consoleFontsDark = {
+                            ...DEFAULT_PREFERENCES.consoleFontsDark,
+                            ...(parsed.consoleFontsDark || {})
+                        };
+                        validatedPreferences.consoleFontStylesLight = {
+                            ...DEFAULT_PREFERENCES.consoleFontStylesLight,
+                            ...(parsed.consoleFontStylesLight || {})
+                        };
+                        validatedPreferences.consoleFontStylesDark = {
+                            ...DEFAULT_PREFERENCES.consoleFontStylesDark,
+                            ...(parsed.consoleFontStylesDark || {})
+                        };
+                        
                         for (const [key, value] of Object.entries(parsed)) {
                             if (key !== 'consoleColorsLight' && key !== 'consoleColorsDark' && 
+                                key !== 'consoleFontsLight' && key !== 'consoleFontsDark' &&
+                                key !== 'consoleFontStylesLight' && key !== 'consoleFontStylesDark' &&
                                 key in DEFAULT_PREFERENCES && value != null && 
                                 this.isValidPreferenceValue(key as keyof Preferences, value)) {
                                 (validatedPreferences as any)[key] = value;
@@ -279,6 +550,8 @@ export class PreferencesStore {
                 return ['landscape', 'portrait'].includes(value);
             case 'lastSystemThemeCheck':
                 return typeof value === 'number';
+            case 'postLoginCommands':
+                return typeof value === 'string';
             default:
                 return true; // For other boolean and basic types, type check is sufficient
         }
@@ -301,13 +574,65 @@ export class PreferencesStore {
         const colors = isDark ? this.preferences.consoleColorsDark : this.preferences.consoleColorsLight;
         
         // Handle channel colors
-        if (messageType === 'channel' && channelNumber) {
+        if (messageType === 'channelTell' && channelNumber) {
             const channelKey = `channel${channelNumber}` as keyof ConsoleColors;
-            return colors[channelKey] || null;
+            // Return specific channel color if defined, otherwise use default channelTell color
+            return colors[channelKey] || colors.channelTell;
         }
         
         // Handle other message types
         const colorKey = messageType as keyof ConsoleColors;
         return colors[colorKey] || null;
+    }
+    
+    // Get console font based on message type and current theme
+    getConsoleFont(messageType: string, channelNumber?: string): string | null {
+        const isDark = this.preferences.theme === 'dark' || 
+            (this.preferences.theme === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+        
+        const fonts = isDark ? this.preferences.consoleFontsDark : this.preferences.consoleFontsLight;
+        
+        // Handle channel fonts
+        if (messageType === 'channelTell' && channelNumber) {
+            const channelKey = `channel${channelNumber}` as keyof ConsoleFonts;
+            // Return specific channel font if defined, otherwise use default channelTell font
+            return fonts[channelKey] || fonts.channelTell || null;
+        }
+        
+        // Handle other message types
+        const fontKey = messageType as keyof ConsoleFonts;
+        return fonts[fontKey] || null;
+    }
+    
+    // Get console font style based on message type and current theme
+    getConsoleFontStyle(messageType: string, channelNumber?: string): string | null {
+        const isDark = this.preferences.theme === 'dark' || 
+            (this.preferences.theme === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+        
+        const fontStyles = isDark ? this.preferences.consoleFontStylesDark : this.preferences.consoleFontStylesLight;
+        
+        // Handle channel font styles
+        if (messageType === 'channelTell' && channelNumber) {
+            const channelKey = `channel${channelNumber}` as keyof ConsoleFontStyles;
+            // Return specific channel font style if defined, otherwise use default channelTell font style
+            return fontStyles[channelKey] || fontStyles.channelTell || null;
+        }
+        
+        // Handle other message types
+        const fontStyleKey = messageType as keyof ConsoleFontStyles;
+        return fontStyles[fontStyleKey] || null;
+    }
+
+    // Method to refresh console colors with new defaults
+    refreshConsoleColors() {
+        runInAction(() => {
+            this.preferences.consoleColorsLight = {
+                ...DEFAULT_PREFERENCES.consoleColorsLight
+            };
+            this.preferences.consoleColorsDark = {
+                ...DEFAULT_PREFERENCES.consoleColorsDark
+            };
+            this.savePreferences();
+        });
     }
 }

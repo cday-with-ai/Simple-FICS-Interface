@@ -23,15 +23,15 @@ interface GameControlsProps {
 const ControlsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: ${props => props.theme.spacing[2]};
-  padding: ${props => props.theme.spacing[3]};
+  gap: ${props => props.theme.spacing[1]};
+  padding: ${props => props.theme.spacing[2]};
   background-color: ${props => props.theme.colors.surface};
   border-radius: ${props => props.theme.borderRadius.md};
   box-shadow: ${props => props.theme.shadows.sm};
 `;
 
 const ControlButton = styled.button<{ $variant?: 'primary' | 'danger' | 'secondary' }>`
-  padding: ${props => props.theme.spacing[1]} ${props => props.theme.spacing[3]};
+  padding: 2px ${props => props.theme.spacing[1]};
   border: none;
   border-radius: ${props => props.theme.borderRadius.md};
   font-size: ${props => props.theme.typography.fontSize.xs};

@@ -6,4 +6,3 @@ export * from './DigitalScore';
 export * from './ConfirmDialog';
 export * from './PlayerName';
 export * from './PlayerContextMenu';
-export * from './LinkifiedText';

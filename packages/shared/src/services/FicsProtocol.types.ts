@@ -31,6 +31,9 @@ export interface Style12 {
     timeTaken: string;
     prettyMove: string;
     flipBoard: boolean;
+    // Holdings for bughouse/crazyhouse variants
+    whiteHoldings?: string;
+    blackHoldings?: string;
 }
 
 export interface ChannelTell {
@@ -77,6 +80,8 @@ export type FicsMessage =
     | { type: 'channelTell'; data: ChannelTell & ParsedMessage }
     | { type: 'chatContinuation'; data: ChatContinuation }
     | { type: 'directTell'; data: DirectTell & ParsedMessage }
+    | { type: 'outgoingTell'; data: DirectTell & ParsedMessage }
+    | { type: 'tellContinuation'; data: DirectTell & ParsedMessage }
     | { type: 'gameEnd'; data: GameEnd }
     | { type: 'movesList'; data: MovesList }
     | { type: 'illegalMove'; data: { move: string } }
@@ -94,6 +99,7 @@ export type FicsMessage =
     | { type: 'gamesOutput'; data: ParsedMessage<GamesOutputData> }
     | { type: 'channelListOutput'; data: ParsedMessage<ChannelListOutputData> }
     | { type: 'newsOutput'; data: ParsedMessage<NewsOutputData> }
+    | { type: 'inOutput'; data: ParsedMessage<InOutputData> }
     | { type: 'notification'; data: ParsedMessage<{ type: string; player?: string }> }
     | { type: 'shout'; data: ParsedMessage<{ username: string; message: string }> }
     | { type: 'cshout'; data: ParsedMessage<{ username: string; message: string }> }
@@ -156,7 +162,7 @@ export interface HistoryOutputData {
         index: number;
         result: '+' | '-' | '=';
         rating: number;
-        color: 'W' | 'B';
+        color: 'W' | 'B' | 'N';
         opponentRating: number;
         opponent: string;
         eco?: string;
@@ -176,8 +182,8 @@ export interface JournalOutputData {
         blackRating: number;
         result: string;
         eco?: string;
-        moves: number;
-        date: string;
+        endType: string;
+        gameInfo: string;
     }>;
 }
 
@@ -215,16 +221,22 @@ export interface GamesOutputData {
 }
 
 export interface ChannelListOutputData {
-    channelNumber: number;
-    channelName?: string;
-    members: string[];
-    totalMembers: number;
+    channels: Array<{
+        number: number;
+        name: string;
+        members?: number;
+    }>;
 }
 
 export interface NewsOutputData {
-    entries: Array<{
-        number: number;
+    items: Array<{
+        id: number;
+        poster: string;
         date: string;
         title: string;
     }>;
+}
+
+export interface InOutputData {
+    content: string;
 }

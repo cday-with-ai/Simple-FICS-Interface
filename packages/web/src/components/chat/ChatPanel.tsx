@@ -63,7 +63,7 @@ const Content = styled.div`
 `;
 
 export const ChatPanel: React.FC<ChatPanelProps> = observer(({ className, compact = false }) => {
-  const { chatStore, ficsStore } = useRootStore();
+  const { chatStore, ficsStore, preferencesStore } = useRootStore();
   const [inputValue, setInputValue] = useState('');
   const [isWaitingForPassword, setIsWaitingForPassword] = useState(false);
   const [hoveredMessageTime, setHoveredMessageTime] = useState<Date | string | number | null>(null);
@@ -130,19 +130,21 @@ Local commands:
       return;
     }
     
-    // Show what user typed
-    chatStore.addMessage('console', {
-      channel: 'console',
-      sender: 'You',
-      content: message,
-      timestamp: new Date(),
-      type: 'message'
-    });
-
     // Determine if it's a command or a message
     if (message.startsWith('/') || message.startsWith('\\')) {
       // Command prefix - strip it and send
-      ficsStore.sendCommand(message.substring(1));
+      const command = message.substring(1);
+      
+      // Show in console
+      chatStore.addMessage('console', {
+        channel: 'console',
+        sender: 'You',
+        content: message,
+        timestamp: new Date(),
+        type: 'message'
+      });
+      
+      ficsStore.sendCommand(command);
     } else {
       // Regular message - determine destination based on active tab
       const activeTab = chatStore.activeTab;
@@ -151,12 +153,55 @@ Local commands:
       if (activeTab.type === 'channel') {
         // Channel message - send as "tell <channel> <message>"
         const channelNum = activeTab.id.replace('channel-', '');
+        
+        // Don't add the message here - FICS will echo it back
+        // and the ChannelTellParser will add it to the tab
+        
         ficsStore.sendCommand(`tell ${channelNum} ${message}`);
       } else if (activeTab.type === 'private') {
         // Private message - send as "tell <user> <message>"
+        
+        // Show in private tab
+        chatStore.addMessage(activeTab.id, {
+          channel: activeTab.id,
+          sender: 'You',
+          content: message,
+          timestamp: new Date(),
+          type: 'message'
+        });
+        
         ficsStore.sendCommand(`tell ${activeTab.id} ${message}`);
       } else {
-        // Console - send as raw command
+        // Console - check if it's a tell command
+        const tellMatch = message.match(/^tell\s+(\w+)\s+(.+)$/);
+        
+        if (tellMatch && preferencesStore.preferences.openTellsInTabs) {
+          const [, username, tellMessage] = tellMatch;
+          const cleanUsername = username.replace(/\([^)]*\)/g, '').trim();
+          const privateTabId = cleanUsername.toLowerCase();
+          
+          // Create tab if it doesn't exist
+          chatStore.createTab(privateTabId, cleanUsername, 'private');
+          
+          // Add message to the private tab
+          chatStore.addMessage(privateTabId, {
+            channel: privateTabId,
+            sender: 'You',
+            content: tellMessage,
+            timestamp: new Date(),
+            type: 'message'
+          });
+        } else {
+          // Show in console for other commands
+          chatStore.addMessage('console', {
+            channel: 'console',
+            sender: 'You',
+            content: message,
+            timestamp: new Date(),
+            type: 'message'
+          });
+        }
+        
         ficsStore.sendCommand(message);
       }
     }

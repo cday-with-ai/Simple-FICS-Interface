@@ -38,12 +38,12 @@ export class FICSStore {
     private readonly timesealKey = "Timestamp (FICS) v1.0 - programmed by Henrik Gram.";
     
     // Track login state
-    private loginState: 'pre-login' | 'logging-in' | 'logged-in' = 'pre-login';
+    loginState: 'pre-login' | 'logging-in' | 'logged-in' = 'pre-login';
     
     // Track if we're clearing a list
     private clearingListType: string | null = null;
     private clearingListBuffer: string[] = [];
-    private credentials: { username: string; password: string } | null = null;
+    credentials: { username: string; password: string } | null = null;
     
     // Track multi-line channel member lists
     private channelListBuffer: string[] = [];
@@ -169,6 +169,19 @@ export class FICSStore {
                 this.executeClearList(listType);
                 return;
             }
+        }
+        
+        // Handle refresh colors command
+        if (cmd === 'refresh colors') {
+            this.rootStore?.preferencesStore.refreshConsoleColors();
+            this.rootStore?.chatStore.addMessage('console', {
+                channel: 'console',
+                sender: 'System',
+                content: 'Console colors refreshed with latest defaults.',
+                timestamp: new Date(),
+                type: 'system'
+            });
+            return;
         }
         
         // Handle set theme command
@@ -347,10 +360,12 @@ export class FICSStore {
     }
 
     private handleMessage(data: string) {
-        
         runInAction(() => {
             this.lastPing = Date.now();
         });
+        
+        // Log raw FICS message before any processing
+        console.log('[FICS Raw]:', JSON.stringify(data));
         
         // Handle timeseal acknowledgements
         const { cleanedMessage, needsAck } = FicsProtocol.handleTimesealAcknowledgement(data);
@@ -361,11 +376,18 @@ export class FICSStore {
         }
         
         // Use cleaned message for processing
-        const processData = cleanedMessage;
+        let processData = cleanedMessage;
+        
+        // Normalize line endings before parsing
+        processData = processData.replace(/\n\r/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        
+        // Remove FICS prompts - they appear at the end of messages
+        processData = processData.replace(/\nfics%\s*$/g, '\n');
+        processData = processData.replace(/^fics%\s*\n/g, '');
 
         // Process all messages immediately
         // FICS sends complete messages, so we don't need buffering
-        const messages = FicsProtocol.parseMessage(processData);
+        const messages = FicsProtocol.parseMessageWithStores(processData, this.rootStore!);
         this.processMessages(messages);
     }
 
@@ -374,26 +396,7 @@ export class FICSStore {
             try {
                 switch (message.type) {
                     case 'login':
-                        // User needs to enter username
-                        runInAction(() => {
-                            this.loginState = 'logging-in';
-                        });
-                        
-                        // Also show in console
-                        if (this.rootStore?.chatStore) {
-                            this.rootStore.chatStore.addMessage('console', {
-                                channel: 'console',
-                                sender: 'FICS',
-                                content: 'login: ',
-                                timestamp: new Date(),
-                                type: 'system'
-                            });
-                        }
-                        
-                        if (this.credentials) {
-                            this.sendCommand(this.credentials.username);
-                        }
-                        // Don't auto-login as guest - wait for user input
+                        // Handled by parser
                         break;
                         
                     case 'password':
@@ -407,132 +410,54 @@ export class FICSStore {
                         break;
 
                     case 'sessionStart':
-                        this.handleLogin();
-                        runInAction(() => {
-                            this.loginState = 'logged-in';
-                            this.user = {
-                                handle: message.data.username,
-                                rating: {},
-                                isGuest: message.data.username.startsWith('Guest')
-                            };
-                        });
-                        
-                        // Send FICS initialization commands
-                        this.sendCommand('set style 12');
-                        this.sendCommand('set prompt');
-                        this.sendCommand('set bell off');
-                        this.sendCommand('set interface Simple FICS Interface');
+                        // Handled by SessionStartParser
                         break;
 
                     case 'style12':
-                        this.rootStore?.gameStore.updateFromStyle12(message.data);
+                        const style12Data = message.data.metadata || message.data;
+                        this.rootStore?.gameStore.updateFromStyle12(style12Data);
                         // If we're observing and not at move 1, request the moves
-                        if (message.data.moveNumber > 1 && 
-                            (message.data.relation === 0 || message.data.relation === -2)) {
+                        if (style12Data.moveNumber > 1 && 
+                            (style12Data.relation === 0 || style12Data.relation === -2)) {
                             // Check if we already have moves for this game
                             if (!this.rootStore?.gameStore.hasMoveHistory()) {
-                                this.sendCommand(`moves ${message.data.gameNumber}`);
+                                this.sendCommand(`moves ${style12Data.gameNumber}`);
                             }
                         }
                         break;
 
                     case 'gameStart':
-                        this.handleGameStart(message.data);
-                        // Play start sound when a game starts (playing or observing)
-                        this.rootStore?.soundStore?.playStart();
+                        // Handled by parser
                         break;
 
                     case 'channelTell':
-                        // Handling channelTell
-                        const channelId = `channel-${message.data.channelNumber}`;
-                        
-                        // Check if we should open channels in tabs
-                        if (this.rootStore?.preferencesStore.preferences.openChannelsInTabs) {
-                            // Create channel tab if it doesn't exist
-                            this.rootStore?.chatStore.createTab(
-                                channelId,
-                                message.data.channelNumber,
-                                'channel'
-                            );
-                        }
-                        
-                        // Create corrected timestamp
-                        const channelNow = new Date();
-                        const channelIsInGMT = channelNow.getTimezoneOffset() === 0;
-                        let channelLocalTime = channelNow;
-                        
-                        if (channelIsInGMT) {
-                            const edtOffset = -4 * 60; // EDT is UTC-4
-                            channelLocalTime = new Date(channelNow.getTime() + (edtOffset * 60 * 1000));
-                        }
-                        
-                        // Add message to appropriate location
-                        const targetId = this.rootStore?.preferencesStore.preferences.openChannelsInTabs ? channelId : 'console';
-                        this.rootStore?.chatStore.addMessage(targetId, {
-                            channel: targetId,
-                            sender: this.stripTitles(message.data.username),
-                            content: this.rootStore?.preferencesStore.preferences.openChannelsInTabs 
-                                ? message.data.message 
-                                : message.data.content || `(${message.data.channelNumber}): ${this.stripTitles(message.data.username)}: ${message.data.message}`,
-                            timestamp: channelLocalTime,
-                            type: 'message',
-                            metadata: {
-                                consoleType: 'channel',
-                                channelNumber: message.data.channelNumber
-                            }
-                        });
+                        // Handled by parser
                         break;
 
 
                     case 'directTell':
-                        // Strip titles from username
-                        const cleanUsername = this.stripTitles(message.data.username);
-                        const privateTabId = cleanUsername.toLowerCase();
-                        
-                        // Check if we should open tells in tabs
-                        if (this.rootStore?.preferencesStore.preferences.openTellsInTabs) {
-                            // Create private tab if it doesn't exist
-                            this.rootStore?.chatStore.createTab(
-                                privateTabId,
-                                cleanUsername,
-                                'private'
-                            );
-                        }
-                        
-                        // Create corrected timestamp
-                        const privateNow = new Date();
-                        const privateIsInGMT = privateNow.getTimezoneOffset() === 0;
-                        let privateLocalTime = privateNow;
-                        
-                        if (privateIsInGMT) {
-                            const edtOffset = -4 * 60; // EDT is UTC-4
-                            privateLocalTime = new Date(privateNow.getTime() + (edtOffset * 60 * 1000));
-                        }
-                        
-                        // Add message to appropriate location
-                        const tellTargetId = this.rootStore?.preferencesStore.preferences.openTellsInTabs ? privateTabId : 'console';
-                        this.rootStore?.chatStore.addMessage(tellTargetId, {
-                            channel: tellTargetId,
-                            sender: cleanUsername,
-                            content: this.rootStore?.preferencesStore.preferences.openTellsInTabs 
-                                ? message.data.message 
-                                : `${cleanUsername} tells you: ${message.data.message}`,
-                            timestamp: privateLocalTime,
-                            type: 'whisper',
-                            metadata: {
-                                consoleType: 'directTell'
-                            }
-                        });
+                        // Handled by parser
                         break;
 
                     case 'movesList':
                         this.handleMovesList(message.data);
+                        // Also show in console with proper color
+                        if (message.data) {
+                            this.rootStore?.chatStore.addMessage('console', {
+                                channel: 'console',
+                                sender: 'FICS',
+                                content: `Movelist for game ${message.data.gameNumber}`,
+                                timestamp: new Date(),
+                                type: 'system',
+                                metadata: {
+                                    consoleType: 'movesList'
+                                }
+                            });
+                        }
                         break;
 
                     case 'gameEnd':
-                        this.handleGameEnd(message.data);
-                        // Play end sound when a game ends
-                        this.rootStore?.soundStore?.playEnd();
+                        // Handled by parser
                         break;
                         
                     case 'unobserve':
@@ -546,7 +471,10 @@ export class FICSStore {
                             sender: 'FICS',
                             content: `Removing game ${message.data.gameNumber} from observation list.`,
                             timestamp: new Date(),
-                            type: 'system'
+                            type: 'system',
+                            metadata: {
+                                consoleType: 'unobserve'
+                            }
                         });
                         break;
 
@@ -557,7 +485,10 @@ export class FICSStore {
                             sender: 'FICS',
                             content: `Illegal move: ${message.data.move}`,
                             timestamp: new Date(),
-                            type: 'system'
+                            type: 'system',
+                            metadata: {
+                                consoleType: 'illegalMove'
+                            }
                         });
                         // Play illegal move sound
                         this.rootStore?.soundStore?.playIllegal();
@@ -570,7 +501,10 @@ export class FICSStore {
                             sender: 'FICS',
                             content: `${message.data.username} offers you a draw.`,
                             timestamp: new Date(),
-                            type: 'system'
+                            type: 'system',
+                            metadata: {
+                                consoleType: 'drawOffer'
+                            }
                         });
                         // Play draw sound
                         this.rootStore?.soundStore?.playDraw();
@@ -579,8 +513,7 @@ export class FICSStore {
                     case 'seekAnnouncement':
                         // Handle seek announcement with interactive elements
                         if (message.data) {
-                            // Play challenge sound
-                            this.rootStore?.soundStore?.playChallenge();
+                            // Don't play sounds for seek announcements
                             
                             // Add to console with parsed data
                             this.rootStore?.chatStore.addMessage('console', {
@@ -590,7 +523,7 @@ export class FICSStore {
                                 timestamp: new Date(),
                                 type: 'system',
                                 metadata: {
-                                    consoleType: 'seek',
+                                    consoleType: 'seekAnnouncement',
                                     parsedMessage: message.data
                                 }
                             });
@@ -618,20 +551,7 @@ export class FICSStore {
                         
                     case 'shout':
                     case 'cshout':
-                        // Handle shouts with interactive elements
-                        if (message.data) {
-                            this.rootStore?.chatStore.addMessage('console', {
-                                channel: 'console',
-                                sender: 'FICS',
-                                content: message.data.content,
-                                timestamp: new Date(),
-                                type: 'system',
-                                metadata: {
-                                    consoleType: message.type,
-                                    parsedMessage: message.data
-                                }
-                            });
-                        }
+                        // Handled by parser
                         break;
                         
                     case 'fingerOutput':
@@ -642,7 +562,27 @@ export class FICSStore {
                     case 'gamesOutput':
                     case 'channelListOutput':
                     case 'newsOutput':
+                    case 'inOutput':
                         // Handle structured outputs with interactive elements
+                        if (message.data) {
+                            // Use the full type name for console coloring (e.g., 'fingerOutput' not 'finger')
+                            const consoleType = message.type;
+                            this.rootStore?.chatStore.addMessage('console', {
+                                channel: 'console',
+                                sender: 'FICS',
+                                content: message.data.content,
+                                timestamp: new Date(),
+                                type: 'system',
+                                metadata: {
+                                    consoleType,
+                                    parsedMessage: message.data
+                                }
+                            });
+                        }
+                        break;
+                    
+                    case 'matchRequest':
+                        // Handle match requests with consistent coloring
                         if (message.data) {
                             this.rootStore?.chatStore.addMessage('console', {
                                 channel: 'console',
@@ -651,7 +591,7 @@ export class FICSStore {
                                 timestamp: new Date(),
                                 type: 'system',
                                 metadata: {
-                                    consoleType: message.type.replace('Output', ''),
+                                    consoleType: 'matchRequest',
                                     parsedMessage: message.data
                                 }
                             });
@@ -659,6 +599,7 @@ export class FICSStore {
                         break;
                     
                     case 'raw':
+                    case 'system':
                     default:
                         // Check if it's a seek or game list message (for old compatibility)
                         if (message.data && typeof message.data === 'string') {
@@ -803,39 +744,7 @@ export class FICSStore {
                                 // Continue with current message
                             }
                             
-                            // Create timestamp and force it to be in local timezone
-                            const now = new Date();
-                            
-                            // Check if we're in GMT when we shouldn't be
-                            const isInGMT = now.getTimezoneOffset() === 0;
-                            let localTime = now;
-                            
-                            if (isInGMT) {
-                                // If we're in GMT but should be in EDT (UTC-4), subtract 4 hours
-                                // This is a workaround for the timezone issue
-                                const edtOffset = -4 * 60; // EDT is UTC-4 (240 minutes behind UTC)
-                                localTime = new Date(now.getTime() + (edtOffset * 60 * 1000));
-                            }
-                            
-                            // For raw messages with ParsedMessage structure
-                            const messageContent = typeof message.data === 'string' ? message.data : message.data.content;
-                            
-                            // Detect message type for console coloring
-                            const metadata = this.detectConsoleMessageType(messageContent);
-                            
-                            // If message.data is a ParsedMessage, include it in metadata
-                            if (typeof message.data === 'object' && message.data.elements) {
-                                metadata.parsedMessage = message.data;
-                            }
-                            
-                            this.rootStore?.chatStore.addMessage('console', {
-                                channel: 'console',
-                                sender: 'FICS',
-                                content: messageContent,
-                                timestamp: localTime,
-                                type: 'system',
-                                metadata
-                            });
+                            // Raw and system messages are handled by their parsers now
                         }
                         break;
                 }
@@ -1080,7 +989,7 @@ export class FICSStore {
         // Channel tells (but not the echo when you send)
         const channelMatch = message.match(/^\w+(?:\([A-Z*]+\))?\((\d+)\):/);
         if (channelMatch) {
-            return { consoleType: 'channel', channelNumber: channelMatch[1] };
+            return { consoleType: 'channelTell', channelNumber: channelMatch[1] };
         }
         
         // Shouts
