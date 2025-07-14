@@ -43,23 +43,23 @@ export class GameEndParser extends BaseParser {
     }
     
     parse(message: string): ParsedMessage<GameEnd> | null {
-        const match = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+) vs\. ([a-zA-Z0-9_\[\]*-]+)\) ([^}]+)\}\s*(.+)/);
+        const match = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) vs\. ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*)\) ([^}]+)\}\s*(.+)/);
         if (match) {
             const gameEnd: GameEnd = {
                 gameNumber: parseInt(match[1]),
-                whiteName: match[2],
-                blackName: match[3],
+                whiteName: this.stripTitles(match[2]),
+                blackName: this.stripTitles(match[3]),
                 reason: match[4],
                 result: match[5].trim()
             };
             
             const elements: InteractiveElement[] = [];
             
-            // Add player elements
-            const whiteIndex = message.indexOf(gameEnd.whiteName);
+            // Add player elements (strip titles for the element)
+            const whiteIndex = message.indexOf(match[2]);
             elements.push(ParserUtils.createPlayerElement(gameEnd.whiteName, whiteIndex));
             
-            const blackIndex = message.indexOf(gameEnd.blackName, whiteIndex + gameEnd.whiteName.length);
+            const blackIndex = message.indexOf(match[3], whiteIndex + match[2].length);
             elements.push(ParserUtils.createPlayerElement(gameEnd.blackName, blackIndex));
             
             // Add game number element

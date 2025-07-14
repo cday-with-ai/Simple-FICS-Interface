@@ -28,7 +28,7 @@ export class ShoutParser extends BaseParser {
     }
     
     canParse(message: string): boolean {
-        return !!message.match(/^\w+\s+shouts:/m);
+        return !!message.match(/^\w+(?:\([^)]*\))*\s+shouts:/m);
     }
     
     parse(message: string): ParsedMessage<{ username: string; message: string }> | null {
@@ -44,7 +44,8 @@ export class ShoutParser extends BaseParser {
             
             if (i === 0) {
                 // First line should contain the shout pattern
-                firstLineMatch = line.match(/^(\w+)\s+shouts:\s*(.*)$/);
+                // Match username with optional titles in parentheses
+                firstLineMatch = line.match(/^(\w+(?:\([^)]*\))*)\s+shouts:\s*(.*)$/);
                 if (!firstLineMatch) return null;
                 
                 username = firstLineMatch[1];
@@ -62,8 +63,9 @@ export class ShoutParser extends BaseParser {
         
         const elements: InteractiveElement[] = [];
         
-        // Add player element
-        elements.push(ParserUtils.createPlayerElement(username, 0));
+        // Add player element - strip titles before creating element
+        const strippedUsername = this.stripTitles(username);
+        elements.push(ParserUtils.createPlayerElement(strippedUsername, 0));
         
         // Add URLs in the message
         const urlElements = ParserUtils.findUrlsInText(fullMessage);

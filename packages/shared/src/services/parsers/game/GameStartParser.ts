@@ -83,13 +83,13 @@ export class GameStartParser extends BaseParser {
     
     parse(message: string): ParsedMessage<GameStart> | null {
         // Check for observing game format
-        const obsMatch = message.match(/Game (\d+): ([a-zA-Z0-9_\[\]*-]+) \(([0-9+CEP-]+)\) ([a-zA-Z0-9_\[\]*-]+) \(([0-9+CEP-]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
+        const obsMatch = message.match(/Game (\d+): ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
         if (obsMatch) {
             const gameStart: GameStart = {
                 gameNumber: parseInt(obsMatch[1]),
-                whiteName: obsMatch[2],
+                whiteName: this.stripTitles(obsMatch[2]),
                 whiteRating: obsMatch[3],
-                blackName: obsMatch[4],
+                blackName: this.stripTitles(obsMatch[4]),
                 blackRating: obsMatch[5],
                 isRated: obsMatch[6] === 'rated',
                 gameType: obsMatch[7],
@@ -99,11 +99,11 @@ export class GameStartParser extends BaseParser {
             
             const elements: InteractiveElement[] = [];
             
-            // Add player elements
-            const whiteIndex = message.indexOf(gameStart.whiteName);
+            // Add player elements (strip titles for the element)
+            const whiteIndex = message.indexOf(obsMatch[2]);
             elements.push(ParserUtils.createPlayerElement(gameStart.whiteName, whiteIndex));
             
-            const blackIndex = message.indexOf(gameStart.blackName, whiteIndex + gameStart.whiteName.length);
+            const blackIndex = message.indexOf(obsMatch[4], whiteIndex + obsMatch[2].length);
             elements.push(ParserUtils.createPlayerElement(gameStart.blackName, blackIndex));
             
             // Add game number element
@@ -118,15 +118,15 @@ export class GameStartParser extends BaseParser {
         }
 
         // Check for creating game format
-        const createMatch = message.match(/Creating: ([a-zA-Z0-9_\[\]*-]+) \(([0-9+CEP-]+)\) ([a-zA-Z0-9_\[\]*-]+) \(([0-9+CEP-]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
-        const gameMatch = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+) vs\. ([a-zA-Z0-9_\[\]*-]+)\)/);
+        const createMatch = message.match(/Creating: ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
+        const gameMatch = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) vs\. ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*)\)/);
 
         if (createMatch && gameMatch) {
             const gameStart: GameStart = {
                 gameNumber: parseInt(gameMatch[1]),
-                whiteName: createMatch[1],
+                whiteName: this.stripTitles(createMatch[1]),
                 whiteRating: createMatch[2],
-                blackName: createMatch[3],
+                blackName: this.stripTitles(createMatch[3]),
                 blackRating: createMatch[4],
                 isRated: createMatch[5] === 'rated',
                 gameType: createMatch[6],
@@ -136,11 +136,11 @@ export class GameStartParser extends BaseParser {
             
             const elements: InteractiveElement[] = [];
             
-            // Add player elements
-            const whiteIndex = message.indexOf(gameStart.whiteName);
+            // Add player elements (strip titles for the element)
+            const whiteIndex = message.indexOf(createMatch[1]);
             elements.push(ParserUtils.createPlayerElement(gameStart.whiteName, whiteIndex));
             
-            const blackIndex = message.indexOf(gameStart.blackName, whiteIndex + gameStart.whiteName.length);
+            const blackIndex = message.indexOf(createMatch[3], whiteIndex + createMatch[1].length);
             elements.push(ParserUtils.createPlayerElement(gameStart.blackName, blackIndex));
             
             // Add game number element

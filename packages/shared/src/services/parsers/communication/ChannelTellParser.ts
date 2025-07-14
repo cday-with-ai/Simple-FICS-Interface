@@ -56,7 +56,7 @@ export class ChannelTellParser extends BaseParser {
     
     canParse(message: string): boolean {
         // Use multiline mode (m) to match after newlines
-        return !!message.match(/^\s*\w+(?:\([^)]*\))?\((\d+)\):/m);
+        return !!message.match(/^\s*\w+(?:\([^)]*\))*\((\d+)\):/m);
     }
     
     parse(message: string): ParsedMessage<ChannelTell> | null {
@@ -75,10 +75,11 @@ export class ChannelTellParser extends BaseParser {
             }
         }
         
-        const channelMatch = firstLine.match(/^\s*(\w+)(?:\([^)]*\))?\((\d+)\):\s*(.*)$/);
+        const channelMatch = firstLine.match(/^\s*(\w+(?:\([^)]*\))*)\((\d+)\):\s*(.*)$/);
         if (!channelMatch) return null;
         
-        const username = channelMatch[1];
+        const fullUsername = channelMatch[1];
+        const username = this.stripTitles(fullUsername);
         const channelNumber = channelMatch[2];
         let fullMessage = channelMatch[3];
         
@@ -106,7 +107,10 @@ export class ChannelTellParser extends BaseParser {
             // Multi-line messages have position calculation issues
             
             // Add player element for the sender (in the original message position)
-            elements.push(this.createPlayerElement(username, message.indexOf(username)));
+            const usernameIndex = message.indexOf(fullUsername);
+            if (usernameIndex !== -1) {
+                elements.push(this.createPlayerElement(username, usernameIndex));
+            }
             
             // Add channel number as clickable (in the original message position)
             const channelIndex = message.indexOf(`(${channelNumber})`);
