@@ -67,12 +67,12 @@ export class ParserUtils {
 
     static findUrlsInText(text: string): InteractiveElement[] {
         const elements: InteractiveElement[] = [];
-        // Only match full URLs with protocol - this is what FICS actually uses for clickable links
-        const urlRegex = /(https?:\/\/[^\s]+)/gi;
+        // Match URLs with protocol or www. domains
+        const urlRegex = /(?:https?:\/\/[^\s]+|www\.[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
         let match;
         
         while ((match = urlRegex.exec(text)) !== null) {
-            elements.push(this.createUrlElement(match[1], match.index));
+            elements.push(this.createUrlElement(match[0], match.index));
         }
         
         return elements;
@@ -80,13 +80,13 @@ export class ParserUtils {
     
     static findQuotedCommandsInText(text: string): InteractiveElement[] {
         const elements: InteractiveElement[] = [];
-        // Match commands in single quotes like 'help intro_basics'
-        const commandRegex = /'([^']+)'/g;
+        // Match commands in single quotes 'command' or double quotes "command"
+        const commandRegex = /(['"])([^'"]+)\1/g;
         let match;
         
         while ((match = commandRegex.exec(text)) !== null) {
-            const command = match[1];
-            // Only treat as command if it starts with a word character
+            const command = match[2];
+            // Only treat as command if it starts with a word character (looks like a command)
             if (/^\w/.test(command)) {
                 elements.push(this.createCommandElement(match[0], command, match.index));
             }

@@ -67,13 +67,22 @@ export class FingerParser extends BaseParser {
                     currentSection.content += '\n' + line;
                 }
             } else if (line.match(/^\s*\d+:\s*/)) {
-                // Finger notes - check for URLs
+                // Finger notes - check for URLs and quoted commands
                 const urlsInLine = ParserUtils.findUrlsInText(line);
                 for (const url of urlsInLine) {
                     elements.push({
                         ...url,
                         start: offset + url.start,
                         end: offset + url.end
+                    });
+                }
+                
+                const commandsInLine = ParserUtils.findQuotedCommandsInText(line);
+                for (const cmd of commandsInLine) {
+                    elements.push({
+                        ...cmd,
+                        start: offset + cmd.start,
+                        end: offset + cmd.end
                     });
                 }
                 
