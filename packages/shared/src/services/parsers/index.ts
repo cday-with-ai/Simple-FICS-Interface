@@ -17,6 +17,7 @@ import { ChannelLogParser } from './output/ChannelLogParser';
 // Game parsers
 import { Style12Parser } from './game/Style12Parser';
 import { GameStartParser } from './game/GameStartParser';
+import { GameNotificationParser } from './game/GameNotificationParser';
 import { GameEndParser } from './game/GameEndParser';
 import { SeekAnnouncementParser } from './game/SeekAnnouncementParser';
 import { MovesListParser } from './game/MovesListParser';
@@ -63,6 +64,7 @@ export const MESSAGE_PARSERS: Parser[] = [
     new IllegalMoveParser(),   // priority: 85
     new DrawOfferParser(),     // priority: 85
     new UnobserveParser(),     // priority: 85
+    new GameNotificationParser(), // priority: 85
     
     // Command outputs and outgoing messages
     new WhoParser(),           // priority: 80

@@ -6,6 +6,7 @@ interface PlayerNameProps {
   name: string;
   className?: string;
   style?: React.CSSProperties;
+  onClick?: () => void;
 }
 
 const NameSpan = styled.span`
@@ -18,12 +19,19 @@ const NameSpan = styled.span`
   }
 `;
 
-export const PlayerName: React.FC<PlayerNameProps> = ({ name, className, style }) => {
+export const PlayerName: React.FC<PlayerNameProps> = ({ name, className, style, onClick }) => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // If there's an onClick handler, call it
+    if (onClick) {
+      onClick();
+    }
+    
+    // Always show the context menu
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
   

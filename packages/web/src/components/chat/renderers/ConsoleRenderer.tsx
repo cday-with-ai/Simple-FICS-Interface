@@ -8,11 +8,12 @@ abstract class ConsoleRenderer extends MessageRenderer {
   render({ message, onCommandClick }: MessageRendererProps): React.ReactNode {
     const parsedMessage = message.metadata?.parsedMessage;
     
+    
     return (
       <PreformattedMessageRow 
-        $color={message.metadata?.color}
-        $fontFamily={message.metadata?.fontFamily}
-        $fontStyle={message.metadata?.fontStyle}
+        $color={message.metadata?.color || undefined}
+        $fontFamily={message.metadata?.fontFamily || undefined}
+        $fontStyle={message.metadata?.fontStyle || undefined}
       >
         <InteractiveContent
           content={parsedMessage?.content || message.content}
@@ -54,6 +55,10 @@ export class DrawOfferRenderer extends ConsoleRenderer {
 
 export class UnobserveRenderer extends ConsoleRenderer {
   readonly type = 'unobserve';
+}
+
+export class GameNotificationRenderer extends ConsoleRenderer {
+  readonly type = 'gameNotification';
 }
 
 // Command output renderers

@@ -76,6 +76,7 @@ export interface MovesList {
 
 export type FicsMessage =
     | { type: 'gameStart'; data: GameStart }
+    | { type: 'gameNotification'; data: ParsedMessage<GameStart> }
     | { type: 'style12'; data: Style12 }
     | { type: 'channelTell'; data: ChannelTell & ParsedMessage }
     | { type: 'chatContinuation'; data: ChatContinuation }

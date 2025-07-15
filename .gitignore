@@ -31,4 +31,4 @@ temp/**
 scripts/
 
 # User preferences for Claude
-USER_PREFERENCES.md
+scripts/USER_PREFERENCES.md

@@ -17,6 +17,7 @@ import {
   IllegalMoveRenderer,
   DrawOfferRenderer,
   UnobserveRenderer,
+  GameNotificationRenderer,
   WhoOutputRenderer,
   GamesOutputRenderer,
   FingerOutputRenderer,
@@ -50,6 +51,7 @@ function registerAllRenderers() {
   MessageRendererRegistry.register(new IllegalMoveRenderer());
   MessageRendererRegistry.register(new DrawOfferRenderer());
   MessageRendererRegistry.register(new UnobserveRenderer());
+  MessageRendererRegistry.register(new GameNotificationRenderer());
   
   // Seek/match renderers
   MessageRendererRegistry.register(new SeekAnnouncementRenderer());

@@ -94,4 +94,47 @@ export class ParserUtils {
         
         return elements;
     }
+    
+    static findPlayersInText(text: string, offset: number = 0): InteractiveElement[] {
+        const elements: InteractiveElement[] = [];
+        
+        // FICS player names pattern: word characters followed by optional titles in parentheses
+        // Player names are 3-17 characters, can be followed by titles like (GM), (*), (C), etc.
+        const playerRegex = /\b([a-zA-Z][a-zA-Z0-9_]{2,16})(?:\([^)]*\))*/g;
+        let match;
+        
+        // Common words to exclude from being treated as player names
+        const excludeWords = new Set([
+            'the', 'and', 'you', 'are', 'has', 'can', 'not', 'for', 'with',
+            'was', 'will', 'but', 'had', 'have', 'been', 'from', 'this', 'that',
+            'game', 'games', 'rated', 'unrated', 'seek', 'match', 'player', 'players',
+            'white', 'black', 'draw', 'win', 'loss', 'time', 'move', 'moves',
+            'blitz', 'standard', 'lightning', 'bullet', 'wild', 'crazyhouse', 'atomic',
+            'chess', 'board', 'piece', 'pieces', 'king', 'queen', 'rook', 'bishop', 'knight', 'pawn',
+            'check', 'checkmate', 'stalemate', 'resign', 'flag', 'abort', 'adjourn',
+            'tell', 'say', 'shout', 'kibitz', 'whisper', 'channel', 'observe', 'examine',
+            'finger', 'history', 'stored', 'journal', 'news', 'help', 'who', 'games', 'sought',
+            'message', 'messages', 'notification', 'arrived', 'departed', 'logged', 'disconnected'
+        ]);
+        
+        while ((match = playerRegex.exec(text)) !== null) {
+            const playerName = match[1];
+            const fullMatch = match[0];
+            
+            // Skip common English words and FICS commands
+            if (excludeWords.has(playerName.toLowerCase())) {
+                continue;
+            }
+            
+            // Skip if it looks like a number or time
+            if (/^\d+$/.test(playerName)) {
+                continue;
+            }
+            
+            const playerIndex = offset + (match.index || 0);
+            elements.push(this.createPlayerElement(playerName, playerIndex));
+        }
+        
+        return elements;
+    }
 }

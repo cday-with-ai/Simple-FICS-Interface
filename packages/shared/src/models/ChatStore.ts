@@ -14,9 +14,19 @@ export interface ChatMessage {
     type: 'message' | 'system' | 'whisper' | 'announcement';
     metadata?: {
         consoleType?: 'notification' | 'channel' | 'directTell' | 'shout' | 'cshout' | 'matchRequest' | 'seek' | 
-                       'finger' | 'who' | 'history' | 'journal' | 'sought' | 'games' | 'channelList' | 'news' | 'in';
+                       'finger' | 'who' | 'history' | 'journal' | 'sought' | 'games' | 'channelList' | 'news' | 'in' |
+                       'channelTell' | 'channelTold' | 'outgoingTell' | 'tellContinuation' | 'tellReply' | 
+                       'gameStart' | 'gameEnd' | 'gameNotification' | 'channelLog' | 'guestLoginConfirmation' |
+                       'seekAnnouncement' | 'drawOffer' | 'unobserve' | 'illegalMove' | 'movesList' | 'style12' |
+                       'fingerOutput' | 'whoOutput' | 'historyOutput' | 'journalOutput' | 'soughtOutput' | 
+                       'gamesOutput' | 'channelListOutput' | 'newsOutput' | 'inOutput' | 'login' | 'password' | 
+                       'sessionStart' | 'system' | 'raw';
         channelNumber?: string;
         parsedMessage?: any; // ParsedMessage from FicsProtocol
+        color?: string | null;
+        fontFamily?: string | null;
+        fontStyle?: string | null;
+        isGroupedMessage?: boolean;
     };
 }
 

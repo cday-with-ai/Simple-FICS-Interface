@@ -34,6 +34,7 @@ export const Message: React.FC<MessageProps> = observer(({
     ? preferencesStore.getConsoleFontStyle(consoleType, channelNumber)
     : null;
   
+  
   // Add styling to metadata for renderer to use
   const messageWithStyling = {
     ...message,

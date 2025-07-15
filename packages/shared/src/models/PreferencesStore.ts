@@ -31,6 +31,7 @@ export interface ConsoleColors {
     // Game related
     style12: string;
     gameStart: string;
+    gameNotification: string;
     gameEnd: string;
     movesList: string;
     illegalMove: string;
@@ -91,6 +92,7 @@ export interface ConsoleFonts {
     // Game related
     style12?: string;
     gameStart?: string;
+    gameNotification?: string;
     gameEnd?: string;
     movesList?: string;
     illegalMove?: string;
@@ -151,6 +153,7 @@ export interface ConsoleFontStyles {
     // Game related
     style12?: string;
     gameStart?: string;
+    gameNotification?: string;
     gameEnd?: string;
     movesList?: string;
     illegalMove?: string;
@@ -324,6 +327,7 @@ set interface Simple FICS Interface`,
         // Game related
         style12: '#333333',       // Dark Gray (low visibility for board updates)
         gameStart: '#008000',     // Green
+        gameNotification: '#4169e1', // RoyalBlue
         gameEnd: '#cc0000',       // Red
         movesList: '#4682b4',     // SteelBlue
         illegalMove: '#dc143c',   // Crimson
@@ -382,6 +386,7 @@ set interface Simple FICS Interface`,
         // Game related
         style12: '#666666',       // Medium Gray (low visibility for board updates)
         gameStart: '#66ff66',     // Light Green
+        gameNotification: '#6495ed', // CornflowerBlue
         gameEnd: '#ff6666',       // Light Red
         movesList: '#87ceeb',     // SkyBlue
         illegalMove: '#ff6b6b',   // Light Crimson

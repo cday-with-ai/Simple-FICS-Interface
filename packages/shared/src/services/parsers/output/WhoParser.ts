@@ -36,7 +36,8 @@ export class WhoParser extends BaseParser {
             
             // Parse multiple players per line
             // Format: "rating[.^#:]player(flags) rating[.^#:]player(flags) ..."
-            const playerRegex = /(\d{3,4}|----|\+{4})([.^~&#:]*)?(\w+)(?:\([^)]*\))?/g;
+            // More flexible regex to capture all player names
+            const playerRegex = /(\d{3,4}|----|\+{4})([.^~&#:]*)\s*([a-zA-Z][a-zA-Z0-9_]*)(?:\([^)]*\))?/g;
             let match;
             
             while ((match = playerRegex.exec(line)) !== null) {

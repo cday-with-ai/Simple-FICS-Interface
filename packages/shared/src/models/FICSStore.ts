@@ -549,6 +549,25 @@ export class FICSStore {
                         }
                         break;
                         
+                    case 'gameNotification':
+                        // Handle game notifications
+                        if (message.data) {
+                            this.rootStore?.soundStore?.playAlert();
+                            
+                            this.rootStore?.chatStore.addMessage('console', {
+                                channel: 'console',
+                                sender: 'FICS',
+                                content: message.data.content,
+                                timestamp: new Date(),
+                                type: 'system',
+                                metadata: {
+                                    consoleType: 'gameNotification',
+                                    parsedMessage: message.data
+                                }
+                            });
+                        }
+                        break;
+                        
                     case 'shout':
                     case 'cshout':
                         // Handled by parser

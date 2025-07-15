@@ -26,13 +26,13 @@ const MoveListContainer = styled.div`
 `;
 
 const MoveListHeader = styled.div`
-  padding: ${props => props.theme.spacing[2]};
+  padding: ${props => props.theme.spacing[1]};
   border-bottom: 1px solid ${props => props.theme.colors.border};
   font-weight: ${props => props.theme.typography.fontWeight.semibold};
   color: ${props => props.theme.colors.text};
   display: flex;
   flex-direction: column;
-  gap: ${props => props.theme.spacing[3]};
+  gap: ${props => props.theme.spacing[2]};
 `;
 
 const NavigationControls = styled.div`
@@ -42,8 +42,8 @@ const NavigationControls = styled.div`
 `;
 
 const NavButton = styled.button`
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1,5 +1,6 @@
 import { BaseParser } from '../BaseParser';
 import { ParsedMessage, InteractiveElement, JournalOutputData } from '../../FicsProtocol.types';
+import { ParserUtils } from '../utils';
 
 export class JournalParser extends BaseParser {
     name = 'journalOutput';
@@ -26,7 +27,7 @@ export class JournalParser extends BaseParser {
         // Add player element in header
         const headerIndex = message.indexOf(player);
         if (headerIndex !== -1) {
-            elements.push(this.createPlayerElement(player, headerIndex));
+            elements.push(ParserUtils.createPlayerElement(player, headerIndex));
         }
         
         let offset = 0;
@@ -50,14 +51,14 @@ export class JournalParser extends BaseParser {
                 
                 // Add white player as clickable
                 const whiteIndex = offset + line.indexOf(white);
-                elements.push(this.createPlayerElement(white, whiteIndex));
+                elements.push(ParserUtils.createPlayerElement(white, whiteIndex));
                 
                 // Add black player as clickable
                 const blackIndex = offset + line.indexOf(black, whiteIndex + white.length);
-                elements.push(this.createPlayerElement(black, blackIndex));
+                elements.push(ParserUtils.createPlayerElement(black, blackIndex));
                 
                 // Make the whole line clickable to examine the game
-                elements.push(this.createCommandElement(
+                elements.push(ParserUtils.createCommandElement(
                     line.trim(),
                     `examine ${player} %${index}`,
                     offset
@@ -71,26 +72,6 @@ export class JournalParser extends BaseParser {
             content: message,
             elements,
             metadata: { player, entries }
-        };
-    }
-    
-    private createPlayerElement(text: string, start: number): InteractiveElement {
-        return {
-            type: 'player',
-            text,
-            action: `finger ${text}`,
-            start,
-            end: start + text.length
-        };
-    }
-    
-    private createCommandElement(text: string, command: string, start: number): InteractiveElement {
-        return {
-            type: 'command',
-            text,
-            action: command,
-            start,
-            end: start + text.length
         };
     }
 }

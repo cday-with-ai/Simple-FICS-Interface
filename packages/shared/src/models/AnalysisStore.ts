@@ -21,6 +21,7 @@ export class AnalysisStore {
     public currentLine: AnalysisLine | null = null;
     public depth: number = 0;
     public error: string | null = null;
+    private lockedBoardOrientation: boolean | null = null;
 
     constructor() {
         makeAutoObservable(this);
@@ -63,6 +64,8 @@ export class AnalysisStore {
             // Create a new ChessAPI instance for analysis from the current position
             this.analysisApi = new ChessAPI();
             this.analysisApi.loadFen(fen);
+            // Lock the board orientation when starting analysis
+            this.lockedBoardOrientation = this.rootStore?.gameStore?.shouldShowFlippedBoard || false;
         });
 
         this.engine.analyzePosition(fen);
@@ -73,6 +76,8 @@ export class AnalysisStore {
             this.engine.stopAnalysis();
             runInAction(() => {
                 this.isAnalyzing = false;
+                // Clear the locked orientation when stopping analysis
+                this.lockedBoardOrientation = null;
             });
         }
     }
@@ -256,10 +261,11 @@ export class AnalysisStore {
             evalInPawns = this.currentLine.mate > 0 ? 999 : -999;
         }
         
-        // Check if board is flipped (black on bottom)
-        // Use the GameStore's shouldShowFlippedBoard which correctly handles
-        // playing, observing, and examining perspectives
-        const isFlipped = this.rootStore?.gameStore?.shouldShowFlippedBoard || false;
+        // Use the locked board orientation if available (during analysis)
+        // Otherwise fall back to current board orientation
+        const isFlipped = this.lockedBoardOrientation !== null 
+            ? this.lockedBoardOrientation 
+            : (this.rootStore?.gameStore?.shouldShowFlippedBoard || false);
         
         // If black is on bottom, negate the evaluation
         if (isFlipped) {
