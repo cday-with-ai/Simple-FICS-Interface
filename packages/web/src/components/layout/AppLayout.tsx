@@ -125,7 +125,7 @@ export const AppLayout: React.FC = observer(() => {
       
       <MainContent>
         <ChessArea $isVisible={showChess}>
-          <ChessGameLayout hasChat={showChat} />
+          <ChessGameLayout hasChat={showChat} chatWidth={showChat && !layout.isMobile ? chatPanelWidth : 0} />
         </ChessArea>
         
         {showSplitter && (

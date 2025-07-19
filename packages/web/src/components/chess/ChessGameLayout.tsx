@@ -18,6 +18,7 @@ import {convertToUnicodeChessPieces, longAlgebraicToDisplaySAN} from '@fics/shar
 interface ChessGameLayoutProps {
     className?: string;
     hasChat?: boolean;
+    chatWidth?: number;
 }
 
 const LayoutContainer = styled.div<{ $orientation: 'landscape' | 'portrait'; $hasChat: boolean }>`
@@ -129,15 +130,15 @@ const BottomBoardInfo = styled.div`
 `;
 
 // Landscape-specific info components
-const LandscapeTopInfo = styled(TopBoardInfo)`
+const LandscapeTopInfo = styled(TopBoardInfo)<{ $chatWidth?: number }>`
     margin-bottom: -6px;
-    max-width: min(calc(100vh - 140px), calc(100vw - 480px));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$chatWidth || 0}px - 80px - 320px));
     padding: 0 11px;
 `;
 
-const LandscapeBottomInfo = styled(BottomBoardInfo)`
+const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number }>`
     margin-top: -6px;
-    max-width: min(calc(100vh - 140px), calc(100vw - 480px));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$chatWidth || 0}px - 80px - 320px));
     padding: 0 11px;
 `;
 
@@ -187,7 +188,7 @@ const OpeningInfo = styled.div`
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
+const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chatWidth?: number }>`
     position: relative;
     display: flex;
     align-items: center;
@@ -198,8 +199,8 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
     max-width: 600px;
     max-height: 600px;
   ` : `
-    width: min(calc(100vh - 140px), calc(100vw - 480px));
-    height: min(calc(100vh - 140px), calc(100vw - 480px));
+    width: min(calc(100vh - 140px), calc(100vw - ${props.$chatWidth || 0}px - 80px - 320px));
+    height: min(calc(100vh - 140px), calc(100vw - ${props.$chatWidth || 0}px - 80px - 320px));
     max-width: calc(100vh - 140px);
     max-height: calc(100vh - 140px);
   `}
@@ -447,9 +448,9 @@ const ExtraControlsContainer = styled.div`
     width: 100%;
 `;
 
-const LandscapeAnalysisInfo = styled.div`
+const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number }>`
     margin-top: ${props => props.theme.spacing[1]};
-    max-width: min(calc(100vh - 140px), calc(100vw - 480px));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$chatWidth || 0}px - 80px - 320px));
     width: 100%;
     padding: 0 11px;
 `;
@@ -486,7 +487,7 @@ const PortraitAnalysisWrapper = styled.div<{ $squareSize?: number; $topOffset?: 
 `;
 
 
-export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({className, hasChat = false}) => {
+export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({className, hasChat = false, chatWidth = 0}) => {
     const gameStore = useGameStore();
     const preferencesStore = usePreferencesStore();
     const analysisStore = useAnalysisStore();
@@ -946,7 +947,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                     <ChessSection $orientation="landscape">
                         <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
                             <BoardArea>
-                                <LandscapeTopInfo>
+                                <LandscapeTopInfo $chatWidth={chatWidth}>
                                     <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
                                     <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                 </LandscapeTopInfo>
@@ -954,7 +955,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     {isAnalysisActive && (
                                         <AnalysisDisplay orientation="vertical"/>
                                     )}
-                                    <BoardWrapper $orientation="landscape">
+                                    <BoardWrapper $orientation="landscape" $chatWidth={chatWidth}>
                                         <ChessBoardWithPieces
                                             position={position}
                                             flipped={boardFlipped}
@@ -969,7 +970,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         />
                                     </BoardWrapper>
                                 </BoardWithAnalysis>
-                                <LandscapeBottomInfo>
+                                <LandscapeBottomInfo $chatWidth={chatWidth}>
                                     <LastMoveInfo>
                                         {gameStore.premove ? 
                                             `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
@@ -981,7 +982,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     )}
                                 </LandscapeBottomInfo>
                                 {isAnalysisActive && (
-                                    <LandscapeAnalysisInfo>
+                                    <LandscapeAnalysisInfo $chatWidth={chatWidth}>
                                         <AnalysisInfoDisplay/>
                                     </LandscapeAnalysisInfo>
                                 )}
