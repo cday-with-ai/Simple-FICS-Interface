@@ -180,7 +180,494 @@ export class SettingsRegistry {
       previewType: 'test'
     });
 
-    // Add more default settings as needed...
+    this.register({
+      id: 'captureSound',
+      category: 'sounds',
+      label: 'Capture Sound',
+      description: 'Play sound when pieces are captured',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      dependencies: ['enableSounds'],
+      targetElements: [],
+      keywords: ['audio', 'effects', 'capture'],
+      previewType: 'test'
+    });
+
+    this.register({
+      id: 'checkSound',
+      category: 'sounds',
+      label: 'Check Sound',
+      description: 'Play sound when king is in check',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      dependencies: ['enableSounds'],
+      targetElements: [],
+      keywords: ['audio', 'effects', 'check'],
+      previewType: 'test'
+    });
+
+    // Board preferences
+    this.register({
+      id: 'boardFlipped',
+      category: 'board',
+      label: 'Flip Board',
+      description: 'View board from black\'s perspective',
+      type: 'boolean',
+      value: false,
+      defaultValue: false,
+      targetElements: ['.chess-board'],
+      keywords: ['flip', 'rotate', 'perspective', 'orientation'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'showLegalMoves',
+      category: 'board',
+      label: 'Show Legal Moves',
+      description: 'Highlight possible moves when selecting a piece',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      targetElements: ['.chess-board'],
+      keywords: ['hints', 'possible', 'valid'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'disableAnimationLowTime',
+      category: 'board',
+      label: 'Disable Animations When Low on Time',
+      description: 'Turn off piece animations when under 10 seconds',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      dependencies: ['animateMoves'],
+      targetElements: ['.chess-piece'],
+      keywords: ['performance', 'time', 'speed'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'autoPromoteToQueen',
+      category: 'gameplay',
+      label: 'Auto-Promote to Queen',
+      description: 'Automatically promote pawns to queen',
+      type: 'boolean',
+      value: false,
+      defaultValue: false,
+      targetElements: [],
+      keywords: ['promotion', 'pawn', 'queen'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'autoPromotionPiece',
+      category: 'gameplay',
+      label: 'Auto-Promotion Piece',
+      description: 'Which piece to auto-promote to',
+      type: 'select',
+      value: 'Q',
+      defaultValue: 'Q',
+      options: [
+        { label: 'Queen', value: 'Q' },
+        { label: 'Rook', value: 'R' },
+        { label: 'Bishop', value: 'B' },
+        { label: 'Knight', value: 'N' }
+      ],
+      dependencies: ['autoPromoteToQueen'],
+      targetElements: [],
+      keywords: ['promotion', 'pawn'],
+      previewType: 'apply'
+    });
+
+    // View preferences
+    this.register({
+      id: 'viewMode',
+      category: 'appearance',
+      label: 'View Mode',
+      description: 'Layout for chess and chat areas',
+      type: 'select',
+      value: 'chess-and-chat',
+      defaultValue: 'chess-and-chat',
+      options: [
+        { label: 'Chess Only', value: 'chess-only' },
+        { label: 'Chat Only', value: 'chat-only' },
+        { label: 'Chess and Chat', value: 'chess-and-chat' }
+      ],
+      targetElements: ['body'],
+      keywords: ['layout', 'view', 'mode'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'chessOrientation',
+      category: 'appearance',
+      label: 'Chess Orientation',
+      description: 'Portrait or landscape layout for chess area',
+      type: 'select',
+      value: 'landscape',
+      defaultValue: 'landscape',
+      options: [
+        { label: 'Landscape', value: 'landscape' },
+        { label: 'Portrait', value: 'portrait' }
+      ],
+      targetElements: ['.chess-game-layout'],
+      keywords: ['orientation', 'layout', 'portrait', 'landscape'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'showCapturedPieces',
+      category: 'board',
+      label: 'Show Captured Pieces',
+      description: 'Display captured pieces beside the board',
+      type: 'boolean',
+      value: false,
+      defaultValue: false,
+      targetElements: ['.captured-pieces'],
+      keywords: ['captured', 'taken', 'pieces'],
+      previewType: 'instant'
+    });
+
+    // Chat preferences
+    this.register({
+      id: 'showTimestamps',
+      category: 'chat',
+      label: 'Show Timestamps',
+      description: 'Display time for each message',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      targetElements: ['.chat-message'],
+      keywords: ['time', 'when', 'clock'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'highlightMentions',
+      category: 'chat',
+      label: 'Highlight Mentions',
+      description: 'Highlight messages that mention your username',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      targetElements: ['.chat-message'],
+      keywords: ['mention', 'highlight', 'username'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'openChannelsInTabs',
+      category: 'chat',
+      label: 'Open Channels in Tabs',
+      description: 'Open channel messages in separate tabs',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      targetElements: ['.chat-tabs'],
+      keywords: ['channel', 'tab', 'organize'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'openTellsInTabs',
+      category: 'chat',
+      label: 'Open Tells in Tabs',
+      description: 'Open private messages in separate tabs',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      targetElements: ['.chat-tabs'],
+      keywords: ['tell', 'private', 'message', 'tab'],
+      previewType: 'apply'
+    });
+
+    // Gameplay preferences
+    this.register({
+      id: 'autoAcceptRematch',
+      category: 'gameplay',
+      label: 'Auto-Accept Rematch',
+      description: 'Automatically accept rematch offers',
+      type: 'boolean',
+      value: false,
+      defaultValue: false,
+      targetElements: [],
+      keywords: ['rematch', 'auto', 'accept'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'confirmResign',
+      category: 'gameplay',
+      label: 'Confirm Resign',
+      description: 'Show confirmation dialog before resigning',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      targetElements: ['.resign-button'],
+      keywords: ['resign', 'confirm', 'safety'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'defaultTimeControl',
+      category: 'gameplay',
+      label: 'Default Time Control',
+      description: 'Default time control for seeks',
+      type: 'text',
+      value: '15 0',
+      defaultValue: '15 0',
+      targetElements: [],
+      keywords: ['time', 'control', 'seek', 'default'],
+      previewType: 'apply'
+    });
+
+    // Analysis preferences
+    this.register({
+      id: 'autoAnalyze',
+      category: 'gameplay',
+      label: 'Auto-Analyze',
+      description: 'Automatically start analysis after game',
+      type: 'boolean',
+      value: false,
+      defaultValue: false,
+      targetElements: [],
+      keywords: ['analysis', 'stockfish', 'engine'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'engineDepth',
+      category: 'gameplay',
+      label: 'Engine Depth',
+      description: 'Analysis depth for chess engine',
+      type: 'number',
+      value: 20,
+      defaultValue: 20,
+      min: 1,
+      max: 50,
+      step: 1,
+      targetElements: [],
+      keywords: ['depth', 'analysis', 'stockfish'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'showEvaluation',
+      category: 'gameplay',
+      label: 'Show Evaluation',
+      description: 'Display position evaluation',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      targetElements: ['.evaluation-bar'],
+      keywords: ['eval', 'score', 'analysis'],
+      previewType: 'instant'
+    });
+
+    // Advanced settings
+    this.register({
+      id: 'postLoginCommands',
+      category: 'advanced',
+      label: 'Post-Login Commands',
+      description: 'Commands to send after logging into FICS',
+      type: 'text',
+      value: 'set style 12\nset prompt\nset bell off\nset interface Simple FICS Interface',
+      defaultValue: 'set style 12\nset prompt\nset bell off\nset interface Simple FICS Interface',
+      targetElements: [],
+      keywords: ['login', 'commands', 'fics', 'startup'],
+      previewType: 'apply'
+    });
+
+    // Layout preference
+    this.register({
+      id: 'layout',
+      category: 'appearance',
+      label: 'Layout Mode',
+      description: 'Force specific layout or auto-detect',
+      type: 'select',
+      value: 'auto',
+      defaultValue: 'auto',
+      options: [
+        { label: 'Auto', value: 'auto' },
+        { label: 'Landscape', value: 'landscape' },
+        { label: 'Portrait', value: 'portrait' }
+      ],
+      targetElements: ['body'],
+      keywords: ['layout', 'responsive', 'auto'],
+      previewType: 'instant'
+    });
+
+    // Auto view mode
+    this.register({
+      id: 'autoViewMode',
+      category: 'appearance',
+      label: 'Auto View Mode',
+      description: 'Automatically select view mode based on screen size',
+      type: 'boolean',
+      value: true,
+      defaultValue: true,
+      targetElements: [],
+      keywords: ['auto', 'responsive', 'view'],
+      previewType: 'apply'
+    });
+
+    // From design doc - additional board settings
+    this.register({
+      id: 'highlightLastMoveDuration',
+      category: 'board',
+      label: 'Highlight Last Move Duration',
+      description: 'How long to highlight the last move',
+      type: 'select',
+      value: 'always',
+      defaultValue: 'always',
+      options: [
+        { label: 'Always', value: 'always' },
+        { label: '3 seconds', value: '3s' },
+        { label: '5 seconds', value: '5s' },
+        { label: 'Never', value: 'never' }
+      ],
+      targetElements: ['.chess-board'],
+      keywords: ['highlight', 'last move', 'duration'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'premoveHighlightColor',
+      category: 'board',
+      label: 'Premove Highlight Color',
+      description: 'Color for premove highlighting',
+      type: 'color',
+      value: '#ffff00',
+      defaultValue: '#ffff00',
+      targetElements: ['.chess-board'],
+      keywords: ['premove', 'color', 'highlight'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'checkIndicatorStyle',
+      category: 'board',
+      label: 'Check Indicator Style',
+      description: 'How to show when king is in check',
+      type: 'select',
+      value: 'border',
+      defaultValue: 'border',
+      options: [
+        { label: 'Border', value: 'border' },
+        { label: 'Glow', value: 'glow' },
+        { label: 'King Highlight', value: 'king-highlight' },
+        { label: 'None', value: 'none' }
+      ],
+      targetElements: ['.chess-board'],
+      keywords: ['check', 'indicator', 'king'],
+      previewType: 'instant'
+    });
+
+    // Clock settings from design doc
+    this.register({
+      id: 'clockPosition',
+      category: 'board',
+      label: 'Clock Position',
+      description: 'Where to display player clocks',
+      type: 'select',
+      value: 'sides',
+      defaultValue: 'sides',
+      options: [
+        { label: 'Sides', value: 'sides' },
+        { label: 'Top/Bottom', value: 'top-bottom' },
+        { label: 'Bottom Only', value: 'bottom' }
+      ],
+      targetElements: ['.player-clock'],
+      keywords: ['clock', 'position', 'time'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'lowTimeThreshold',
+      category: 'gameplay',
+      label: 'Low Time Warning',
+      description: 'Show warning when time drops below (seconds)',
+      type: 'number',
+      value: 30,
+      defaultValue: 30,
+      min: 5,
+      max: 60,
+      step: 5,
+      unit: 's',
+      targetElements: ['.player-clock'],
+      keywords: ['time', 'warning', 'threshold'],
+      previewType: 'apply'
+    });
+
+    this.register({
+      id: 'showMillisecondsUnder',
+      category: 'board',
+      label: 'Show Milliseconds Under',
+      description: 'Show tenths of seconds when time is below (seconds)',
+      type: 'number',
+      value: 10,
+      defaultValue: 10,
+      min: 0,
+      max: 30,
+      step: 5,
+      unit: 's',
+      targetElements: ['.player-clock'],
+      keywords: ['milliseconds', 'time', 'precision'],
+      previewType: 'instant'
+    });
+
+    // Player context menu commands
+    this.register({
+      id: 'playerContextCommands',
+      category: 'advanced',
+      label: 'Player Context Commands',
+      description: 'Commands shown when clicking on player names',
+      type: 'text', // TODO: Should be a custom editor
+      value: JSON.stringify([
+        { label: 'Finger', command: 'finger {player}' },
+        { label: 'History', command: 'hi {player}' },
+        { label: 'Variables', command: 'vars {player}' },
+        { divider: true },
+        { label: 'Censor', command: '+censor {player}' },
+        { label: 'No Play', command: '+noplay {player}' }
+      ]),
+      defaultValue: JSON.stringify([
+        { label: 'Finger', command: 'finger {player}' },
+        { label: 'History', command: 'hi {player}' },
+        { label: 'Variables', command: 'vars {player}' },
+        { divider: true },
+        { label: 'Censor', command: '+censor {player}' },
+        { label: 'No Play', command: '+noplay {player}' }
+      ]),
+      targetElements: ['.player-name'],
+      keywords: ['context', 'menu', 'player', 'commands'],
+      previewType: 'apply'
+    });
+
+    // TODO: Console colors and fonts need special handling
+    // as they're complex objects with light/dark themes
+    // For now, adding a placeholder
+    this.register({
+      id: 'consoleTheme',
+      category: 'chat',
+      label: 'Console Theme',
+      description: 'Color scheme for FICS console output',
+      type: 'select',
+      value: 'default',
+      defaultValue: 'default',
+      options: [
+        { label: 'Default', value: 'default' },
+        { label: 'High Contrast', value: 'high-contrast' },
+        { label: 'Colorful', value: 'colorful' },
+        { label: 'Minimal', value: 'minimal' }
+      ],
+      targetElements: ['.console-output'],
+      keywords: ['console', 'colors', 'theme'],
+      previewType: 'instant'
+    });
   }
 
   register(setting: SettingDefinition) {

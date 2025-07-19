@@ -215,6 +215,36 @@ const Select = styled.select`
   }
 `;
 
+const NumberInput = styled.input`
+  padding: ${props => props.theme.spacing[2]} ${props => props.theme.spacing[3]};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.md};
+  background-color: ${props => props.theme.colors.background};
+  color: ${props => props.theme.colors.text};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+  width: 80px;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const ColorInput = styled.input`
+  width: 60px;
+  height: 32px;
+  padding: ${props => props.theme.spacing[1]};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.md};
+  background-color: ${props => props.theme.colors.background};
+  cursor: pointer;
+  
+  &:focus {
+    outline: none;
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
 const Footer = styled.div`
   display: flex;
   justify-content: space-between;
@@ -305,6 +335,34 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = observer(({ isOpen,
               </option>
             ))}
           </Select>
+        );
+      
+      case 'number':
+        return (
+          <NumberInput
+            type="number"
+            value={setting.value}
+            min={setting.min}
+            max={setting.max}
+            step={setting.step}
+            onChange={(e) => handleSettingChange(setting.id, Number(e.target.value))}
+          />
+        );
+      
+      case 'color':
+        return (
+          <ColorInput
+            type="color"
+            value={setting.value}
+            onChange={(e) => handleSettingChange(setting.id, e.target.value)}
+          />
+        );
+      
+      case 'text':
+        return (
+          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+            Text input not yet implemented
+          </span>
         );
       
       default:
