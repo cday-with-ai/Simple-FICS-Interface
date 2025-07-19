@@ -16,8 +16,6 @@ const Container = styled.div<{ $compact: boolean }>`
   flex-direction: column;
   height: 100%;
   background-color: ${props => props.theme.colors.surface};
-  border-radius: ${props => props.theme.borderRadius.container};
-  box-shadow: ${props => props.theme.shadows.container};
   overflow: hidden;
   min-height: ${props => props.$compact ? '200px' : '300px'};
 `;
