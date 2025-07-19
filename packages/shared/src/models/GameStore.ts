@@ -198,8 +198,6 @@ export class GameStore {
     updateFromStyle12(style12: Style12) {
         runInAction(() => {
             try {
-                // Set flag to prevent animations for server updates
-                this.isProcessingServerUpdate = true;
                 // Convert Style12 board array to string format for style12ToFen
                 // Style12 board is already in the correct format (8x8 array of strings)
                 const boardRows = style12.board.map(row => row.join(''));
@@ -288,6 +286,11 @@ export class GameStore {
                         // This handles mid-game joins where we get a style12 with a move
                         const lastHistoryMove = this.moveHistory[this.moveHistory.length - 1];
                         if (!lastHistoryMove || lastHistoryMove.san !== style12.prettyMove) {
+                            // Only prevent animations for opponent moves when we're playing
+                            // Check the relation to see if this is an opponent's move (relation = -1)
+                            if (style12.relation === -1) {
+                                this.isProcessingServerUpdate = true;
+                            }
                             // Create a move object from the style12 data
                             // verboseMove format is like "P/g2-g3" or "o-o" for castling
                             let from = '';
