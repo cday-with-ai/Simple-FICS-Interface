@@ -130,6 +130,10 @@ export class GameStore {
 
     makeMove(from: string, to: string, promotion?: string) {
         try {
+            // First check if the move would be a capture (before making it)
+            const targetSquare = this.chessBoard.getPiece(to);
+            const isCapture = targetSquare !== null;
+            
             const move = this.chessBoard.makeLongAlgebraicMove(from, to, promotion as any);
             if (move) {
                 runInAction(() => {
@@ -156,11 +160,15 @@ export class GameStore {
                 // Send move to FICS if connected
                 this.rootStore?.ficsStore.sendCommand(from + to + (promotion || ''));
                 return true;
+            } else {
+                // Move failed - if it was an attempted capture, we need to play illegal sound
+                // This will be handled by the caller (ChessGameLayout)
+                return false;
             }
         } catch (error) {
             console.error('Invalid move:', error);
+            return false;
         }
-        return false;
     }
 
     makeSANMove(san: string) {
@@ -314,11 +322,16 @@ export class GameStore {
                             this.currentMoveIndex = this.moveHistory.length - 1;
                             // Move added to history
                             
-                            // Play move sound - check if it's a capture
-                            if (style12.prettyMove.includes('x')) {
-                                this.rootStore?.soundStore?.playCapture();
-                            } else {
-                                this.rootStore?.soundStore?.playMove();
+                            // Play move sound only for:
+                            // 1. Opponent moves when playing (relation = -1)
+                            // 2. All moves when observing (relation = 0 or -2)
+                            // Our own moves (relation = 1) already played sound in makeMove()
+                            if (style12.relation !== 1) {
+                                if (style12.prettyMove.includes('x')) {
+                                    this.rootStore?.soundStore?.playCapture();
+                                } else {
+                                    this.rootStore?.soundStore?.playMove();
+                                }
                             }
                         }
                     }
