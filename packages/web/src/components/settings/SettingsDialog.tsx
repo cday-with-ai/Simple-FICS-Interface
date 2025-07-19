@@ -62,16 +62,20 @@ const CloseButton = styled.button`
   }
 `;
 
+const SearchContainer = styled.div`
+  padding: ${props => props.theme.spacing[3]};
+  padding-bottom: 0;
+`;
+
 const SearchBar = styled.input`
   width: 100%;
   padding: ${props => props.theme.spacing[3]};
-  margin: ${props => props.theme.spacing[3]};
-  margin-bottom: 0;
   border: 1px solid ${props => props.theme.colors.border};
   border-radius: ${props => props.theme.borderRadius.md};
   background-color: ${props => props.theme.colors.background};
   color: ${props => props.theme.colors.text};
   font-size: ${props => props.theme.typography.fontSize.md};
+  box-sizing: border-box;
   
   &::placeholder {
     color: ${props => props.theme.colors.textTertiary};
@@ -121,6 +125,7 @@ const SettingsArea = styled.div`
   flex: 1;
   padding: ${props => props.theme.spacing[4]};
   overflow-y: auto;
+  min-width: 0; // Prevent flex child from overflowing
 `;
 
 const SettingGroup = styled.div`
@@ -223,6 +228,12 @@ const FooterButtons = styled.div`
   gap: ${props => props.theme.spacing[3]};
 `;
 
+const SearchInfo = styled.p`
+  margin: 0 0 ${props => props.theme.spacing[4]} 0;
+  color: ${props => props.theme.colors.textSecondary};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+`;
+
 const Button = styled.button<{ $variant?: 'primary' | 'secondary' }>`
   padding: ${props => props.theme.spacing[2]} ${props => props.theme.spacing[4]};
   border: none;
@@ -309,12 +320,14 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = observer(({ isOpen,
           <CloseButton onClick={onClose}>✕</CloseButton>
         </Header>
         
-        <SearchBar
-          type="text"
-          placeholder="Search settings..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+        <SearchContainer>
+          <SearchBar
+            type="text"
+            placeholder="Search settings..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </SearchContainer>
         
         <Content>
           <Sidebar>
@@ -335,9 +348,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = observer(({ isOpen,
           
           <SettingsArea>
             {searchQuery && (
-              <p style={{ marginBottom: '20px', color: 'var(--text-secondary)' }}>
+              <SearchInfo>
                 Found {settings.length} settings matching "{searchQuery}"
-              </p>
+              </SearchInfo>
             )}
             
             <SettingGroup>

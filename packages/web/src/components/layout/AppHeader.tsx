@@ -156,6 +156,20 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
   // Orientation toggle is disabled in chat-only mode
   const isOrientationDisabled = viewMode === 'chat-only';
   
+  // Keyboard shortcut for settings
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+, or Cmd+, for settings
+      if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault();
+        setShowSettings(true);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+  
   return (
     <HeaderContainer>
       <LogoSection>
