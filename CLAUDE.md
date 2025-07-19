@@ -20,8 +20,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 yarn install
 
-# Run web development server
+# Run web development server (default port 5173)
 yarn web
+
+# Run web development server in dev mode (port 14040)
+yarn dev
+
+# Run web development server for Claude (port 14080)
+yarn claude
 
 # Build web app
 yarn build:web
@@ -145,11 +151,32 @@ yarn workspace @fics/shared test:watch
 - Player names are clickable (not right-click) for context menu
 - Console tab shows FICS output with smart scrolling
 
+## Development Modes
+
+The project supports multiple development server configurations:
+
+- **`yarn web`** - Standard development server (port 5173)
+  - Default Vite configuration
+  - Auto-opens browser
+  - Hot module replacement enabled
+
+- **`yarn dev`** - Enhanced development mode (port 14040)
+  - Development-specific optimizations
+  - External network access enabled
+  - Ideal for team development
+
+- **`yarn claude`** - Claude-specific development mode (port 14080)
+  - Optimized for Claude Code assistance
+  - External host access enabled
+  - Separate port to avoid conflicts
+
 ## Common Commands Reference
 
 ```bash
 # Development
-yarn web                    # Start dev server
+yarn web                    # Start dev server (port 5173)
+yarn dev                    # Enhanced dev mode (port 14040)
+yarn claude                 # Claude dev mode (port 14080)
 yarn build:web             # Build for production
 yarn test                  # Run all tests
 yarn typecheck             # Check TypeScript

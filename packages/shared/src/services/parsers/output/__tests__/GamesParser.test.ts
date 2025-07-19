@@ -72,4 +72,37 @@ describe('GamesParser', () => {
         expect(gmElement).toBeDefined();
         expect(gmElement?.action).toBe('finger SuperGM'); // Title stripped from action
     });
+    
+    it('should handle FICS line endings correctly', () => {
+        // Using actual FICS format with \n\r line endings
+        const message = "\n\r  3 (Exam. 1573 AFCERGY     1482 elrukapill) [pbr  3   0] B: 46\n\r  6 ++++ GuestWDBZ   ++++ GuestQYGG  [ bu  5   2]   4:30 -  4:35 (35-38) B:  9\n\r  8 ++++ GuestWFGM   ++++ GuestKNJJ  [ bu 10   5]  10:10 - 10:04 (35-35) W:  7\n\r\n\r  3 games displayed.\n\r";
+        
+        expect(parser.canParse(message)).toBe(true);
+        
+        const result = parser.parse(message);
+        
+        expect(result).not.toBeNull();
+        expect(result?.elements).toBeDefined();
+        
+        const elements = result?.elements || [];
+        
+        // Should have elements for all 3 games
+        // Game 3 is examination mode, should not have player elements but may have observe command
+        const game3Elements = elements.filter(e => e.text === '3' && e.type === 'gameNumber');
+        expect(game3Elements.length).toBeGreaterThan(0);
+        
+        // Game 6 should have player elements
+        const game6Num = elements.find(e => e.type === 'gameNumber' && e.text === '6');
+        expect(game6Num).toBeDefined();
+        
+        const guestWDBZ = elements.find(e => e.type === 'player' && e.text === 'GuestWDBZ');
+        expect(guestWDBZ).toBeDefined();
+        
+        const guestQYGG = elements.find(e => e.type === 'player' && e.text === 'GuestQYGG');
+        expect(guestQYGG).toBeDefined();
+        
+        // Game 8 should also have player elements
+        const game8Num = elements.find(e => e.type === 'gameNumber' && e.text === '8');
+        expect(game8Num).toBeDefined();
+    });
 });

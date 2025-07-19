@@ -137,9 +137,12 @@ export function parseMessage(msg: string): FicsMessage[] {
                 if (parser.canParse(segment)) {
                     const result = parser.parse(segment);
                     if (result) {
+                        // For movesList messages, use the metadata as the data
+                        const data = parser.name === 'movesList' && result.metadata ? result.metadata : result;
+                        
                         results.push({
                             type: parser.name as any,
-                            data: result
+                            data: data
                         });
                         parsed = true;
                         break;
@@ -167,9 +170,12 @@ export function parseMessage(msg: string): FicsMessage[] {
         if (parser.canParse(normalizedMsg)) {
             const result = parser.parse(normalizedMsg);
             if (result) {
+                // For movesList messages, use the metadata as the data
+                const data = parser.name === 'movesList' && result.metadata ? result.metadata : result;
+                
                 return [{
                     type: parser.name as any,
-                    data: result
+                    data: data
                 }];
             }
         }
@@ -222,9 +228,12 @@ export function parseMessageWithStores(msg: string, stores: RootStore): FicsMess
             for (const parser of candidateParsers) {
                 const result = parser.handle(segment, stores);
                 if (result) {
+                    // For movesList messages, use the metadata as the data
+                    const data = parser.name === 'movesList' && result.metadata ? result.metadata : result;
+                    
                     results.push({
                         type: parser.name as any,
-                        data: result
+                        data: data
                     });
                     parsed = true;
                     break;
@@ -253,9 +262,12 @@ export function parseMessageWithStores(msg: string, stores: RootStore): FicsMess
     for (const parser of candidateParsers) {
         const result = parser.handle(normalizedMsg, stores);
         if (result) {
+            // For movesList messages, use the metadata as the data
+            const data = parser.name === 'movesList' && result.metadata ? result.metadata : result;
+            
             return [{
                 type: parser.name as any,
-                data: result
+                data: data
             }];
         }
     }

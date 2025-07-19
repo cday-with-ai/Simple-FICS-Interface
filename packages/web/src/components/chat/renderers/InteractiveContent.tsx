@@ -183,7 +183,7 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
             key={key}
             onClick={() => handleAction(element.action, element.type)}
           >
-            Game {element.text}
+            {element.text}
           </GameNumberLink>
         );
         break;

@@ -66,6 +66,21 @@ export default defineConfig({
 
     // Required for Stockfish WebAssembly with SharedArrayBuffer
     server: {
+        // Default port logic: use environment-specific ports
+        port: (() => {
+            // Check if we're running the claude script specifically
+            if (process.argv.includes('--port') && process.argv.includes('14080')) {
+                return 14080;
+            }
+            // Check for dev script
+            if (process.argv.includes('--port') && process.argv.includes('14040')) {
+                return 14040;
+            }
+            // Default port for yarn web
+            return 5173;
+        })(),
+        host: true, // Allow external connections in dev mode
+        open: true, // Auto-open browser in dev mode
         headers: {
             'Cross-Origin-Embedder-Policy': 'require-corp',
             'Cross-Origin-Opener-Policy': 'same-origin',
@@ -120,5 +135,8 @@ export default defineConfig({
     // Define global constants
     define: {
         __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
+        __DEV_MODE__: JSON.stringify(process.env.NODE_ENV === 'development'),
+        __DEV_PORT__: JSON.stringify(14040),
+        __CLAUDE_PORT__: JSON.stringify(14080),
     }
 })

@@ -47,7 +47,7 @@ export class Style12Parser extends BaseParser {
         const parts = cleanLine.split(' ').filter(p => p.length > 0);
         
         if (parts.length < 31) {
-            console.error('Style12 parser: Not enough parts', parts.length, parts);
+            // Style12 requires at least 31 fields
             return null;
         }
 
@@ -56,7 +56,7 @@ export class Style12Parser extends BaseParser {
         for (let i = 0; i < 8; i++) {
             const rank = parts[i];
             if (!rank || rank.length !== 8) {
-                console.error('Style12 parser: Invalid rank', i, rank);
+                // Invalid board rank
                 return null;
             }
             board.push(rank.split(''));

@@ -8,7 +8,6 @@ abstract class ConsoleRenderer extends MessageRenderer {
   render({ message, onCommandClick }: MessageRendererProps): React.ReactNode {
     const parsedMessage = message.metadata?.parsedMessage;
     
-    
     return (
       <PreformattedMessageRow 
         $color={message.metadata?.color || undefined}

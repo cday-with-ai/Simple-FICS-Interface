@@ -9,7 +9,7 @@ describe('Style12Parser', () => {
 
     describe('canParse', () => {
         it('should return true for messages containing <12>', () => {
-            expect(parser.canParse('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0')).toBe(true);
+            expect(parser.canParse('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0 0 0')).toBe(true);
         });
 
         it('should return false for messages without <12>', () => {
@@ -19,7 +19,7 @@ describe('Style12Parser', () => {
 
     describe('parse', () => {
         it('should parse a standard Style12 message', () => {
-            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0';
+            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0 0 0';
             const result = parser.parse(message);
 
             expect(result).not.toBeNull();
@@ -42,7 +42,7 @@ describe('Style12Parser', () => {
         });
 
         it('should parse Style12 message with <b1> holdings', () => {
-            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0\n<b1> 1 PN [pn]';
+            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0 0 0\n<b1> 1 PN [pn]';
             const result = parser.parse(message);
 
             expect(result).not.toBeNull();
@@ -54,7 +54,7 @@ describe('Style12Parser', () => {
         });
 
         it('should parse Style12 message with empty <b1> holdings', () => {
-            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0\n<b1> 1  []';
+            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0 0 0\n<b1> 1  []';
             const result = parser.parse(message);
 
             expect(result).not.toBeNull();
@@ -66,7 +66,7 @@ describe('Style12Parser', () => {
         });
 
         it('should ignore <b1> message for different game number', () => {
-            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0\n<b1> 2 PN [pn]';
+            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0 0 0\n<b1> 2 PN [pn]';
             const result = parser.parse(message);
 
             expect(result).not.toBeNull();
@@ -78,7 +78,7 @@ describe('Style12Parser', () => {
         });
 
         it('should handle Style12 without <b1> message', () => {
-            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0';
+            const message = '<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 1 TestPlayer Opponent 1 5 0 39 39 300 300 1 none (0:00) none 0 0 0';
             const result = parser.parse(message);
 
             expect(result).not.toBeNull();

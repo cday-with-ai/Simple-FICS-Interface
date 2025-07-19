@@ -24,8 +24,9 @@ export abstract class BaseParser implements Parser {
     
     // Common utility methods for all parsers
     protected splitLines(message: string): string[] {
-        // Split on newlines and filter out empty lines
-        return message.split('\n').filter(line => line.trim().length > 0);
+        // Split on FICS line endings (\n\r or \r\n) and regular newlines
+        // FICS uses \n\r as line endings
+        return message.split(/\r?\n\r?/).filter(line => line.trim().length > 0);
     }
     
     // Utility method to strip titles from usernames

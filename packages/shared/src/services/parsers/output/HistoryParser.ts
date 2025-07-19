@@ -48,11 +48,8 @@ export class HistoryParser extends BaseParser {
                     date: '' // Will be parsed from rest of line
                 });
                 
-                // Add opponent as clickable
-                const opponentIndex = offset + line.indexOf(opponent, 20); // Start search after ratings
-                elements.push(ParserUtils.createPlayerElement(opponent, opponentIndex));
-                
                 // Make the whole line clickable to examine the game
+                // Don't add individual player elements as they would overlap
                 elements.push(ParserUtils.createCommandElement(
                     line.trim(),
                     `examine ${player} ${index}`,

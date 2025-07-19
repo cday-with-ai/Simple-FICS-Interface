@@ -49,15 +49,8 @@ export class JournalParser extends BaseParser {
                     gameInfo
                 });
                 
-                // Add white player as clickable
-                const whiteIndex = offset + line.indexOf(white);
-                elements.push(ParserUtils.createPlayerElement(white, whiteIndex));
-                
-                // Add black player as clickable
-                const blackIndex = offset + line.indexOf(black, whiteIndex + white.length);
-                elements.push(ParserUtils.createPlayerElement(black, blackIndex));
-                
                 // Make the whole line clickable to examine the game
+                // Don't add individual player elements as they would overlap
                 elements.push(ParserUtils.createCommandElement(
                     line.trim(),
                     `examine ${player} %${index}`,
