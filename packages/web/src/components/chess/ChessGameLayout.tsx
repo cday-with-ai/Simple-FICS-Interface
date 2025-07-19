@@ -129,15 +129,15 @@ const BottomBoardInfo = styled.div`
 `;
 
 // Landscape-specific info components
-const LandscapeTopInfo = styled(TopBoardInfo)<{ $hasAnalysis?: boolean }>`
+const LandscapeTopInfo = styled(TopBoardInfo)`
     margin-bottom: -6px;
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '480px' : '400px'}));
+    max-width: min(calc(100vh - 140px), calc(100vw - 480px));
     padding: 0 11px;
 `;
 
-const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $hasAnalysis?: boolean }>`
+const LandscapeBottomInfo = styled(BottomBoardInfo)`
     margin-top: -6px;
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '480px' : '400px'}));
+    max-width: min(calc(100vh - 140px), calc(100vw - 480px));
     padding: 0 11px;
 `;
 
@@ -187,7 +187,7 @@ const OpeningInfo = styled.div`
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $hasAnalysis?: boolean }>`
+const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
     position: relative;
     display: flex;
     align-items: center;
@@ -198,8 +198,8 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $hasA
     max-width: 600px;
     max-height: 600px;
   ` : `
-    width: min(calc(100vh - 140px), calc(100vw - ${props.$hasAnalysis ? '480px' : '400px'}));
-    height: min(calc(100vh - 140px), calc(100vw - ${props.$hasAnalysis ? '480px' : '400px'}));
+    width: min(calc(100vh - 140px), calc(100vw - 480px));
+    height: min(calc(100vh - 140px), calc(100vw - 480px));
     max-width: calc(100vh - 140px);
     max-height: calc(100vh - 140px);
   `}
@@ -443,9 +443,9 @@ const ExtraControlsContainer = styled.div`
     width: 100%;
 `;
 
-const LandscapeAnalysisInfo = styled.div<{ $hasAnalysis?: boolean }>`
+const LandscapeAnalysisInfo = styled.div`
     margin-top: ${props => props.theme.spacing[1]};
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '480px' : '400px'}));
+    max-width: min(calc(100vh - 140px), calc(100vw - 480px));
     width: 100%;
     padding: 0 11px;
 `;
@@ -942,7 +942,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                     <ChessSection $orientation="landscape">
                         <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
                             <BoardArea>
-                                <LandscapeTopInfo $hasAnalysis={isAnalysisActive}>
+                                <LandscapeTopInfo>
                                     <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
                                     <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                 </LandscapeTopInfo>
@@ -950,7 +950,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     {isAnalysisActive && (
                                         <AnalysisDisplay orientation="vertical"/>
                                     )}
-                                    <BoardWrapper $orientation="landscape" $hasAnalysis={isAnalysisActive}>
+                                    <BoardWrapper $orientation="landscape">
                                         <ChessBoardWithPieces
                                             position={position}
                                             flipped={boardFlipped}
@@ -965,7 +965,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         />
                                     </BoardWrapper>
                                 </BoardWithAnalysis>
-                                <LandscapeBottomInfo $hasAnalysis={isAnalysisActive}>
+                                <LandscapeBottomInfo>
                                     <LastMoveInfo>
                                         {gameStore.premove ? 
                                             `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
@@ -977,7 +977,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     )}
                                 </LandscapeBottomInfo>
                                 {isAnalysisActive && (
-                                    <LandscapeAnalysisInfo $hasAnalysis={isAnalysisActive}>
+                                    <LandscapeAnalysisInfo>
                                         <AnalysisInfoDisplay/>
                                     </LandscapeAnalysisInfo>
                                 )}
