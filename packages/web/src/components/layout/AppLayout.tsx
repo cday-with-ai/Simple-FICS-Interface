@@ -71,18 +71,19 @@ export const AppLayout: React.FC = observer(() => {
   const [chatPanelWidth, setChatPanelWidth] = useState(600); // Start fully expanded
   const [isResizing, setIsResizing] = useState(false);
   
-  // Auto-select view mode based on viewport
+  // Auto-select view mode based on viewport - only once at startup
   useEffect(() => {
     if (autoViewMode) {
-      if (layout.isMobile) {
-        preferencesStore.updatePreference('viewMode', 'chess-only');
-      } else if (layout.isTablet) {
+      // Set initial view mode based on device type
+      if (layout.isMobile || layout.isTablet) {
         preferencesStore.updatePreference('viewMode', 'chess-only');
       } else {
         preferencesStore.updatePreference('viewMode', 'chess-and-chat');
       }
+      // Disable auto view mode after initial setup
+      preferencesStore.updatePreference('autoViewMode', false);
     }
-  }, [layout.isMobile, layout.isTablet, autoViewMode, preferencesStore]);
+  }, []); // Empty dependency array - only run once on mount
   
   // Handle splitter resize
   const handleMouseDown = (e: React.MouseEvent) => {
