@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import type { ViewMode, ChessOrientation } from '@fics/shared';
 import { useTheme } from '../../theme';
+import { SettingsDialog } from '../settings';
 
 const HeaderContainer = styled.header`
   height: 56px;
@@ -138,6 +139,7 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
   const { preferencesStore } = useRootStore();
   const { viewMode, chessOrientation } = preferencesStore.preferences;
   const { themePreference, setTheme } = useTheme();
+  const [showSettings, setShowSettings] = useState(false);
   
   const handleViewModeChange = (mode: ViewMode) => {
     preferencesStore.updatePreference('viewMode', mode);
@@ -245,7 +247,20 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
             </ToggleButton>
           </ToggleContainer>
         </ToggleGroup>
+        
+        <MenuButton 
+          onClick={() => setShowSettings(true)} 
+          aria-label="Settings"
+          title="Settings (Ctrl+,)"
+        >
+          ⚙️
+        </MenuButton>
       </ControlsSection>
+      
+      <SettingsDialog 
+        isOpen={showSettings} 
+        onClose={() => setShowSettings(false)} 
+      />
     </HeaderContainer>
   );
 });

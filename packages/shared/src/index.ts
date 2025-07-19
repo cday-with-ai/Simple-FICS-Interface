@@ -26,6 +26,8 @@ export {default as StockfishEngine} from './services/StockfishEngine';
 export type {AnalysisResult, AnalysisOptions, AnalysisCallback} from './services/StockfishEngine';
 export {SoundService, getSoundService} from './services/SoundService';
 export type {SoundType, SoundServiceInterface} from './services/SoundService';
+export {SettingsRegistry} from './services/SettingsRegistry';
+export type {SettingDefinition, SettingCategory, SettingType, PreviewState, SettingsExport} from './types/Settings.types';
 
 // Contexts (React integration)
 export {

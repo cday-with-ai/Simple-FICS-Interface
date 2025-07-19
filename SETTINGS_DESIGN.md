@@ -190,14 +190,56 @@ class SettingsSearch {
 - Custom context menus
 - Export/import settings
 - Reset options
+- Settings backup/restore
 
-### 7. Implementation Phases
+### 7. Settings Import/Export
+
+#### File Format
+```json
+{
+  "version": "1.0.0",
+  "exportDate": "2024-01-20T10:30:00Z",
+  "appVersion": "2.5.0",
+  "settings": {
+    "appearance": { ... },
+    "board": { ... },
+    "chat": { ... },
+    "sounds": { ... }
+  }
+}
+```
+
+#### Export Features
+- Download as JSON file
+- Copy to clipboard option
+- Include/exclude specific categories
+- Automatic filename with date: `fics-settings-2024-01-20.json`
+- Compress large settings (base64 encoded custom sounds)
+
+#### Import Features
+- Drag & drop JSON file onto settings dialog
+- Browse and select file
+- Paste from clipboard
+- Preview changes before applying
+- Validation with helpful error messages
+- Merge or replace options
+- Version compatibility checking
+
+#### Use Cases
+- Transfer settings between browsers
+- Share settings with friends
+- Backup before major changes
+- Create and share setting presets
+- Distribute team/club standard settings
+
+### 8. Implementation Phases
 
 #### Phase 1: Core Infrastructure
 - Settings registry
 - Search functionality
 - Basic settings dialog
 - Migrate existing preferences
+- Import/export functionality
 
 #### Phase 2: Magic Wand
 - Element detection system
@@ -208,10 +250,10 @@ class SettingsSearch {
 #### Phase 3: Advanced Features
 - Setting dependencies
 - Preset themes
-- Cloud sync
 - Setting profiles
+- Shareable setting URLs
 
-### 8. Technical Considerations
+### 9. Technical Considerations
 
 #### Performance
 - Lazy load setting components
@@ -230,6 +272,292 @@ class SettingsSearch {
 - Swipe gestures
 - Simplified magic wand
 - Touch-optimized controls
+
+## Settings UI/UX Design Philosophy
+
+### Invisible Until Needed
+The settings system should be completely out of the way during normal use, appearing only when explicitly requested.
+
+### Access Points
+
+#### 1. **Magic Wand Mode** (Primary)
+- **Activation**: Hold `Cmd/Ctrl + Shift` or click wand icon
+- **Visual**: Subtle purple cursor, hoverable elements glow
+- **Interaction**: Click any element to see its settings
+- **Exit**: Click empty space, press Escape, or release keys
+
+#### 2. **Command Palette** (Power Users)
+- **Activation**: `Cmd/Ctrl + K` 
+- **Usage**: Type to search any setting
+- **Examples**:
+  - "piece" → Shows piece set options
+  - "font size" → Shows all font size settings
+  - "theme" → Shows theme options
+
+#### 3. **Minimal Settings Icon**
+- **Location**: Bottom-right corner, semi-transparent
+- **Behavior**: Only visible on hover in corner area
+- **Click**: Opens full settings dialog
+- **Right-click**: Recent settings
+
+### Interface Principles
+
+#### No Persistent UI
+- No settings toolbar
+- No settings sidebar  
+- No permanent settings button
+- Settings icon only appears on hover
+
+#### Context-Aware Appearance
+- Quick settings appear as floating cards
+- Position intelligently to not cover important content
+- Auto-dismiss when clicking elsewhere
+- Smooth fade in/out animations
+
+#### Progressive Disclosure
+```
+Click piece with magic wand →
+┌─────────────────┐
+│ Piece Style     │
+│ [Standard ▼]    │
+│                 │
+│ Animation Speed │
+│ [●────] 250ms   │
+│                 │
+│ [More...]       │
+└─────────────────┘
+```
+
+#### Smart Grouping
+When clicking an element, only show:
+1. Most commonly changed settings (2-3 items)
+2. "More..." link for advanced options
+3. Related settings grouped together
+
+### Visual Design
+
+#### Floating Cards
+```css
+.quick-settings {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  min-width: 200px;
+  max-width: 320px;
+}
+```
+
+#### Dark Mode Support
+- Cards adapt to current theme
+- Subtle transparency for depth
+- High contrast for readability
+
+### Mobile Adaptation
+
+#### Touch-Friendly
+- Long press instead of hover
+- Larger tap targets (44px minimum)
+- Bottom sheet for settings
+- Swipe down to dismiss
+
+#### Gesture Support
+- Two-finger tap for magic wand
+- Swipe from corner for settings
+- Pinch for quick zoom settings
+
+### Performance Optimizations
+
+#### Lazy Loading
+- Settings components load on-demand
+- Magic wand overlay uses CSS only
+- No JS execution until interaction
+
+#### Efficient Detection
+```typescript
+// Use event delegation for performance
+document.addEventListener('click', (e) => {
+  if (!magicWandActive) return;
+  
+  const settingsTarget = e.target.closest('[data-settings]');
+  if (settingsTarget) {
+    showQuickSettings(settingsTarget);
+  }
+});
+```
+
+### Keyboard Navigation
+
+#### Quick Access
+- `Cmd/Ctrl + K` - Command palette
+- `Cmd/Ctrl + ,` - Full settings
+- `Escape` - Close any settings UI
+- `Tab` - Navigate between settings
+
+#### Magic Wand Shortcuts
+- Hold modifier keys - Activate wand
+- Click - Show settings
+- Escape - Exit wand mode
+
+### Discoverability
+
+#### First-Time User Experience
+1. Subtle animation on corner hover
+2. Tooltip: "Settings (Ctrl+,)"
+3. One-time hint for magic wand
+4. Tutorial on first use
+
+#### Learning Curve
+- Consistent shortcuts across platforms
+- Visual feedback for all actions
+- Undo/redo for setting changes
+- "Reset to default" always visible
+
+### Preview System
+
+#### Live Preview
+Settings changes preview immediately without saving:
+
+```typescript
+interface PreviewState {
+  isPreviewActive: boolean;
+  originalSettings: SettingsSnapshot;
+  previewSettings: SettingsSnapshot;
+  timeout: NodeJS.Timeout | null;
+}
+```
+
+#### Preview UI Pattern
+```
+┌─────────────────────────┐
+│ Board Theme             │
+│ [Classic ▼]             │
+│                         │
+│ ✓ Live Preview          │
+│                         │
+│ [Apply] [Cancel]        │
+└─────────────────────────┘
+```
+
+#### Preview Behaviors
+
+**Instant Preview Types:**
+- Visual changes (themes, colors, fonts)
+- Board appearance (piece sets, coordinates)
+- UI layouts (clock position, panel sizes)
+- Animation speeds (shown with demo move)
+
+**Confirmation Required Types:**
+- Sound changes (play sample, then confirm)
+- Keyboard shortcuts (avoid conflicts)
+- Behavioral changes (auto-accept, confirmations)
+- Performance settings (may affect stability)
+
+#### Preview Implementation
+
+**1. Hover Preview** (for dropdowns)
+```typescript
+// Hovering over piece set options shows preview
+onHover(pieceSet) {
+  temporarilyApply(pieceSet);
+  showPreviewBadge("Previewing...");
+}
+```
+
+**2. Temporary Apply**
+```typescript
+// Changes apply to UI but not saved
+const previewSetting = (key, value) => {
+  // Store original
+  previewState.original[key] = currentSettings[key];
+  
+  // Apply temporarily
+  applyToUI(key, value);
+  
+  // Auto-revert timer
+  startRevertTimer(5000);
+  
+  // Show preview indicator
+  showPreviewMode(true);
+};
+```
+
+**3. Preview Indicators**
+- Subtle border around previewed elements
+- "Preview Mode" badge in corner
+- Countdown timer for auto-revert
+- Clear Apply/Cancel buttons
+
+#### Auto-Revert Safety
+```typescript
+// Automatically revert if user doesn't decide
+const startRevertTimer = (ms = 5000) => {
+  clearTimeout(previewTimeout);
+  previewTimeout = setTimeout(() => {
+    if (previewActive) {
+      revertPreview();
+      showNotification("Preview reverted");
+    }
+  }, ms);
+};
+```
+
+#### Comparison Mode
+For some settings, show before/after:
+
+```
+┌─────────────────────────┐
+│ Piece Style Comparison  │
+├─────────────┬───────────┤
+│   Current   │  Preview  │
+│     ♔       │    ♔     │
+│  (Classic)  │ (Modern)  │
+├─────────────┴───────────┤
+│ [Use Modern] [Keep Classic] │
+└─────────────────────────┘
+```
+
+#### Sound Preview
+Special handling for audio settings:
+
+```
+┌─────────────────────────┐
+│ Move Sound              │
+│ [Default ▼]             │
+│                         │
+│ 🔊 [Test Sound]         │
+│ Volume: [●────] 70%     │
+│                         │
+│ [Apply] [Cancel]        │
+└─────────────────────────┘
+```
+
+#### Batch Preview
+When changing multiple related settings:
+
+```typescript
+// Group related changes
+const previewTheme = (themeName) => {
+  const theme = themes[themeName];
+  batchPreview({
+    boardTheme: theme.board,
+    pieceSet: theme.pieces,
+    uiTheme: theme.ui,
+    colors: theme.colors
+  });
+};
+```
+
+#### Mobile Preview Gestures
+- Swipe left/right to preview options
+- Hold to preview, release to revert
+- Shake to undo last change
+
+#### Accessibility
+- Announce preview state to screen readers
+- Keyboard shortcuts for apply/cancel
+- Clear visual distinction between preview and saved
 
 ## Feasibility Assessment: Magic Wand Feature
 
@@ -294,6 +622,31 @@ class SettingsSearch {
 - Advanced color customization
 - Setting sync across devices
 - Preset packs (GM themes, streamer themes)
+
+## Additional Preferences to Consider
+
+### Board & Pieces
+- **Piece drag preview opacity** (0-100%)
+- **Highlight last move duration** (always/3s/5s/never)
+- **Premove highlighting color**
+- **Check indicator style** (border/glow/king-highlight/none)
+- **Coordinates on/off** (inside/outside/none)
+
+### Clock & Time
+- **Clock position** (top/bottom/sides)
+- **Clock style** (digital/analog/both)
+- **Low time warning threshold** (customizable, not hardcoded 30s)
+- **Clock flash on move** (on/off)
+- **Show milliseconds under X seconds**
+- **Time format** (mm:ss, h:mm:ss, etc.)
+
+### Game Analysis
+- **Analysis arrow thickness**
+- **Evaluation bar width**
+- **Positive/negative score colors**
+
+### Sounds
+- **All sounds are overridable. Should list each one.**
 
 ## Success Metrics
 - Setting discovery rate

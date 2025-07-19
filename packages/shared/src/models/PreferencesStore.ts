@@ -1,4 +1,5 @@
 import {makeAutoObservable, runInAction} from 'mobx';
+import { SettingsRegistry } from '../services/SettingsRegistry';
 
 // Forward declaration to avoid circular dependency
 interface RootStore {
@@ -436,17 +437,43 @@ set interface Simple FICS Interface`,
 export class PreferencesStore {
     preferences: Preferences = DEFAULT_PREFERENCES;
     rootStore?: RootStore;
+    settingsRegistry: SettingsRegistry;
 
     constructor() {
         makeAutoObservable(this);
+        this.settingsRegistry = new SettingsRegistry();
         this.loadPreferences();
+        this.syncWithRegistry();
     }
 
     updatePreference<K extends keyof Preferences>(key: K, value: Preferences[K]) {
         runInAction(() => {
             this.preferences[key] = value;
+            // Also update in registry if it exists there
+            const setting = this.settingsRegistry.get(key as string);
+            if (setting) {
+                setting.value = value;
+            }
         });
         this.savePreferences();
+    }
+    
+    // Sync current preferences with the settings registry
+    private syncWithRegistry() {
+        // Update registry values with current preferences
+        Object.entries(this.preferences).forEach(([key, value]) => {
+            const setting = this.settingsRegistry.get(key);
+            if (setting) {
+                setting.value = value;
+                // Set up onChange handler to sync back to preferences
+                setting.onChange = (newValue) => {
+                    runInAction(() => {
+                        (this.preferences as any)[key] = newValue;
+                        this.savePreferences();
+                    });
+                };
+            }
+        });
     }
 
     resetToDefaults() {
