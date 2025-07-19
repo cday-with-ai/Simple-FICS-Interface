@@ -131,13 +131,13 @@ const BottomBoardInfo = styled.div`
 // Landscape-specific info components
 const LandscapeTopInfo = styled(TopBoardInfo)<{ $hasAnalysis?: boolean }>`
     margin-bottom: -6px;
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '440px' : '400px'}));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '480px' : '400px'}));
     padding: 0 11px;
 `;
 
 const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $hasAnalysis?: boolean }>`
     margin-top: -6px;
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '440px' : '400px'}));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '480px' : '400px'}));
     padding: 0 11px;
 `;
 
@@ -198,8 +198,8 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $hasA
     max-width: 600px;
     max-height: 600px;
   ` : `
-    width: min(calc(100vh - 140px), calc(100vw - ${props.$hasAnalysis ? '440px' : '400px'}));
-    height: min(calc(100vh - 140px), calc(100vw - ${props.$hasAnalysis ? '440px' : '400px'}));
+    width: min(calc(100vh - 140px), calc(100vw - ${props.$hasAnalysis ? '480px' : '400px'}));
+    height: min(calc(100vh - 140px), calc(100vw - ${props.$hasAnalysis ? '480px' : '400px'}));
     max-width: calc(100vh - 140px);
     max-height: calc(100vh - 140px);
   `}
@@ -445,7 +445,7 @@ const ExtraControlsContainer = styled.div`
 
 const LandscapeAnalysisInfo = styled.div<{ $hasAnalysis?: boolean }>`
     margin-top: ${props => props.theme.spacing[1]};
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '440px' : '400px'}));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '480px' : '400px'}));
     width: 100%;
     padding: 0 11px;
 `;
