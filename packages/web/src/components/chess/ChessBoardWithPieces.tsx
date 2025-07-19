@@ -382,7 +382,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   
   // Detect piece movements and start animations
   useEffect(() => {
-    if (!shouldAnimateMoves || userMoveInProgress) {
+    if (!shouldAnimateMoves || userMoveInProgress || gameStore.isProcessingServerUpdate) {
       previousPiecesRef.current = new Map(pieces);
       return;
     }
@@ -416,7 +416,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     }
     
     previousPiecesRef.current = new Map(pieces);
-  }, [pieces, lastMove, shouldAnimateMoves, userMoveInProgress]);
+  }, [pieces, lastMove, shouldAnimateMoves, userMoveInProgress, gameStore.isProcessingServerUpdate]);
   
   // Clear user move flag after position changes
   useEffect(() => {

@@ -42,6 +42,7 @@ export class GameStore {
     _capturedPieces: { white: string[]; black: string[] } = { white: [], black: [] };
     private _positionHistory: string[] = []; // Store FEN for each position
     private _lastKnownOpening: string | null = null; // Store the last matched opening
+    isProcessingServerUpdate = false; // Flag to indicate we're processing a Style12 update
     
     // Holdings for bughouse/crazyhouse variants
     whiteHoldings: string = '';
@@ -197,6 +198,8 @@ export class GameStore {
     updateFromStyle12(style12: Style12) {
         runInAction(() => {
             try {
+                // Set flag to prevent animations for server updates
+                this.isProcessingServerUpdate = true;
                 // Convert Style12 board array to string format for style12ToFen
                 // Style12 board is already in the correct format (8x8 array of strings)
                 const boardRows = style12.board.map(row => row.join(''));
@@ -229,6 +232,9 @@ export class GameStore {
                 
                 // Convert to FEN using the utility
                 const fen = style12ToFen(mockStyle12Line);
+                
+                // Store the old position for comparison
+                const oldPosition = this._position;
                 
                 // Load the position
                 const loadSuccess = this.chessBoard.loadFen(fen);
@@ -374,8 +380,18 @@ export class GameStore {
                 
             } catch (error) {
                 console.error('Failed to parse Style12 data:', error);
+                this.isProcessingServerUpdate = false;
             }
         });
+        
+        // Reset the flag after a small delay to ensure React components see the change
+        if (this.isProcessingServerUpdate) {
+            setTimeout(() => {
+                runInAction(() => {
+                    this.isProcessingServerUpdate = false;
+                });
+            }, 50);
+        }
     }
 
     setEvaluation(evaluation: { score: number; depth: number; pv: string }) {
