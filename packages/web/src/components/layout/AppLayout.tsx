@@ -16,38 +16,44 @@ const LayoutContainer = styled.div`
   background-color: ${props => props.theme.colors.surface};
 `;
 
-const MainContent = styled.main`
+const MainContent = styled.main<{ $isPortrait?: boolean }>`
   flex: 1;
   display: flex;
+  flex-direction: ${props => props.$isPortrait ? 'column' : 'row'};
   overflow: hidden;
   position: relative;
 `;
 
-const ChessArea = styled.div<{ $isVisible: boolean }>`
-  flex: 1;
+const ChessArea = styled.div<{ $isVisible: boolean; $isPortrait?: boolean; $height?: string }>`
+  flex: ${props => props.$isPortrait && props.$height ? 'none' : '1'};
+  height: ${props => props.$isPortrait && props.$height ? props.$height : 'auto'};
   display: ${props => props.$isVisible ? 'flex' : 'none'};
   overflow: hidden;
+  min-height: ${props => props.$isPortrait ? '300px' : 'auto'};
 `;
 
-const ChatPanelContainer = styled.div<{ $isVisible: boolean; $fullWidth?: boolean }>`
-  width: ${props => props.$fullWidth ? '100%' : props.$isVisible ? '600px' : '0'};
+const ChatPanelContainer = styled.div<{ $isVisible: boolean; $fullWidth?: boolean; $isPortrait?: boolean }>`
+  width: ${props => props.$isPortrait ? '100%' : (props.$fullWidth ? '100%' : props.$isVisible ? '600px' : '0')};
   display: ${props => props.$isVisible ? 'flex' : 'none'};
   flex-direction: column;
   background-color: ${props => props.theme.colors.surface};
-  border-left: ${props => props.$fullWidth ? 'none' : '1px solid ' + props.theme.colors.border};
+  border-left: ${props => props.$isPortrait ? 'none' : (props.$fullWidth ? 'none' : '1px solid ' + props.theme.colors.border)};
+  border-top: ${props => props.$isPortrait ? '1px solid ' + props.theme.colors.border : 'none'};
   overflow: hidden;
-  flex: ${props => props.$fullWidth ? '1' : 'initial'};
+  flex: ${props => props.$fullWidth || props.$isPortrait ? '1' : 'initial'};
+  min-height: ${props => props.$isPortrait ? '200px' : 'auto'};
   
   @media (max-width: 768px) {
     width: ${props => props.$isVisible ? '100%' : '0'};
   }
 `;
 
-const Splitter = styled.div<{ $isVisible: boolean }>`
-  width: ${props => props.$isVisible ? '4px' : '0'};
+const Splitter = styled.div<{ $isVisible: boolean; $isPortrait?: boolean }>`
+  width: ${props => props.$isPortrait ? '100%' : (props.$isVisible ? '4px' : '0')};
+  height: ${props => props.$isPortrait ? '4px' : '100%'};
   display: ${props => props.$isVisible ? 'block' : 'none'};
   background-color: ${props => props.theme.colors.border};
-  cursor: col-resize;
+  cursor: ${props => props.$isPortrait ? 'row-resize' : 'col-resize'};
   position: relative;
   
   &:hover {
@@ -57,19 +63,29 @@ const Splitter = styled.div<{ $isVisible: boolean }>`
   &::after {
     content: '';
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: -2px;
-    right: -2px;
+    ${props => props.$isPortrait ? `
+      left: 0;
+      right: 0;
+      top: -2px;
+      bottom: -2px;
+    ` : `
+      top: 0;
+      bottom: 0;
+      left: -2px;
+      right: -2px;
+    `}
   }
 `;
 
 export const AppLayout: React.FC = observer(() => {
   const { preferencesStore } = useRootStore();
-  const { viewMode, autoViewMode } = preferencesStore.preferences;
+  const { viewMode, autoViewMode, chessOrientation } = preferencesStore.preferences;
   const layout = useLayout();
   const [chatPanelWidth, setChatPanelWidth] = useState(600); // Start fully expanded
+  const [chessAreaHeight, setChessAreaHeight] = useState<number | null>(null); // Portrait mode height
   const [isResizing, setIsResizing] = useState(false);
+  
+  const isPortraitMode = chessOrientation === 'portrait';
   
   // Auto-select view mode based on viewport
   useEffect(() => {
@@ -94,8 +110,17 @@ export const AppLayout: React.FC = observer(() => {
     if (!isResizing) return;
     
     const handleMouseMove = (e: MouseEvent) => {
-      const newWidth = window.innerWidth - e.clientX;
-      setChatPanelWidth(Math.max(300, Math.min(600, newWidth)));
+      if (isPortraitMode) {
+        // In portrait mode, adjust vertical split
+        const newHeight = e.clientY - 50; // 50px for header
+        const maxHeight = window.innerHeight - 250; // Leave space for chat
+        const minHeight = 300;
+        setChessAreaHeight(Math.max(minHeight, Math.min(maxHeight, newHeight)));
+      } else {
+        // In landscape mode, adjust horizontal split
+        const newWidth = window.innerWidth - e.clientX;
+        setChatPanelWidth(Math.max(300, Math.min(600, newWidth)));
+      }
       // Trigger a resize event so the chess board recalculates its size
       window.dispatchEvent(new Event('resize'));
     };
@@ -111,7 +136,7 @@ export const AppLayout: React.FC = observer(() => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isResizing]);
+  }, [isResizing, isPortraitMode]);
   
   // Determine what to show based on view mode
   const showChess = viewMode === 'chess-only' || viewMode === 'chess-and-chat';
@@ -122,23 +147,32 @@ export const AppLayout: React.FC = observer(() => {
     <LayoutContainer>
       <AppHeader />
       
-      <MainContent>
-        <ChessArea $isVisible={showChess}>
+      <MainContent $isPortrait={isPortraitMode}>
+        <ChessArea 
+          $isVisible={showChess}
+          $isPortrait={isPortraitMode}
+          $height={isPortraitMode && chessAreaHeight ? `${chessAreaHeight}px` : undefined}
+        >
           <ChessGameLayout hasChat={showChat} />
         </ChessArea>
         
         {showSplitter && (
           <Splitter 
             $isVisible={true}
+            $isPortrait={isPortraitMode}
             onMouseDown={handleMouseDown}
-            style={{ cursor: isResizing ? 'col-resize' : 'ew-resize' }}
+            style={{ cursor: isResizing ? (isPortraitMode ? 'row-resize' : 'col-resize') : (isPortraitMode ? 'ns-resize' : 'ew-resize') }}
           />
         )}
         
         <ChatPanelContainer 
           $isVisible={showChat}
           $fullWidth={viewMode === 'chat-only'}
-          style={{ width: viewMode === 'chat-only' ? undefined : (showChat && !layout.isMobile ? `${chatPanelWidth}px` : undefined) }}
+          $isPortrait={isPortraitMode}
+          style={{ 
+            width: viewMode === 'chat-only' || isPortraitMode ? undefined : (showChat && !layout.isMobile ? `${chatPanelWidth}px` : undefined),
+            height: isPortraitMode && chessAreaHeight ? `calc(100% - ${chessAreaHeight}px - 4px)` : undefined
+          }}
         >
           <ChatPanelComponent />
         </ChatPanelContainer>

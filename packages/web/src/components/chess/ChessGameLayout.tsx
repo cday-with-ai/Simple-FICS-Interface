@@ -40,14 +40,15 @@ const ChessSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
     flex-direction: column;
     align-items: center;
     gap: ${props => props.theme.spacing[2]};
-    flex: ${props => props.$orientation === 'portrait' ? '0 0 auto' : '1'};
+    flex: 1;
     width: 100%;
-    height: ${props => props.$orientation === 'portrait' ? 'auto' : '100%'};
+    height: 100%;
     justify-content: ${props => props.$orientation === 'portrait' ? 'flex-start' : 'center'};
     ${props => props.$orientation === 'portrait' && `
     padding-top: ${props.theme.spacing[1]};
+    padding-bottom: ${props.theme.spacing[1]};
   `}
-    overflow: ${props => props.$orientation === 'portrait' ? 'visible' : 'hidden'};
+    overflow: ${props => props.$orientation === 'portrait' ? 'auto' : 'hidden'};
     min-width: 0;
     /* Reserve minimum height for analysis info to prevent jumps */
 
@@ -184,16 +185,16 @@ const OpeningInfo = styled.div`
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
+const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $hasAnalysis?: boolean }>`
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     ${props => props.$orientation === 'portrait' ? `
-    width: min(100vw - 32px, calc(100vh - 280px));
-    height: min(100vw - 32px, calc(100vh - 280px));
-    max-width: 600px;
-    max-height: 600px;
+    width: min(100vw - 32px, calc(100vh - ${props.$hasAnalysis ? '380px' : '320px'}));
+    height: min(100vw - 32px, calc(100vh - ${props.$hasAnalysis ? '380px' : '320px'}));
+    max-width: 500px;
+    max-height: 500px;
   ` : `
     width: min(calc(100vh - 120px), calc(100vw - 400px));
     height: min(calc(100vh - 120px), calc(100vw - 400px));
@@ -257,9 +258,9 @@ const ControlsSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
     overflow: ${props => props.$orientation === 'portrait' ? 'visible' : 'hidden'};
     ${props => props.$orientation === 'portrait' && `
     width: 100%;
-    max-width: min(100vw - 32px, 600px);
+    max-width: min(100vw - 32px, 500px);
     margin: 0 auto;
-    padding-bottom: ${props.theme.spacing[3]};
+    padding-bottom: ${props.theme.spacing[2]};
   `}
 `;
 
@@ -801,7 +802,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     </PortraitPlayerCardWrapper>
                                 </PortraitPlayerInfo>
 
-                                <BoardWrapper $orientation="portrait">
+                                <BoardWrapper $orientation="portrait" $hasAnalysis={isAnalysisActive}>
                                     <ChessBoardWithPieces
                                         position={position}
                                         flipped={boardFlipped}
