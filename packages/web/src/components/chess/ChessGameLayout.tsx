@@ -250,7 +250,7 @@ const MoveInfo = styled.div`
     white-space: nowrap;
 `;
 
-const ControlsSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
+const ControlsSection = styled.div<{ $orientation: 'landscape' | 'portrait'; $boardSize?: number }>`
     display: flex;
     flex-direction: column;
     gap: ${props => props.theme.spacing[2]};
@@ -259,10 +259,9 @@ const ControlsSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
     max-width: ${props => props.$orientation === 'landscape' ? '320px' : 'none'};
     overflow: ${props => props.$orientation === 'portrait' ? 'visible' : 'hidden'};
     ${props => props.$orientation === 'portrait' && `
-    width: 100%;
-    max-width: min(100vw - 32px, 600px);
+    width: ${props.$boardSize ? `${props.$boardSize}px` : 'auto'};
     margin: 0 auto;
-    padding-bottom: ${props.theme.spacing[3]};
+    padding-bottom: ${props.theme.spacing[2]};
   `}
 `;
 
@@ -894,7 +893,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                 </PortraitBoardSection>
             </ChessSection>
 
-            <ControlsSection $orientation="portrait">
+            <ControlsSection $orientation="portrait" $boardSize={boardSize}>
                 <MoveList
                     moves={gameStore.moveHistory}
                     currentMoveIndex={gameStore.currentMoveIndex}
