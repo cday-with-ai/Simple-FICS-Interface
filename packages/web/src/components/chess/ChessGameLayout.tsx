@@ -70,6 +70,9 @@ const BoardArea = styled.div`
     height: 100%;
     align-items: center;
     justify-content: center;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
 `;
 
 const ExtraCapturedSquare = styled.div<{ $size: number }>`
@@ -126,15 +129,15 @@ const BottomBoardInfo = styled.div`
 `;
 
 // Landscape-specific info components
-const LandscapeTopInfo = styled(TopBoardInfo)`
+const LandscapeTopInfo = styled(TopBoardInfo)<{ $hasAnalysis?: boolean }>`
     margin-bottom: -6px;
-    max-width: min(calc(100vh - 120px), calc(100vw - 400px));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '440px' : '400px'}));
     padding: 0 11px;
 `;
 
-const LandscapeBottomInfo = styled(BottomBoardInfo)`
+const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $hasAnalysis?: boolean }>`
     margin-top: -6px;
-    max-width: min(calc(100vh - 120px), calc(100vw - 400px));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '440px' : '400px'}));
     padding: 0 11px;
 `;
 
@@ -184,7 +187,7 @@ const OpeningInfo = styled.div`
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
+const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $hasAnalysis?: boolean }>`
     position: relative;
     display: flex;
     align-items: center;
@@ -195,10 +198,10 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
     max-width: 600px;
     max-height: 600px;
   ` : `
-    width: min(calc(100vh - 120px), calc(100vw - 400px));
-    height: min(calc(100vh - 120px), calc(100vw - 400px));
-    max-width: 100%;
-    max-height: 100%;
+    width: min(calc(100vh - 140px), calc(100vw - ${props.$hasAnalysis ? '440px' : '400px'}));
+    height: min(calc(100vh - 140px), calc(100vw - ${props.$hasAnalysis ? '440px' : '400px'}));
+    max-width: calc(100vh - 140px);
+    max-height: calc(100vh - 140px);
   `}
 `;
 
@@ -280,6 +283,8 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     padding: ${props => props.theme.spacing[2]};
     width: 100%;
     position: relative;
+    overflow: hidden;
+    min-width: 0;
 `;
 
 const PlayersColumn = styled.div`
@@ -438,9 +443,9 @@ const ExtraControlsContainer = styled.div`
     width: 100%;
 `;
 
-const LandscapeAnalysisInfo = styled.div`
+const LandscapeAnalysisInfo = styled.div<{ $hasAnalysis?: boolean }>`
     margin-top: ${props => props.theme.spacing[1]};
-    max-width: min(calc(100vh - 120px), calc(100vw - 400px));
+    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$hasAnalysis ? '440px' : '400px'}));
     width: 100%;
     padding: 0 11px;
 `;
@@ -937,7 +942,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                     <ChessSection $orientation="landscape">
                         <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
                             <BoardArea>
-                                <LandscapeTopInfo>
+                                <LandscapeTopInfo $hasAnalysis={isAnalysisActive}>
                                     <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
                                     <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                 </LandscapeTopInfo>
@@ -945,7 +950,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     {isAnalysisActive && (
                                         <AnalysisDisplay orientation="vertical"/>
                                     )}
-                                    <BoardWrapper $orientation="landscape">
+                                    <BoardWrapper $orientation="landscape" $hasAnalysis={isAnalysisActive}>
                                         <ChessBoardWithPieces
                                             position={position}
                                             flipped={boardFlipped}
@@ -960,7 +965,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         />
                                     </BoardWrapper>
                                 </BoardWithAnalysis>
-                                <LandscapeBottomInfo>
+                                <LandscapeBottomInfo $hasAnalysis={isAnalysisActive}>
                                     <LastMoveInfo>
                                         {gameStore.premove ? 
                                             `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
@@ -972,7 +977,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     )}
                                 </LandscapeBottomInfo>
                                 {isAnalysisActive && (
-                                    <LandscapeAnalysisInfo>
+                                    <LandscapeAnalysisInfo $hasAnalysis={isAnalysisActive}>
                                         <AnalysisInfoDisplay/>
                                     </LandscapeAnalysisInfo>
                                 )}
