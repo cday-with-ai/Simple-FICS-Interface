@@ -70,7 +70,7 @@ const BoardArea = styled.div`
     height: 100%;
     align-items: center;
     justify-content: center;
-    flex: 1;
+    flex: 0 0 auto;
     min-width: 0;
     overflow: hidden;
 `;
@@ -285,6 +285,11 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     position: relative;
     overflow: hidden;
     min-width: 0;
+    
+    /* Keep board and players together */
+    & > * {
+        flex-shrink: 0;
+    }
 `;
 
 const PlayersColumn = styled.div`
@@ -320,7 +325,7 @@ const LandscapePlayersColumn = styled.div`
     gap: ${props => props.theme.spacing[2]};
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
-    flex-shrink: 0;
+    flex: 0 0 auto;
 `;
 
 const LandscapeControlsContainer = styled.div`
