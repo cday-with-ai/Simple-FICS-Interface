@@ -322,7 +322,6 @@ export class GameStore {
                 }
                 
                 // Update position
-                const oldPosition = this._position;
                 this._position = this.chessBoard.getFen();
                 
                 // If this is a new position, add it to history
