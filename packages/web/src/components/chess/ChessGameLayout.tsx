@@ -77,13 +77,16 @@ const BoardArea = styled.div<{ $isWideAspect?: boolean }>`
 `;
 
 
-const BoardWithAnalysis = styled.div`
+const BoardWithAnalysis = styled.div<{ $orientation?: 'landscape' | 'portrait' }>`
     display: flex;
     flex-direction: row;
     gap: ${props => props.theme.spacing[1]};
     align-items: stretch;
     position: relative;
     height: fit-content;
+    ${props => props.$orientation === 'landscape' && `
+        margin-left: 60px;
+    `}
 `;
 
 const PortraitCapturedPiecesContainer = styled.div<{ $squareSize?: number }>`
@@ -197,13 +200,11 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chat
     /* Landscape calculations:
      * Width: viewport width - chat width - player controls (200px) - analysis space (60px always reserved)
      * Height: viewport height - header (~48px) - top/bottom info (~80px) - padding (20px)
-     * Always add 60px left margin to prevent board shifting when analysis is toggled
      */
     width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 60px));
     height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 60px));
     max-width: calc(100vh - 100px);
     max-height: calc(100vh - 100px);
-    margin-left: 60px;
   `}
 `;
 
@@ -966,7 +967,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
                                     <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                 </LandscapeTopInfo>
-                                <BoardWithAnalysis>
+                                <BoardWithAnalysis $orientation="landscape">
                                     {isAnalysisActive && (
                                         <AnalysisDisplay orientation="vertical"/>
                                     )}
