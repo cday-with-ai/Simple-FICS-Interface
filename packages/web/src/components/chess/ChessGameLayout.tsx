@@ -324,12 +324,15 @@ const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean; $boardSize?
     /* Dynamically calculate margin based on actual board size */
     margin-top: ${props => {
         if (!props.$boardSize) return '180px'; // Fallback
-        // LandscapeTopInfo height is approximately 40px
-        const topInfoHeight = 40;
-        // Center of board is at topInfoHeight + (boardSize / 2)
-        const boardCenter = topInfoHeight + (props.$boardSize / 2);
-        // Controls height is approximately 200px, so offset by 100px to center
-        const controlsOffset = 100;
+        // LandscapeTopInfo height is approximately 35px
+        const topInfoHeight = 35;
+        // Gap between top info and board
+        const gap = 8;
+        // Center of board is at topInfoHeight + gap + (boardSize / 2)
+        const boardCenter = topInfoHeight + gap + (props.$boardSize / 2);
+        // Controls total height is approximately 260px
+        // So offset by 130px to center them with the board
+        const controlsOffset = 130;
         return `${boardCenter - controlsOffset}px`;
     }};
 `;
