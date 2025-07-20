@@ -391,26 +391,23 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     const previousPieces = previousPiecesRef.current;
     const newAnimations: AnimatingPiece[] = [];
     
-    // Find pieces that moved
-    previousPieces.forEach((piece, square) => {
-      if (!pieces.has(square)) {
-        // This piece moved from this square - find where it went
-        // Look for the same piece type that appeared on a new square
-        pieces.forEach((newPiece, newSquare) => {
-          if (newPiece === piece && !previousPieces.has(newSquare)) {
-            // Check if this could be the move based on lastMove
-            if (lastMove && lastMove.from === square && lastMove.to === newSquare) {
-              newAnimations.push({
-                piece,
-                from: square,
-                to: newSquare,
-                startTime: Date.now()
-              });
-            }
-          }
+    // Find pieces that moved based on lastMove
+    if (lastMove) {
+      const { from, to } = lastMove;
+      const movingPiece = previousPieces.get(from);
+      const destinationPiece = pieces.get(to);
+      
+      // Check if a piece moved from 'from' to 'to'
+      if (movingPiece && destinationPiece === movingPiece && !pieces.has(from)) {
+        // The piece successfully moved (could be a capture or regular move)
+        newAnimations.push({
+          piece: movingPiece,
+          from,
+          to,
+          startTime: Date.now()
         });
       }
-    });
+    }
     
     if (newAnimations.length > 0) {
       setAnimatingPieces(prev => [...prev, ...newAnimations]);

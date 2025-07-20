@@ -124,13 +124,13 @@ const BottomBoardInfo = styled.div`
 // Landscape-specific info components
 const LandscapeTopInfo = styled(TopBoardInfo)<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-bottom: -6px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 20px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 30px - 20px));
     padding: 0 11px;
 `;
 
 const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-top: -6px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 20px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 30px - 20px));
     padding: 0 11px;
 `;
 
@@ -193,11 +193,11 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chat
     max-height: 600px;
   ` : `
     /* Landscape calculations:
-     * Width: viewport width - chat width - player controls (200px) - analysis (20px if active) - padding (20px)
+     * Width: viewport width - chat width - player controls (200px) - analysis column (30px always) - padding (20px)
      * Height: viewport height - header (~48px) - top/bottom info (~80px) - padding (20px)
      */
-    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - ${props.$hasAnalysis ? 20 : 0}px - 20px));
-    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - ${props.$hasAnalysis ? 20 : 0}px - 20px));
+    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 30px - 20px));
+    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 30px - 20px));
     max-width: calc(100vh - 100px);
     max-height: calc(100vh - 100px);
   `}
@@ -267,7 +267,7 @@ const LandscapeLayout = styled.div`
     display: flex;
     width: 100%;
     height: 100%;
-    gap: ${props => props.theme.spacing[3]};
+    gap: 0;
 `;
 
 const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
@@ -463,14 +463,29 @@ const ExtraControlsContainer = styled.div`
 
 const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-top: ${props => props.theme.spacing[1]};
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 20px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 30px - 20px));
     width: 100%;
     padding: 0 11px;
 `;
 
-const LandscapeAnalysisWrapper = styled.div`
+const LandscapeAnalysisColumn = styled.div`
+    width: 30px;
+    height: 100%;
     position: relative;
-    margin-left: 35px;
+    flex-shrink: 0;
+    padding: ${props => props.theme.spacing[2]};
+    padding-top: ${props => props.theme.spacing[1]};
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+`;
+
+const LandscapeAnalysisWrapper = styled.div<{ $boardSize?: number }>`
+    position: relative;
+    margin-top: 18px;
+    height: ${props => props.$boardSize ? `${props.$boardSize}px` : '100%'};
+    display: flex;
+    align-items: center;
 `;
 
 const LandscapeCapturedPiecesContainer = styled.div`
@@ -960,20 +975,23 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
             {isLandscape ? (
                 <>
                     <ChessSection $orientation="landscape">
-                        <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
-                            <BoardArea $isWideAspect={isWideAspect}>
-                                <LandscapeTopInfo $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
-                                    <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
-                                    <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
-                                </LandscapeTopInfo>
-                                <BoardWithAnalysis $orientation="landscape">
-                                    {isAnalysisActive && (
-                                        <LandscapeAnalysisWrapper>
-                                            <AnalysisDisplay orientation="vertical" boardSize={boardSize}/>
-                                        </LandscapeAnalysisWrapper>
-                                    )}
-                                    <BoardWrapper $orientation="landscape" $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
-                                        <ChessBoardWithPieces
+                        <LandscapeLayout>
+                            <LandscapeAnalysisColumn>
+                                {isAnalysisActive && (
+                                    <LandscapeAnalysisWrapper $boardSize={boardSize}>
+                                        <AnalysisDisplay orientation="vertical" boardSize={boardSize}/>
+                                    </LandscapeAnalysisWrapper>
+                                )}
+                            </LandscapeAnalysisColumn>
+                            <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
+                                <BoardArea $isWideAspect={isWideAspect}>
+                                    <LandscapeTopInfo $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
+                                        <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
+                                        <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
+                                    </LandscapeTopInfo>
+                                    <BoardWithAnalysis $orientation="landscape">
+                                        <BoardWrapper $orientation="landscape" $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
+                                            <ChessBoardWithPieces
                                             position={position}
                                             flipped={boardFlipped}
                                             showCoordinates={preferencesStore.preferences.showCoordinates}
@@ -1122,6 +1140,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 )}
                             </LandscapePlayersColumn>
                         </LandscapeBoardSection>
+                        </LandscapeLayout>
                     </ChessSection>
                 </>
             ) : renderPortraitLayout()}

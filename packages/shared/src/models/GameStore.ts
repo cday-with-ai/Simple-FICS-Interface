@@ -294,9 +294,11 @@ export class GameStore {
                         // This handles mid-game joins where we get a style12 with a move
                         const lastHistoryMove = this.moveHistory[this.moveHistory.length - 1];
                         if (!lastHistoryMove || lastHistoryMove.san !== style12.prettyMove) {
-                            // Only prevent animations for opponent moves when we're playing
-                            // Check the relation to see if this is an opponent's move (relation = -1)
-                            if (style12.relation === -1) {
+                            // Prevent animations for:
+                            // 1. Opponent moves when playing (relation = -1)
+                            // 2. All moves when observing (relation = 0 or -2)
+                            // Our own moves (relation = 1) already handled by user interaction
+                            if (style12.relation !== 1) {
                                 this.isProcessingServerUpdate = true;
                             }
                             // Create a move object from the style12 data
