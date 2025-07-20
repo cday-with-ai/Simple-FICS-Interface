@@ -322,11 +322,14 @@ const HorizontalPlayerWithClock = styled.div`
 const LandscapePlayersColumn = styled.div`
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     gap: ${props => props.theme.spacing[2]};
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
     flex: 0 0 auto;
+    height: calc(100vh - 140px);
+    margin-top: auto;
+    margin-bottom: auto;
 `;
 
 const LandscapeControlsContainer = styled.div`

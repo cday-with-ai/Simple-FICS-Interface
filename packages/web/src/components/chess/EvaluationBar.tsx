@@ -44,7 +44,7 @@ const EvaluationLabel = styled.div<{ $orientation: 'vertical' | 'horizontal' }>`
   `}
 `;
 
-const VerticalEvalText = styled.div<{ $isLight: boolean }>`
+const VerticalEvalText = styled.div<{ $needsDarkText: boolean }>`
   position: absolute;
   top: 8px;
   left: 50%;
@@ -52,10 +52,12 @@ const VerticalEvalText = styled.div<{ $isLight: boolean }>`
   writing-mode: vertical-rl;
   text-orientation: mixed;
   font-size: ${props => props.theme.typography.fontSize.xs};
-  font-weight: ${props => props.theme.typography.fontWeight.normal};
-  color: ${props => props.$isLight ? props.theme.colors.textTertiary : props.theme.colors.background};
+  font-weight: ${props => props.theme.typography.fontWeight.semibold};
+  color: ${props => props.$needsDarkText ? '#2C3E50' : '#E8E8E8'};
   z-index: 3;
-  text-shadow: ${props => props.$isLight ? '0 1px 2px rgba(0,0,0,0.3)' : '0 1px 2px rgba(255,255,255,0.3)'};
+  text-shadow: ${props => props.$needsDarkText 
+    ? '0 1px 3px rgba(255,255,255,0.9), 0 0 1px rgba(255,255,255,0.7)' 
+    : '0 1px 3px rgba(0,0,0,0.9), 0 0 1px rgba(0,0,0,0.7)'};
 `;
 
 // Container for the three sections of the bar
@@ -111,13 +113,15 @@ export const EvaluationBar: React.FC<EvaluationBarProps> = observer(({
   const barColor = percent === 50 ? '#FFC107' : (isWinning ? '#2E7D32' : '#C62828');
   
   if (orientation === 'vertical') {
-    // Determine if we need light or dark text based on bar position and color
-    const needsLightText = percent < 80; // Use light text unless bar is very high
+    // Determine if we need dark text based on bar position
+    // When the bar is low (bottom player losing), we need dark text on light background
+    // When the bar is high (bottom player winning), we need light text on colored background
+    const needsDarkText = percent < 20;
     
     return (
       <BarContainer $orientation={orientation} className={className}>
         <EvaluationLabel $orientation={orientation}>{evaluation}</EvaluationLabel>
-        <VerticalEvalText $isLight={needsLightText}>{evaluation}</VerticalEvalText>
+        <VerticalEvalText $needsDarkText={needsDarkText}>{evaluation}</VerticalEvalText>
         <BarSections $orientation={orientation}>
           <TransparentSection style={{ height: `${topSection}%` }} />
           <ColoredSection $color={barColor} style={{ height: `${middleSection}%` }} />
