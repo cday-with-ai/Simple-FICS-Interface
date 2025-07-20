@@ -333,8 +333,8 @@ const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean }>`
     /* Board center is at: 40px + half board height (~200px) = 240px from container top */
     /* Controls are ~200px tall, so center them at 240px - 100px = 140px */
     /* But we also need to account for the LandscapeTopInfo space */
-    /* Total: 40px (top info) + 120px = 160px (adjusted down slightly) */
-    margin-top: 160px;
+    /* Total: 40px (top info) + 140px = 180px */
+    margin-top: 180px;
 `;
 
 const LandscapeControlsContainer = styled.div`
