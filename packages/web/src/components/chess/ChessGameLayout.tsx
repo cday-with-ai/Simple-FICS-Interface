@@ -136,6 +136,7 @@ const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number }>`
 
 // Portrait-specific info components
 const PortraitTopInfo = styled(TopBoardInfo)`
+    margin-top: 10px;
     margin-bottom: ${props => props.theme.spacing[1]};
     padding: 0 30px;
     position: relative;
