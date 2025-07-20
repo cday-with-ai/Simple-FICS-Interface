@@ -112,8 +112,8 @@ const Coordinate = styled.div<{ $type: 'file' | 'rank'; $isLight: boolean; $size
   font-size: ${props => Math.max(6, Math.min(14, props.$size * 0.15))}px;
   font-weight: 600;
   color: ${props => props.$isLight 
-    ? props.theme.colors.board.dark  // Use dark square color on light squares
-    : props.theme.colors.board.light  // Use light square color on dark squares
+    ? props.theme.colors.board.coordinateLight 
+    : props.theme.colors.board.coordinateDark
   };
   opacity: 0.8;
   user-select: none;
@@ -365,19 +365,20 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     if (!preferencesStore.preferences.animateMoves) return false;
     
     // Check if we're playing and have low time
-    if (gameStore.isPlaying && preferencesStore.preferences.disableAnimationLowTime) {
+    if (gameStore.isPlaying) {
       const currentGame = gameStore.currentGame;
       const playingColor = gameStore.playingColor;
       if (currentGame && playingColor) {
         // Get the time for the player (not necessarily the active player)
         const playerTime = playingColor === 'white' ? currentGame.white.time : currentGame.black.time;
-        // Disable animations if under 10 seconds
-        if (playerTime < 10) return false;
+        // Disable animations if under the threshold
+        const threshold = preferencesStore.preferences.disableAnimationsThreshold;
+        if (playerTime < threshold) return false;
       }
     }
     
     return true;
-  }, [preferencesStore.preferences.animateMoves, preferencesStore.preferences.disableAnimationLowTime, 
+  }, [preferencesStore.preferences.animateMoves, preferencesStore.preferences.disableAnimationsThreshold, 
       gameStore.isPlaying, gameStore.currentGame, gameStore.playingColor]);
   
   // Detect piece movements and start animations
@@ -796,12 +797,24 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
               <ChessPiece piece={piece} size={squareSize} />
             )}
             {showFileCoordinate && (
-              <Coordinate $type="file" $isLight={isLight} $size={squareSize}>
+              <Coordinate 
+                $type="file" 
+                $isLight={isLight} 
+                $size={squareSize}
+                data-settings="coordinates"
+                className="coordinate-label"
+              >
                 {flipped ? FILES[7 - fileIndex] : FILES[fileIndex]}
               </Coordinate>
             )}
             {showRankCoordinate && (
-              <Coordinate $type="rank" $isLight={isLight} $size={squareSize}>
+              <Coordinate 
+                $type="rank" 
+                $isLight={isLight} 
+                $size={squareSize}
+                data-settings="coordinates"
+                className="coordinate-label"
+              >
                 {flipped ? RANKS[7 - rankIndex] : RANKS[rankIndex]}
               </Coordinate>
             )}
@@ -827,7 +840,13 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
 
   return (
     <>
-      <BoardContainer ref={containerRef} $size={calculatedSize} onContextMenu={handleContextMenu}>
+      <BoardContainer 
+        ref={containerRef} 
+        $size={calculatedSize} 
+        onContextMenu={handleContextMenu}
+        data-settings="board"
+        className="chess-board"
+      >
         <BoardGrid>
           {squares}
         </BoardGrid>

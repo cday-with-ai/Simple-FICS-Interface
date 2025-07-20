@@ -19,8 +19,8 @@ export interface SettingDefinition {
   max?: number;
   step?: number;
   unit?: string; // e.g., 'ms', 'px', '%'
+  placeholder?: string; // Placeholder text for text inputs
   dependencies?: string[]; // Other settings this depends on
-  targetElements?: string[]; // CSS selectors for magic wand targeting
   keywords?: string[]; // Additional search terms
   previewType?: 'instant' | 'apply' | 'test'; // How preview works
   onChange?: (value: any) => void; // Custom change handler
@@ -49,15 +49,3 @@ export interface SettingsExport {
   settings: Record<string, any>;
 }
 
-// Magic wand related types
-export interface MagicWandState {
-  isActive: boolean;
-  highlightedElement: HTMLElement | null;
-  availableSettings: string[]; // Setting IDs
-}
-
-export interface QuickSettingsPosition {
-  x: number;
-  y: number;
-  anchor: 'top' | 'bottom' | 'left' | 'right';
-}

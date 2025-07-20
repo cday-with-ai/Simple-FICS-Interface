@@ -1,5 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
+import { observer } from 'mobx-react-lite';
+import { usePreferencesStore } from '@fics/shared';
 
 interface ChessPieceProps {
   piece: string; // e.g., 'K', 'k', 'Q', 'q', etc.
@@ -27,17 +29,19 @@ const pieceNameMap: Record<string, string> = {
   'k': 'bK', 'q': 'bQ', 'r': 'bR', 'b': 'bB', 'n': 'bN', 'p': 'bP'
 };
 
-export const ChessPiece: React.FC<ChessPieceProps> = ({ 
+export const ChessPiece: React.FC<ChessPieceProps> = observer(({ 
   piece, 
   size, 
   isDragging = false,
   style 
 }) => {
+  const preferencesStore = usePreferencesStore();
   const pieceName = pieceNameMap[piece];
   if (!pieceName) return null;
 
-  // Use the SVG pieces from the /pieces/cburnett directory
-  const pieceUrl = `/pieces/cburnett/${pieceName}.svg`;
+  // Use the piece set from preferences
+  const pieceSet = preferencesStore.preferences.pieceSet;
+  const pieceUrl = `/pieces/${pieceSet}/${pieceName}.svg`;
 
   return (
     <PieceImage
@@ -47,8 +51,9 @@ export const ChessPiece: React.FC<ChessPieceProps> = ({
       $isDragging={isDragging}
       draggable={false}
       style={style}
+      data-settings="pieces"
     />
   );
-};
+});
 
 ChessPiece.displayName = 'ChessPiece';

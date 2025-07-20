@@ -58,6 +58,8 @@ export const ObservableClock: React.FC<ObservableClockProps> = observer(({
             lowTimeThreshold={30}
             size={size}
             compact={compact}
+            data-settings="clock"
+            className="chess-clock"
         />
     );
 });

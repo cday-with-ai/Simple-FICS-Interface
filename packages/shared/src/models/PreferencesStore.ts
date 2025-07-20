@@ -195,13 +195,13 @@ export interface ConsoleFontStyles {
 export interface Preferences {
     // Display preferences
     boardTheme: 'brown' | 'blue' | 'green' | 'purple';
-    pieceSet: 'standard' | 'modern' | 'classic';
+    pieceSet: string; // Dynamic based on available piece sets
     showCoordinates: boolean;
     showLegalMoves: boolean;
     boardFlipped: boolean;
     animateMoves: boolean;
     animationDuration: number; // in milliseconds
-    disableAnimationLowTime: boolean; // Disable animations when under 10 seconds
+    disableAnimationsThreshold: number; // Disable animations when time falls below this (in seconds)
     autoPromoteToQueen: boolean;
     autoPromotionPiece: 'Q' | 'R' | 'B' | 'N'; // Piece to auto-promote to in playing mode
 
@@ -240,6 +240,14 @@ export interface Preferences {
     engineDepth: number;
     showEvaluation: boolean;
 
+    // Board color preferences
+    lightSquareColor: string;
+    darkSquareColor: string;
+    coordinateColorLight: string; // Color for coordinates on light squares
+    coordinateColorDark: string;  // Color for coordinates on dark squares
+    lastMoveHighlightColor: string;
+    premoveHighlightColor: string;
+
     // Context menu preferences
     playerContextCommands: Array<{ label: string; command: string } | { divider: true }>;
     
@@ -264,13 +272,13 @@ export interface Preferences {
 
 const DEFAULT_PREFERENCES: Preferences = {
     boardTheme: 'brown',
-    pieceSet: 'standard',
+    pieceSet: 'cburnett',
     showCoordinates: true,
     showLegalMoves: true,
     boardFlipped: false,
     animateMoves: true,
     animationDuration: 250, // 0.25 seconds
-    disableAnimationLowTime: true, // Default to disabling animations when low on time
+    disableAnimationsThreshold: 30, // Default to 30 seconds
     autoPromoteToQueen: false,
     autoPromotionPiece: 'Q', // Default to queen
     theme: 'system',
@@ -294,6 +302,12 @@ const DEFAULT_PREFERENCES: Preferences = {
     autoAnalyze: false,
     engineDepth: 20,
     showEvaluation: true,
+    lightSquareColor: '#f0d9b5',
+    darkSquareColor: '#b58863',
+    coordinateColorLight: '#b58863', // Use dark square color on light squares
+    coordinateColorDark: '#f0d9b5',  // Use light square color on dark squares
+    lastMoveHighlightColor: '#cdd26a',
+    premoveHighlightColor: '#ffa500',
     playerContextCommands: [
         { label: 'Finger', command: 'finger {player}' },
         { label: 'History', command: 'hi {player}' },
@@ -452,7 +466,12 @@ export class PreferencesStore {
             // Also update in registry if it exists there
             const setting = this.settingsRegistry.get(key as string);
             if (setting) {
-                setting.value = value;
+                // Special handling for playerContextCommands - convert to JSON string
+                if (key === 'playerContextCommands') {
+                    setting.value = JSON.stringify(value, null, 2);
+                } else {
+                    setting.value = value;
+                }
             }
         });
         this.savePreferences();
@@ -464,11 +483,26 @@ export class PreferencesStore {
         Object.entries(this.preferences).forEach(([key, value]) => {
             const setting = this.settingsRegistry.get(key);
             if (setting) {
-                setting.value = value;
+                // Special handling for playerContextCommands - convert to JSON string
+                if (key === 'playerContextCommands') {
+                    setting.value = JSON.stringify(value, null, 2);
+                } else {
+                    setting.value = value;
+                }
                 // Set up onChange handler to sync back to preferences
                 setting.onChange = (newValue) => {
                     runInAction(() => {
-                        (this.preferences as any)[key] = newValue;
+                        // Parse JSON string back to array for playerContextCommands
+                        if (key === 'playerContextCommands' && typeof newValue === 'string') {
+                            try {
+                                (this.preferences as any)[key] = JSON.parse(newValue);
+                            } catch (e) {
+                                console.error('Failed to parse playerContextCommands:', e);
+                                return;
+                            }
+                        } else {
+                            (this.preferences as any)[key] = newValue;
+                        }
                         this.savePreferences();
                     });
                 };
@@ -528,8 +562,20 @@ export class PreferencesStore {
                                 key !== 'consoleFontStylesLight' && key !== 'consoleFontStylesDark' &&
                                 key in DEFAULT_PREFERENCES && value != null && 
                                 this.isValidPreferenceValue(key as keyof Preferences, value)) {
-                                (validatedPreferences as any)[key] = value;
+                                // Migration: fix old pieceSet values
+                                if (key === 'pieceSet' && (value === 'standard' || value === 'modern' || value === 'classic')) {
+                                    (validatedPreferences as any)[key] = 'cburnett';
+                                } else {
+                                    (validatedPreferences as any)[key] = value;
+                                }
                             }
+                        }
+                        
+                        // Migration: handle old coordinateColor
+                        if (parsed.coordinateColor && !parsed.coordinateColorLight && !parsed.coordinateColorDark) {
+                            // Use contrasting colors based on the old coordinate color
+                            validatedPreferences.coordinateColorLight = validatedPreferences.darkSquareColor;
+                            validatedPreferences.coordinateColorDark = validatedPreferences.lightSquareColor;
                         }
                         this.preferences = validatedPreferences;
                     });
@@ -569,7 +615,7 @@ export class PreferencesStore {
             case 'boardTheme':
                 return ['brown', 'blue', 'green', 'purple'].includes(value);
             case 'pieceSet':
-                return ['standard', 'modern', 'classic'].includes(value);
+                return typeof value === 'string' && value.length > 0;
             case 'chatFontSize':
                 return ['small', 'medium', 'large'].includes(value);
             case 'theme':

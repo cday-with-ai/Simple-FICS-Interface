@@ -1,6 +1,7 @@
 import {useState, useEffect} from 'react';
 import {useWindowSize, useOrientation} from 'react-use';
 import {useTheme} from './ThemeProvider';
+import type { ViewMode, ChessOrientation } from '@fics/shared';
 
 // Viewport dimensions interface
 export interface ViewportDimensions {
@@ -23,6 +24,7 @@ export interface LayoutState {
     isTablet: boolean;
     isDesktop: boolean;
     isTouch: boolean;
+    isMobileDevice: boolean; // True mobile device, not just small window
 }
 
 // Hook to get current viewport dimensions
@@ -84,12 +86,40 @@ export const useTouch = (): boolean => {
     return isTouch;
 };
 
+// Hook to detect if device is actually mobile (not just small window)
+export const useMobileDevice = (): boolean => {
+    const [isMobileDevice, setIsMobileDevice] = useState(false);
+    const isTouch = useTouch();
+    const { width } = useViewport();
+
+    useEffect(() => {
+        const checkMobile = () => {
+            // Check user agent for mobile devices
+            const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+            const isMobileUA = mobileRegex.test(navigator.userAgent);
+            
+            // Check for touch + small screen (not just touch, as many laptops have touch)
+            const isSmallTouchDevice = isTouch && width < 768;
+            
+            // Check for mobile-specific features
+            const hasMobileFeatures = 'orientation' in window && 'ondeviceorientation' in window;
+            
+            return isMobileUA || (isSmallTouchDevice && hasMobileFeatures);
+        };
+
+        setIsMobileDevice(checkMobile());
+    }, [isTouch, width]);
+
+    return isMobileDevice;
+};
+
 // Main layout hook that combines all responsive information
 export const useLayout = (): LayoutState => {
     const dimensions = useViewport();
     const orientation = useResponsiveOrientation();
     const breakpoint = useBreakpoint();
     const isTouch = useTouch();
+    const isMobileDevice = useMobileDevice();
 
     const isMobile = breakpoint === 'mobilePortrait' || breakpoint === 'mobileLandscape';
     const isTablet = breakpoint === 'tablet';
@@ -103,6 +133,7 @@ export const useLayout = (): LayoutState => {
         isTablet,
         isDesktop,
         isTouch,
+        isMobileDevice,
     };
 };
 
@@ -177,4 +208,52 @@ export const getBreakpointQuery = (breakpoint: Breakpoint, theme: any): string =
     };
 
     return queries[breakpoint];
+};
+
+// Hook to get available view modes based on device and viewport
+export const useAvailableViewModes = (): ViewMode[] => {
+    const layout = useLayout();
+    const { width } = layout.dimensions;
+    const { isMobileDevice } = layout;
+    
+    // Mobile or width < 1200: no chess-and-chat mode
+    if (isMobileDevice || width < 1200) {
+        return ['chess-only', 'chat-only'];
+    }
+    
+    // Desktop with sufficient width: all modes
+    return ['chess-only', 'chess-and-chat', 'chat-only'];
+};
+
+// Hook to get available orientations based on device and viewport
+export const useAvailableOrientations = (): ChessOrientation[] => {
+    const layout = useLayout();
+    const { width } = layout.dimensions;
+    const { isMobileDevice } = layout;
+    
+    // Mobile or width < 768: portrait only
+    if (isMobileDevice || width < 768) {
+        return ['portrait'];
+    }
+    
+    // Tablet and desktop: both orientations
+    return ['portrait', 'landscape'];
+};
+
+// Hook to get recommended initial settings based on device
+export const useRecommendedSettings = (): { viewMode: ViewMode; orientation: ChessOrientation } => {
+    const layout = useLayout();
+    const { width } = layout.dimensions;
+    const { isMobileDevice } = layout;
+    
+    if (isMobileDevice || width < 768) {
+        // Mobile: portrait only, chess-only mode
+        return { viewMode: 'chess-only', orientation: 'portrait' };
+    } else if (width < 1200) {
+        // Tablet/small desktop: landscape, chess-only
+        return { viewMode: 'chess-only', orientation: 'landscape' };
+    } else {
+        // Large desktop: landscape, chess-and-chat
+        return { viewMode: 'chess-and-chat', orientation: 'landscape' };
+    }
 };

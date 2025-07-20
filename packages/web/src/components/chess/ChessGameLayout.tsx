@@ -46,7 +46,7 @@ const ChessSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
     height: ${props => props.$orientation === 'portrait' ? 'auto' : '100%'};
     justify-content: ${props => props.$orientation === 'portrait' ? 'flex-start' : 'center'};
     ${props => props.$orientation === 'portrait' && `
-    padding-top: ${props.theme.spacing[1]};
+    padding-top: 0;
   `}
     overflow: ${props => props.$orientation === 'portrait' ? 'visible' : 'hidden'};
     min-width: 0;
@@ -70,7 +70,7 @@ const BoardArea = styled.div`
     gap: 0;
     height: 100%;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     flex: 0 0 auto;
     min-width: 0;
     overflow: hidden;
@@ -144,7 +144,7 @@ const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number }>`
 
 // Portrait-specific info components
 const PortraitTopInfo = styled(TopBoardInfo)`
-    margin-bottom: ${props => props.theme.spacing[2]};
+    margin-bottom: ${props => props.theme.spacing[1]};
     padding: 0 30px;
     position: relative;
 `;
@@ -155,7 +155,7 @@ const PortraitControlButtons = styled.div`
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
-    top: 0;
+    top: -${props => props.theme.spacing[2]};
     z-index: 10;
 `;
 
@@ -194,8 +194,8 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chat
     align-items: center;
     justify-content: center;
     ${props => props.$orientation === 'portrait' ? `
-    width: min(100vw - 32px, calc(100vh - 280px));
-    height: min(100vw - 32px, calc(100vh - 280px));
+    width: min(100vw - 32px, calc(100vh - 260px));
+    height: min(100vw - 32px, calc(100vh - 260px));
     max-width: 600px;
     max-height: 600px;
   ` : `
@@ -278,9 +278,10 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     flex-direction: row;
     gap: ${props => props.theme.spacing[3]};
     height: 100%;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: ${props => props.theme.spacing[2]};
+    padding-top: ${props => props.theme.spacing[4]};
     width: 100%;
     position: relative;
     overflow: hidden;
@@ -295,7 +296,7 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
 const PlayersColumn = styled.div`
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     gap: ${props => props.theme.spacing[2]};
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
@@ -321,7 +322,7 @@ const HorizontalPlayerWithClock = styled.div`
 const LandscapePlayersColumn = styled.div`
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     gap: ${props => props.theme.spacing[2]};
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
@@ -815,7 +816,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     <ChessBoardWithPieces
                                         position={position}
                                         flipped={boardFlipped}
-                                        showCoordinates={true}
+                                        showCoordinates={preferencesStore.preferences.showCoordinates}
                                         onMove={handleMove}
                                         onDrop={handleDrop}
                                         interactive={perspective === 'playing' || perspective === 'freestyle' || perspective === 'examining'}
@@ -959,7 +960,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         <ChessBoardWithPieces
                                             position={position}
                                             flipped={boardFlipped}
-                                            showCoordinates={true}
+                                            showCoordinates={preferencesStore.preferences.showCoordinates}
                                             onMove={handleMove}
                                             onDrop={handleDrop}
                                             interactive={perspective === 'playing' || perspective === 'freestyle' || perspective === 'examining'}

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
 import { AppHeader } from './AppHeader';
 import { ChessGameLayout } from '../chess/ChessGameLayout';
 import { ChatPanel as ChatPanelComponent } from '../chat';
-import { useLayout } from '../../theme/hooks';
+import { useLayout, useAvailableViewModes, useAvailableOrientations, useRecommendedSettings } from '../../theme/hooks';
 
 const LayoutContainer = styled.div`
   display: flex;
@@ -68,22 +68,43 @@ export const AppLayout: React.FC = observer(() => {
   const { preferencesStore } = useRootStore();
   const { viewMode, autoViewMode } = preferencesStore.preferences;
   const layout = useLayout();
+  const availableViewModes = useAvailableViewModes();
+  const availableOrientations = useAvailableOrientations();
+  const recommendedSettings = useRecommendedSettings();
   const [chatPanelWidth, setChatPanelWidth] = useState(600); // Start fully expanded
   const [isResizing, setIsResizing] = useState(false);
+  const hasInitialized = useRef(false);
   
-  // Auto-select view mode based on viewport - only once at startup
+  // Auto-select view mode and orientation based on device - only once at startup
   useEffect(() => {
-    if (autoViewMode) {
-      // Set initial view mode based on device type
-      if (layout.isMobile || layout.isTablet) {
-        preferencesStore.updatePreference('viewMode', 'chess-only');
-      } else {
-        preferencesStore.updatePreference('viewMode', 'chess-and-chat');
-      }
+    if (!hasInitialized.current && autoViewMode) {
+      hasInitialized.current = true;
+      
+      // Set initial settings based on device
+      preferencesStore.updatePreference('viewMode', recommendedSettings.viewMode);
+      preferencesStore.updatePreference('chessOrientation', recommendedSettings.orientation);
+      
       // Disable auto view mode after initial setup
       preferencesStore.updatePreference('autoViewMode', false);
     }
-  }, []); // Empty dependency array - only run once on mount
+  }, [autoViewMode, recommendedSettings, preferencesStore]);
+  
+  // Ensure current view mode is still available when viewport changes
+  useEffect(() => {
+    if (!availableViewModes.includes(viewMode)) {
+      // Fall back to chess-only if current mode not available
+      preferencesStore.updatePreference('viewMode', 'chess-only');
+    }
+  }, [availableViewModes, viewMode, preferencesStore]);
+  
+  // Ensure current orientation is still available when viewport changes
+  useEffect(() => {
+    const currentOrientation = preferencesStore.preferences.chessOrientation;
+    if (!availableOrientations.includes(currentOrientation)) {
+      // Fall back to portrait if current orientation not available
+      preferencesStore.updatePreference('chessOrientation', 'portrait');
+    }
+  }, [availableOrientations, preferencesStore]);
   
   // Handle splitter resize
   const handleMouseDown = (e: React.MouseEvent) => {

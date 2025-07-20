@@ -46,6 +46,8 @@ export class ChannelTellRenderer extends MessageRenderer {
         $color={message.metadata?.color}
         $fontFamily={message.metadata?.fontFamily}
         $fontStyle={message.metadata?.fontStyle}
+        data-settings="chat"
+        className="channel-tell-message"
       >
         <Sender $isYou={isYou}>
           {isYou ? message.sender : <PlayerName name={message.sender} />}

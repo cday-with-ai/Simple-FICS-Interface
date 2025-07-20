@@ -54,7 +54,24 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = observer(({children})
     };
 
     const activeThemeName = getActiveTheme();
-    const activeTheme = themes[activeThemeName] || defaultTheme;
+    const baseTheme = themes[activeThemeName] || defaultTheme;
+    
+    // Merge board colors from preferences into the theme
+    const activeTheme = {
+        ...baseTheme,
+        colors: {
+            ...baseTheme.colors,
+            board: {
+                ...baseTheme.colors.board,
+                light: preferencesStore.preferences.lightSquareColor,
+                dark: preferencesStore.preferences.darkSquareColor,
+                coordinateLight: preferencesStore.preferences.coordinateColorLight,
+                coordinateDark: preferencesStore.preferences.coordinateColorDark,
+                lastMoveHighlight: preferencesStore.preferences.lastMoveHighlightColor,
+                premoveHighlight: preferencesStore.preferences.premoveHighlightColor
+            }
+        }
+    };
 
     // Theme context value
     const contextValue: ThemeContextType = {
