@@ -70,7 +70,7 @@ const BoardArea = styled.div<{ $isWideAspect?: boolean }>`
     gap: 0;
     height: 100%;
     align-items: center;
-    justify-content: ${props => props.$isWideAspect ? 'center' : 'flex-start'};
+    justify-content: flex-start;
     flex: 0 0 auto;
     min-width: 0;
     overflow: hidden;
@@ -278,7 +278,7 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     flex-direction: row;
     gap: ${props => props.theme.spacing[3]};
     height: 100%;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     padding: ${props => props.theme.spacing[2]};
     padding-top: ${props => props.theme.spacing[4]};
@@ -328,11 +328,6 @@ const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean }>`
     padding: ${props => props.theme.spacing[3]} 0;
     flex: 0 0 auto;
     align-self: center;
-    
-    /* For tall aspect ratios, add top margin to align with board center */
-    ${props => !props.$isWideAspect && `
-        margin-top: 60px; /* Approximate offset to center with board */
-    `}
 `;
 
 const LandscapeControlsContainer = styled.div`
