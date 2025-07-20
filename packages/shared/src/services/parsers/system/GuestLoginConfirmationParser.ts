@@ -17,7 +17,7 @@ export class GuestLoginConfirmationParser extends BaseParser {
         
         // Extract the guest name from the message
         const match = message.match(/Press return to enter the server as "([^"]+)":/);
-        const guestName = match ? match[1] : null;
+        const guestName = match ? match[1] : 'guest';
         
         return {
             content: message,

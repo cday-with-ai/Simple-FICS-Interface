@@ -21,9 +21,9 @@ export class ChannelTellRenderer extends MessageRenderer {
     if (isGroupedMessage || !message.sender) {
       return (
         <MessageRow 
-          $color={message.metadata?.color}
-          $fontFamily={message.metadata?.fontFamily}
-          $fontStyle={message.metadata?.fontStyle}
+          $color={message.metadata?.color || undefined}
+          $fontFamily={message.metadata?.fontFamily || undefined}
+          $fontStyle={message.metadata?.fontStyle || undefined}
         >
           <MessageSpacer />
           <Content>
@@ -43,9 +43,9 @@ export class ChannelTellRenderer extends MessageRenderer {
     
     return (
       <MessageRow 
-        $color={message.metadata?.color}
-        $fontFamily={message.metadata?.fontFamily}
-        $fontStyle={message.metadata?.fontStyle}
+        $color={message.metadata?.color || undefined}
+        $fontFamily={message.metadata?.fontFamily || undefined}
+        $fontStyle={message.metadata?.fontStyle || undefined}
         data-settings="chat"
         className="channel-tell-message"
       >

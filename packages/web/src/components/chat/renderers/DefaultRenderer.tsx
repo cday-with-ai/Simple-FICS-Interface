@@ -19,7 +19,7 @@ export class DefaultRenderer extends MessageRenderer {
     // System messages
     if (message.type === 'system') {
       return (
-        <SystemMessageRow $color={message.metadata?.color}>
+        <SystemMessageRow $color={message.metadata?.color || undefined}>
           <InteractiveContent
             content={parsedMessage?.content || message.content}
             elements={parsedMessage?.elements}
@@ -35,7 +35,7 @@ export class DefaultRenderer extends MessageRenderer {
     // For grouped messages, only show content
     if (isGroupedMessage || !message.sender) {
       return (
-        <MessageRow $color={message.metadata?.color}>
+        <MessageRow $color={message.metadata?.color || undefined}>
           <MessageSpacer />
           <Content>
             <InteractiveContent
@@ -49,8 +49,8 @@ export class DefaultRenderer extends MessageRenderer {
     }
     
     return (
-      <MessageRow $color={message.metadata?.color}>
-        <Sender $isYou={isYou}>
+      <MessageRow $color={message.metadata?.color || undefined}>
+        <Sender $isYou={isYou || undefined}>
           {isYou ? message.sender : <PlayerName name={message.sender} />}
         </Sender>
         <Content>

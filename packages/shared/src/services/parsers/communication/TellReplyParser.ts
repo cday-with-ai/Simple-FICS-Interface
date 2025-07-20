@@ -49,7 +49,7 @@ export class TellReplyParser extends BaseParser {
                 // If the last message was from "You", append the (told username) to it
                 if (lastMessage.sender === 'You') {
                     runInAction(() => {
-                        lastMessage.content += ` (told ${parsed.metadata.username})`;
+                        lastMessage.content += ` (told ${parsed.metadata?.username || 'unknown'})`;
                     });
                     return parsed;
                 }
@@ -67,8 +67,7 @@ export class TellReplyParser extends BaseParser {
             type: isToldConfirmation ? 'system' : 'whisper',
             metadata: {
                 consoleType: 'tellReply',
-                parsedMessage: parsed,
-                isSystemMessage: isToldConfirmation
+                parsedMessage: parsed
             }
         });
         

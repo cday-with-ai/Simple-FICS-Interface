@@ -425,7 +425,6 @@ export class SettingsRegistry {
       type: 'boolean',
       value: false,
       defaultValue: false,
-      targetElements: ['.captured-pieces'],
       keywords: ['captured', 'taken', 'pieces'],
       previewType: 'instant'
     });
@@ -439,7 +438,6 @@ export class SettingsRegistry {
       type: 'boolean',
       value: true,
       defaultValue: true,
-      targetElements: ['.chat-message'],
       keywords: ['time', 'when', 'clock'],
       previewType: 'instant'
     });
@@ -452,7 +450,6 @@ export class SettingsRegistry {
       type: 'boolean',
       value: true,
       defaultValue: true,
-      targetElements: ['.chat-message'],
       keywords: ['mention', 'highlight', 'username'],
       previewType: 'apply'
     });
@@ -465,7 +462,6 @@ export class SettingsRegistry {
       type: 'boolean',
       value: true,
       defaultValue: true,
-      targetElements: ['.chat-tabs'],
       keywords: ['channel', 'tab', 'organize'],
       previewType: 'apply'
     });
@@ -478,7 +474,6 @@ export class SettingsRegistry {
       type: 'boolean',
       value: true,
       defaultValue: true,
-      targetElements: ['.chat-tabs'],
       keywords: ['tell', 'private', 'message', 'tab'],
       previewType: 'apply'
     });
@@ -510,7 +505,6 @@ export class SettingsRegistry {
       type: 'boolean',
       value: true,
       defaultValue: true,
-      targetElements: ['.resign-button'],
       keywords: ['resign', 'confirm', 'safety'],
       previewType: 'apply'
     });
@@ -725,7 +719,6 @@ export class SettingsRegistry {
         { label: 'No Play', command: '+noplay {player}' }
       ], null, 2),
       placeholder: 'Enter player context commands in JSON format',
-      targetElements: ['.player-name'],
       keywords: ['context', 'menu', 'player', 'commands'],
       previewType: 'apply',
       validate: (value: string) => {
@@ -774,7 +767,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#f0d9b5',
       defaultValue: '#f0d9b5',
-      targetElements: ['.board-square.light'],
       keywords: ['board', 'light', 'square', 'color'],
       previewType: 'instant'
     });
@@ -787,7 +779,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#b58863',
       defaultValue: '#b58863',
-      targetElements: ['.board-square.dark'],
       keywords: ['board', 'dark', 'square', 'color'],
       previewType: 'instant'
     });
@@ -837,7 +828,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#555555',
       defaultValue: '#555555',
-      targetElements: ['.channel-tell'],
       keywords: ['channel', 'tell', 'color', 'light'],
       previewType: 'instant'
     });
@@ -850,7 +840,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#0066cc',
       defaultValue: '#0066cc',
-      targetElements: ['.direct-tell'],
       keywords: ['private', 'tell', 'color', 'light'],
       previewType: 'instant'
     });
@@ -863,7 +852,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#cc0000',
       defaultValue: '#cc0000',
-      targetElements: ['.channel-39'],
       keywords: ['channel', '39', 'color', 'light'],
       previewType: 'instant'
     });
@@ -876,7 +864,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#006600',
       defaultValue: '#006600',
-      targetElements: ['.shout'],
       keywords: ['shout', 'color', 'light'],
       previewType: 'instant'
     });
@@ -889,7 +876,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#4169e1',
       defaultValue: '#4169e1',
-      targetElements: ['.game-notification'],
       keywords: ['game', 'notification', 'color', 'light'],
       previewType: 'instant'
     });
@@ -903,7 +889,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#aaaaaa',
       defaultValue: '#aaaaaa',
-      targetElements: ['.channel-tell'],
       keywords: ['channel', 'tell', 'color', 'dark'],
       previewType: 'instant'
     });
@@ -916,7 +901,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#66aaff',
       defaultValue: '#66aaff',
-      targetElements: ['.direct-tell'],
       keywords: ['private', 'tell', 'color', 'dark'],
       previewType: 'instant'
     });
@@ -929,7 +913,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#ff6666',
       defaultValue: '#ff6666',
-      targetElements: ['.channel-39'],
       keywords: ['channel', '39', 'color', 'dark'],
       previewType: 'instant'
     });
@@ -942,7 +925,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#66ff66',
       defaultValue: '#66ff66',
-      targetElements: ['.shout'],
       keywords: ['shout', 'color', 'dark'],
       previewType: 'instant'
     });
@@ -955,7 +937,6 @@ export class SettingsRegistry {
       type: 'color',
       value: '#7788ff',
       defaultValue: '#7788ff',
-      targetElements: ['.game-notification'],
       keywords: ['game', 'notification', 'color', 'dark'],
       previewType: 'instant'
     });
@@ -978,7 +959,6 @@ export class SettingsRegistry {
         { label: 'Georgia', value: 'Georgia, serif' },
         { label: 'Times New Roman', value: 'Times New Roman, serif' }
       ],
-      targetElements: ['.console-output'],
       keywords: ['console', 'font', 'family', 'monospace'],
       previewType: 'instant'
     });
@@ -996,7 +976,6 @@ export class SettingsRegistry {
         { label: 'Italic', value: 'italic' },
         { label: 'Oblique', value: 'oblique' }
       ],
-      targetElements: ['.console-output'],
       keywords: ['console', 'font', 'style', 'italic'],
       previewType: 'instant'
     });
@@ -1006,12 +985,7 @@ export class SettingsRegistry {
     this.settings.set(setting.id, setting);
     
     // Register element mappings
-    if (setting.targetElements) {
-      setting.targetElements.forEach(selector => {
-        const existing = this.elementMappings.get(selector) || [];
-        this.elementMappings.set(selector, [...existing, setting.id]);
-      });
-    }
+    // targetElements removed from SettingDefinition type
   }
 
   get(id: string): SettingDefinition | undefined {

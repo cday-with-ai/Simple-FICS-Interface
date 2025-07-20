@@ -16,9 +16,9 @@ export class DirectTellRenderer extends MessageRenderer {
     if (isGroupedMessage || !message.sender) {
       return (
         <MessageRow 
-          $color={message.metadata?.color}
-          $fontFamily={message.metadata?.fontFamily}
-          $fontStyle={message.metadata?.fontStyle}
+          $color={message.metadata?.color || undefined}
+          $fontFamily={message.metadata?.fontFamily || undefined}
+          $fontStyle={message.metadata?.fontStyle || undefined}
         >
           <MessageSpacer />
           <Content>
@@ -34,9 +34,9 @@ export class DirectTellRenderer extends MessageRenderer {
     
     return (
       <MessageRow 
-        $color={message.metadata?.color}
-        $fontFamily={message.metadata?.fontFamily}
-        $fontStyle={message.metadata?.fontStyle}
+        $color={message.metadata?.color || undefined}
+        $fontFamily={message.metadata?.fontFamily || undefined}
+        $fontStyle={message.metadata?.fontStyle || undefined}
       >
         <Sender $isYou={isYou}>
           {isYou ? message.sender : <PlayerName name={message.sender} />}

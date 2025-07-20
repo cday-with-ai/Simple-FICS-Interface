@@ -10,6 +10,8 @@
     "dev": "yarn workspace @fics/web dev",
     "claude": "yarn workspace @fics/web claude",
     "build:web": "yarn workspace @fics/web build",
+    "deploy:copy": "cp -r packages/web/dist/* .",
+    "deploy": "yarn build:web && yarn deploy:copy",
     "mobile": "yarn workspace @fics/mobile start",
     "ios": "yarn workspace @fics/mobile ios",
     "android": "yarn workspace @fics/mobile android",

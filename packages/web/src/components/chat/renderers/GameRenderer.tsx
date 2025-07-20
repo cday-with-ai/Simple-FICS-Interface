@@ -10,7 +10,7 @@ export class GameStartRenderer extends MessageRenderer {
     const parsedMessage = message.metadata?.parsedMessage;
     
     return (
-      <SystemMessageRow $color={message.metadata?.color}>
+      <SystemMessageRow $color={message.metadata?.color || undefined}>
         <InteractiveContent
           content={message.content}
           elements={parsedMessage?.elements}
@@ -28,7 +28,7 @@ export class GameEndRenderer extends MessageRenderer {
     const parsedMessage = message.metadata?.parsedMessage;
     
     return (
-      <SystemMessageRow $color={message.metadata?.color}>
+      <SystemMessageRow $color={message.metadata?.color || undefined}>
         <InteractiveContent
           content={message.content}
           elements={parsedMessage?.elements}
@@ -60,7 +60,7 @@ export class MovesListRenderer extends MessageRenderer {
     const parsedMessage = message.metadata?.parsedMessage;
     
     return (
-      <SystemMessageRow $color={message.metadata?.color}>
+      <SystemMessageRow $color={message.metadata?.color || undefined}>
         <InteractiveContent
           content={message.content}
           elements={parsedMessage?.elements}

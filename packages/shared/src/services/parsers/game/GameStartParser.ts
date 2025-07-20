@@ -7,7 +7,7 @@ export class GameStartParser extends BaseParser {
     name = 'gameStart';
     priority = 90;
     
-    private mapGameTypeToVariant(gameType: string): string {
+    private mapGameTypeToVariant(gameType: string): 'standard' | 'chess960' | 'losers' | 'suicide' | 'atomic' | 'crazyhouse' | 'wild' {
         const variantMap: Record<string, string> = {
             'standard': 'standard',
             'blitz': 'standard',
@@ -15,8 +15,8 @@ export class GameStartParser extends BaseParser {
             'bullet': 'standard',
             'crazyhouse': 'crazyhouse',
             'atomic': 'atomic',
-            'losers': 'antichess',
-            'suicide': 'antichess',
+            'losers': 'losers',
+            'suicide': 'suicide',
             'wild/0': 'chess960',
             'wild/1': 'standard',
             'wild/2': 'standard',
@@ -27,7 +27,7 @@ export class GameStartParser extends BaseParser {
             'wild/8a': 'standard'
         };
         
-        return variantMap[gameType.toLowerCase()] || 'standard';
+        return (variantMap[gameType.toLowerCase()] || 'standard') as 'standard' | 'chess960' | 'losers' | 'suicide' | 'atomic' | 'crazyhouse' | 'wild';
     }
     
     override handle(message: string, stores: RootStore): ParsedMessage<GameStart> | null {

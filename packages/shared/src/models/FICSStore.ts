@@ -1,14 +1,7 @@
 import {makeAutoObservable, runInAction} from 'mobx';
 import {FicsProtocol} from '../services/FicsProtocol';
 import {GameStart, GameEnd, MovesList} from '../services/FicsProtocol.types';
-
-// Forward declaration to avoid circular dependency
-interface RootStore {
-    gameStore: any;
-    chatStore: any;
-    soundStore?: any;
-    preferencesStore: any;
-}
+import type {RootStore} from './RootStore';
 
 export interface FICSUser {
     handle: string;
@@ -786,7 +779,7 @@ export class FICSStore {
         }, 5000);
     }
 
-    private handleLogin() {
+    handleLogin() {
         runInAction(() => {
             // Initialize ping monitoring - run every minute
             this.pingMonitorInterval = setInterval(() => {
@@ -807,13 +800,7 @@ export class FICSStore {
         });
     }
 
-    private handleStyle12(line: string) {
-        // Extract Style12 data and update game store
-        const style12Match = line.match(/Style 12: (.+)/);
-        if (style12Match) {
-            this.rootStore?.gameStore.updateFromStyle12(style12Match[1]);
-        }
-    }
+    // Style12 is now handled by the Style12Parser
 
     private handleGameStart(gameStart: GameStart) {
         const gameState = {
@@ -965,7 +952,7 @@ export class FICSStore {
         this.clearingListBuffer = [];
     }
     
-    private detectConsoleMessageType(message: string): { consoleType?: string; channelNumber?: string } | undefined {
+    private detectConsoleMessageType(message: string): { consoleType?: 'journal' | 'history' | 'fingerOutput' | 'notification' | 'directTell' | 'channelTell' | 'shout' | 'cshout' | 'matchRequest' | 'seek' | 'finger' | 'who' | 'sought' | 'games' | 'channel' | 'seekAnnouncement' | 'gameNotification' | 'system'; channelNumber?: string } | undefined {
         // Skip empty messages
         if (!message || !message.trim()) return undefined;
         
@@ -1003,7 +990,7 @@ export class FICSStore {
             message.match(/^Total time online:/) || // Total time
             message.match(/^% of life online:/) // Percentage online
         ) {
-            return { consoleType: 'fingerNotes' };
+            return { consoleType: 'fingerOutput' };
         }
         
         // Notification messages

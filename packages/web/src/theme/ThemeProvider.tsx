@@ -110,7 +110,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = observer(({children})
 
             // Set CSS custom properties for global styling
             Object.entries(activeTheme.colors).forEach(([key, value]) => {
-                root.style.setProperty(`--color-${key}`, value);
+                if (typeof value === 'string') {
+                    root.style.setProperty(`--color-${key}`, value);
+                } else if (typeof value === 'object' && value !== null) {
+                    // Handle nested color objects (like board colors)
+                    Object.entries(value).forEach(([subKey, subValue]) => {
+                        if (typeof subValue === 'string') {
+                            root.style.setProperty(`--color-${key}-${subKey}`, subValue);
+                        }
+                    });
+                }
             });
 
             Object.entries(activeTheme.spacing).forEach(([key, value]) => {
