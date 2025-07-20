@@ -85,7 +85,7 @@ const BoardWithAnalysis = styled.div<{ $orientation?: 'landscape' | 'portrait' }
     position: relative;
     height: fit-content;
     ${props => props.$orientation === 'landscape' && `
-        margin-left: 60px;
+        margin-left: 30px;
     `}
 `;
 
@@ -127,15 +127,15 @@ const BottomBoardInfo = styled.div`
 // Landscape-specific info components
 const LandscapeTopInfo = styled(TopBoardInfo)<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-bottom: -6px;
-    margin-left: 60px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 60px));
+    margin-left: 30px;
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 30px));
     padding: 0 11px;
 `;
 
 const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-top: -6px;
-    margin-left: 60px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 60px));
+    margin-left: 30px;
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 30px));
     padding: 0 11px;
 `;
 
@@ -198,11 +198,11 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chat
     max-height: 600px;
   ` : `
     /* Landscape calculations:
-     * Width: viewport width - chat width - player controls (200px) - analysis space (60px always reserved)
+     * Width: viewport width - chat width - player controls (200px) - analysis space (30px always reserved)
      * Height: viewport height - header (~48px) - top/bottom info (~80px) - padding (20px)
      */
-    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 60px));
-    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 60px));
+    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 30px));
+    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 30px));
     max-width: calc(100vh - 100px);
     max-height: calc(100vh - 100px);
   `}
@@ -468,8 +468,8 @@ const ExtraControlsContainer = styled.div`
 
 const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-top: ${props => props.theme.spacing[1]};
-    margin-left: 60px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 60px));
+    margin-left: 30px;
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 30px));
     width: 100%;
     padding: 0 11px;
 `;
