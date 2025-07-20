@@ -65,16 +65,15 @@ const GameInfo = styled.div`
 `;
 
 const BoardArea = styled.div<{ $isWideAspect?: boolean }>`
-    display: grid;
-    grid-template-rows: auto 1fr auto;
+    display: flex;
+    flex-direction: column;
     gap: 0;
     height: 100%;
-    justify-items: center;
+    align-items: center;
+    justify-content: flex-start;
     flex: 0 0 auto;
     min-width: 0;
     overflow: hidden;
-    grid-column: 1;
-    grid-row: 1 / -1;
 `;
 
 const ExtraCapturedSquare = styled.div<{ $size: number }>`
@@ -275,12 +274,11 @@ const LandscapeLayout = styled.div`
 `;
 
 const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-rows: auto 1fr auto;
+    display: flex;
+    flex-direction: row;
     gap: ${props => props.theme.spacing[3]};
     height: 100%;
-    align-items: start;
+    align-items: flex-start;
     justify-content: center;
     padding: ${props => props.theme.spacing[2]};
     padding-top: ${props => props.theme.spacing[4]};
@@ -288,6 +286,11 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     position: relative;
     overflow: hidden;
     min-width: 0;
+    
+    /* Keep board and players together */
+    & > * {
+        flex-shrink: 0;
+    }
 `;
 
 const PlayersColumn = styled.div`
@@ -319,16 +322,17 @@ const HorizontalPlayerWithClock = styled.div`
 const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean }>`
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
     gap: ${props => props.theme.spacing[2]};
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
     flex: 0 0 auto;
     
-    /* Position in second column, second row to align with the board */
-    grid-column: 2;
-    grid-row: 2;
-    align-self: center;
+    /* Calculate margin to center with the actual board */
+    /* Top info is ~40px, then we want to start at middle of board */
+    /* So if board is 400px, center is at 40px + 200px = 240px from top */
+    /* Controls height is ~200px, so start at 240px - 100px = 140px */
+    margin-top: 140px;
 `;
 
 const LandscapeControlsContainer = styled.div`
