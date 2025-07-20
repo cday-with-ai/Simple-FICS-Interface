@@ -124,13 +124,13 @@ const BottomBoardInfo = styled.div`
 // Landscape-specific info components
 const LandscapeTopInfo = styled(TopBoardInfo)<{ $chatWidth?: number }>`
     margin-bottom: -6px;
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$chatWidth || 0}px - 80px - 320px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - 40px));
     padding: 0 11px;
 `;
 
 const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number }>`
     margin-top: -6px;
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$chatWidth || 0}px - 80px - 320px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - 40px));
     padding: 0 11px;
 `;
 
@@ -192,10 +192,14 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chat
     max-width: 600px;
     max-height: 600px;
   ` : `
-    width: min(calc(100vh - 140px), calc(100vw - ${props.$chatWidth || 0}px - 80px - 320px));
-    height: min(calc(100vh - 140px), calc(100vw - ${props.$chatWidth || 0}px - 80px - 320px));
-    max-width: calc(100vh - 140px);
-    max-height: calc(100vh - 140px);
+    /* Landscape calculations:
+     * Width: viewport width - chat width - player controls (280px) - gaps/padding (40px)
+     * Height: viewport height - header (~48px) - top/bottom info (~80px) - padding (20px)
+     */
+    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 280px - 40px));
+    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 280px - 40px));
+    max-width: calc(100vh - 100px);
+    max-height: calc(100vh - 100px);
   `}
 `;
 
@@ -459,7 +463,7 @@ const ExtraControlsContainer = styled.div`
 
 const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number }>`
     margin-top: ${props => props.theme.spacing[1]};
-    max-width: min(calc(100vh - 140px), calc(100vw - ${props => props.$chatWidth || 0}px - 80px - 320px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - 40px));
     width: 100%;
     padding: 0 11px;
 `;
