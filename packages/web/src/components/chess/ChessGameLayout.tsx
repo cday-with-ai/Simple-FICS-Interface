@@ -84,6 +84,10 @@ const BoardWithAnalysis = styled.div<{ $orientation?: 'landscape' | 'portrait' }
     align-items: stretch;
     position: relative;
     height: fit-content;
+    ${props => props.$orientation === 'landscape' && `
+        /* Ensure the analysis bar can position relative to this container */
+        position: relative;
+    `}
 `;
 
 const PortraitCapturedPiecesContainer = styled.div<{ $squareSize?: number }>`
@@ -471,10 +475,11 @@ const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number; $hasAnalysis?: b
 
 const LandscapeAnalysisWrapper = styled.div`
     position: absolute;
-    left: -28px;
+    left: -35px;
     top: 0;
     height: 100%;
-    z-index: 10;
+    z-index: 100;
+    background: rgba(255, 0, 0, 0.1); /* Temporary debug background */
 `;
 
 const LandscapeCapturedPiecesContainer = styled.div`
@@ -973,7 +978,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 <BoardWithAnalysis $orientation="landscape">
                                     {isAnalysisActive && (
                                         <LandscapeAnalysisWrapper>
-                                            <AnalysisDisplay orientation="vertical"/>
+                                            <AnalysisDisplay orientation="vertical" boardSize={boardSize}/>
                                         </LandscapeAnalysisWrapper>
                                     )}
                                     <BoardWrapper $orientation="landscape" $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
