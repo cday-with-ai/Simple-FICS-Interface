@@ -122,15 +122,15 @@ const BottomBoardInfo = styled.div`
 `;
 
 // Landscape-specific info components
-const LandscapeTopInfo = styled(TopBoardInfo)<{ $chatWidth?: number }>`
+const LandscapeTopInfo = styled(TopBoardInfo)<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-bottom: -6px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - 40px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - ${props => props.$hasAnalysis ? 60 : 0}px - 20px));
     padding: 0 11px;
 `;
 
-const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number }>`
+const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-top: -6px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - 40px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - ${props => props.$hasAnalysis ? 60 : 0}px - 20px));
     padding: 0 11px;
 `;
 
@@ -181,7 +181,7 @@ const OpeningInfo = styled.div`
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chatWidth?: number }>`
+const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chatWidth?: number; $hasAnalysis?: boolean }>`
     position: relative;
     display: flex;
     align-items: center;
@@ -193,11 +193,11 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chat
     max-height: 600px;
   ` : `
     /* Landscape calculations:
-     * Width: viewport width - chat width - player controls (280px) - gaps/padding (40px)
+     * Width: viewport width - chat width - player controls (280px) - analysis (60px if active) - left padding (20px)
      * Height: viewport height - header (~48px) - top/bottom info (~80px) - padding (20px)
      */
-    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 280px - 40px));
-    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 280px - 40px));
+    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 280px - ${props.$hasAnalysis ? 60 : 0}px - 20px));
+    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 280px - ${props.$hasAnalysis ? 60 : 0}px - 20px));
     max-width: calc(100vh - 100px);
     max-height: calc(100vh - 100px);
   `}
@@ -461,9 +461,9 @@ const ExtraControlsContainer = styled.div`
     width: 100%;
 `;
 
-const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number }>`
+const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-top: ${props => props.theme.spacing[1]};
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - 40px));
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - ${props => props.$hasAnalysis ? 60 : 0}px - 20px));
     width: 100%;
     padding: 0 11px;
 `;
@@ -957,7 +957,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                     <ChessSection $orientation="landscape">
                         <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
                             <BoardArea $isWideAspect={isWideAspect}>
-                                <LandscapeTopInfo $chatWidth={chatWidth}>
+                                <LandscapeTopInfo $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
                                     <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
                                     <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                 </LandscapeTopInfo>
@@ -965,7 +965,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     {isAnalysisActive && (
                                         <AnalysisDisplay orientation="vertical"/>
                                     )}
-                                    <BoardWrapper $orientation="landscape" $chatWidth={chatWidth}>
+                                    <BoardWrapper $orientation="landscape" $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
                                         <ChessBoardWithPieces
                                             position={position}
                                             flipped={boardFlipped}
@@ -980,7 +980,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                         />
                                     </BoardWrapper>
                                 </BoardWithAnalysis>
-                                <LandscapeBottomInfo $chatWidth={chatWidth}>
+                                <LandscapeBottomInfo $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
                                     <LastMoveInfo>
                                         {gameStore.premove ? 
                                             `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
@@ -992,7 +992,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     )}
                                 </LandscapeBottomInfo>
                                 {isAnalysisActive && (
-                                    <LandscapeAnalysisInfo $chatWidth={chatWidth}>
+                                    <LandscapeAnalysisInfo $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
                                         <AnalysisInfoDisplay/>
                                     </LandscapeAnalysisInfo>
                                 )}
