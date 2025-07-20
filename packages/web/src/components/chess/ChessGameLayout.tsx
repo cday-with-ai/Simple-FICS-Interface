@@ -506,17 +506,11 @@ const PortraitAnalysisInfoWrapper = styled.div`
     padding: 0 30px;
 `;
 
-const PortraitAnalysisWrapper = styled.div<{ $squareSize?: number; $topOffset?: number }>`
+const PortraitAnalysisWrapper = styled.div<{ $boardSize?: number }>`
     display: flex;
-    align-items: flex-start;
-    padding-top: ${props => {
-        // Calculate offset: 1 extra square + estimated height of top info + player info
-        const extraSquare = props.$squareSize || 0;
-        const topInfoHeight = 24; // Approximate height of game# and time control
-        const playerInfoHeight = 40; // Approximate height of player info row
-        const quarterSquare = (props.$squareSize || 0) * 0.25;
-        return extraSquare + topInfoHeight + playerInfoHeight + 8 - quarterSquare; // +8 for margins, -quarterSquare to make it taller
-    }}px;
+    align-items: center;
+    height: ${props => props.$boardSize ? `${props.$boardSize}px` : 'auto'};
+    margin-top: 65px; /* Align with board top (top info + player info) */
 `;
 
 
@@ -728,7 +722,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                 <PortraitBoardSection>
                     <BoardAndExtrasContainer>
                         {isAnalysisActive && (
-                            <PortraitAnalysisWrapper $squareSize={boardSize ? boardSize / 8 : 0}>
+                            <PortraitAnalysisWrapper $boardSize={boardSize}>
                                 <AnalysisDisplay orientation="vertical" boardSize={boardSize}/>
                             </PortraitAnalysisWrapper>
                         )}
