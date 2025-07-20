@@ -278,7 +278,7 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     flex-direction: row;
     gap: ${props => props.theme.spacing[3]};
     height: 100%;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: ${props => props.theme.spacing[2]};
     padding-top: ${props => props.theme.spacing[4]};
@@ -319,7 +319,7 @@ const HorizontalPlayerWithClock = styled.div`
     width: 100%;
 `;
 
-const LandscapePlayersColumn = styled.div`
+const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean }>`
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -327,6 +327,12 @@ const LandscapePlayersColumn = styled.div`
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
     flex: 0 0 auto;
+    align-self: center;
+    
+    /* For tall aspect ratios, add top margin to align with board center */
+    ${props => !props.$isWideAspect && `
+        margin-top: 60px; /* Approximate offset to center with board */
+    `}
 `;
 
 const LandscapeControlsContainer = styled.div`
@@ -994,7 +1000,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 )}
                             </BoardArea>
 
-                            <LandscapePlayersColumn>
+                            <LandscapePlayersColumn $isWideAspect={isWideAspect}>
                                 {showCapturedPieces && (
                                     <CapturedPieces
                                         orientation="horizontal"
