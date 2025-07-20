@@ -329,10 +329,12 @@ const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean }>`
     flex: 0 0 auto;
     
     /* Calculate margin to center with the actual board */
-    /* Top info is ~40px, then we want to start at middle of board */
-    /* So if board is 400px, center is at 40px + 200px = 240px from top */
-    /* Controls height is ~200px, so start at 240px - 100px = 140px */
-    margin-top: 140px;
+    /* LandscapeTopInfo (game# + time control) is ~40px */
+    /* Board center is at: 40px + half board height (~200px) = 240px from container top */
+    /* Controls are ~200px tall, so center them at 240px - 100px = 140px */
+    /* But we also need to account for the LandscapeTopInfo space */
+    /* Total: 40px (top info) + 120px = 160px (adjusted down slightly) */
+    margin-top: 160px;
 `;
 
 const LandscapeControlsContainer = styled.div`
