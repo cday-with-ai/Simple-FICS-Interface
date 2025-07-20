@@ -278,7 +278,7 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     flex-direction: row;
     gap: ${props => props.theme.spacing[3]};
     height: 100%;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     padding: ${props => props.theme.spacing[2]};
     padding-top: ${props => props.theme.spacing[4]};
@@ -327,7 +327,6 @@ const LandscapePlayersColumn = styled.div`
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
     flex: 0 0 auto;
-    align-self: center;
 `;
 
 const LandscapeControlsContainer = styled.div`
