@@ -281,7 +281,7 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     align-items: flex-start;
     justify-content: center;
     padding: ${props => props.theme.spacing[2]};
-    padding-top: ${props => props.theme.spacing[4]};
+    padding-top: ${props => props.theme.spacing[1]};
     width: 100%;
     position: relative;
     overflow: hidden;
