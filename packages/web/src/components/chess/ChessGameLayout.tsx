@@ -312,7 +312,7 @@ const HorizontalPlayerWithClock = styled.div`
     width: 100%;
 `;
 
-const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean }>`
+const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean; $boardSize?: number }>`
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -321,13 +321,17 @@ const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean }>`
     padding: ${props => props.theme.spacing[3]} 0;
     flex: 0 0 auto;
     
-    /* Calculate margin to center with the actual board */
-    /* LandscapeTopInfo (game# + time control) is ~40px */
-    /* Board center is at: 40px + half board height (~200px) = 240px from container top */
-    /* Controls are ~200px tall, so center them at 240px - 100px = 140px */
-    /* But we also need to account for the LandscapeTopInfo space */
-    /* Total: 40px (top info) + 140px = 180px */
-    margin-top: 180px;
+    /* Dynamically calculate margin based on actual board size */
+    margin-top: ${props => {
+        if (!props.$boardSize) return '180px'; // Fallback
+        // LandscapeTopInfo height is approximately 40px
+        const topInfoHeight = 40;
+        // Center of board is at topInfoHeight + (boardSize / 2)
+        const boardCenter = topInfoHeight + (props.$boardSize / 2);
+        // Controls height is approximately 200px, so offset by 100px to center
+        const controlsOffset = 100;
+        return `${boardCenter - controlsOffset}px`;
+    }};
 `;
 
 const LandscapeControlsContainer = styled.div`
@@ -987,7 +991,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 )}
                             </BoardArea>
 
-                            <LandscapePlayersColumn $isWideAspect={isWideAspect}>
+                            <LandscapePlayersColumn $isWideAspect={isWideAspect} $boardSize={boardSize}>
                                 {showCapturedPieces && (
                                     <CapturedPieces
                                         orientation="horizontal"
