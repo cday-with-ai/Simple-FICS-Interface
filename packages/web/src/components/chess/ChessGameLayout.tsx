@@ -279,9 +279,10 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     justify-content: center;
     padding: ${props => props.theme.spacing[2]};
     padding-top: ${props => props.theme.spacing[1]};
+    padding-left: 40px; /* Always reserve space for analysis bar */
     width: 100%;
     position: relative;
-    overflow: hidden;
+    overflow: visible; /* Allow analysis bar to show */
     min-width: 0;
     
     /* Keep board and players together */
@@ -470,7 +471,7 @@ const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number; $hasAnalysis?: b
 
 const LandscapeAnalysisWrapper = styled.div`
     position: absolute;
-    left: -30px;
+    left: -28px;
     top: 0;
     height: 100%;
     z-index: 10;
