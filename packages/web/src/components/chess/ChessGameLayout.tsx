@@ -70,7 +70,7 @@ const BoardArea = styled.div`
     gap: 0;
     height: 100%;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
     flex: 0 0 auto;
     min-width: 0;
     overflow: hidden;
