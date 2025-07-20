@@ -124,13 +124,15 @@ const BottomBoardInfo = styled.div`
 // Landscape-specific info components
 const LandscapeTopInfo = styled(TopBoardInfo)<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-bottom: -6px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - ${props => props.$hasAnalysis ? 60 : 0}px - 20px));
+    margin-left: 60px;
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 60px));
     padding: 0 11px;
 `;
 
 const LandscapeBottomInfo = styled(BottomBoardInfo)<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-top: -6px;
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - ${props => props.$hasAnalysis ? 60 : 0}px - 20px));
+    margin-left: 60px;
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 60px));
     padding: 0 11px;
 `;
 
@@ -193,13 +195,15 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chat
     max-height: 600px;
   ` : `
     /* Landscape calculations:
-     * Width: viewport width - chat width - player controls (280px) - analysis (60px if active) - left padding (20px)
+     * Width: viewport width - chat width - player controls (200px) - analysis space (60px always reserved)
      * Height: viewport height - header (~48px) - top/bottom info (~80px) - padding (20px)
+     * Always add 60px left margin to prevent board shifting when analysis is toggled
      */
-    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 280px - ${props.$hasAnalysis ? 60 : 0}px - 20px));
-    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 280px - ${props.$hasAnalysis ? 60 : 0}px - 20px));
+    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 60px));
+    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 60px));
     max-width: calc(100vh - 100px);
     max-height: calc(100vh - 100px);
+    margin-left: 60px;
   `}
 `;
 
@@ -253,7 +257,7 @@ const ControlsSection = styled.div<{ $orientation: 'landscape' | 'portrait'; $bo
     flex-direction: column;
     gap: ${props => props.theme.spacing[2]};
     flex: ${props => props.$orientation === 'landscape' ? '0 0 auto' : '0 0 auto'};
-    min-width: ${props => props.$orientation === 'landscape' ? '280px' : 'auto'};
+    min-width: ${props => props.$orientation === 'landscape' ? '200px' : 'auto'};
     max-width: ${props => props.$orientation === 'landscape' ? '320px' : 'none'};
     overflow: ${props => props.$orientation === 'portrait' ? 'visible' : 'hidden'};
     ${props => props.$orientation === 'portrait' && `
@@ -321,7 +325,7 @@ const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean; $boardSize?
     flex-direction: column;
     justify-content: flex-start;
     gap: ${props => props.theme.spacing[2]};
-    width: 280px;
+    width: 200px;
     padding: ${props => props.theme.spacing[3]} 0;
     flex: 0 0 auto;
     
@@ -463,7 +467,8 @@ const ExtraControlsContainer = styled.div`
 
 const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number; $hasAnalysis?: boolean }>`
     margin-top: ${props => props.theme.spacing[1]};
-    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 280px - ${props => props.$hasAnalysis ? 60 : 0}px - 20px));
+    margin-left: 60px;
+    max-width: min(calc(100vh - 100px), calc(100vw - ${props => props.$chatWidth || 0}px - 200px - 60px));
     width: 100%;
     padding: 0 11px;
 `;
