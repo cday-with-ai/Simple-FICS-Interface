@@ -84,10 +84,6 @@ const BoardWithAnalysis = styled.div<{ $orientation?: 'landscape' | 'portrait' }
     align-items: stretch;
     position: relative;
     height: fit-content;
-    ${props => props.$orientation === 'landscape' && `
-        /* Ensure the analysis bar can position relative to this container */
-        position: relative;
-    `}
 `;
 
 const PortraitCapturedPiecesContainer = styled.div<{ $squareSize?: number }>`
@@ -197,11 +193,11 @@ const BoardWrapper = styled.div<{ $orientation?: 'landscape' | 'portrait'; $chat
     max-height: 600px;
   ` : `
     /* Landscape calculations:
-     * Width: viewport width - chat width - player controls (200px) - padding (20px)
+     * Width: viewport width - chat width - player controls (200px) - analysis (20px if active) - padding (20px)
      * Height: viewport height - header (~48px) - top/bottom info (~80px) - padding (20px)
      */
-    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 20px));
-    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - 20px));
+    width: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - ${props.$hasAnalysis ? 20 : 0}px - 20px));
+    height: min(calc(100vh - 100px), calc(100vw - ${props.$chatWidth || 0}px - 200px - ${props.$hasAnalysis ? 20 : 0}px - 20px));
     max-width: calc(100vh - 100px);
     max-height: calc(100vh - 100px);
   `}
@@ -283,10 +279,9 @@ const LandscapeBoardSection = styled.div<{ $hasAnalysis?: boolean }>`
     justify-content: center;
     padding: ${props => props.theme.spacing[2]};
     padding-top: ${props => props.theme.spacing[1]};
-    padding-left: 40px; /* Always reserve space for analysis bar */
     width: 100%;
     position: relative;
-    overflow: visible; /* Allow analysis bar to show */
+    overflow: hidden;
     min-width: 0;
     
     /* Keep board and players together */
@@ -977,9 +972,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 </LandscapeTopInfo>
                                 <BoardWithAnalysis $orientation="landscape">
                                     {isAnalysisActive && (
-                                        <LandscapeAnalysisWrapper>
-                                            <AnalysisDisplay orientation="vertical" boardSize={boardSize}/>
-                                        </LandscapeAnalysisWrapper>
+                                        <AnalysisDisplay orientation="vertical" boardSize={boardSize}/>
                                     )}
                                     <BoardWrapper $orientation="landscape" $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
                                         <ChessBoardWithPieces
