@@ -64,13 +64,13 @@ const GameInfo = styled.div`
     white-space: nowrap;
 `;
 
-const BoardArea = styled.div`
+const BoardArea = styled.div<{ $isWideAspect?: boolean }>`
     display: flex;
     flex-direction: column;
     gap: 0;
     height: 100%;
     align-items: center;
-    justify-content: center;
+    justify-content: ${props => props.$isWideAspect ? 'center' : 'flex-start'};
     flex: 0 0 auto;
     min-width: 0;
     overflow: hidden;
@@ -508,6 +508,11 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     // Get current position from GameStore - direct access to ensure MobX tracks it
     const position = gameStore.currentPosition || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
     
+    // Calculate if we have a wide aspect ratio (more width than height)
+    // For tall landscapes like iPad Pro (1024x1366 in landscape = 1.33 ratio), align to top
+    // For wide landscapes, center vertically  
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    const isWideAspect = aspectRatio > 1.6;
 
     // Test: Start with position after 1.e4
     // const position = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1';
@@ -947,7 +952,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                 <>
                     <ChessSection $orientation="landscape">
                         <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
-                            <BoardArea>
+                            <BoardArea $isWideAspect={isWideAspect}>
                                 <LandscapeTopInfo $chatWidth={chatWidth}>
                                     <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
                                     <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
