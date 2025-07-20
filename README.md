@@ -1,12 +1,21 @@
-# Simple-FICS-Interface Version beta 1
+# Simple-FICS-Interface Version beta 2
 
-<img src="docs/screenshot.png">
-<img src="docs/analysis-screenshot.png">
+A modern, responsive chess client for the Free Internet Chess Server (FICS) built with React and TypeScript. Features a clean interface focused on gameplay and chat functionality with minimal UI distractions.
 
 Try it <a href="https://simple-fics-interface.pages.dev/" target="_blank">here</a>.
 
-A modern, responsive chess client for the Free Internet Chess Server (FICS) built with React and TypeScript. Features a 
-clean interface focused on gameplay and chat functionality with minimal UI distractions.
+Desktop Light Mode, Landscape
+<img src="docs/light-mode-landscape-mode.png">
+Desktop Dark Mode, Portrait
+<img src="docs/dark-mode-portait-mode.png">
+Dark Mode, Portrait
+<img src="docs/dark-mode-theme.png">
+Small Mobile, analysis mode.
+<img src="docs/mobile-analysis.png">
+Small Mobile, chat mode.
+<img src="docs/mobile-chat-only.png">
+
+## Overview
 
 MIT licensed so anyone can fork and build upon it without worrying about IP.
 
@@ -14,36 +23,57 @@ You can use this repo to report Issues.
 
 ## Features
 **Working Functionality:**
-
+- **Mobile support**
+  - Works in tiny iPhone SE resolutions
+  - Adaptive layout modes: chess-only, chat-only, or chess-and-chat based on viewport
+  - Landscape and portrait orientations with device tilt support
 - **Multiple Chess Variants**: 
-  - Standard, Chess960, Losers, Suicide, Atomic, Crazyhouse, Wild all supported
+  - Standard, Chess960, Losers, Suicide, Atomic, Wild all supported
   - Full client-side move validation
-  - Pre-move support with validation
+  - Crazyhouse support (experimental)
 - **Stockfish 16 WASM Integration** for real-time analysis
+  - Perspective is always of the bottom player
+  - Top tier analysis all run in JavaScript
+  - Dedicated analysis column in landscape mode (no board shifting)
+  - Evaluation bar with centipawn display
 - **Modern UI Features**:
-  - Smooth piece animations
+  - Smooth piece animations with configurable duration
+  - Auto-disable animations when low on time
   - Drag-and-drop and click-click move input
-  - Premove (Right click to clear)
-  - Smart scroll in chat
-  - Responsive design (portrait/landscape modes). Should work on phones and tablets.
-  - Landscape as well as Portrait mode. Show work with tilt on phones/tablets.
+  - Premove support (right-click to clear)
+  - Smart scroll in chat with auto-scroll toggle
+  - Responsive design with three adaptive modes
   - Dark/Light theme support
-  - 30+ chess piece sets. (Same as lichess.org)
+  - 30+ chess piece sets (same as lichess.org)
   - Drag-and-drop chat tabs
-  - Chat links for player handles.
+  - Board coordinates toggle
+  - Legal move indicators
+  - Manual board flipping
+- **Settings System**:
+  - Comprehensive settings dialog with categories
+  - Quick settings popover (magic wand)
+  - Auto-promotion piece configuration
+  - Sound effects (moves, captures, illegal moves)
+  - Persistent local storage
 - **FICS Protocol Support**:
   - Timeseal2 protocol
   - Style12 board updates
   - Channel and private chat tabs
-  - Game observation
+  - Click on games, history, journal to view games
+  - Click on player names for actions (finger, vars, etc.)
+  - Game observation with real-time updates
   - Player context menus
+  - Clear list support (clear censor, clear noplay, etc.)
+  - Hover over messages to see time received
 - **Game Features**:
-  - Move list with navigation
+  - Move list with navigation (keyboard arrow keys supported)
   - ECO opening database
-  - Captured pieces display
+  - Captured pieces display (clickable for Crazyhouse drops)
   - Clock display with low-time warnings
   - Draw/Resign/Abort controls
-  - Pawn promotion dialogs
+  - Pawn promotion dialog and quick promotion
+  - Game examination support
+  - Position setup via FEN
 
 ## Quick Start
 
@@ -56,10 +86,19 @@ Simply open `index.html` in your browser. The app is pre-built and ready to use.
 yarn install
 
 # Start development server
-yarn web
+yarn web         # Standard dev server (port 5173)
+yarn dev         # Enhanced dev mode (port 14040)
+yarn claude      # Claude-specific mode (port 14080)
 ```
 
-Then open http://localhost:5173
+## Connecting to FICS
+
+1. Open the app in your browser
+2. Enter your FICS username and password
+3. For guest access, use username "guest"
+4. Click "Connect" to join the server
+
+The app will automatically reconnect if the connection is lost.
 
 ## Project Structure
 
@@ -77,6 +116,12 @@ packages/
 ```bash
 # Build the web app
 yarn build:web
+
+# Run tests
+yarn test
+
+# Type checking
+yarn typecheck
 ```
 
 The built files are already included in `packages/web/dist/` for easy deployment.
@@ -103,19 +148,36 @@ The app is configured for Cloudflare Pages deployment with:
 - Custom chess engine with full variant support
 - Responsive design system
 
+## Keyboard Shortcuts
+
+- **Arrow Keys**: Navigate through moves
+- **Right Click**: Clear premove
+- **Escape**: Cancel piece selection
+
+## Common FICS Commands
+
+```
+tell <user> <message>     # Send private message
+<channel>. <message>      # Send channel message
+observe <game>           # Watch a game
+seek <time> <inc>        # Seek a game
+examine                  # Examine your last game
+flip                     # Flip the board
+```
+
 ## Roadmap
 
 **In Progress:**
-- Additional UI polish and animations
-- Adding Preferences
-- Bug fixes
+- Fix some annoying chat issues
+- Improve Crazyhouse stability
 
-**Planned:**
-- Enhanced mobile experience by creating react native apps.
+** Possible enhancments **
+- Add IOS/Android app and complete mobile support. (Currently works via browser)
 
 **Not Planned:**
 - Bughouse support
 - Multiple simultaneous boards
+- Tournament management
 
 ## Contributing
 
