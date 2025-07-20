@@ -151,10 +151,14 @@ export class AnalysisStore {
     }
 
     get evaluation(): string {
+        if (!this.currentLine) return '0.00';
+        
         const evalFromBottomPerspective = this.getEvaluationFromBottomPerspective();
         
-        if (this.currentLine?.mate !== undefined) {
-            return `M${Math.abs(this.currentLine.mate)}`;
+        if (this.currentLine.mate !== undefined) {
+            // Show mate from bottom player's perspective
+            const mateValue = evalFromBottomPerspective > 0 ? Math.abs(this.currentLine.mate) : -Math.abs(this.currentLine.mate);
+            return mateValue > 0 ? `M${mateValue}` : `M${mateValue}`;
         }
         
         return evalFromBottomPerspective >= 0 ? `+${evalFromBottomPerspective.toFixed(2)}` : evalFromBottomPerspective.toFixed(2);
@@ -253,13 +257,25 @@ export class AnalysisStore {
     private getEvaluationFromBottomPerspective(): number {
         if (!this.currentLine) return 0;
         
-        // Get evaluation in pawns (Stockfish gives it from white's perspective)
+        // Get evaluation in pawns
         let evalInPawns = this.currentLine.score / 100;
         
         if (this.currentLine.mate !== undefined) {
             // For mate, use extreme values
+            // Positive mate value means the side to move has mate
             evalInPawns = this.currentLine.mate > 0 ? 999 : -999;
         }
+        
+        // Parse the FEN to determine whose turn it is
+        const fenParts = this.currentFen.split(' ');
+        const isBlackToMove = fenParts.length > 1 && fenParts[1] === 'b';
+        
+        // Stockfish returns evaluation from the perspective of the side to move
+        // If it's black's turn, we need to negate to get it from white's perspective first
+        if (isBlackToMove) {
+            evalInPawns = -evalInPawns;
+        }
+        // Now evalInPawns is always from white's perspective
         
         // Use the locked board orientation if available (during analysis)
         // Otherwise fall back to current board orientation
@@ -267,7 +283,7 @@ export class AnalysisStore {
             ? this.lockedBoardOrientation 
             : (this.rootStore?.gameStore?.shouldShowFlippedBoard || false);
         
-        // If black is on bottom, negate the evaluation
+        // If black is on bottom (board is flipped), negate the evaluation
         if (isFlipped) {
             evalInPawns = -evalInPawns;
         }
