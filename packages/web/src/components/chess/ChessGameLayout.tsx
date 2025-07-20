@@ -331,8 +331,8 @@ const LandscapePlayersColumn = styled.div<{ $isWideAspect?: boolean; $boardSize?
         // Center of board is at topInfoHeight + gap + (boardSize / 2)
         const boardCenter = topInfoHeight + gap + (props.$boardSize / 2);
         // Controls total height is approximately 260px
-        // So offset by 150px to move them up (centering slightly higher)
-        const controlsOffset = 150;
+        // So offset by 160px to move them up (centering slightly higher)
+        const controlsOffset = 160;
         return `${boardCenter - controlsOffset}px`;
     }};
 `;
