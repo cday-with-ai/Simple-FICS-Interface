@@ -327,9 +327,7 @@ const LandscapePlayersColumn = styled.div`
     width: 280px;
     padding: ${props => props.theme.spacing[3]} 0;
     flex: 0 0 auto;
-    height: calc(100vh - 140px);
-    margin-top: auto;
-    margin-bottom: auto;
+    align-self: center;
 `;
 
 const LandscapeControlsContainer = styled.div`
