@@ -867,6 +867,19 @@ export class FICSStore {
         // Update the game store with the moves list
         if (this.rootStore?.gameStore.currentGame?.gameId === movesList.gameNumber) {
             this.rootStore.gameStore.loadMovesFromList(movesList.moves);
+            
+            // Update player ratings if available (from FICS format parsing)
+            if (movesList.whiteElo || movesList.blackElo) {
+                const currentGame = this.rootStore.gameStore.currentGame;
+                if (currentGame) {
+                    if (movesList.whiteElo) {
+                        currentGame.white.rating = parseInt(movesList.whiteElo);
+                    }
+                    if (movesList.blackElo) {
+                        currentGame.black.rating = parseInt(movesList.blackElo);
+                    }
+                }
+            }
         }
     }
 

@@ -18,6 +18,15 @@ export class MovesListParser extends BaseParser {
 
         // Extract PGN headers if present
         const headers: Partial<MovesList> = {gameNumber, moves};
+        
+        // First, try to parse FICS format: "player1 (rating1) vs. player2 (rating2)"
+        const vsMatch = message.match(/(\w+)\s+\((\d+)\)\s+vs\.\s+(\w+)\s+\((\d+)\)/);
+        if (vsMatch) {
+            headers.white = vsMatch[1];
+            headers.whiteElo = vsMatch[2];
+            headers.black = vsMatch[3];
+            headers.blackElo = vsMatch[4];
+        }
 
         // Parse PGN headers
         const eventMatch = message.match(/\[Event "([^"]+)"\]/);
