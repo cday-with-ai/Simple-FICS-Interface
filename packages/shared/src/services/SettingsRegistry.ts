@@ -21,12 +21,11 @@ export class SettingsRegistry {
 
   private initializeCategories() {
     const categories: SettingCategory[] = [
-      { id: 'appearance', label: 'Appearance', icon: '🎨', order: 1 },
-      { id: 'board', label: 'Board & Pieces', icon: '♟️', order: 2 },
-      { id: 'clock', label: 'Clock', icon: '⏱️', order: 3 },
-      { id: 'chat', label: 'Chat & Messages', icon: '💬', order: 4 },
-      { id: 'sounds', label: 'Sounds', icon: '🔊', order: 5 },
-      { id: 'advanced', label: 'Advanced', icon: '🔧', order: 6 }
+      { id: 'board', label: 'Board & Pieces', icon: '♟️', order: 1 },
+      { id: 'clock', label: 'Clock', icon: '⏱️', order: 2 },
+      { id: 'chat', label: 'Chat & Messages', icon: '💬', order: 3 },
+      { id: 'sounds', label: 'Sounds', icon: '🔊', order: 4 },
+      { id: 'advanced', label: 'Advanced', icon: '🔧', order: 5 }
     ];
 
     categories.forEach(cat => this.categories.set(cat.id, cat));
@@ -130,23 +129,7 @@ export class SettingsRegistry {
     });
 
 
-    // Appearance
-    this.register({
-      id: 'theme',
-      category: 'appearance',
-      label: 'Theme',
-      description: 'Light and Dark are fixed themes. System automatically adapts to your OS theme settings',
-      type: 'select',
-      value: 'system',
-      defaultValue: 'system',
-      options: [
-        { label: 'Light', value: 'light' },
-        { label: 'Dark', value: 'dark' },
-        { label: 'System', value: 'system' }
-      ],
-      keywords: ['dark mode', 'light mode', 'colors'],
-      previewType: 'instant'
-    });
+    // Appearance settings have been moved to the header menu for easier access
 
     this.register({
       id: 'chatFontSize',
@@ -432,41 +415,7 @@ export class SettingsRegistry {
     });
 
 
-    // View preferences
-    this.register({
-      id: 'viewMode',
-      category: 'appearance',
-      label: 'View Mode',
-      description: 'Layout for chess and chat areas',
-      type: 'select',
-      value: 'chess-and-chat',
-      defaultValue: 'chess-and-chat',
-      options: [
-        { label: 'Chess Only', value: 'chess-only' },
-        { label: 'Chat Only', value: 'chat-only' },
-        { label: 'Chess and Chat', value: 'chess-and-chat' }
-      ],
-      targetElements: ['body'],
-      keywords: ['layout', 'view', 'mode'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'chessOrientation',
-      category: 'appearance',
-      label: 'Chess Orientation',
-      description: 'Portrait or landscape layout for chess area',
-      type: 'select',
-      value: 'landscape',
-      defaultValue: 'landscape',
-      options: [
-        { label: 'Landscape', value: 'landscape' },
-        { label: 'Portrait', value: 'portrait' }
-      ],
-      targetElements: ['.chess-game-layout'],
-      keywords: ['orientation', 'layout', 'portrait', 'landscape'],
-      previewType: 'instant'
-    });
+    // View preferences - moved to header menu
 
     this.register({
       id: 'showCapturedPieces',
@@ -627,36 +576,7 @@ export class SettingsRegistry {
     });
 
     // Layout preference
-    this.register({
-      id: 'layout',
-      category: 'appearance',
-      label: 'Layout Mode',
-      description: 'Force specific layout or auto-detect',
-      type: 'select',
-      value: 'auto',
-      defaultValue: 'auto',
-      options: [
-        { label: 'Auto', value: 'auto' },
-        { label: 'Landscape', value: 'landscape' },
-        { label: 'Portrait', value: 'portrait' }
-      ],
-      targetElements: ['body'],
-      keywords: ['layout', 'responsive', 'auto'],
-      previewType: 'instant'
-    });
-
-    // Auto view mode
-    this.register({
-      id: 'autoViewMode',
-      category: 'appearance',
-      label: 'Auto View Mode',
-      description: 'Automatically select view mode based on screen size',
-      type: 'boolean',
-      value: true,
-      defaultValue: true,
-      keywords: ['auto', 'responsive', 'view'],
-      previewType: 'apply'
-    });
+    // Layout and auto view mode settings have been moved to automatic responsive behavior
 
     // From design doc - additional board settings
     this.register({
@@ -1102,35 +1022,7 @@ export class SettingsRegistry {
     const settings = Array.from(this.settings.values())
       .filter(setting => setting.category === categoryId);
     
-    // Special sorting for appearance category
-    if (categoryId === 'appearance') {
-      const theme = settings.find(s => s.id === 'theme');
-      const viewMode = settings.find(s => s.id === 'viewMode');
-      const chessOrientation = settings.find(s => s.id === 'chessOrientation');
-      const layout = settings.find(s => s.id === 'layout');
-      const autoViewMode = settings.find(s => s.id === 'autoViewMode');
-      
-      const otherSettings = settings.filter(s => 
-        s.id !== 'theme' && 
-        s.id !== 'viewMode' && 
-        s.id !== 'chessOrientation' &&
-        s.id !== 'layout' &&
-        s.id !== 'autoViewMode'
-      );
-      
-      const orderedSettings = [];
-      // Add settings in your preferred order
-      if (theme) orderedSettings.push(theme);
-      if (chessOrientation) orderedSettings.push(chessOrientation);
-      if (viewMode) orderedSettings.push(viewMode);
-      if (layout) orderedSettings.push(layout);
-      if (autoViewMode) orderedSettings.push(autoViewMode);
-      
-      // Add any remaining settings
-      orderedSettings.push(...otherSettings.sort((a, b) => a.label.localeCompare(b.label)));
-      
-      return orderedSettings;
-    }
+    // Appearance category has been removed - settings moved to header menu
     
     // Special sorting for board category
     if (categoryId === 'board') {
