@@ -76,14 +76,6 @@ const BoardArea = styled.div<{ $isWideAspect?: boolean }>`
     overflow: hidden;
 `;
 
-const ExtraCapturedSquare = styled.div<{ $size: number }>`
-    width: ${props => props.$size}px;
-    height: ${props => props.$size}px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-`;
 
 const BoardWithAnalysis = styled.div`
     display: flex;
@@ -709,10 +701,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                             </PortraitAnalysisWrapper>
                         )}
                         <BoardColumn>
-                            <ExtraCapturedSquare $size={boardSize ? boardSize / 8 : 0}>
-                                {/* Extra square for captured pieces above board */}
-                            </ExtraCapturedSquare>
-
                             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}} id="board-container">
                                 <PortraitTopInfo>
                                     <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
@@ -880,10 +868,6 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     </PortraitAnalysisInfoWrapper>
                                 )}
                             </div>
-
-                            <ExtraCapturedSquare $size={boardSize ? boardSize / 8 : 0}>
-                                {/* Extra square for captured pieces below board */}
-                            </ExtraCapturedSquare>
                         </BoardColumn>
 
                         {showCapturedPieces && (
