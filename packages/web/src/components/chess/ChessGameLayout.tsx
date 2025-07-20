@@ -469,12 +469,8 @@ const LandscapeAnalysisInfo = styled.div<{ $chatWidth?: number; $hasAnalysis?: b
 `;
 
 const LandscapeAnalysisWrapper = styled.div`
-    position: absolute;
-    left: -35px;
-    top: 0;
-    height: 100%;
-    z-index: 100;
-    background: rgba(255, 0, 0, 0.1); /* Temporary debug background */
+    position: relative;
+    margin-left: 35px;
 `;
 
 const LandscapeCapturedPiecesContainer = styled.div`
@@ -972,7 +968,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 </LandscapeTopInfo>
                                 <BoardWithAnalysis $orientation="landscape">
                                     {isAnalysisActive && (
-                                        <AnalysisDisplay orientation="vertical" boardSize={boardSize}/>
+                                        <LandscapeAnalysisWrapper>
+                                            <AnalysisDisplay orientation="vertical" boardSize={boardSize}/>
+                                        </LandscapeAnalysisWrapper>
                                     )}
                                     <BoardWrapper $orientation="landscape" $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
                                         <ChessBoardWithPieces
