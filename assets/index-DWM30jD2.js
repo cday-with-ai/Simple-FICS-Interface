@@ -2233,7 +2233,7 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   }
   
   @media (max-width: 768px) {
-    padding-bottom: calc(${e=>e.theme.spacing[3]} + 80px);
+    padding-bottom: calc(${e=>e.theme.spacing[3]} + 100px + env(safe-area-inset-bottom, 8px));
   }
 `,uu=m.div`
   margin-bottom: ${e=>e.theme.spacing[1]};
@@ -2277,17 +2277,18 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   
   /* Ensure input is visible on mobile */
   @media (max-width: 768px) {
-    position: sticky;
-    bottom: 0;
-    padding-bottom: calc(${e=>e.theme.spacing[2]} + env(safe-area-inset-bottom, 8px));
-    margin-bottom: 0;
-    margin-left: ${e=>e.theme.spacing[1]};
-    margin-right: ${e=>e.theme.spacing[1]};
+    position: fixed;
+    bottom: env(safe-area-inset-bottom, 8px);
+    left: ${e=>e.theme.spacing[1]};
+    right: ${e=>e.theme.spacing[1]};
+    width: auto;
+    margin: 0;
+    padding-bottom: ${e=>e.theme.spacing[3]};
     min-height: 60px;
     background-color: ${e=>e.theme.colors.background};
     border: 2px solid ${e=>e.theme.colors.primary};
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 100;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
   }
 `,mu=m.input`
   flex: 1;
@@ -2424,8 +2425,8 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   padding-bottom: 0;
   
   @media (max-width: 768px) {
-    height: calc(100vh - 120px);
-    max-height: calc(100vh - 120px);
+    height: calc(100vh - 180px);
+    max-height: calc(100vh - 180px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }

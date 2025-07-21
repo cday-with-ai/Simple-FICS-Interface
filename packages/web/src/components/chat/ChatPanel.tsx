@@ -60,8 +60,8 @@ const Content = styled.div`
   padding-bottom: 0;
   
   @media (max-width: 768px) {
-    height: calc(100vh - 120px);
-    max-height: calc(100vh - 120px);
+    height: calc(100vh - 180px);
+    max-height: calc(100vh - 180px);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }

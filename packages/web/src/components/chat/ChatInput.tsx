@@ -26,17 +26,18 @@ const InputContainer = styled.div`
   
   /* Ensure input is visible on mobile */
   @media (max-width: 768px) {
-    position: sticky;
-    bottom: 0;
-    padding-bottom: calc(${props => props.theme.spacing[2]} + env(safe-area-inset-bottom, 8px));
-    margin-bottom: 0;
-    margin-left: ${props => props.theme.spacing[1]};
-    margin-right: ${props => props.theme.spacing[1]};
+    position: fixed;
+    bottom: env(safe-area-inset-bottom, 8px);
+    left: ${props => props.theme.spacing[1]};
+    right: ${props => props.theme.spacing[1]};
+    width: auto;
+    margin: 0;
+    padding-bottom: ${props => props.theme.spacing[3]};
     min-height: 60px;
     background-color: ${props => props.theme.colors.background};
     border: 2px solid ${props => props.theme.colors.primary};
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 100;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
   }
 `;
 

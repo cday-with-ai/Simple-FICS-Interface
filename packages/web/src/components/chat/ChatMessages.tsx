@@ -57,7 +57,7 @@ const MessagesContainer = styled.div`
   }
   
   @media (max-width: 768px) {
-    padding-bottom: calc(${props => props.theme.spacing[3]} + 80px);
+    padding-bottom: calc(${props => props.theme.spacing[3]} + 100px + env(safe-area-inset-bottom, 8px));
   }
 `;
 
