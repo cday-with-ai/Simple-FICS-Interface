@@ -58,9 +58,15 @@ export class SessionStartParser extends BaseParser {
         if (commands) {
             // Split by newlines and send each non-empty command
             const commandLines = commands.split('\n').filter(cmd => cmd.trim());
-            commandLines.forEach(command => {
-                stores.ficsStore.sendCommand(command.trim());
-            });
+            // Add a delay before sending commands to ensure FICS is ready
+            setTimeout(() => {
+                commandLines.forEach((command, index) => {
+                    // Add a small delay between each command
+                    setTimeout(() => {
+                        stores.ficsStore.sendCommand(command.trim());
+                    }, index * 100);
+                });
+            }, 500);
         }
         
         // Show in console
