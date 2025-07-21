@@ -63,9 +63,8 @@ export class ShoutParser extends BaseParser {
         
         const elements: InteractiveElement[] = [];
         
-        // Add player element - strip titles before creating element
-        const strippedUsername = this.stripTitles(username);
-        elements.push(ParserUtils.createPlayerElement(strippedUsername, 0));
+        // Add player element - use the full username with titles for correct positioning
+        elements.push(ParserUtils.createPlayerElement(username, 0));
         
         // Add URLs in the message
         const urlElements = ParserUtils.findUrlsInText(fullMessage);

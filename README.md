@@ -65,6 +65,7 @@ You can use this repo to report Issues.
   - Player context menus
   - Clear list support (clear censor, clear noplay, etc.)
   - Hover over messages to see time received
+  - maciejg format for unicode.
 - **Game Features**:
   - Move list with navigation (keyboard arrow keys supported)
   - ECO opening database

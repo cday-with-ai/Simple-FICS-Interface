@@ -79,17 +79,8 @@ export class DirectTellParser extends BaseParser {
             }
         }
         
-        // Add player element for the sender
-        elements.push(this.createPlayerElement(username, 0));
-        
-        // Find URLs in the message
-        const urls = this.findUrlsInText(fullMessage);
-        const tellPrefixLength = firstLine.indexOf(tellMatch[2]);
-        urls.forEach(url => {
-            url.start += tellPrefixLength;
-            url.end += tellPrefixLength;
-            elements.push(url);
-        });
+        // Don't add elements here - let the renderer handle interactive content detection
+        // since we're passing the reformatted message, not the original
         
         return {
             content: message,

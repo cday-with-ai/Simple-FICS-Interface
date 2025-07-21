@@ -17,7 +17,6 @@ import {
   IllegalMoveRenderer,
   DrawOfferRenderer,
   UnobserveRenderer,
-  GameNotificationRenderer,
   WhoOutputRenderer,
   GamesOutputRenderer,
   FingerOutputRenderer,
@@ -34,6 +33,7 @@ import {
   SystemRenderer,
   RawRenderer
 } from './ConsoleRenderer';
+import { GameNotificationRenderer } from './GameNotificationRenderer';
 
 // Register all renderers
 function registerAllRenderers() {

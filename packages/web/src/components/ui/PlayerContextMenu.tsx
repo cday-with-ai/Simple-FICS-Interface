@@ -121,8 +121,10 @@ export const PlayerContextMenu: React.FC<PlayerContextMenuProps> = observer(({
   }, [position]);
   
   const handleCommand = (command: string) => {
+    // Strip titles from player name before using in commands
+    const cleanPlayerName = playerName.replace(/\([^)]*\)/g, '').trim();
     // Replace {player} placeholder with actual player name
-    const finalCommand = command.replace('{player}', playerName);
+    const finalCommand = command.replace('{player}', cleanPlayerName);
     ficsStore.sendCommand(finalCommand);
     onClose();
   };

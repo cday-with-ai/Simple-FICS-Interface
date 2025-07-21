@@ -67,6 +67,53 @@ export class SystemMessageParser extends BaseParser {
             elements.push(ParserUtils.createGameNumberElement(match[1], gameNumber, gameIndex));
         }
         
+        // Find special commands like [next], [more], [back], [prev]
+        const specialCommandMatches = message.matchAll(/\[(next|more|back|prev)\]/gi);
+        for (const match of specialCommandMatches) {
+            const commandIndex = match.index || 0;
+            elements.push({
+                type: 'command',
+                text: match[0],
+                action: match[1].toLowerCase(),
+                start: commandIndex,
+                end: commandIndex + match[0].length
+            });
+        }
+        
+        // Find quoted commands (single quotes including smart quotes)
+        const singleQuoteCommandMatches = message.matchAll(/['']([^'']+)['']|'([^']+)'/g);
+        for (const match of singleQuoteCommandMatches) {
+            const command = match[1] || match[2];
+            // Check if it looks like a command (starts with a word character)
+            if (/^\w/.test(command)) {
+                const commandIndex = match.index || 0;
+                elements.push({
+                    type: 'command',
+                    text: match[0],
+                    action: command,
+                    start: commandIndex,
+                    end: commandIndex + match[0].length
+                });
+            }
+        }
+        
+        // Find double-quoted commands
+        const doubleQuoteCommandMatches = message.matchAll(/"([^"]+)"/g);
+        for (const match of doubleQuoteCommandMatches) {
+            const command = match[1];
+            // Check if it looks like a command (starts with a word character)
+            if (/^\w/.test(command)) {
+                const commandIndex = match.index || 0;
+                elements.push({
+                    type: 'command',
+                    text: match[0],
+                    action: command,
+                    start: commandIndex,
+                    end: commandIndex + match[0].length
+                });
+            }
+        }
+        
         // Determine system message type based on content
         let type = 'info';
         if (message.includes('Error') || message.includes('error')) {

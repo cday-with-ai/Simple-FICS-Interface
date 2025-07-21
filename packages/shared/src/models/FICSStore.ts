@@ -2,6 +2,7 @@ import {makeAutoObservable, runInAction} from 'mobx';
 import {FicsProtocol} from '../services/FicsProtocol';
 import {GameStart, GameEnd, MovesList} from '../services/FicsProtocol.types';
 import type {RootStore} from './RootStore';
+import {unicodeToMaciejgFormat, maciejgFormatToUnicode} from '../utils/MaciejgFormat';
 
 export interface FICSUser {
     handle: string;
@@ -251,9 +252,11 @@ export class FICSStore {
         }
         
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            // console.log('Sending command to FICS:', command);
+            // Convert Unicode to Maciejg format for user text
+            const processedCommand = unicodeToMaciejgFormat(command);
+            
             // Encode with timeseal protocol
-            const encoded = this.encodeTimeseal(command);
+            const encoded = this.encodeTimeseal(processedCommand);
             this.ws.send(encoded);
             
             // Update last activity time
@@ -370,6 +373,9 @@ export class FICSStore {
         
         // Use cleaned message for processing
         let processData = cleanedMessage;
+        
+        // Convert Maciejg format to Unicode for incoming text
+        processData = maciejgFormatToUnicode(processData);
         
         // Normalize line endings before parsing
         processData = processData.replace(/\n\r/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n');

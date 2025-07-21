@@ -40,10 +40,26 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
       });
     }
     
-    // Commands in single quotes
-    const commandRegex = /'([^']+)'/g;
+    // Commands in single quotes (including smart quotes)
+    const commandRegex = /['']([^'']+)['']|'([^']+)'/g;
     while ((match = commandRegex.exec(text)) !== null) {
+      const command = match[1] || match[2];
+      if (/^\w/.test(command)) {
+        detectedElements.push({
+          type: 'command',
+          text: match[0],
+          action: command,
+          start: match.index,
+          end: match.index + match[0].length
+        });
+      }
+    }
+    
+    // Commands in double quotes (escaped as \")
+    const doubleQuoteCommandRegex = /\\?"([^"]+)\\?"/g;
+    while ((match = doubleQuoteCommandRegex.exec(text)) !== null) {
       const command = match[1];
+      // Check if it looks like a command (starts with a word character)
       if (/^\w/.test(command)) {
         detectedElements.push({
           type: 'command',
@@ -91,6 +107,18 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
       });
     }
     
+    // Special commands like [next]
+    const specialCommandRegex = /\[(next|more|back|prev)\]/gi;
+    while ((match = specialCommandRegex.exec(text)) !== null) {
+      detectedElements.push({
+        type: 'command',
+        text: match[0],
+        action: match[1].toLowerCase(),
+        start: match.index,
+        end: match.index + match[0].length
+      });
+    }
+    
     return detectedElements;
   };
   
@@ -109,7 +137,8 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
   
   // Only detect elements if none were provided
   if (elements.length === 0) {
-    allElements.push(...detectElements(content));
+    const detected = detectElements(content);
+    allElements.push(...detected);
   }
   
   // If still no elements, return plain text

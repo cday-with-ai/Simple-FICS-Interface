@@ -412,7 +412,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = observer(({ isOpen,
   const { settingsRegistry } = preferencesStore;
   const layout = useLayout();
   const isMobile = layout.isMobileDevice || layout.dimensions.width < 768;
-  const [selectedCategory, setSelectedCategory] = useState('appearance');
+  const [selectedCategory, setSelectedCategory] = useState('board');
   const [searchQuery, setSearchQuery] = useState('');
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
