@@ -252,11 +252,16 @@ export class FICSStore {
         }
         
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            // Log the raw command being sent
+            console.log('[FICSStore] Sending command:', JSON.stringify(command));
+            
             // Convert Unicode to Maciejg format for user text
             const processedCommand = unicodeToMaciejgFormat(command);
+            console.log('[FICSStore] After Unicode processing:', JSON.stringify(processedCommand));
             
             // Encode with timeseal protocol
             const encoded = this.encodeTimeseal(processedCommand);
+            console.log('[FICSStore] Encoded bytes:', Array.from(encoded.slice(0, Math.min(encoded.length, 50))));
             this.ws.send(encoded);
             
             // Update last activity time

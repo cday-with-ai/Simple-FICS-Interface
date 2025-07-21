@@ -59,10 +59,12 @@ export class SessionStartParser extends BaseParser {
             // Split by newlines and send each non-empty command
             const commandLines = commands.split('\n').filter(cmd => cmd.trim());
             // Add a delay before sending commands to ensure FICS is ready
+            console.log('[SessionStartParser] Post-login commands:', commandLines);
             setTimeout(() => {
                 commandLines.forEach((command, index) => {
                     // Add a small delay between each command
                     setTimeout(() => {
+                        console.log('[SessionStartParser] Sending command:', JSON.stringify(command.trim()));
                         stores.ficsStore.sendCommand(command.trim());
                     }, index * 100);
                 });

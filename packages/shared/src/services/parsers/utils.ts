@@ -2,6 +2,7 @@ import { InteractiveElement } from '../FicsProtocol.types';
 
 export class ParserUtils {
     static createPlayerElement(text: string, start: number): InteractiveElement {
+        
         return {
             type: 'player',
             text,

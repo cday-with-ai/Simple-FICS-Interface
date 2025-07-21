@@ -59,6 +59,7 @@ You can use this repo to report Issues.
   - Timeseal2 protocol
   - Style12 board updates
   - Channel and private chat tabs
+  - Drag and drop tabs to different locations.
   - Click on games, history, journal to view games
   - Click on player names for actions (finger, vars, etc.)
   - Game observation with real-time updates

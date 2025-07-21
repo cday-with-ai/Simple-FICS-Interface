@@ -23,6 +23,7 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
 }) => {
   const { ficsStore } = useRootStore();
   
+  
   // Universal element detection
   const detectElements = (text: string): InteractiveElement[] => {
     const detectedElements: InteractiveElement[] = [];
@@ -135,11 +136,14 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
   // Combine provided elements with detected ones
   const allElements = [...elements];
   
+  
   // Only detect elements if none were provided
   if (elements.length === 0) {
     const detected = detectElements(content);
     allElements.push(...detected);
   }
+  
+  
   
   // If still no elements, return plain text
   if (allElements.length === 0) {
@@ -149,32 +153,49 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
   // Sort elements by start position
   const sortedElements = [...allElements].sort((a, b) => a.start - b.start);
   
+  
   // Build the rendered content with interactive elements
   const parts: React.ReactNode[] = [];
   let lastEnd = 0;
   
+  
   sortedElements.forEach((element, index) => {
+    
     // Add text before this element
     if (element.start > lastEnd) {
+      const gapText = content.substring(lastEnd, element.start);
+      
+      
       parts.push(
         <span key={`text-${index}`} style={{ whiteSpace: 'pre' }}>
-          {content.substring(lastEnd, element.start)}
+          {gapText}
         </span>
       );
+    } else if (element.start < lastEnd) {
+      // Skip overlapping elements
+      console.warn(`[InteractiveContent] Skipping overlapping element:`, {
+        element,
+        lastEnd,
+        overlap: lastEnd - element.start
+      });
+      return;
     }
     
     // Add the interactive element
     const key = `${element.type}-${index}`;
-    const elementText = content.substring(element.start, element.end);
+    // ALWAYS use element.text for display to avoid extraction issues
+    const elementText = element.text;
     
     switch (element.type) {
       case 'player':
         parts.push(
-          <PlayerName 
-            key={key} 
-            name={element.text} 
-            onClick={() => handleAction(element.action, element.type)}
-          />
+          <span key={key}>
+            {' '}
+            <PlayerName 
+              name={elementText} 
+              onClick={() => handleAction(element.action, element.type)}
+            />
+          </span>
         );
         break;
         
@@ -201,7 +222,7 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
             key={key}
             onClick={() => handleAction(element.action, element.type)}
           >
-            {element.text}
+            {elementText}
           </ChannelLink>
         );
         break;
@@ -212,7 +233,7 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
             key={key}
             onClick={() => handleAction(element.action, element.type)}
           >
-            {element.text}
+            {elementText}
           </GameNumberLink>
         );
         break;
