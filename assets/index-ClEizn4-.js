@@ -2202,12 +2202,21 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   padding: ${e=>e.theme.spacing[3]};
   min-height: 0;
   
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  
   /* Custom scrollbar */
   scrollbar-width: thin;
   scrollbar-color: ${e=>e.theme.colors.border} transparent;
   
   &::-webkit-scrollbar {
     width: 8px;
+  }
+  
+  @media (max-width: 768px) {
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
   }
   
   &::-webkit-scrollbar-track {
@@ -2221,6 +2230,10 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
     &:hover {
       background-color: ${e=>e.theme.colors.borderHover};
     }
+  }
+  
+  @media (max-width: 768px) {
+    padding-bottom: calc(${e=>e.theme.spacing[3]} + 80px);
   }
 `,uu=m.div`
   margin-bottom: ${e=>e.theme.spacing[1]};
@@ -2260,16 +2273,21 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   box-shadow: ${e=>e.theme.shadows.container};
   position: relative;
   z-index: 10;
+  flex-shrink: 0;
   
   /* Ensure input is visible on mobile */
   @media (max-width: 768px) {
-    padding-bottom: calc(${e=>e.theme.spacing[2]} + env(safe-area-inset-bottom, 0px));
-    margin-bottom: ${e=>e.theme.spacing[1]};
+    position: sticky;
+    bottom: 0;
+    padding-bottom: calc(${e=>e.theme.spacing[2]} + env(safe-area-inset-bottom, 8px));
+    margin-bottom: 0;
     margin-left: ${e=>e.theme.spacing[1]};
     margin-right: ${e=>e.theme.spacing[1]};
     min-height: 60px;
     background-color: ${e=>e.theme.colors.background};
     border: 2px solid ${e=>e.theme.colors.primary};
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
   }
 `,mu=m.input`
   flex: 1;
@@ -2404,6 +2422,13 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   padding: ${e=>e.theme.spacing[2]};
   padding-top: 0;
   padding-bottom: 0;
+  
+  @media (max-width: 768px) {
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 `,ti=K(({className:e,compact:t=!1})=>{const{chatStore:r,ficsStore:n,preferencesStore:o}=Ee(),[s,a]=f.useState(""),[p,c]=f.useState(!1),[d,l]=f.useState(null);ie.useEffect(()=>{!n.connected&&!n.connecting&&(console.log("Auto-connecting to FICS..."),n.connect())},[n]),ie.useEffect(()=>{n.error&&r.addMessage("console",{channel:"console",sender:"System",content:`Error: ${n.error}`,timestamp:new Date,type:"system"})},[n.error,r]);const h=u=>{if(console.log("handleSendMessage called with:",u,"Length:",u.length),!!u.trim()){if(r.addToHistory(u),u==="/help"||u==="\\help"){r.addMessage("console",{channel:"console",sender:"You",content:u,timestamp:new Date,type:"message"}),r.addMessage("console",{channel:"console",sender:"System",content:`FICS Commands:
 guest - Login as guest
 <username> - Login with username (will prompt for password)
@@ -2443,6 +2468,9 @@ Local commands:
   
   @media (max-width: 768px) {
     width: ${e=>e.$isVisible?"100%":"0"};
+    height: ${e=>e.$fullWidth?"100vh":"auto"};
+    max-height: ${e=>e.$fullWidth?"100vh":"none"};
+    position: ${e=>e.$fullWidth?"relative":"static"};
   }
 `,ju=m.div`
   width: ${e=>e.$isVisible?"4px":"0"};

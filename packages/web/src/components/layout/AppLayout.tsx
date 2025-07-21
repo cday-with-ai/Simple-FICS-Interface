@@ -40,6 +40,9 @@ const ChatPanelContainer = styled.div<{ $isVisible: boolean; $fullWidth?: boolea
   
   @media (max-width: 768px) {
     width: ${props => props.$isVisible ? '100%' : '0'};
+    height: ${props => props.$fullWidth ? '100vh' : 'auto'};
+    max-height: ${props => props.$fullWidth ? '100vh' : 'none'};
+    position: ${props => props.$fullWidth ? 'relative' : 'static'};
   }
 `;
 

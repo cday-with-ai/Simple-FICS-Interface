@@ -22,16 +22,21 @@ const InputContainer = styled.div`
   box-shadow: ${props => props.theme.shadows.container};
   position: relative;
   z-index: 10;
+  flex-shrink: 0;
   
   /* Ensure input is visible on mobile */
   @media (max-width: 768px) {
-    padding-bottom: calc(${props => props.theme.spacing[2]} + env(safe-area-inset-bottom, 0px));
-    margin-bottom: ${props => props.theme.spacing[1]};
+    position: sticky;
+    bottom: 0;
+    padding-bottom: calc(${props => props.theme.spacing[2]} + env(safe-area-inset-bottom, 8px));
+    margin-bottom: 0;
     margin-left: ${props => props.theme.spacing[1]};
     margin-right: ${props => props.theme.spacing[1]};
     min-height: 60px;
     background-color: ${props => props.theme.colors.background};
     border: 2px solid ${props => props.theme.colors.primary};
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
   }
 `;
 

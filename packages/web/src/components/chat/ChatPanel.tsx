@@ -58,6 +58,13 @@ const Content = styled.div`
   padding: ${props => props.theme.spacing[2]};
   padding-top: 0;
   padding-bottom: 0;
+  
+  @media (max-width: 768px) {
+    height: calc(100vh - 120px);
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 `;
 
 export const ChatPanel: React.FC<ChatPanelProps> = observer(({ className, compact = false }) => {

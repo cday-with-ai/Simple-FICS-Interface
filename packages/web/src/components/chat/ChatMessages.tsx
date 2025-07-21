@@ -26,12 +26,21 @@ const MessagesContainer = styled.div`
   padding: ${props => props.theme.spacing[3]};
   min-height: 0;
   
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+  
   /* Custom scrollbar */
   scrollbar-width: thin;
   scrollbar-color: ${props => props.theme.colors.border} transparent;
   
   &::-webkit-scrollbar {
     width: 8px;
+  }
+  
+  @media (max-width: 768px) {
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
   }
   
   &::-webkit-scrollbar-track {
@@ -45,6 +54,10 @@ const MessagesContainer = styled.div`
     &:hover {
       background-color: ${props => props.theme.colors.borderHover};
     }
+  }
+  
+  @media (max-width: 768px) {
+    padding-bottom: calc(${props => props.theme.spacing[3]} + 80px);
   }
 `;
 
