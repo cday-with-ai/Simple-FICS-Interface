@@ -37,10 +37,12 @@ export class GamesParser extends BaseParser {
                 const gameNum = gameMatch[1];
                 
                 // Make the entire game line clickable to observe the game
+                const trimmedLine = line.trim();
+                const lineStartIndex = line.indexOf(trimmedLine);
                 elements.push(ParserUtils.createCommandElement(
-                    line.trim(),
+                    trimmedLine,
                     `observe ${gameNum}`,
-                    offset
+                    offset + lineStartIndex
                 ));
             }
             

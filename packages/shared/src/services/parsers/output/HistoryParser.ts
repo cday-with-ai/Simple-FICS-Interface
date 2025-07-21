@@ -50,10 +50,12 @@ export class HistoryParser extends BaseParser {
                 
                 // Make the whole line clickable to examine the game
                 // Don't add individual player elements as they would overlap
+                const trimmedLine = line.trim();
+                const lineStartIndex = line.indexOf(trimmedLine);
                 elements.push(ParserUtils.createCommandElement(
-                    line.trim(),
+                    trimmedLine,
                     `examine ${player} ${index}`,
-                    offset
+                    offset + lineStartIndex
                 ));
             }
             

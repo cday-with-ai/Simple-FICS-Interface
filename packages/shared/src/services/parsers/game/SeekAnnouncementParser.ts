@@ -18,13 +18,17 @@ export class SeekAnnouncementParser extends BaseParser {
             const [fullMatch, player, rating, time, increment, ratedStr, gameType, seekNumber] = match;
             const elements: InteractiveElement[] = [];
             
+            // Find the actual start of the seek text (after any leading whitespace/newlines)
+            const trimmedMessage = message.trim();
+            const startIndex = message.indexOf(trimmedMessage);
+            
             // Make the entire line clickable as a seek
             elements.push({
                 type: 'seekNumber',
-                text: message.trim(),
+                text: trimmedMessage,
                 action: `play ${seekNumber}`,
-                start: 0,
-                end: message.trim().length
+                start: startIndex,
+                end: startIndex + trimmedMessage.length
             });
 
             return {

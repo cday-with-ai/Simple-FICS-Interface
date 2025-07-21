@@ -30,10 +30,12 @@ export class SoughtParser extends BaseParser {
                 const seekNum = seekMatch[1];
                 
                 // Make the entire line clickable to play the seek
+                const trimmedLine = line.trim();
+                const lineStartIndex = line.indexOf(trimmedLine);
                 elements.push(this.createCommandElement(
-                    line.trim(),
+                    trimmedLine,
                     `play ${seekNum}`,
-                    offset
+                    offset + lineStartIndex
                 ));
             }
             

@@ -32,11 +32,15 @@ export class GameNotificationParser extends BaseParser {
         
         const elements: InteractiveElement[] = [];
         
+        // Find the actual start of the notification text (after any leading whitespace/newlines)
+        const trimmedMessage = message.trim();
+        const startIndex = message.indexOf(trimmedMessage);
+        
         // Make the entire line clickable to observe the game
         elements.push(ParserUtils.createCommandElement(
-            message.trim(),
+            trimmedMessage,
             `observe ${gameNotification.gameNumber}`,
-            0
+            startIndex
         ));
         
         return {
