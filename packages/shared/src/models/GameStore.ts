@@ -205,7 +205,21 @@ export class GameStore {
 
     updateFromStyle12(style12: Style12) {
         runInAction(() => {
+            // Don't process Style12 updates if we just ended this game
+            if (this.lastGameState && this.lastGameState.gameId === style12.gameNumber && !this.currentGame) {
+                console.log('[GameStore] Ignoring Style12 for recently ended game:', style12.gameNumber);
+                return;
+            }
+            
             try {
+                console.log('[GameStore] Processing Style12 move:', {
+                    move: style12.prettyMove,
+                    relation: style12.relation,
+                    verboseMove: style12.verboseMove,
+                    turn: style12.colorToMove,
+                    gameNumber: style12.gameNumber
+                });
+                
                 // Convert Style12 board array to string format for style12ToFen
                 // Style12 board is already in the correct format (8x8 array of strings)
                 const boardRows = style12.board.map(row => row.join(''));
@@ -247,6 +261,9 @@ export class GameStore {
 
                 // Update or create game state
                 if (!this.currentGame || this.currentGame.gameId !== style12.gameNumber) {
+                    // Track if we had a previous game to avoid playing start sound on game switches
+                    const hadPreviousGame = !!this.currentGame;
+                    
                     // New game or joining mid-game - clear move history from previous game
                     this.moveHistory = [];
                     this.currentMoveIndex = -1;
@@ -283,9 +300,14 @@ export class GameStore {
                     
                     // Play start sound for:
                     // 1. New games starting (move 1, no previous move)
-                    // 2. When starting to observe any game
-                    if ((isNewGameStart || isObserving) && this.rootStore?.soundStore) {
-                        console.log('[GameStore] Playing game start sound', { isNewGameStart, isObserving, gameId: style12.gameNumber });
+                    // 2. When starting to observe any game (but not when switching from another game)
+                    if ((isNewGameStart || (isObserving && !hadPreviousGame)) && this.rootStore?.soundStore) {
+                        console.log('[GameStore] Playing game start sound', { 
+                            isNewGameStart, 
+                            isObserving, 
+                            hadPreviousGame,
+                            gameId: style12.gameNumber 
+                        });
                         this.rootStore.soundStore.playStart();
                     }
                 } else {

@@ -460,15 +460,22 @@ export class FICSStore {
                         break;
                         
                     case 'unobserve':
+                        const gameNumber = message.data.metadata?.gameNumber;
+                        console.log('[FICSStore] Handling unobserve:', {
+                            gameNumber: gameNumber,
+                            currentGameId: this.rootStore?.gameStore.currentGame?.gameId,
+                            metadata: message.data
+                        });
                         // If we're unobserving the current game, end it
-                        if (this.rootStore?.gameStore.currentGame?.gameId === message.data.gameNumber) {
+                        if (this.rootStore?.gameStore.currentGame?.gameId === gameNumber) {
+                            console.log('[FICSStore] Ending current game due to unobserve');
                             this.rootStore?.gameStore.endGame();
                         }
                         // Show message in console
                         this.rootStore?.chatStore.addMessage('console', {
                             channel: 'console',
                             sender: 'FICS',
-                            content: `Removing game ${message.data.gameNumber} from observation list.`,
+                            content: `Removing game ${gameNumber} from observation list.`,
                             timestamp: new Date(),
                             type: 'system',
                             metadata: {

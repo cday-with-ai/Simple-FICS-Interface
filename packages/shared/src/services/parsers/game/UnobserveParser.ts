@@ -1,13 +1,26 @@
 import { BaseParser } from '../BaseParser';
 import { ParsedMessage, InteractiveElement } from '../../FicsProtocol.types';
 import { ParserUtils } from '../utils';
+import { RootStore } from '../../../models/RootStore';
 
 export class UnobserveParser extends BaseParser {
     name = 'unobserve';
     priority = 85;
     
+    override handle(message: string, stores: RootStore): ParsedMessage<{ gameNumber: number }> | null {
+        const parsed = this.parse(message);
+        if (parsed && parsed.metadata) {
+            console.log('[UnobserveParser] Parsed unobserve message:', parsed.metadata);
+        }
+        return parsed;
+    }
+    
     canParse(message: string): boolean {
-        return !!message.match(/Removing game \d+ from observation list/);
+        const canParse = !!message.match(/Removing game \d+ from observation list/);
+        if (canParse) {
+            console.log('[UnobserveParser] Can parse unobserve message:', message);
+        }
+        return canParse;
     }
     
     parse(message: string): ParsedMessage<{ gameNumber: number }> | null {

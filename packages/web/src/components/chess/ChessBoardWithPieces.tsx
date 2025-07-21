@@ -256,6 +256,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   // Parse position
   const pieces = useMemo(() => parseFEN(position), [position]);
   const previousPiecesRef = useRef<Map<string, string>>(new Map());
+  const lastAnimationTimeRef = useRef<number>(0);
   
   // Function to get square position relative to board
   const getSquarePosition = useCallback((square: string, boardSize: number) => {
@@ -385,6 +386,10 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   useEffect(() => {
     if (!shouldAnimateMoves || userMoveInProgress || gameStore.isProcessingServerUpdate) {
       previousPiecesRef.current = new Map(pieces);
+      // Clear any ongoing animations if we're not animating
+      if (!shouldAnimateMoves) {
+        setAnimatingPieces([]);
+      }
       return;
     }
     
@@ -399,18 +404,42 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       
       // Check if a piece moved from 'from' to 'to'
       if (movingPiece && destinationPiece === movingPiece && !pieces.has(from)) {
-        // The piece successfully moved (could be a capture or regular move)
-        newAnimations.push({
-          piece: movingPiece,
-          from,
-          to,
-          startTime: Date.now()
-        });
+        const now = Date.now();
+        const timeSinceLastAnimation = now - lastAnimationTimeRef.current;
+        
+        // Skip animation if moves are coming too fast (less than 100ms apart)
+        if (timeSinceLastAnimation < 100) {
+          // Clear any existing animations to prevent visual glitches
+          setAnimatingPieces([]);
+        } else {
+          // The piece successfully moved (could be a capture or regular move)
+          newAnimations.push({
+            piece: movingPiece,
+            from,
+            to,
+            startTime: now
+          });
+          lastAnimationTimeRef.current = now;
+        }
       }
     }
     
     if (newAnimations.length > 0) {
-      setAnimatingPieces(prev => [...prev, ...newAnimations]);
+      setAnimatingPieces(prev => {
+        // Remove any existing animations for pieces that are starting new animations
+        const newFromSquares = new Set(newAnimations.map(anim => anim.from));
+        const newToSquares = new Set(newAnimations.map(anim => anim.to));
+        
+        // Keep only animations that don't conflict with new ones
+        const filtered = prev.filter(anim => 
+          !newFromSquares.has(anim.from) && 
+          !newFromSquares.has(anim.to) &&
+          !newToSquares.has(anim.from) &&
+          !newToSquares.has(anim.to)
+        );
+        
+        return [...filtered, ...newAnimations];
+      });
     }
     
     previousPiecesRef.current = new Map(pieces);
@@ -774,7 +803,9 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
         const isSelected = selectedSquare === squareName;
         const isPossibleMove = possibleMoves.has(squareName);
         const isDraggedFrom = draggedPiece?.from === squareName;
-        const isAnimating = animatingPieces.some(anim => anim.to === squareName);
+        // Check if a piece is animating to OR from this square
+        const isAnimatingTo = animatingPieces.some(anim => anim.to === squareName);
+        const isAnimatingFrom = animatingPieces.some(anim => anim.from === squareName);
 
         const showFileCoordinate = showCoordinates && rankIndex === 7;
         const showRankCoordinate = showCoordinates && fileIndex === 0;
@@ -790,7 +821,7 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             $isPossibleMove={isPossibleMove}
             onMouseDown={(e) => handleMouseDown(e, squareName, piece)}
           >
-            {piece && !isDraggedFrom && !isAnimating && (
+            {piece && !isDraggedFrom && !isAnimatingFrom && !isAnimatingTo && (
               <ChessPiece piece={piece} size={squareSize} />
             )}
             {showFileCoordinate && (
