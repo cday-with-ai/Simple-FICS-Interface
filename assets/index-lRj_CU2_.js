@@ -2256,6 +2256,12 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   background-color: transparent;
   margin: ${e=>e.theme.spacing[2]};
   margin-top: 0;
+  
+  /* Ensure input is visible on mobile */
+  @media (max-width: 768px) {
+    padding-bottom: env(safe-area-inset-bottom, ${e=>e.theme.spacing[2]});
+    margin-bottom: ${e=>e.theme.spacing[1]};
+  }
 `,mu=m.input`
   flex: 1;
   padding: ${e=>e.theme.spacing[2]};
@@ -2268,6 +2274,16 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   box-shadow: ${e=>e.theme.shadows.container};
   outline: none;
   transition: all ${e=>e.theme.transitions.fast};
+  
+  /* iOS fixes to prevent zoom and ensure visibility */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  
+  /* Ensure minimum 16px font size on mobile to prevent iOS zoom */
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
   
   &:focus {
     border-color: ${e=>e.theme.colors.primary};
@@ -2293,6 +2309,16 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   cursor: pointer;
   transition: all ${e=>e.theme.transitions.fast};
   outline: none;
+  
+  /* iOS fixes */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  
+  /* Match input font size on mobile */
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
   
   &:hover:not(:disabled) {
     background-color: ${e=>e.theme.colors.primaryHover};

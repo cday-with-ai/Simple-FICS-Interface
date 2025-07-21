@@ -18,6 +18,12 @@ const InputContainer = styled.div`
   background-color: transparent;
   margin: ${props => props.theme.spacing[2]};
   margin-top: 0;
+  
+  /* Ensure input is visible on mobile */
+  @media (max-width: 768px) {
+    padding-bottom: env(safe-area-inset-bottom, ${props => props.theme.spacing[2]});
+    margin-bottom: ${props => props.theme.spacing[1]};
+  }
 `;
 
 const InputField = styled.input`
@@ -32,6 +38,16 @@ const InputField = styled.input`
   box-shadow: ${props => props.theme.shadows.container};
   outline: none;
   transition: all ${props => props.theme.transitions.fast};
+  
+  /* iOS fixes to prevent zoom and ensure visibility */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  
+  /* Ensure minimum 16px font size on mobile to prevent iOS zoom */
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
   
   &:focus {
     border-color: ${props => props.theme.colors.primary};
@@ -59,6 +75,16 @@ const SendButton = styled.button`
   cursor: pointer;
   transition: all ${props => props.theme.transitions.fast};
   outline: none;
+  
+  /* iOS fixes */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  
+  /* Match input font size on mobile */
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
   
   &:hover:not(:disabled) {
     background-color: ${props => props.theme.colors.primaryHover};
