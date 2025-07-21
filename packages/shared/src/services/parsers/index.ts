@@ -25,6 +25,7 @@ import { MatchRequestParser } from './game/MatchRequestParser';
 import { IllegalMoveParser } from './game/IllegalMoveParser';
 import { DrawOfferParser } from './game/DrawOfferParser';
 import { UnobserveParser } from './game/UnobserveParser';
+import { ObservingGameParser } from './game/ObservingGameParser';
 
 // Communication parsers
 import { DirectTellParser } from './communication/DirectTellParser';
@@ -65,6 +66,7 @@ export const MESSAGE_PARSERS: Parser[] = [
     new DrawOfferParser(),     // priority: 85
     new UnobserveParser(),     // priority: 85
     new GameNotificationParser(), // priority: 85
+    new ObservingGameParser(), // priority: 85
     
     // Command outputs and outgoing messages
     new WhoParser(),           // priority: 80

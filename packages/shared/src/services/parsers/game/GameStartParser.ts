@@ -32,32 +32,21 @@ export class GameStartParser extends BaseParser {
     
     override handle(message: string, stores: RootStore): ParsedMessage<GameStart> | null {
         const parsed = this.parse(message);
-        if (!parsed || !parsed.metadata) return parsed;
+        console.log('[GameStartParser] Parse result:', parsed);
+        if (!parsed || !parsed.metadata) {
+            console.log('[GameStartParser] No metadata, returning early');
+            return parsed;
+        }
         
         const gameStart = parsed.metadata;
         
-        // Handle game start in GameStore
-        const gameState = {
-            gameId: gameStart.gameNumber,
-            white: {
-                name: gameStart.whiteName,
-                rating: parseInt(gameStart.whiteRating) || 0,
-                time: gameStart.minutes * 60
-            },
-            black: {
-                name: gameStart.blackName,
-                rating: parseInt(gameStart.blackRating) || 0,
-                time: gameStart.minutes * 60
-            },
-            turn: 'w' as const,
-            moveNumber: 1,
-            variant: this.mapGameTypeToVariant(gameStart.gameType),
-            timeControl: `${gameStart.minutes} ${gameStart.increment}`
-        };
-
-        stores.gameStore.startNewGame(gameState);
+        console.log('[GameStartParser] Handling game start:', gameStart);
         
-        // Play start sound
+        // Note: We don't call startNewGame here because the game might already be in progress
+        // The Style12 update will handle creating/updating the game state
+        
+        // Always play start sound when observing a game (even mid-game)
+        console.log('[GameStartParser] Playing game start sound for observation');
         stores.soundStore?.playStart();
         
         // Show in console with proper color
@@ -77,13 +66,24 @@ export class GameStartParser extends BaseParser {
     }
     
     canParse(message: string): boolean {
-        return !!message.match(/Game \d+: .+ vs\. .+ (rated|unrated)/) ||
-               !!message.match(/Creating: .+ \(\d+\) .+ \(\d+\) (rated|unrated)/);
+        const canParse = !!message.match(/Game \d+: \S+ \(\d+\) \S+ \(\d+\) (rated|unrated)/) ||
+                        !!message.match(/Creating: .+ \(.+\) .+ \(.+\) (rated|unrated) \w+ \d+ \d+/) ||
+                        !!message.match(/\{Game \d+ \(.+ vs\. .+\) Creating (rated|unrated) .+ match\.\}/);
+        if (canParse) {
+            console.log('[GameStartParser] Can parse game start:', message);
+        }
+        return canParse;
     }
     
     parse(message: string): ParsedMessage<GameStart> | null {
+        // Extract just the Game line from multi-line messages
+        const gameLineMatch = message.match(/Game \d+: .* \(.*\) .* \(.*\) (?:rated|unrated) .*/);
+        const gameLine = gameLineMatch ? gameLineMatch[0] : message;
+        console.log('[GameStartParser] Extracted game line:', gameLine);
+        
         // Check for observing game format
-        const obsMatch = message.match(/Game (\d+): ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
+        const obsMatch = gameLine.match(/Game (\d+): ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
+        console.log('[GameStartParser] Trying to parse, obsMatch:', !!obsMatch, obsMatch);
         if (obsMatch) {
             const gameStart: GameStart = {
                 gameNumber: parseInt(obsMatch[1]),

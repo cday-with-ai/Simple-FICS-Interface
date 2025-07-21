@@ -53,7 +53,7 @@ export class SoundService implements SoundServiceInterface {
         });
     }
     
-    play(sound: SoundType): void {
+    play(sound: SoundType, volume: number = 0.5): void {
         if (!this.enabled || typeof window === 'undefined') {
             return;
         }
@@ -62,7 +62,7 @@ export class SoundService implements SoundServiceInterface {
         if (audio) {
             // Clone the audio to allow overlapping sounds
             const clone = audio.cloneNode() as HTMLAudioElement;
-            clone.volume = 0.5; // Set reasonable default volume
+            clone.volume = volume; // Use provided volume or default
             clone.play().catch(error => {
                 console.warn(`Failed to play sound: ${sound}`, error);
             });

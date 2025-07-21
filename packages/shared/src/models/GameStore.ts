@@ -251,6 +251,12 @@ export class GameStore {
                     this.moveHistory = [];
                     this.currentMoveIndex = -1;
                     
+                    // Check if this is the start of a new game (move 1, no previous move)
+                    const isNewGameStart = style12.moveNumber === 1 && style12.prettyMove === 'none';
+                    
+                    // Check if we're observing (relation 0 or -2)
+                    const isObserving = style12.relation === 0 || style12.relation === -2;
+                    
                     this.currentGame = {
                         gameId: style12.gameNumber,
                         white: { 
@@ -274,6 +280,14 @@ export class GameStore {
                     this.baseWhiteTime = style12.whiteTimeRemaining;
                     this.baseBlackTime = style12.blackTimeRemaining;
                     this.lastClockUpdate = Date.now();
+                    
+                    // Play start sound for:
+                    // 1. New games starting (move 1, no previous move)
+                    // 2. When starting to observe any game
+                    if ((isNewGameStart || isObserving) && this.rootStore?.soundStore) {
+                        console.log('[GameStore] Playing game start sound', { isNewGameStart, isObserving, gameId: style12.gameNumber });
+                        this.rootStore.soundStore.playStart();
+                    }
                 } else {
                     // Update existing game
                     this.currentGame.turn = style12.colorToMove.toLowerCase() as 'w' | 'b';
@@ -294,6 +308,14 @@ export class GameStore {
                         // This handles mid-game joins where we get a style12 with a move
                         const lastHistoryMove = this.moveHistory[this.moveHistory.length - 1];
                         if (!lastHistoryMove || lastHistoryMove.san !== style12.prettyMove) {
+                            console.log('[GameStore] Processing Style12 move:', {
+                                move: style12.prettyMove,
+                                relation: style12.relation,
+                                verboseMove: style12.verboseMove,
+                                turn: style12.colorToMove,
+                                lastMove: lastHistoryMove?.san || 'none'
+                            });
+                            
                             // Prevent animations for:
                             // 1. Opponent moves when playing (relation = -1)
                             // 2. All moves when observing (relation = 0 or -2)
@@ -324,16 +346,39 @@ export class GameStore {
                             this.currentMoveIndex = this.moveHistory.length - 1;
                             // Move added to history
                             
-                            // Play move sound only for:
-                            // 1. Opponent moves when playing (relation = -1)
-                            // 2. All moves when observing (relation = 0 or -2)
-                            // Our own moves (relation = 1) already played sound in makeMove()
-                            if (style12.relation !== 1) {
-                                if (style12.prettyMove.includes('x')) {
-                                    this.rootStore?.soundStore?.playCapture();
-                                } else {
-                                    this.rootStore?.soundStore?.playMove();
-                                }
+                            // Determine who made this move based on:
+                            // 1. The current turn (after the move)
+                            // 2. Who would have moved to reach this position
+                            const moveWasMadeByWhite = style12.colorToMove === 'B'; // If it's Black's turn, White just moved
+                            const iAmWhite = (this.isPlaying && this._playingColor === 'white') || 
+                                           (!this._playingColor && style12.whiteName === 'GuestFCDC'); // Fallback check
+                            const moveWasMadeByMe = (moveWasMadeByWhite && iAmWhite) || (!moveWasMadeByWhite && !iAmWhite);
+                            
+                            console.log('[GameStore] Move analysis:', {
+                                move: style12.prettyMove,
+                                relation: style12.relation,
+                                colorToMove: style12.colorToMove,
+                                moveWasMadeByWhite,
+                                iAmWhite,
+                                moveWasMadeByMe,
+                                playingColor: this._playingColor
+                            });
+                            
+                            // Play sound for opponent moves or when observing
+                            // Skip for our own moves (they already played in makeMove())
+                            if (!moveWasMadeByMe || style12.relation === 0 || style12.relation === -2) {
+                                console.log('[GameStore] Playing sound for opponent/observed move');
+                                // Add a small delay to ensure opponent sounds are audible
+                                // This helps when moves happen in rapid succession
+                                setTimeout(() => {
+                                    if (style12.prettyMove.includes('x')) {
+                                        this.rootStore?.soundStore?.playSound('capture', 0.7);
+                                    } else {
+                                        this.rootStore?.soundStore?.playSound('move', 0.7);
+                                    }
+                                }, 100);
+                            } else {
+                                console.log('[GameStore] Skipping sound for own move');
                             }
                         }
                     }
