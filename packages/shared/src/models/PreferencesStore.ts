@@ -319,6 +319,7 @@ const DEFAULT_PREFERENCES: Preferences = {
     postLoginCommands: `set style 12
 set prompt
 set bell off
+set gin off
 set interface Simple FICS Interface`,
     consoleColorsLight: {
         // Communication
