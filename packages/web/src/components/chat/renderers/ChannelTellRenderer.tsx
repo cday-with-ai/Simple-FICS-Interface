@@ -12,8 +12,7 @@ export class ChannelTellRenderer extends MessageRenderer {
     const parsedMessage = message.metadata?.parsedMessage;
     const isGroupedMessage = message.metadata?.isGroupedMessage;
     
-    // For channel tabs, we need to show clean message content without interactive elements
-    // to avoid the InteractiveContent component detecting channel patterns in the message itself
+    // For channel tabs, we need to show clean message content but still allow URLs
     const isChannelTab = message.channel?.startsWith('channel-');
     const messageContent = parsedMessage?.metadata?.message || message.content;
     
@@ -27,15 +26,11 @@ export class ChannelTellRenderer extends MessageRenderer {
         >
           <MessageSpacer />
           <Content>
-            {isChannelTab ? (
-              <span style={{ whiteSpace: 'pre-wrap' }}>{messageContent}</span>
-            ) : (
-              <InteractiveContent
-                content={messageContent}
-                elements={parsedMessage?.elements}
-                onCommandClick={onCommandClick}
-              />
-            )}
+            <InteractiveContent
+              content={messageContent}
+              elements={isChannelTab ? [] : parsedMessage?.elements}
+              onCommandClick={onCommandClick}
+            />
           </Content>
         </MessageRow>
       );
@@ -53,15 +48,11 @@ export class ChannelTellRenderer extends MessageRenderer {
           {isYou ? message.sender : <PlayerName name={message.sender} />}
         </Sender>
         <Content>
-          {isChannelTab ? (
-            <span style={{ whiteSpace: 'pre-wrap' }}>{messageContent}</span>
-          ) : (
-            <InteractiveContent
-              content={messageContent}
-              elements={[]} // Don't use elements for channel tabs - positions are wrong
-              onCommandClick={onCommandClick}
-            />
-          )}
+          <InteractiveContent
+            content={messageContent}
+            elements={[]} // Always use empty elements array to trigger auto-detection
+            onCommandClick={onCommandClick}
+          />
         </Content>
       </MessageRow>
     );
