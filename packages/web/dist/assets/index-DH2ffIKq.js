@@ -2253,14 +2253,23 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   gap: ${e=>e.theme.spacing[2]};
   padding: ${e=>e.theme.spacing[2]};
   padding-top: ${e=>e.theme.spacing[1]};
-  background-color: transparent;
+  background-color: ${e=>e.theme.colors.surface};
   margin: ${e=>e.theme.spacing[2]};
   margin-top: 0;
+  border-radius: ${e=>e.theme.borderRadius.container};
+  box-shadow: ${e=>e.theme.shadows.container};
+  position: relative;
+  z-index: 10;
   
   /* Ensure input is visible on mobile */
   @media (max-width: 768px) {
-    padding-bottom: env(safe-area-inset-bottom, ${e=>e.theme.spacing[2]});
+    padding-bottom: calc(${e=>e.theme.spacing[2]} + env(safe-area-inset-bottom, 0px));
     margin-bottom: ${e=>e.theme.spacing[1]};
+    margin-left: ${e=>e.theme.spacing[1]};
+    margin-right: ${e=>e.theme.spacing[1]};
+    min-height: 60px;
+    background-color: ${e=>e.theme.colors.background};
+    border: 2px solid ${e=>e.theme.colors.primary};
   }
 `,mu=m.input`
   flex: 1;
@@ -2279,15 +2288,31 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+  -webkit-user-select: text;
+  user-select: text;
   
   /* Ensure minimum 16px font size on mobile to prevent iOS zoom */
   @media (max-width: 768px) {
     font-size: 16px;
+    min-height: 44px;
+    padding: ${e=>e.theme.spacing[3]};
+    border-width: 2px;
+    background-color: #ffffff;
+    color: #000000;
+    border-color: ${e=>e.theme.colors.primary};
   }
   
   &:focus {
     border-color: ${e=>e.theme.colors.primary};
     box-shadow: ${e=>e.theme.shadows.container}, 0 0 0 2px ${e=>e.theme.colors.primary}20;
+  }
+  
+  @media (max-width: 768px) {
+    &:focus {
+      border-color: ${e=>e.theme.colors.primary};
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px ${e=>e.theme.colors.primary}40;
+    }
   }
   
   &:disabled {
@@ -2297,6 +2322,12 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   
   &::placeholder {
     color: ${e=>e.theme.colors.textTertiary};
+  }
+  
+  @media (max-width: 768px) {
+    &::placeholder {
+      color: #666666;
+    }
   }
 `,fu=m.button`
   padding: ${e=>e.theme.spacing[2]} ${e=>e.theme.spacing[3]};

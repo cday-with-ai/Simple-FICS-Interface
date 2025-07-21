@@ -15,14 +15,23 @@ const InputContainer = styled.div`
   gap: ${props => props.theme.spacing[2]};
   padding: ${props => props.theme.spacing[2]};
   padding-top: ${props => props.theme.spacing[1]};
-  background-color: transparent;
+  background-color: ${props => props.theme.colors.surface};
   margin: ${props => props.theme.spacing[2]};
   margin-top: 0;
+  border-radius: ${props => props.theme.borderRadius.container};
+  box-shadow: ${props => props.theme.shadows.container};
+  position: relative;
+  z-index: 10;
   
   /* Ensure input is visible on mobile */
   @media (max-width: 768px) {
-    padding-bottom: env(safe-area-inset-bottom, ${props => props.theme.spacing[2]});
+    padding-bottom: calc(${props => props.theme.spacing[2]} + env(safe-area-inset-bottom, 0px));
     margin-bottom: ${props => props.theme.spacing[1]};
+    margin-left: ${props => props.theme.spacing[1]};
+    margin-right: ${props => props.theme.spacing[1]};
+    min-height: 60px;
+    background-color: ${props => props.theme.colors.background};
+    border: 2px solid ${props => props.theme.colors.primary};
   }
 `;
 
@@ -43,15 +52,31 @@ const InputField = styled.input`
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+  -webkit-user-select: text;
+  user-select: text;
   
   /* Ensure minimum 16px font size on mobile to prevent iOS zoom */
   @media (max-width: 768px) {
     font-size: 16px;
+    min-height: 44px;
+    padding: ${props => props.theme.spacing[3]};
+    border-width: 2px;
+    background-color: #ffffff;
+    color: #000000;
+    border-color: ${props => props.theme.colors.primary};
   }
   
   &:focus {
     border-color: ${props => props.theme.colors.primary};
     box-shadow: ${props => props.theme.shadows.container}, 0 0 0 2px ${props => props.theme.colors.primary}20;
+  }
+  
+  @media (max-width: 768px) {
+    &:focus {
+      border-color: ${props => props.theme.colors.primary};
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px ${props => props.theme.colors.primary}40;
+    }
   }
   
   &:disabled {
@@ -61,6 +86,12 @@ const InputField = styled.input`
   
   &::placeholder {
     color: ${props => props.theme.colors.textTertiary};
+  }
+  
+  @media (max-width: 768px) {
+    &::placeholder {
+      color: #666666;
+    }
   }
 `;
 
