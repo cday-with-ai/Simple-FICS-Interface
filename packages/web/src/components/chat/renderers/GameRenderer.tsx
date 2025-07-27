@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageRenderer, MessageRendererProps } from './MessageRenderer';
-import { SystemMessageRow } from './MessageStyles';
+import { SystemMessageRow, PreformattedMessageRow } from './MessageStyles';
 import { InteractiveContent } from './InteractiveContent';
 
 export class GameStartRenderer extends MessageRenderer {
@@ -28,13 +28,13 @@ export class GameEndRenderer extends MessageRenderer {
     const parsedMessage = message.metadata?.parsedMessage;
     
     return (
-      <SystemMessageRow $color={message.metadata?.color || undefined}>
+      <PreformattedMessageRow $color={message.metadata?.color || undefined}>
         <InteractiveContent
           content={message.content}
           elements={parsedMessage?.elements}
           onCommandClick={onCommandClick}
         />
-      </SystemMessageRow>
+      </PreformattedMessageRow>
     );
   }
 }

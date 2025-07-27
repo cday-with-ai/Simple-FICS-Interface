@@ -203,7 +203,7 @@ export class GameStore {
         return false;
     }
 
-    updateFromStyle12(style12: Style12) {
+    updateFromStyle12(style12: Style12, pendingMetadata?: { whiteRating: number; blackRating: number; variant: string }) {
         runInAction(() => {
             // Don't process Style12 updates if we just ended this game
             if (this.lastGameState && this.lastGameState.gameId === style12.gameNumber && !this.currentGame) {
@@ -278,18 +278,18 @@ export class GameStore {
                         gameId: style12.gameNumber,
                         white: { 
                             name: style12.whiteName, 
-                            rating: 0, // Will be updated from game start
+                            rating: pendingMetadata?.whiteRating || 0,
                             time: style12.whiteTimeRemaining 
                         },
                         black: { 
                             name: style12.blackName, 
-                            rating: 0, // Will be updated from game start
+                            rating: pendingMetadata?.blackRating || 0,
                             time: style12.blackTimeRemaining 
                         },
                         turn: style12.colorToMove.toLowerCase() as 'w' | 'b',
                         moveNumber: style12.moveNumber,
                         lastMove: style12.prettyMove !== 'none' ? style12.prettyMove : undefined,
-                        variant: 'standard', // Will be updated from game start
+                        variant: (pendingMetadata?.variant || 'standard') as GameState['variant'],
                         timeControl: `${style12.initialTime} ${style12.incrementTime}`
                     };
                     
@@ -735,16 +735,23 @@ export class GameStore {
         if (this.isPlaying) {
             const color = this.playingColor;
             const baseFlip = color === 'black';
-            // Check if user has manually flipped from this default
-            const preferencesFlipped = this.rootStore?.preferencesStore?.preferences.boardFlipped;
-            if (preferencesFlipped !== undefined) {
-                // XOR with base flip to toggle from the default
-                orientation = baseFlip !== preferencesFlipped;
-            } else {
-                orientation = baseFlip;
-            }
+            // When playing, always use the base flip (black at bottom, white at bottom)
+            // Ignore manual preferences during active games
+            orientation = baseFlip;
+            
+            console.log('[GameStore] Board orientation calculation:', {
+                isPlaying: this.isPlaying,
+                playingColor: color,
+                baseFlip,
+                orientation,
+                gameRelation: this.gameRelation,
+                currentGame: this.currentGame?.gameId
+            });
+            
             // Cache the orientation while in a game
-            this._lastBoardOrientation = orientation;
+            runInAction(() => {
+                this._lastBoardOrientation = orientation;
+            });
             return orientation;
         }
         
@@ -836,6 +843,7 @@ export class GameStore {
         }
         this.currentGame = null;
         this._playingColor = null; // Reset playing color
+        this._lastBoardOrientation = null; // Reset cached orientation
     }
     
     hasMoveHistory(): boolean {

@@ -49,16 +49,17 @@ export class GameStartParser extends BaseParser {
         console.log('[GameStartParser] Playing game start sound for observation');
         stores.soundStore?.playStart();
         
-        // Show in console with proper color
-        const gameInfo = `Game ${gameStart.gameNumber}: ${gameStart.whiteName} (${gameStart.whiteRating}) vs ${gameStart.blackName} (${gameStart.blackRating})`;
+        // Show the full original message in console to preserve all information
+        // This is important when starting a game while observing another
         stores.chatStore.addMessage('console', {
             channel: 'console',
             sender: 'FICS',
-            content: gameInfo,
+            content: message,
             timestamp: new Date(),
             type: 'system',
             metadata: {
-                consoleType: 'gameStart'
+                consoleType: 'gameStart',
+                parsedMessage: parsed
             }
         });
         
@@ -68,7 +69,8 @@ export class GameStartParser extends BaseParser {
     canParse(message: string): boolean {
         const canParse = !!message.match(/Game \d+: \S+ \(\d+\) \S+ \(\d+\) (rated|unrated)/) ||
                         !!message.match(/Creating: .+ \(.+\) .+ \(.+\) (rated|unrated) \w+ \d+ \d+/) ||
-                        !!message.match(/\{Game \d+ \(.+ vs\. .+\) Creating (rated|unrated) .+ match\.\}/);
+                        !!message.match(/\{Game \d+ \(.+ vs\. .+\) Creating (rated|unrated) .+ match\.\}/) ||
+                        !!message.match(/You are now observing game \d+/);
         if (canParse) {
             console.log('[GameStartParser] Can parse game start:', message);
         }
@@ -76,6 +78,7 @@ export class GameStartParser extends BaseParser {
     }
     
     parse(message: string): ParsedMessage<GameStart> | null {
+        console.log('[GameStartParser] Full message to parse:', message);
         // Extract just the Game line from multi-line messages
         const gameLineMatch = message.match(/Game \d+: .* \(.*\) .* \(.*\) (?:rated|unrated) .*/);
         const gameLine = gameLineMatch ? gameLineMatch[0] : message;
@@ -120,6 +123,12 @@ export class GameStartParser extends BaseParser {
         // Check for creating game format
         const createMatch = message.match(/Creating: ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+CEP-]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
         const gameMatch = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) vs\. ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*)\)/);
+
+        console.log('[GameStartParser] Creating format - createMatch:', !!createMatch, createMatch);
+        console.log('[GameStartParser] Creating format - gameMatch:', !!gameMatch, gameMatch);
+        if (createMatch) {
+            console.log('[GameStartParser] Extracted ratings - white:', createMatch[2], 'black:', createMatch[4]);
+        }
 
         if (createMatch && gameMatch) {
             const gameStart: GameStart = {

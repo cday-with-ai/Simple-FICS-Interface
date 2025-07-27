@@ -129,22 +129,27 @@ export class FicsProtocol {
         return n.slice(0, t);
     }
 
-    static handleTimesealAcknowledgement(msg: string): { cleanedMessage: string; needsAck: boolean } {
-        let needsAck = false;
+    static handleTimesealAcknowledgement(msg: string): { cleanedMessage: string; ackCount: number } {
+        let ackCount = 0;
         let cleanedMessage = msg;
-        let timesealAckIndex = msg.indexOf("[G]\0");
+        
+        // Handle both [G]\0
+        const pattern = "[G]\0";
+        
+        let timesealAckIndex = cleanedMessage.indexOf(pattern);
 
         while (timesealAckIndex !== -1) {
-            needsAck = true;
-            cleanedMessage = cleanedMessage.substring(0, timesealAckIndex) + cleanedMessage.substring(timesealAckIndex + 4);
-            timesealAckIndex = cleanedMessage.indexOf("[G]\0");
+            ackCount++;
+            cleanedMessage = cleanedMessage.substring(0, timesealAckIndex) + cleanedMessage.substring(timesealAckIndex + pattern.length);
+            timesealAckIndex = cleanedMessage.indexOf(pattern);
         }
 
-        return {cleanedMessage, needsAck};
+
+        return {cleanedMessage, ackCount};
     }
 
     static createTimesealAck(): Uint8Array {
-        return this.encodeTimeseal(String.fromCharCode(2, 57));
+        return this.encodeTimeseal(String.fromCharCode(2) + '9');
     }
 
     // Message cleanup methods

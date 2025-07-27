@@ -21,16 +21,17 @@ export class GameEndParser extends BaseParser {
         // Play end sound
         stores.soundStore?.playEnd();
         
-        // Show in console with proper color
-        const endInfo = `{Game ${gameEnd.gameNumber} (${gameEnd.whiteName} vs ${gameEnd.blackName}) ${gameEnd.reason}} ${gameEnd.result}`;
+        // Show in console with proper formatting - use the original message
+        console.log('[GameEndParser] Adding to console:', JSON.stringify(message));
         stores.chatStore.addMessage('console', {
             channel: 'console',
             sender: 'FICS',
-            content: endInfo,
+            content: message,
             timestamp: new Date(),
             type: 'system',
             metadata: {
-                consoleType: 'gameEnd'
+                consoleType: 'gameEnd',
+                parsedMessage: parsed
             }
         });
         
@@ -38,12 +39,46 @@ export class GameEndParser extends BaseParser {
     }
     
     canParse(message: string): boolean {
-        return !!message.match(/\{Game \d+ \(.+ vs\. .+\) .+\}/) ||
-               !!message.match(/You are no longer examining game \d+/);
+        // Only match game end messages, not game creation messages or active games
+        // Game end: {Game X (player vs. player) reason} result
+        // Game creation: {Game X (player vs. player) Creating...}
+        
+        // If there's a Style12 board update in this message, check if game is still active
+        if (message.includes('<12>')) {
+            // Extract the relation field from Style12 (it's the 19th field)
+            const style12Match = message.match(/<12>.*?([WB])\s+(-?\d+)\s+\d+\s+\d+/);
+            if (style12Match) {
+                const relation = parseInt(style12Match[2]);
+                // If relation is -1 or 1, the game is still active (playing)
+                // If relation is 0 or -2, we're observing
+                // Only relation -3 means the game is truly over
+                if (relation !== -3) {
+                    if (message.includes('{Game')) {
+                        console.log('[GameEndParser] Skipping - game still active, relation:', relation);
+                    }
+                    return false;
+                }
+            }
+        }
+        
+        const canParse = (!!message.match(/\{Game \d+ \(.+ vs\. .+\) .+\}\s*(?:1-0|0-1|1\/2-1\/2|\*)/) &&
+                         !message.includes('Creating')) ||
+                        !!message.match(/You are no longer examining game \d+/);
+        if (message.includes('{Game')) {
+            console.log('[GameEndParser] canParse check:', JSON.stringify(message), 'result:', canParse);
+        }
+        return canParse;
     }
     
     parse(message: string): ParsedMessage<GameEnd> | null {
-        const match = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) vs\. ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*)\) ([^}]+)\}\s*(.+)/);
+        // First try to match game end with result on same line
+        let match = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) vs\. ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*)\) ([^}]+)\}\s*(.+?)(?:\n|$)/);
+        
+        // If not found, try matching across lines (for cases where result is on next line)
+        if (!match) {
+            match = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) vs\. ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*)\) ([^}]+)\}[\s\n]*(.+?)(?:\n|$)/);
+        }
+        
         if (match) {
             const gameEnd: GameEnd = {
                 gameNumber: parseInt(match[1]),
@@ -67,7 +102,7 @@ export class GameEndParser extends BaseParser {
             elements.push(ParserUtils.createGameNumberElement(match[1], gameEnd.gameNumber, gameNumIndex));
             
             return {
-                content: message,
+                content: message,  // Return the full message including rating adjustments
                 elements,
                 metadata: gameEnd
             };

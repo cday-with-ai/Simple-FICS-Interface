@@ -99,7 +99,21 @@ export const ChatPanel: React.FC<ChatPanelProps> = observer(({ className, compac
     console.log('handleSendMessage called with:', message, 'Length:', message.length);
     if (!message.trim()) return;
 
-    // Add to history
+    // Split multi-line messages into separate commands
+    const lines = message.split('\n');
+    
+    // If multi-line, process each line separately (skip empty lines)
+    if (lines.length > 1) {
+      lines.forEach(line => {
+        if (line) { // Don't skip lines with only spaces, just empty lines
+          handleSendMessage(line);
+        }
+      });
+      setInputValue('');
+      return;
+    }
+
+    // Add to history (only for single line messages to avoid duplicates)
     chatStore.addToHistory(message);
     
     // Handle special local commands (only /help now)

@@ -1,6 +1,6 @@
 import React from 'react';
 import { MessageRenderer, MessageRendererProps } from './MessageRenderer';
-import { PreformattedMessageRow } from './MessageStyles';
+import { PreformattedMessageRow, CommandLink } from './MessageStyles';
 import { InteractiveContent } from './InteractiveContent';
 
 // Base class for console messages
@@ -74,8 +74,49 @@ export class FingerOutputRenderer extends ConsoleRenderer {
   readonly type = 'fingerOutput';
 }
 
-export class HistoryOutputRenderer extends ConsoleRenderer {
+export class HistoryOutputRenderer extends MessageRenderer {
   readonly type = 'historyOutput';
+  
+  render({ message, onCommandClick }: MessageRendererProps): React.ReactNode {
+    const content = message.content;
+    const metadata = message.metadata?.parsedMessage?.metadata as any;
+    const player = metadata?.player || '';
+    
+    // Split content into lines
+    const lines = content.split('\n');
+    
+    return (
+      <PreformattedMessageRow 
+        $color={message.metadata?.color || undefined}
+        $fontFamily={message.metadata?.fontFamily || undefined}
+        $fontStyle={message.metadata?.fontStyle || undefined}
+      >
+        {lines.map((line, index) => {
+          // Check if this line is a history entry (starts with a number and colon)
+          const entryMatch = line.match(/^(\d+):/);
+          if (entryMatch && onCommandClick) {
+            const gameNumber = entryMatch[1];
+            return (
+              <React.Fragment key={index}>
+                <CommandLink 
+                  onClick={() => onCommandClick(`examine ${player} ${gameNumber}`)}
+                  style={{ display: 'block' }}
+                >
+                  {line}
+                </CommandLink>
+              </React.Fragment>
+            );
+          }
+          return (
+            <React.Fragment key={index}>
+              {line}
+              {index < lines.length - 1 && '\n'}
+            </React.Fragment>
+          );
+        })}
+      </PreformattedMessageRow>
+    );
+  }
 }
 
 export class JournalOutputRenderer extends ConsoleRenderer {

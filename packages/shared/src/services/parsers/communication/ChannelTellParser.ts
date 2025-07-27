@@ -75,7 +75,7 @@ export class ChannelTellParser extends BaseParser {
             }
         }
         
-        const channelMatch = firstLine.match(/^\s*(\w+(?:\([^)]*\))*)\((\d+)\):\s*(.*)$/);
+        const channelMatch = firstLine.match(/^\s*(\w+(?:\([^)]*\))*)\((\d+)\):\s(.*)$/);
         if (!channelMatch) return null;
         
         const fullUsername = channelMatch[1];

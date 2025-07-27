@@ -17,7 +17,7 @@ import { ChannelLogParser } from './output/ChannelLogParser';
 // Game parsers
 import { Style12Parser } from './game/Style12Parser';
 import { GameStartParser } from './game/GameStartParser';
-import { GameNotificationParser } from './game/GameNotificationParser';
+// import { GameNotificationParser } from './game/GameNotificationParser';
 import { GameEndParser } from './game/GameEndParser';
 import { SeekAnnouncementParser } from './game/SeekAnnouncementParser';
 import { MovesListParser } from './game/MovesListParser';
@@ -65,7 +65,7 @@ export const MESSAGE_PARSERS: Parser[] = [
     new IllegalMoveParser(),   // priority: 85
     new DrawOfferParser(),     // priority: 85
     new UnobserveParser(),     // priority: 85
-    new GameNotificationParser(), // priority: 85
+    // new GameNotificationParser(), // priority: 85
     new ObservingGameParser(), // priority: 85
     
     // Command outputs and outgoing messages
@@ -110,64 +110,11 @@ export function parseMessage(msg: string): FicsMessage[] {
     // Normalize line endings (this function might be called from tests)
     let normalizedMsg = msg.replace(/\r\n/g, '\n').replace(/\n\r/g, '\n').replace(/\r/g, '\n');
     
-    // Remove FICS prompts if present
-    normalizedMsg = normalizedMsg.replace(/\nfics%\s*$/g, '\n');
+    // Remove trailing FICS prompt if present (for tests)
+    normalizedMsg = normalizedMsg.replace(/\nfics%\s*$/g, '');
     normalizedMsg = normalizedMsg.replace(/^fics%\s*\n/g, '');
     
-    // Check if this message contains multiple FICS messages separated by \nfics%
-    // This can happen when multiple messages are buffered together
-    const hasFicsPrompt = normalizedMsg.includes('\nfics%');
-    
-    if (hasFicsPrompt) {
-        // Split on \nfics% to handle multiple concatenated messages
-        const segments = normalizedMsg.split('\nfics%');
-        const results: FicsMessage[] = [];
-        
-        for (let i = 0; i < segments.length; i++) {
-            // Don't trim the segment - it might have important whitespace
-            let segment = segments[i];
-            
-            // Skip empty segments
-            if (!segment || segment.length === 0) continue;
-            
-            // Normalize line endings in the segment
-            segment = segment.replace(/\r\n/g, '\n').replace(/\n\r/g, '\n').replace(/\r/g, '\n');
-            
-            // Try each parser in priority order for this segment
-            let parsed = false;
-            for (const parser of MESSAGE_PARSERS) {
-                if (parser.canParse(segment)) {
-                    const result = parser.parse(segment);
-                    if (result) {
-                        // For movesList messages, use the metadata as the data
-                        const data = parser.name === 'movesList' && result.metadata ? result.metadata : result;
-                        
-                        results.push({
-                            type: parser.name as any,
-                            data: data
-                        });
-                        parsed = true;
-                        break;
-                    }
-                }
-            }
-            
-            // If no parser handled this segment, add as raw
-            if (!parsed) {
-                results.push({
-                    type: 'raw',
-                    data: {
-                        content: segment,
-                        elements: []
-                    }
-                });
-            }
-        }
-        
-        return results.length > 0 ? results : [{type: 'raw', data: { content: msg, elements: [] }}];
-    }
-    
-    // Single message - try each parser in priority order
+    // Try each parser in priority order
     for (const parser of MESSAGE_PARSERS) {
         if (parser.canParse(normalizedMsg)) {
             const result = parser.parse(normalizedMsg);
@@ -199,65 +146,11 @@ export function parseMessageWithStores(msg: string, stores: RootStore): FicsMess
         return [{type: 'raw', data: { content: '', elements: [] }}];
     }
     
-    // Message should already be normalized and cleaned by FICSStore
-    let normalizedMsg = msg;
+    // Message is already a complete FICS message (everything up to a fics% prompt)
+    // No need to split on prompts anymore
+    const normalizedMsg = msg;
     
-    // Check if this message contains multiple FICS messages separated by \nfics%
-    // This shouldn't happen anymore with preprocessing, but keep for safety
-    const hasFicsPrompt = normalizedMsg.includes('\nfics%');
-    
-    if (hasFicsPrompt) {
-        // Split on \nfics% to handle multiple concatenated messages
-        const segments = normalizedMsg.split('\nfics%');
-        const results: FicsMessage[] = [];
-        
-        for (let i = 0; i < segments.length; i++) {
-            // Don't trim the segment - it might have important whitespace
-            let segment = segments[i];
-            
-            // Skip empty segments
-            if (!segment || segment.length === 0) continue;
-            
-            // Normalize line endings in the segment
-            segment = segment.replace(/\r\n/g, '\n').replace(/\n\r/g, '\n').replace(/\r/g, '\n');
-            
-            // Find all parsers that can handle this segment
-            const candidateParsers = MESSAGE_PARSERS.filter(parser => parser.canParse(segment));
-            
-            
-            // Try each candidate parser in priority order (already sorted)
-            let parsed = false;
-            for (const parser of candidateParsers) {
-                const result = parser.handle(segment, stores);
-                if (result) {
-                    // For movesList messages, use the metadata as the data
-                    const data = parser.name === 'movesList' && result.metadata ? result.metadata : result;
-                    
-                    results.push({
-                        type: parser.name as any,
-                        data: data
-                    });
-                    parsed = true;
-                    break;
-                }
-            }
-            
-            // If no parser handled this segment, add as raw
-            if (!parsed) {
-                results.push({
-                    type: 'raw',
-                    data: {
-                        content: segment,
-                        elements: []
-                    }
-                });
-            }
-        }
-        
-        return results.length > 0 ? results : [{type: 'raw', data: { content: msg, elements: [] }}];
-    }
-    
-    // Single message - find all parsers that can handle it
+    // Find all parsers that can handle this message
     const candidateParsers = MESSAGE_PARSERS.filter(parser => parser.canParse(normalizedMsg));
     
     // Try each candidate parser in priority order (already sorted)

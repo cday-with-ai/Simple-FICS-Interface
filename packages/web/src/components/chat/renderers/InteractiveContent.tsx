@@ -150,8 +150,36 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
     return <>{content}</>;
   }
   
-  // Sort elements by start position
-  const sortedElements = [...allElements].sort((a, b) => a.start - b.start);
+  // Sort elements by start position and remove duplicates/overlaps
+  const sortedElements = [...allElements]
+    .sort((a, b) => {
+      // Sort by start position first
+      if (a.start !== b.start) return a.start - b.start;
+      // If same start, prefer longer elements (they're likely more specific)
+      if (a.end !== b.end) return b.end - a.end;
+      // If same position, prefer certain types
+      const typePriority: Record<string, number> = {
+        'command': 1,
+        'player': 2,
+        'gameNumber': 3,
+        'channel': 4,
+        'url': 5,
+        'seek': 6
+      };
+      const aPriority = typePriority[a.type] || 99;
+      const bPriority = typePriority[b.type] || 99;
+      return aPriority - bPriority;
+    })
+    .filter((element, index, array) => {
+      // Remove exact duplicates
+      if (index > 0) {
+        const prev = array[index - 1];
+        if (prev.start === element.start && prev.end === element.end && prev.type === element.type) {
+          return false;
+        }
+      }
+      return true;
+    });
   
   
   // Build the rendered content with interactive elements
@@ -167,17 +195,13 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
       
       
       parts.push(
-        <span key={`text-${index}`} style={{ whiteSpace: 'pre' }}>
+        <React.Fragment key={`text-${index}`}>
           {gapText}
-        </span>
+        </React.Fragment>
       );
     } else if (element.start < lastEnd) {
-      // Skip overlapping elements
-      console.warn(`[InteractiveContent] Skipping overlapping element:`, {
-        element,
-        lastEnd,
-        overlap: lastEnd - element.start
-      });
+      // Skip overlapping elements silently - this is expected with multi-line messages
+      // where parsers might create overlapping elements
       return;
     }
     
@@ -189,13 +213,11 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
     switch (element.type) {
       case 'player':
         parts.push(
-          <span key={key}>
-            {' '}
-            <PlayerName 
-              name={elementText} 
-              onClick={() => handleAction(element.action, element.type)}
-            />
-          </span>
+          <PlayerName 
+            key={key}
+            name={elementText} 
+            onClick={() => handleAction(element.action, element.type)}
+          />
         );
         break;
         
@@ -268,9 +290,9 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
   // Add any remaining text
   if (lastEnd < content.length) {
     parts.push(
-      <span key="text-end" style={{ whiteSpace: 'pre' }}>
+      <React.Fragment key="text-end">
         {content.substring(lastEnd)}
-      </span>
+      </React.Fragment>
     );
   }
   

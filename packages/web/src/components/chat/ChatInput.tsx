@@ -41,7 +41,7 @@ const InputContainer = styled.div`
   }
 `;
 
-const InputField = styled.input`
+const InputField = styled.textarea`
   flex: 1;
   padding: ${props => props.theme.spacing[2]};
   border: 1px solid ${props => props.theme.colors.border};
@@ -53,6 +53,10 @@ const InputField = styled.input`
   box-shadow: ${props => props.theme.shadows.container};
   outline: none;
   transition: all ${props => props.theme.transitions.fast};
+  resize: none;
+  height: 40px;
+  line-height: 1.5;
+  overflow: hidden;
   
   /* iOS fixes to prevent zoom and ensure visibility */
   -webkit-appearance: none;
@@ -64,7 +68,7 @@ const InputField = styled.input`
   /* Ensure minimum 16px font size on mobile to prevent iOS zoom */
   @media (max-width: 768px) {
     font-size: 16px;
-    min-height: 44px;
+    height: 44px;
     padding: ${props => props.theme.spacing[3]};
     border-width: 2px;
     background-color: #ffffff;
@@ -149,13 +153,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   placeholder = 'Type a message...',
   disabled = false
 }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (value.trim()) {
-        onSend(value.trim());
+      if (value) {
+        onSend(value);
       }
     } else if (e.key === 'ArrowUp' && !value) {
       e.preventDefault();
@@ -167,8 +171,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleSendClick = () => {
-    if (value.trim()) {
-      onSend(value.trim());
+    if (value) {
+      onSend(value);
     }
   };
 
@@ -176,7 +180,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     <InputContainer>
       <InputField
         ref={inputRef}
-        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -184,10 +187,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         disabled={disabled}
         autoComplete="off"
         spellCheck="true"
+        rows={1}
       />
       <SendButton
         onClick={handleSendClick}
-        disabled={disabled || !value.trim()}
+        disabled={disabled || !value}
         title="Send message (Enter)"
       >
         Send

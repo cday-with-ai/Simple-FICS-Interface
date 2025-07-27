@@ -11,7 +11,9 @@ export class HistoryParser extends BaseParser {
     }
     
     parse(message: string): ParsedMessage<HistoryOutputData> | null {
+        console.log('[HistoryParser] Raw message:', JSON.stringify(message));
         const lines = this.splitLines(message);
+        console.log('[HistoryParser] Split into', lines.length, 'lines');
         
         // Look for history header
         const headerLine = lines.find(line => line.includes('History for'));
@@ -49,13 +51,10 @@ export class HistoryParser extends BaseParser {
                 });
                 
                 // Make the whole line clickable to examine the game
-                // Don't add individual player elements as they would overlap
-                const trimmedLine = line.trim();
-                const lineStartIndex = line.indexOf(trimmedLine);
                 elements.push(ParserUtils.createCommandElement(
-                    trimmedLine,
+                    line.trim(),
                     `examine ${player} ${index}`,
-                    offset + lineStartIndex
+                    offset
                 ));
             }
             

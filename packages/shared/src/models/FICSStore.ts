@@ -42,6 +42,9 @@ export class FICSStore {
     // Track multi-line channel member lists
     private channelListBuffer: string[] = [];
     private isCollectingChannelList = false;
+    
+    // Store pending game metadata from GameStart until Style12 arrives
+    private pendingGameMetadata = new Map<number, { whiteRating: number; blackRating: number; variant: string }>();
 
     constructor() {
         makeAutoObservable(this);
@@ -205,6 +208,18 @@ export class FICSStore {
         
         // Handle set orient command
         if (cmd === 'set orient' || cmd === 'set flip') {
+            // Don't allow flipping during active games
+            if (this.rootStore?.gameStore.isPlaying) {
+                this.rootStore?.chatStore.addMessage('console', {
+                    channel: 'console',
+                    sender: 'System',
+                    content: 'Cannot flip board while playing. Board orientation is automatically set based on your color.',
+                    timestamp: new Date(),
+                    type: 'system'
+                });
+                return;
+            }
+            
             this.rootStore?.preferencesStore.toggleBoardFlip();
             const flipped = this.rootStore?.preferencesStore.boardFlipped;
             this.rootStore?.chatStore.addMessage('console', {
@@ -256,9 +271,9 @@ export class FICSStore {
             console.log('[FICSStore] Sending command:', JSON.stringify(command));
             
             // Convert Unicode to Maciejg format for user text
-            const processedCommand = unicodeToMaciejgFormat(command);
-            console.log('[FICSStore] After Unicode processing:', JSON.stringify(processedCommand));
-            
+            var processedCommand = unicodeToMaciejgFormat(command);
+            console.log('[FICSStore] Sending: ', JSON.stringify(processedCommand));
+
             // Encode with timeseal protocol
             const encoded = this.encodeTimeseal(processedCommand);
             console.log('[FICSStore] Encoded bytes:', Array.from(encoded.slice(0, Math.min(encoded.length, 50))));
@@ -364,35 +379,58 @@ export class FICSStore {
         runInAction(() => {
             this.lastPing = Date.now();
         });
-        
+
+        // Handle timeseal acknowledgements immediately. Send an ack for each [G]\0
+        const { cleanedMessage, ackCount } = FicsProtocol.handleTimesealAcknowledgement(data);
+        if (ackCount > 0) {
+            for (var n = 0; n < ackCount; n++) {
+                console.log('[FICS] Timeseal ACK needed, sending immediately');
+                // Send timeseal acknowledgement
+                this.ws!.send(FicsProtocol.createTimesealAck());
+                console.log('[FICS] Timeseal ACK sent');
+            }
+        }
+
         // Log raw FICS message before any processing
         console.log('[FICS Raw]:', JSON.stringify(data));
-        
-        // Handle timeseal acknowledgements
-        const { cleanedMessage, needsAck } = FicsProtocol.handleTimesealAcknowledgement(data);
-        if (needsAck) {
-            // Send timeseal acknowledgement
-            const ack = FicsProtocol.createTimesealAck();
-            this.ws!.send(ack);
-        }
-        
+
         // Use cleaned message for processing
         let processData = cleanedMessage;
-        
+
+        // Normalize line endings before parsing
+        processData = processData.replace(/\n\r/g, '\n')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n');
+
         // Convert Maciejg format to Unicode for incoming text
         processData = maciejgFormatToUnicode(processData);
-        
-        // Normalize line endings before parsing
-        processData = processData.replace(/\n\r/g, '\n').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        
-        // Remove FICS prompts - they appear at the end of messages
-        processData = processData.replace(/\nfics%\s*$/g, '\n');
-        processData = processData.replace(/^fics%\s*\n/g, '');
 
-        // Process all messages immediately
-        // FICS sends complete messages, so we don't need buffering
-        const messages = FicsProtocol.parseMessageWithStores(processData, this.rootStore!);
-        this.processMessages(messages);
+        //split up messages by prompt.
+        var lastPromptIndex = processData.indexOf('fics%');
+        var messageStrings = [];
+        while(lastPromptIndex != -1) {
+            messageStrings.push(processData.substring(0, lastPromptIndex));
+            processData = processData.substring(lastPromptIndex + 5);
+            lastPromptIndex = processData.indexOf('fics%');
+        }
+        if (processData.length > 0) {
+           messageStrings.push(processData);
+        }
+
+        console.log(`Processing ${messageStrings.length} messages`);
+
+
+        //process messages.
+        for (var messageString of messageStrings) {
+            if (messageString.trim() == '') {
+                continue;
+            }
+            messageString = messageString.replaceAll("\n\\   ","\n    ");
+            // Log raw FICS message before any processing
+            console.log('[FICS Message]:', JSON.stringify(messageString));
+            const messages = FicsProtocol.parseMessageWithStores(messageString, this.rootStore!);
+            this.processMessages(messages);
+        }
     }
 
     private processMessages(messages: any[]) {
@@ -419,7 +457,13 @@ export class FICSStore {
 
                     case 'style12':
                         const style12Data = message.data.metadata || message.data;
-                        this.rootStore?.gameStore.updateFromStyle12(style12Data);
+                        // Pass pending metadata if available
+                        const pendingMetadata = this.pendingGameMetadata.get(style12Data.gameNumber);
+                        this.rootStore?.gameStore.updateFromStyle12(style12Data, pendingMetadata);
+                        // Clean up pending metadata after use
+                        if (pendingMetadata) {
+                            this.pendingGameMetadata.delete(style12Data.gameNumber);
+                        }
                         // If we're observing and not at move 1, request the moves
                         if (style12Data.moveNumber > 1 && 
                             (style12Data.relation === 0 || style12Data.relation === -2)) {
@@ -431,7 +475,9 @@ export class FICSStore {
                         break;
 
                     case 'gameStart':
-                        // Handled by parser
+                        if (message.data) {
+                            this.handleGameStart(message.data);
+                        }
                         break;
 
                     case 'channelTell':
@@ -631,6 +677,38 @@ export class FICSStore {
                     case 'raw':
                     case 'system':
                     default:
+                        // First, check for ping response
+                        if (message.data !== null && message.data !== undefined) {
+                            const rawContent = typeof message.data === 'string' ? message.data : message.data.content;
+                            
+                            // Check if this is a ping response
+                            const pingMatch = rawContent.match(/Average ping time for (\w+) is (\d+)ms\./);
+                            if (pingMatch) {
+                                // Check if this was an automatic ping before updating state
+                                const wasAutomaticPing = this.waitingForPing;
+                                console.log('[FICS] Ping response detected:', {
+                                    wasAutomaticPing,
+                                    waitingForPing: this.waitingForPing,
+                                    content: rawContent
+                                });
+                                
+                                runInAction(() => {
+                                    this.averagePing = parseInt(pingMatch[2]);
+                                    this.lastPingUpdate = new Date();
+                                    this.waitingForPing = false;
+                                });
+                                
+                                // Only hide automatic ping responses, show manual ones
+                                if (wasAutomaticPing) {
+                                    console.log('[FICS] Hiding automatic ping response');
+                                    // Don't show automatic ping messages in console
+                                    break;
+                                }
+                                console.log('[FICS] Showing manual ping response');
+                                // Continue to show manual ping commands in console
+                            }
+                        }
+                        
                         // Check if it's a seek or game list message (for old compatibility)
                         if (message.data && typeof message.data === 'string') {
                             this.handleSeekOrGame(message.data);
@@ -686,21 +764,9 @@ export class FICSStore {
                             }
                         }
                         
-                        // Check for ping response before routing to console
-                        if (message.type === 'raw' && message.data !== null && message.data !== undefined) {
+                        // Additional handling for raw messages
+                        if (message.data !== null && message.data !== undefined) {
                             const rawContent = typeof message.data === 'string' ? message.data : message.data.content;
-                            
-                            // Check if this is a ping response
-                            const pingMatch = rawContent.match(/Average ping time for (\w+) is (\d+)ms\./);
-                            if (pingMatch && this.waitingForPing) {
-                                runInAction(() => {
-                                    this.averagePing = parseInt(pingMatch[2]);
-                                    this.lastPingUpdate = new Date();
-                                    this.waitingForPing = false;
-                                });
-                                // Don't show ping messages in console
-                                break;
-                            }
                             
                             // Handle multi-line channel member lists
                             if (rawContent.match(/^\s*Channel\s+\d+(?:\s+"[^"]+")?\s*:/)) {
@@ -821,25 +887,20 @@ export class FICSStore {
     // Style12 is now handled by the Style12Parser
 
     private handleGameStart(gameStart: GameStart) {
-        const gameState = {
-            gameId: gameStart.gameNumber,
-            white: {
-                name: gameStart.whiteName,
-                rating: parseInt(gameStart.whiteRating) || 0,
-                time: gameStart.minutes * 60
-            },
-            black: {
-                name: gameStart.blackName,
-                rating: parseInt(gameStart.blackRating) || 0,
-                time: gameStart.minutes * 60
-            },
-            turn: 'w' as const,
-            moveNumber: 1,
-            variant: this.mapGameTypeToVariant(gameStart.gameType),
-            timeControl: `${gameStart.minutes} ${gameStart.increment}`
-        };
-
-        this.rootStore?.gameStore.startNewGame(gameState);
+        // Store game metadata for when Style12 arrives
+        this.pendingGameMetadata.set(gameStart.gameNumber, {
+            whiteRating: parseInt(gameStart.whiteRating) || 0,
+            blackRating: parseInt(gameStart.blackRating) || 0,
+            variant: this.mapGameTypeToVariant(gameStart.gameType)
+        });
+        
+        // Clean up old pending metadata (older than 5 minutes)
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        for (const [gameId, metadata] of this.pendingGameMetadata.entries()) {
+            if (gameId < gameStart.gameNumber - 100) { // Assume game IDs don't jump by more than 100
+                this.pendingGameMetadata.delete(gameId);
+            }
+        }
     }
     
     private handleGameEnd(gameEnd: GameEnd) {

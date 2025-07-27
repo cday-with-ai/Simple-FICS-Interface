@@ -14,6 +14,19 @@ export class ObservingGameParser extends BaseParser {
         console.log('[ObservingGameParser] Playing game start sound for observation');
         stores.soundStore?.playStart();
         
+        // Add the full message to console
+        stores.chatStore.addMessage('console', {
+            channel: 'console',
+            sender: 'FICS',
+            content: message,
+            timestamp: new Date(),
+            type: 'system',
+            metadata: {
+                consoleType: 'gameNotification',
+                parsedMessage: parsed
+            }
+        });
+        
         return parsed;
     }
     

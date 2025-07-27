@@ -25,7 +25,6 @@ export const PreformattedMessageRow = styled.div<{ $color?: string; $fontFamily?
   font-style: ${props => props.$fontStyle || 'normal'};
   line-height: 1.3;
   white-space: pre;
-  word-break: break-all;
   color: ${props => props.$color || props.theme.colors.textSecondary};
 `;
 

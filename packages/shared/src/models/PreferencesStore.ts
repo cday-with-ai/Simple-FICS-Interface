@@ -277,8 +277,8 @@ const DEFAULT_PREFERENCES: Preferences = {
     showLegalMoves: true,
     boardFlipped: false,
     animateMoves: true,
-    animationDuration: 250, // 0.25 seconds
-    disableAnimationsThreshold: 30, // Default to 30 seconds
+    animationDuration: 200, // 0.2 seconds
+    disableAnimationsThreshold: 10, // Default to 10 seconds
     autoPromoteToQueen: false,
     autoPromotionPiece: 'Q', // Default to queen
     theme: 'system',

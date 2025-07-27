@@ -64,7 +64,7 @@ export class DirectTellParser extends BaseParser {
         
         // Match the first line for tell pattern - handle multiple parenthetical suffixes
         const firstLine = lines[0];
-        const tellMatch = firstLine.match(/^(\w+)((?:\([^)]*\))*)\s*tells\s+you:\s*(.*)$/);
+        const tellMatch = firstLine.match(/^(\w+)((?:\([^)]*\))*)\s*tells\s+you:\s(.*)$/);
         if (!tellMatch) return null;
         
         const username = tellMatch[1];  // Just the username without parentheses

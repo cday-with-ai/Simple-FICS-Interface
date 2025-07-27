@@ -321,7 +321,6 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       // Only update if size actually changed
       if (size !== calculatedSize) {
         setCalculatedSize(size);
-        onSizeCalculated?.(size);
       }
     };
 
@@ -359,6 +358,13 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
     };
   }, [providedSize, calculatedSize]);
 
+  // Notify parent of size changes in a separate effect to avoid setState during render
+  useEffect(() => {
+    if (onSizeCalculated && calculatedSize > 0) {
+      onSizeCalculated(calculatedSize);
+    }
+  }, [calculatedSize, onSizeCalculated]);
+
   const squareSize = calculatedSize / 8;
   
   // Check if we should disable animations due to low time
@@ -382,68 +388,72 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
   }, [preferencesStore.preferences.animateMoves, preferencesStore.preferences.disableAnimationsThreshold, 
       gameStore.isPlaying, gameStore.currentGame, gameStore.playingColor]);
   
+  // Track the last position we animated to prevent duplicates
+  const lastAnimatedPositionRef = useRef<string>('');
+  
   // Detect piece movements and start animations
   useEffect(() => {
+    // Always clear animations first to show final board state immediately
+    setAnimatingPieces([]);
+    
     if (!shouldAnimateMoves || userMoveInProgress || gameStore.isProcessingServerUpdate) {
       previousPiecesRef.current = new Map(pieces);
-      // Clear any ongoing animations if we're not animating
-      if (!shouldAnimateMoves) {
-        setAnimatingPieces([]);
-      }
       return;
     }
     
     const previousPieces = previousPiecesRef.current;
-    const newAnimations: AnimatingPiece[] = [];
     
     // Find pieces that moved based on lastMove
     if (lastMove) {
       const { from, to } = lastMove;
+      
+      // Create a unique key for this position + move combination
+      // This prevents animating the same move twice even if position updates multiple times
+      const positionKey = `${position}-${from}-${to}`;
+      
+      // Skip if we already animated this move for this position
+      if (lastAnimatedPositionRef.current === positionKey) {
+        previousPiecesRef.current = new Map(pieces);
+        return;
+      }
+      
       const movingPiece = previousPieces.get(from);
       const destinationPiece = pieces.get(to);
       
       // Check if a piece moved from 'from' to 'to'
       if (movingPiece && destinationPiece === movingPiece && !pieces.has(from)) {
-        const now = Date.now();
-        const timeSinceLastAnimation = now - lastAnimationTimeRef.current;
+        // If we're playing and it's our turn, this position update is from our move
+        // Don't animate in this case
+        if (gameStore.isPlaying && gameStore.currentGame) {
+          const isMyTurn = gameStore.gameRelation === 1;
+          const myColor = gameStore.playingColor;
+          const moveWasByMe = (myColor === 'white' && gameStore.currentGame.turn === 'b') ||
+                              (myColor === 'black' && gameStore.currentGame.turn === 'w');
+          
+          if (isMyTurn || moveWasByMe) {
+            previousPiecesRef.current = new Map(pieces);
+            lastAnimatedPositionRef.current = positionKey;
+            return;
+          }
+        }
         
-        // Skip animation if moves are coming too fast (less than 100ms apart)
-        if (timeSinceLastAnimation < 100) {
-          // Clear any existing animations to prevent visual glitches
-          setAnimatingPieces([]);
-        } else {
-          // The piece successfully moved (could be a capture or regular move)
-          newAnimations.push({
+        lastAnimatedPositionRef.current = positionKey;
+        
+        // Use setTimeout to start animation on next tick
+        // This ensures the board shows the final state first
+        setTimeout(() => {
+          setAnimatingPieces([{
             piece: movingPiece,
             from,
             to,
-            startTime: now
-          });
-          lastAnimationTimeRef.current = now;
-        }
+            startTime: Date.now()
+          }]);
+        }, 0);
       }
     }
     
-    if (newAnimations.length > 0) {
-      setAnimatingPieces(prev => {
-        // Remove any existing animations for pieces that are starting new animations
-        const newFromSquares = new Set(newAnimations.map(anim => anim.from));
-        const newToSquares = new Set(newAnimations.map(anim => anim.to));
-        
-        // Keep only animations that don't conflict with new ones
-        const filtered = prev.filter(anim => 
-          !newFromSquares.has(anim.from) && 
-          !newFromSquares.has(anim.to) &&
-          !newToSquares.has(anim.from) &&
-          !newToSquares.has(anim.to)
-        );
-        
-        return [...filtered, ...newAnimations];
-      });
-    }
-    
     previousPiecesRef.current = new Map(pieces);
-  }, [pieces, lastMove, shouldAnimateMoves, userMoveInProgress, gameStore.isProcessingServerUpdate]);
+  }, [pieces, lastMove, shouldAnimateMoves, userMoveInProgress, gameStore.isProcessingServerUpdate, position, gameStore]);
   
   // Clear user move flag after position changes
   useEffect(() => {
@@ -821,8 +831,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
             $isPossibleMove={isPossibleMove}
             onMouseDown={(e) => handleMouseDown(e, squareName, piece)}
           >
-            {piece && !isDraggedFrom && !isAnimatingFrom && !isAnimatingTo && (
-              <ChessPiece piece={piece} size={squareSize} />
+            {piece && !isDraggedFrom && !isAnimatingFrom && (
+              <ChessPiece 
+                key={`${piece}-${squareSize}`}
+                piece={piece} 
+                size={squareSize} 
+              />
             )}
             {showFileCoordinate && (
               <Coordinate 
@@ -902,7 +916,11 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
               $progress={easedProgress}
               $size={squareSize}
             >
-              <ChessPiece piece={anim.piece} size={squareSize} />
+              <ChessPiece 
+                key={`${anim.piece}-${squareSize}`}
+                piece={anim.piece} 
+                size={squareSize} 
+              />
             </AnimatingPieceWrapper>
           );
         })}
@@ -910,7 +928,12 @@ export const ChessBoardWithPieces: React.FC<ChessBoardWithPiecesProps> = observe
       {draggedPiece && (
         <>
           <DraggingPiece $x={draggedPiece.x} $y={draggedPiece.y} $size={draggedPiece.size}>
-            <ChessPiece piece={draggedPiece.piece} size={draggedPiece.size} isDragging />
+            <ChessPiece 
+              key={`${draggedPiece.piece}-${draggedPiece.size}-dragging`}
+              piece={draggedPiece.piece} 
+              size={draggedPiece.size} 
+              isDragging 
+            />
           </DraggingPiece>
         </>
       )}
