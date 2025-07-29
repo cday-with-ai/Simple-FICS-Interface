@@ -82,6 +82,9 @@ export class GameStore {
             return;
         }
         
+        // Check if this is transitioning to freestyle mode (gameId -1 means freestyle)
+        const isTransitioningToFreestyle = gameState.gameId === -1;
+        
         this.currentGame = gameState;
         this.lastGameState = null; // Clear last game state when starting a new game
         this.moveHistory = [];
@@ -90,7 +93,14 @@ export class GameStore {
         this._capturedPieces = { white: [], black: [] };
         this._lastKnownOpening = null;
         this._playingColor = null; // Reset playing color
-        this._lastBoardOrientation = null; // Reset cached board orientation for new game
+        
+        // Only reset board orientation when starting a real game (not freestyle)
+        // This way:
+        // - When transitioning to freestyle after a game: orientation is preserved
+        // - When starting a new real game: orientation resets so you're on the correct side
+        if (gameState.gameId > 0) {
+            this._lastBoardOrientation = null; // Reset for real games
+        }
         this.whiteHoldings = ''; // Reset holdings for new game
         this.blackHoldings = ''; // Reset holdings for new game
 
@@ -843,7 +853,7 @@ export class GameStore {
         }
         this.currentGame = null;
         this._playingColor = null; // Reset playing color
-        this._lastBoardOrientation = null; // Reset cached orientation
+        // Don't reset _lastBoardOrientation here - we want to preserve it for freestyle mode
     }
     
     hasMoveHistory(): boolean {
