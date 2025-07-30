@@ -83,26 +83,48 @@ export class ChannelTellParser extends BaseParser {
         const channelNumber = channelMatch[2];
         let fullMessage = channelMatch[3];
         
-        // Handle multi-line channel tells (continuation lines starting with \)
-        let continuationFound = false;
+        // Check if there's a "(told X players...)" line indicating end of multi-line message
+        let toldLineIndex = -1;
         for (let i = lineIndex + 1; i < lines.length; i++) {
-            // Check if line starts with backslash after any whitespace
-            if (lines[i].match(/^\s*\\/)) {
-                continuationFound = true;
-                // Remove the backslash and leading/trailing whitespace, preserve internal spacing
-                const continuationText = lines[i].replace(/^\s*\\/, '').trim();
-                if (continuationText) {
-                    fullMessage += ' ' + continuationText;
-                }
-            } else if (continuationFound) {
-                // Stop at first non-continuation line after finding continuations
+            if (lines[i].match(/^\(told \d+ players? in channel \d+/)) {
+                toldLineIndex = i;
                 break;
+            }
+        }
+        
+        let continuationFound = false;
+        
+        if (toldLineIndex > lineIndex + 1) {
+            // This is a multi-line channel message
+            // Collect all lines between the channel tell and the "told" line
+            const messageLines = [fullMessage];
+            for (let i = lineIndex + 1; i < toldLineIndex; i++) {
+                // Include the line, preserving any indentation
+                messageLines.push(lines[i]);
+            }
+            fullMessage = messageLines.join('\n');
+        } else {
+            // Handle multi-line channel tells (continuation lines starting with \)
+            for (let i = lineIndex + 1; i < lines.length; i++) {
+                // Check if line starts with backslash after any whitespace
+                if (lines[i].match(/^\s*\\/)) {
+                    continuationFound = true;
+                    // Remove the backslash and leading/trailing whitespace, preserve internal spacing
+                    const continuationText = lines[i].replace(/^\s*\\/, '').trim();
+                    if (continuationText) {
+                        fullMessage += ' ' + continuationText;
+                    }
+                } else if (continuationFound) {
+                    // Stop at first non-continuation line after finding continuations
+                    break;
+                }
             }
         }
         
         // For channel tabs, we don't need interactive elements in the sender/channel
         // since they're already shown in the tab. Only add elements for console view.
-        if (!continuationFound) {
+        const isMultiLine = toldLineIndex > lineIndex + 1 || continuationFound;
+        if (!isMultiLine) {
             // Only add elements if this is a simple single-line message
             // Multi-line messages have position calculation issues
             
