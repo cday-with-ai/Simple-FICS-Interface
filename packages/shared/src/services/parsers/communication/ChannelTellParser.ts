@@ -16,12 +16,14 @@ export class ChannelTellParser extends BaseParser {
         
         // Check if we should open channels in tabs
         if (stores.preferencesStore.preferences.openChannelsInTabs) {
-            // Create channel tab if it doesn't exist
-            stores.chatStore.createTab(
-                channelId,
-                channelNumber,
-                'channel'
-            );
+            // Only create tab if it doesn't already exist
+            if (!stores.chatStore.tabs.has(channelId)) {
+                stores.chatStore.createTab(
+                    channelId,
+                    channelNumber,
+                    'channel'
+                );
+            }
         }
         
         // Create corrected timestamp

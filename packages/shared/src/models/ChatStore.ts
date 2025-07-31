@@ -107,6 +107,7 @@ export class ChatStore {
     createTab(id: string, name: string, type: ChatTab['type']) {
         runInAction(() => {
             if (!this.tabs.has(id)) {
+                console.log('[ChatStore] Creating tab:', { id, name, type });
                 // Find the highest order number
                 const maxOrder = Math.max(...Array.from(this.tabs.values()).map(tab => tab.order));
                 
