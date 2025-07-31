@@ -194,22 +194,32 @@ Local commands:
         // Console - check if it's a tell command
         const tellMatch = message.match(/^tell\s+(\w+)\s+(.+)$/);
         
-        if (tellMatch && preferencesStore.preferences.openTellsInTabs) {
+        if (tellMatch) {
           const [, username, tellMessage] = tellMatch;
           const cleanUsername = username.replace(/\([^)]*\)/g, '').trim();
-          const privateTabId = cleanUsername.toLowerCase();
           
-          // Create tab if it doesn't exist
-          chatStore.createTab(privateTabId, cleanUsername, 'private');
+          // Check if it's a channel number
+          const isChannel = /^\d+$/.test(cleanUsername);
           
-          // Add message to the private tab
-          chatStore.addMessage(privateTabId, {
-            channel: privateTabId,
-            sender: 'You',
-            content: tellMessage,
-            timestamp: new Date(),
-            type: 'message'
-          });
+          if (isChannel && preferencesStore.preferences.openChannelsInTabs) {
+            // It's a channel tell - create channel tab
+            const channelId = `channel-${cleanUsername}`;
+            chatStore.createTab(channelId, cleanUsername, 'channel');
+            // Don't add message here - FICS will echo it back
+          } else if (!isChannel && preferencesStore.preferences.openTellsInTabs) {
+            // It's a private tell - create private tab
+            const privateTabId = cleanUsername.toLowerCase();
+            chatStore.createTab(privateTabId, cleanUsername, 'private');
+            
+            // Add message to the private tab
+            chatStore.addMessage(privateTabId, {
+              channel: privateTabId,
+              sender: 'You',
+              content: tellMessage,
+              timestamp: new Date(),
+              type: 'message'
+            });
+          }
         } else {
           // Show in console for other commands
           chatStore.addMessage('console', {
