@@ -14,7 +14,8 @@ export class ChannelTellRenderer extends MessageRenderer {
     
     // For channel tabs, we need to show clean message content but still allow URLs
     const isChannelTab = message.channel?.startsWith('channel-');
-    const messageContent = parsedMessage?.metadata?.message || message.content;
+    // In channel tabs, message.content already has the full multi-line message
+    const messageContent = message.content;
     
     // For grouped messages, only show content
     if (isGroupedMessage || !message.sender) {
