@@ -2121,10 +2121,11 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   line-height: 1.3;
   white-space: pre-wrap;
   word-break: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   position: relative;
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   color: ${e=>e.$color||e.theme.colors.text};
 `,er=m(Ge)`
   color: ${e=>e.$color||e.theme.colors.textSecondary};
@@ -2151,11 +2152,13 @@ Please change the parent <Route path="${x}"> to <Route path="${x==="/"?"*":`${x}
   flex-shrink: 0;
 `,nt=m.span`
   word-break: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   display: block;
+  overflow: hidden;
 `,Ed=m.a`
   color: inherit;
   text-decoration: none;
