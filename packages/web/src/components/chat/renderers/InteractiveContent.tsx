@@ -145,9 +145,9 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
   
   
   
-  // If still no elements, return plain text
+  // If still no elements, return plain text with preserved whitespace
   if (allElements.length === 0) {
-    return <>{content}</>;
+    return <span style={{ whiteSpace: 'pre-wrap' }}>{content}</span>;
   }
   
   // Sort elements by start position and remove duplicates/overlaps
@@ -195,9 +195,9 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
       
       
       parts.push(
-        <React.Fragment key={`text-${index}`}>
+        <span key={`text-${index}`} style={{ whiteSpace: 'pre-wrap' }}>
           {gapText}
-        </React.Fragment>
+        </span>
       );
     } else if (element.start < lastEnd) {
       // Skip overlapping elements silently - this is expected with multi-line messages
@@ -290,9 +290,9 @@ export const InteractiveContent: React.FC<InteractiveContentProps> = ({
   // Add any remaining text
   if (lastEnd < content.length) {
     parts.push(
-      <React.Fragment key="text-end">
+      <span key="text-end" style={{ whiteSpace: 'pre-wrap' }}>
         {content.substring(lastEnd)}
-      </React.Fragment>
+      </span>
     );
   }
   
