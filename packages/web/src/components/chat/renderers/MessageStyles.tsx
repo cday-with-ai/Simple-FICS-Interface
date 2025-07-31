@@ -9,9 +9,11 @@ export const MessageRow = styled.div<{ $color?: string; $fontFamily?: string; $f
   font-style: ${props => props.$fontStyle || 'normal'};
   line-height: 1.3;
   white-space: pre-wrap;
-  word-break: break-all;
+  word-break: break-word;
+  overflow-wrap: break-word;
   position: relative;
   flex: 1;
+  min-width: 0;
   color: ${props => props.$color || props.theme.colors.text};
 `;
 
@@ -51,8 +53,11 @@ export const MessageSpacer = styled.span`
 
 export const Content = styled.span`
   word-break: break-word;
+  overflow-wrap: break-word;
   white-space: pre-wrap;
   flex: 1;
+  min-width: 0;
+  display: block;
 `;
 
 export const Link = styled.a`

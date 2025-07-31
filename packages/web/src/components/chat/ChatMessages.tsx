@@ -63,6 +63,8 @@ const MessagesContainer = styled.div`
 
 const MessageGroup = styled.div`
   margin-bottom: ${props => props.theme.spacing[1]};
+  min-width: 0;
+  width: 100%;
   
   &:last-child {
     margin-bottom: 0;
