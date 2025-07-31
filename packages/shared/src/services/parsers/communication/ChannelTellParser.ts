@@ -62,8 +62,10 @@ export class ChannelTellParser extends BaseParser {
     }
     
     parse(message: string): ParsedMessage<ChannelTell> | null {
+        // Normalize line endings from FICS (\n\r or \r\n to just \n)
+        const normalizedMessage = message.replace(/\r\n/g, '\n').replace(/\n\r/g, '\n').replace(/\r/g, '\n');
         // Don't use splitLines here as it filters empty lines
-        const lines = message.split('\n');
+        const lines = normalizedMessage.split('\n');
         const elements: InteractiveElement[] = [];
         
         // Find the first non-empty line with channel tell pattern
@@ -101,8 +103,24 @@ export class ChannelTellParser extends BaseParser {
             // Collect all lines between the channel tell and the "told" line
             const messageLines = [fullMessage];
             for (let i = lineIndex + 1; i < toldLineIndex; i++) {
-                // Include the line, preserving any indentation
-                messageLines.push(lines[i]);
+                const line = lines[i];
+                // Check if this is a continuation line with backslash
+                if (line.match(/^\s*\\/)) {
+                    continuationFound = true;
+                    // Remove the backslash and preserve the rest
+                    const continuationText = line.replace(/^\s*\\/, '').trim();
+                    if (continuationText) {
+                        // Add to the previous line with a space
+                        if (messageLines.length > 0) {
+                            messageLines[messageLines.length - 1] += ' ' + continuationText;
+                        } else {
+                            messageLines.push(continuationText);
+                        }
+                    }
+                } else {
+                    // Regular line, add it as-is
+                    messageLines.push(line);
+                }
             }
             fullMessage = messageLines.join('\n');
         } else {
