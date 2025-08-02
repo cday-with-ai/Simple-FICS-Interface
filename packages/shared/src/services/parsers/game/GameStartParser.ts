@@ -78,7 +78,7 @@ export class GameStartParser extends BaseParser {
     }
     
     parse(message: string): ParsedMessage<GameStart> | null {
-        console.log('[GameStartParser] Full message to parse:', message);
+        console.log('[GameStartParser] Full message to parse:', JSON.stringify(message));
         // Extract just the Game line from multi-line messages
         const gameLineMatch = message.match(/Game \d+: .* \(.*\) .* \(.*\) (?:rated|unrated) .*/);
         const gameLine = gameLineMatch ? gameLineMatch[0] : message;
@@ -126,8 +126,7 @@ export class GameStartParser extends BaseParser {
         const createMatch = message.match(/Creating: ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9\+\-CEP]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9\+\-CEP]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
         const gameMatch = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) vs\. ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*)\)/);
 
-        console.log('[GameStartParser] Creating format - createMatch:', !!createMatch, createMatch);
-        console.log('[GameStartParser] Creating format - gameMatch:', !!gameMatch, gameMatch);
+        console.log('[GameStartParser] Creating format - createMatch:', !!createMatch, 'gameMatch:', !!gameMatch);
         if (createMatch) {
             console.log('[GameStartParser] Extracted ratings - white:', createMatch[2], 'black:', createMatch[4]);
         }
@@ -158,6 +157,7 @@ export class GameStartParser extends BaseParser {
             const gameNumIndex = message.indexOf(gameMatch[1]);
             elements.push(ParserUtils.createGameNumberElement(gameMatch[1], gameStart.gameNumber, gameNumIndex));
             
+            console.log('[GameStartParser] Returning gameStart:', gameStart);
             return {
                 content: message,
                 elements,
@@ -165,6 +165,7 @@ export class GameStartParser extends BaseParser {
             };
         }
 
+        console.log('[GameStartParser] No match found, returning null');
         return null;
     }
 }
