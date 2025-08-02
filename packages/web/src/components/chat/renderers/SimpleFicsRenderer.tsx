@@ -35,6 +35,9 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
   const { ficsStore, preferencesStore } = useRootStore();
   const chatAppearance = preferencesStore.getChatAppearance();
   
+  // Trim leading newline for display only
+  const displayContent = content.startsWith('\n') ? content.substring(1) : content;
+  
   // Convert ANSI color codes to HTML if enabled
   const processAnsiColors = (text: string): string => {
     if (!ansiColors) return text;
@@ -112,8 +115,8 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
     // First, process ANSI colors
     const colorProcessed = processAnsiColors(text);
     
-    // Detect wrapped URLs
-    const wrappedUrls = detectWrappedUrls(text);
+    // Detect wrapped URLs (use original content for wrapped URL detection)
+    const wrappedUrls = detectWrappedUrls(content);
     
     // Define simple patterns with type-safe handlers
     type PatternHandler = {
@@ -287,7 +290,7 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
   
   return (
     <PreformattedText $fontSize={chatAppearance.fontSize}>
-      {renderWithLinks(content)}
+      {renderWithLinks(displayContent)}
     </PreformattedText>
   );
 });

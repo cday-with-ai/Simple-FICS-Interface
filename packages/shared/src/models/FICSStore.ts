@@ -401,9 +401,6 @@ export class FICSStore {
             .replace(/\r\n/g, '\n')
             .replace(/\r/g, '\n');
 
-        if (processData.startsWith('\n'))   {
-            processData = processData.substring(1);
-        }
 
         // Convert Maciejg format to Unicode for incoming text
         processData = maciejgFormatToUnicode(processData);
