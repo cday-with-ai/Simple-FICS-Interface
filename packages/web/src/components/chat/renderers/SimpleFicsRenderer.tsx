@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
 import { useRootStore } from '@fics/shared';
+import { PlayerContextMenu } from '../../ui/PlayerContextMenu';
 
 const PreformattedText = styled.pre<{ $fontSize: number }>`
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
@@ -58,6 +59,7 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
 }) => {
   const { ficsStore, preferencesStore } = useRootStore();
   const chatAppearance = preferencesStore.getChatAppearance();
+  const [contextMenu, setContextMenu] = useState<{ playerName: string; x: number; y: number } | null>(null);
   
   
   // Trim leading newline for display only
@@ -181,7 +183,12 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
               <SimpleLink
                 onClick={(e) => {
                   e.preventDefault();
-                  ficsStore.sendCommand(`finger ${name}`);
+                  e.stopPropagation();
+                  setContextMenu({ 
+                    playerName: name, 
+                    x: e.clientX, 
+                    y: e.clientY 
+                  });
                 }}
               >
                 {name}
@@ -255,7 +262,12 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
                   <SimpleLink
                     onClick={(e) => {
                       e.preventDefault();
-                      ficsStore.sendCommand(`finger ${element.text}`);
+                      e.stopPropagation();
+                      setContextMenu({ 
+                        playerName: element.text, 
+                        x: e.clientX, 
+                        y: e.clientY 
+                      });
                     }}
                   >
                     {element.text}
@@ -382,8 +394,17 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
   };
   
   return (
-    <PreformattedText $fontSize={chatAppearance.fontSize}>
-      {renderWithLinks(displayContent)}
-    </PreformattedText>
+    <>
+      <PreformattedText $fontSize={chatAppearance.fontSize}>
+        {renderWithLinks(displayContent)}
+      </PreformattedText>
+      {contextMenu && (
+        <PlayerContextMenu
+          playerName={contextMenu.playerName}
+          position={{ x: contextMenu.x, y: contextMenu.y }}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
+    </>
   );
 });
