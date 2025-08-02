@@ -640,7 +640,8 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     const topPlayer = boardFlipped ? whitePlayer : blackPlayer;
     const bottomPlayer = boardFlipped ? blackPlayer : whitePlayer;
     const isTopPlayerWhite = boardFlipped;
-    const isTopPlayerTurn = boardFlipped ? isWhiteTurn : !isWhiteTurn;
+    // In freestyle mode, both clocks should be inactive
+    const isTopPlayerTurn = perspective === 'freestyle' ? false : (boardFlipped ? isWhiteTurn : !isWhiteTurn);
 
     const handleMoveClick = useCallback((index: number) => {
         gameStore.goToMove(index);
@@ -858,7 +859,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 <PortraitPlayerInfo>
                                     <ObservableClock
                                         player={bottomPlayer}
-                                        isActive={!isTopPlayerTurn}
+                                        isActive={perspective === 'freestyle' ? false : !isTopPlayerTurn}
                                         size="small"
                                         compact={true}
                                     />
@@ -867,7 +868,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                             name={bottomPlayer.name}
                                             rating={bottomPlayer.rating}
                                             time={0}
-                                            isActive={!isTopPlayerTurn}
+                                            isActive={perspective === 'freestyle' ? false : !isTopPlayerTurn}
                                             isWhite={!isTopPlayerWhite}
                                             orientation="horizontal"
                                             hideClockInCard={true}
@@ -1118,7 +1119,7 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 
                                 <ObservableClock
                                     player={bottomPlayer}
-                                    isActive={!isTopPlayerTurn}
+                                    isActive={perspective === 'freestyle' ? false : !isTopPlayerTurn}
                                     size="small"
                                     compact={true}
                                     variant="landscape"

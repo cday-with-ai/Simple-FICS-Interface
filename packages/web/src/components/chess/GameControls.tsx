@@ -106,9 +106,6 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
           Resign
         </ControlButton>
       )}
-      <ControlButton onClick={onFlipBoard} $variant="secondary">
-        Flip
-      </ControlButton>
       <PromotionPieceSelector
         color={gameStore.playingColor || 'white'}
         size="medium"
