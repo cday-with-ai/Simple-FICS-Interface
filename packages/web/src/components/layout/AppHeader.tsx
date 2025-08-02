@@ -330,15 +330,17 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
             ☰
           </MenuButton>
           <DropdownMenu $isOpen={showMenu}>
-            <MenuItem 
-              $hasSubmenu
+            <div 
               onMouseEnter={() => handleSubmenuHover('theme')}
               onMouseLeave={() => setActiveSubmenu(null)}
+              style={{ position: 'relative' }}
             >
-              <MenuItemContent>
-                🎨 Theme
-              </MenuItemContent>
-              <SubmenuIndicator>▶</SubmenuIndicator>
+              <MenuItem $hasSubmenu>
+                <MenuItemContent>
+                  🎨 Theme
+                </MenuItemContent>
+                <SubmenuIndicator>▶</SubmenuIndicator>
+              </MenuItem>
               <Submenu $isOpen={activeSubmenu === 'theme'}>
                 <SubmenuItem 
                   $isActive={themePreference === 'light'}
@@ -359,17 +361,19 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
                   ◐ System
                 </SubmenuItem>
               </Submenu>
-            </MenuItem>
+            </div>
             
-            <MenuItem 
-              $hasSubmenu
+            <div 
               onMouseEnter={() => handleSubmenuHover('orientation')}
               onMouseLeave={() => setActiveSubmenu(null)}
+              style={{ position: 'relative' }}
             >
-              <MenuItemContent>
-                📐 Orientation
-              </MenuItemContent>
-              <SubmenuIndicator>▶</SubmenuIndicator>
+              <MenuItem $hasSubmenu>
+                <MenuItemContent>
+                  📐 Orientation
+                </MenuItemContent>
+                <SubmenuIndicator>▶</SubmenuIndicator>
+              </MenuItem>
               <Submenu $isOpen={activeSubmenu === 'orientation'}>
                 {availableOrientations.includes('landscape') && (
                   <SubmenuItem 
@@ -392,17 +396,19 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
                   </SubmenuItem>
                 )}
               </Submenu>
-            </MenuItem>
+            </div>
             
-            <MenuItem 
-              $hasSubmenu
+            <div 
               onMouseEnter={() => handleSubmenuHover('mode')}
               onMouseLeave={() => setActiveSubmenu(null)}
+              style={{ position: 'relative' }}
             >
-              <MenuItemContent>
-                🎮 View Mode
-              </MenuItemContent>
-              <SubmenuIndicator>▶</SubmenuIndicator>
+              <MenuItem $hasSubmenu>
+                <MenuItemContent>
+                  🎮 View Mode
+                </MenuItemContent>
+                <SubmenuIndicator>▶</SubmenuIndicator>
+              </MenuItem>
               <Submenu $isOpen={activeSubmenu === 'mode'}>
                 {availableViewModes.includes('chess-only') && (
                   <SubmenuItem 
@@ -429,7 +435,7 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
                   </SubmenuItem>
                 )}
               </Submenu>
-            </MenuItem>
+            </div>
             
             <MenuDivider />
             

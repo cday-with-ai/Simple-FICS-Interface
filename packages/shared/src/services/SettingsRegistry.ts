@@ -135,16 +135,15 @@ export class SettingsRegistry {
       id: 'chatFontSize',
       category: 'chat',
       label: 'Chat Font Size',
-      description: 'Size of text in chat messages',
-      type: 'select',
-      value: 'medium',
-      defaultValue: 'medium',
-      options: [
-        { label: 'Small', value: 'small' },
-        { label: 'Medium', value: 'medium' },
-        { label: 'Large', value: 'large' }
-      ],
-      keywords: ['text', 'size', 'readability'],
+      description: 'Size of text in chat messages (in pixels)',
+      type: 'number',
+      value: 11,
+      defaultValue: 11,
+      min: 8,
+      max: 20,
+      step: 1,
+      unit: 'px',
+      keywords: ['text', 'size', 'readability', 'font'],
       previewType: 'instant'
     });
 
@@ -819,164 +818,28 @@ export class SettingsRegistry {
       previewType: 'instant'
     });
 
-    // Console message colors (Light theme)
+    // Chat appearance settings
     this.register({
-      id: 'channelTellColorLight',
+      id: 'chatBackgroundColor',
       category: 'chat',
-      label: 'Channel Tell Color (Light)',
-      description: 'Color for channel messages in light theme',
+      label: 'Chat Background Color',
+      description: 'Background color for chat messages',
       type: 'color',
-      value: '#555555',
-      defaultValue: '#555555',
-      keywords: ['channel', 'tell', 'color', 'light'],
+      value: '#ffffff',
+      defaultValue: '#ffffff',
+      keywords: ['background', 'color', 'chat'],
       previewType: 'instant'
     });
 
     this.register({
-      id: 'directTellColorLight',
+      id: 'chatTextColor',
       category: 'chat',
-      label: 'Direct Tell Color (Light)',
-      description: 'Color for private messages in light theme',
+      label: 'Chat Text Color',
+      description: 'Text color for chat messages',
       type: 'color',
-      value: '#0066cc',
-      defaultValue: '#0066cc',
-      keywords: ['private', 'tell', 'color', 'light'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'channel39ColorLight',
-      category: 'chat',
-      label: 'Channel 39 Color (Light)',
-      description: 'Color for Channel 39 messages in light theme',
-      type: 'color',
-      value: '#cc0000',
-      defaultValue: '#cc0000',
-      keywords: ['channel', '39', 'color', 'light'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'shoutColorLight',
-      category: 'chat',
-      label: 'Shout Color (Light)',
-      description: 'Color for shout messages in light theme',
-      type: 'color',
-      value: '#006600',
-      defaultValue: '#006600',
-      keywords: ['shout', 'color', 'light'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'gameNotificationColorLight',
-      category: 'chat',
-      label: 'Game Notification Color (Light)',
-      description: 'Color for game notifications in light theme',
-      type: 'color',
-      value: '#4169e1',
-      defaultValue: '#4169e1',
-      keywords: ['game', 'notification', 'color', 'light'],
-      previewType: 'instant'
-    });
-
-    // Console message colors (Dark theme)
-    this.register({
-      id: 'channelTellColorDark',
-      category: 'chat',
-      label: 'Channel Tell Color (Dark)',
-      description: 'Color for channel messages in dark theme',
-      type: 'color',
-      value: '#aaaaaa',
-      defaultValue: '#aaaaaa',
-      keywords: ['channel', 'tell', 'color', 'dark'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'directTellColorDark',
-      category: 'chat',
-      label: 'Direct Tell Color (Dark)',
-      description: 'Color for private messages in dark theme',
-      type: 'color',
-      value: '#66aaff',
-      defaultValue: '#66aaff',
-      keywords: ['private', 'tell', 'color', 'dark'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'channel39ColorDark',
-      category: 'chat',
-      label: 'Channel 39 Color (Dark)',
-      description: 'Color for Channel 39 messages in dark theme',
-      type: 'color',
-      value: '#ff6666',
-      defaultValue: '#ff6666',
-      keywords: ['channel', '39', 'color', 'dark'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'shoutColorDark',
-      category: 'chat',
-      label: 'Shout Color (Dark)',
-      description: 'Color for shout messages in dark theme',
-      type: 'color',
-      value: '#66ff66',
-      defaultValue: '#66ff66',
-      keywords: ['shout', 'color', 'dark'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'gameNotificationColorDark',
-      category: 'chat',
-      label: 'Game Notification Color (Dark)',
-      description: 'Color for game notifications in dark theme',
-      type: 'color',
-      value: '#7788ff',
-      defaultValue: '#7788ff',
-      keywords: ['game', 'notification', 'color', 'dark'],
-      previewType: 'instant'
-    });
-
-
-    // Font family settings
-    this.register({
-      id: 'consoleFontFamily',
-      category: 'chat',
-      label: 'Console Font Family',
-      description: 'Font family for console messages',
-      type: 'select',
-      value: 'monospace',
-      defaultValue: 'monospace',
-      options: [
-        { label: 'Monospace', value: 'monospace' },
-        { label: 'System Font', value: 'system-ui' },
-        { label: 'Arial', value: 'Arial, sans-serif' },
-        { label: 'Helvetica', value: 'Helvetica, sans-serif' },
-        { label: 'Georgia', value: 'Georgia, serif' },
-        { label: 'Times New Roman', value: 'Times New Roman, serif' }
-      ],
-      keywords: ['console', 'font', 'family', 'monospace'],
-      previewType: 'instant'
-    });
-
-    this.register({
-      id: 'consoleFontStyle',
-      category: 'chat',
-      label: 'Console Font Style',
-      description: 'Font style for console messages',
-      type: 'select',
-      value: 'normal',
-      defaultValue: 'normal',
-      options: [
-        { label: 'Normal', value: 'normal' },
-        { label: 'Italic', value: 'italic' },
-        { label: 'Oblique', value: 'oblique' }
-      ],
-      keywords: ['console', 'font', 'style', 'italic'],
+      value: '#000000',
+      defaultValue: '#000000',
+      keywords: ['text', 'color', 'chat'],
       previewType: 'instant'
     });
   }
@@ -1112,62 +975,32 @@ export class SettingsRegistry {
     // Special sorting for chat category
     if (categoryId === 'chat') {
       const chatFontSize = settings.find(s => s.id === 'chatFontSize');
+      const chatBackgroundColor = settings.find(s => s.id === 'chatBackgroundColor');
+      const chatTextColor = settings.find(s => s.id === 'chatTextColor');
       const showTimestamps = settings.find(s => s.id === 'showTimestamps');
       const highlightMentions = settings.find(s => s.id === 'highlightMentions');
       const openChannelsInTabs = settings.find(s => s.id === 'openChannelsInTabs');
       const openTellsInTabs = settings.find(s => s.id === 'openTellsInTabs');
-      const consoleFontFamily = settings.find(s => s.id === 'consoleFontFamily');
-      const consoleFontStyle = settings.find(s => s.id === 'consoleFontStyle');
-      const channelTellColorLight = settings.find(s => s.id === 'channelTellColorLight');
-      const directTellColorLight = settings.find(s => s.id === 'directTellColorLight');
-      const channel39ColorLight = settings.find(s => s.id === 'channel39ColorLight');
-      const shoutColorLight = settings.find(s => s.id === 'shoutColorLight');
-      const gameNotificationColorLight = settings.find(s => s.id === 'gameNotificationColorLight');
-      const channelTellColorDark = settings.find(s => s.id === 'channelTellColorDark');
-      const directTellColorDark = settings.find(s => s.id === 'directTellColorDark');
-      const channel39ColorDark = settings.find(s => s.id === 'channel39ColorDark');
-      const shoutColorDark = settings.find(s => s.id === 'shoutColorDark');
-      const gameNotificationColorDark = settings.find(s => s.id === 'gameNotificationColorDark');
       
       const otherSettings = settings.filter(s => 
         s.id !== 'chatFontSize' &&
+        s.id !== 'chatBackgroundColor' &&
+        s.id !== 'chatTextColor' &&
         s.id !== 'showTimestamps' &&
         s.id !== 'highlightMentions' &&
         s.id !== 'openChannelsInTabs' &&
-        s.id !== 'openTellsInTabs' &&
-        s.id !== 'consoleFontFamily' &&
-        s.id !== 'consoleFontStyle' &&
-        s.id !== 'channelTellColorLight' &&
-        s.id !== 'directTellColorLight' &&
-        s.id !== 'channel39ColorLight' &&
-        s.id !== 'shoutColorLight' &&
-        s.id !== 'gameNotificationColorLight' &&
-        s.id !== 'channelTellColorDark' &&
-        s.id !== 'directTellColorDark' &&
-        s.id !== 'channel39ColorDark' &&
-        s.id !== 'shoutColorDark' &&
-        s.id !== 'gameNotificationColorDark'
+        s.id !== 'openTellsInTabs'
       );
       
       const orderedSettings = [];
       // Add settings in your preferred order
       if (chatFontSize) orderedSettings.push(chatFontSize);
+      if (chatBackgroundColor) orderedSettings.push(chatBackgroundColor);
+      if (chatTextColor) orderedSettings.push(chatTextColor);
       if (showTimestamps) orderedSettings.push(showTimestamps);
       if (highlightMentions) orderedSettings.push(highlightMentions);
       if (openChannelsInTabs) orderedSettings.push(openChannelsInTabs);
       if (openTellsInTabs) orderedSettings.push(openTellsInTabs);
-      if (consoleFontFamily) orderedSettings.push(consoleFontFamily);
-      if (consoleFontStyle) orderedSettings.push(consoleFontStyle);
-      if (channelTellColorLight) orderedSettings.push(channelTellColorLight);
-      if (directTellColorLight) orderedSettings.push(directTellColorLight);
-      if (channel39ColorLight) orderedSettings.push(channel39ColorLight);
-      if (shoutColorLight) orderedSettings.push(shoutColorLight);
-      if (gameNotificationColorLight) orderedSettings.push(gameNotificationColorLight);
-      if (channelTellColorDark) orderedSettings.push(channelTellColorDark);
-      if (directTellColorDark) orderedSettings.push(directTellColorDark);
-      if (channel39ColorDark) orderedSettings.push(channel39ColorDark);
-      if (shoutColorDark) orderedSettings.push(shoutColorDark);
-      if (gameNotificationColorDark) orderedSettings.push(gameNotificationColorDark);
       
       // Add any remaining settings
       orderedSettings.push(...otherSettings.sort((a, b) => a.label.localeCompare(b.label)));

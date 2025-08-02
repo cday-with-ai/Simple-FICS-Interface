@@ -168,13 +168,12 @@ export class FICSStore {
             }
         }
         
-        // Handle refresh colors command
+        // Handle refresh colors command (no longer needed)
         if (cmd === 'refresh colors') {
-            this.rootStore?.preferencesStore.refreshConsoleColors();
             this.rootStore?.chatStore.addMessage('console', {
                 channel: 'console',
                 sender: 'System',
-                content: 'Console colors refreshed with latest defaults.',
+                content: 'Console colors have been removed. Use the Settings dialog to adjust chat appearance.',
                 timestamp: new Date(),
                 type: 'system'
             });
@@ -401,6 +400,10 @@ export class FICSStore {
         processData = processData.replace(/\n\r/g, '\n')
             .replace(/\r\n/g, '\n')
             .replace(/\r/g, '\n');
+
+        if (processData.startsWith('\n'))   {
+            processData = processData.substring(1);
+        }
 
         // Convert Maciejg format to Unicode for incoming text
         processData = maciejgFormatToUnicode(processData);

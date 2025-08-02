@@ -39,9 +39,7 @@ export class DirectTellParser extends BaseParser {
         stores.chatStore.addMessage(targetId, {
             channel: targetId,
             sender: cleanUsername,
-            content: stores.preferencesStore.preferences.openTellsInTabs 
-                ? parsed.metadata.message 
-                : parsed.content,
+            content: parsed.content, // Always use the full FICS format
             timestamp: localTime,
             type: 'whisper',
             metadata: {

@@ -41,9 +41,7 @@ export class ChannelTellParser extends BaseParser {
         stores.chatStore.addMessage(targetId, {
             channel: targetId,
             sender: this.stripTitles(username),
-            content: stores.preferencesStore.preferences.openChannelsInTabs 
-                ? tellMessage 
-                : parsed.content,
+            content: parsed.content, // Always use the full FICS format
             timestamp: localTime,
             type: 'message',
             metadata: {

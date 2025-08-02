@@ -20,13 +20,17 @@ export abstract class MessageRenderer<T = any> {
 
 // Registry for all message renderers
 export class MessageRendererRegistry {
-  private static renderers = new Map<string, MessageRenderer>();
+  private renderers = new Map<string, MessageRenderer>();
   
-  static register(renderer: MessageRenderer) {
+  register(renderer: MessageRenderer) {
     this.renderers.set(renderer.type, renderer);
   }
   
-  static getRenderer(message: ChatMessage): MessageRenderer | null {
+  clear() {
+    this.renderers.clear();
+  }
+  
+  getRenderer(message: ChatMessage): MessageRenderer | null {
     // First try to match by consoleType
     if (message.metadata?.consoleType) {
       const renderer = this.renderers.get(message.metadata.consoleType);
@@ -47,7 +51,26 @@ export class MessageRendererRegistry {
     return null;
   }
   
-  static getAllRenderers(): MessageRenderer[] {
+  getAllRenderers(): MessageRenderer[] {
     return Array.from(this.renderers.values());
+  }
+  
+  // Keep static methods for backward compatibility, delegating to a singleton
+  private static instance = new MessageRendererRegistry();
+  
+  static register(renderer: MessageRenderer) {
+    this.instance.register(renderer);
+  }
+  
+  static getRenderer(message: ChatMessage): MessageRenderer | null {
+    return this.instance.getRenderer(message);
+  }
+  
+  static getAllRenderers(): MessageRenderer[] {
+    return this.instance.getAllRenderers();
+  }
+  
+  static clear() {
+    this.instance.clear();
   }
 }

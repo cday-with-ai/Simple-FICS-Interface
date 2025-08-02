@@ -1,90 +1,74 @@
 import { MessageRendererRegistry } from './MessageRenderer';
-import { DefaultRenderer } from './DefaultRenderer';
-import { ChannelTellRenderer } from './ChannelTellRenderer';
-import { DirectTellRenderer } from './DirectTellRenderer';
-import { 
-  GameStartRenderer, 
-  GameEndRenderer, 
-  Style12Renderer, 
-  MovesListRenderer 
-} from './GameRenderer';
+import { SimpleDefaultRenderer } from './SimpleDefaultRenderer';
 import {
-  ShoutRenderer,
-  CShoutRenderer,
-  NotificationRenderer,
-  SeekAnnouncementRenderer,
-  MatchRequestRenderer,
-  IllegalMoveRenderer,
-  DrawOfferRenderer,
-  UnobserveRenderer,
-  WhoOutputRenderer,
-  GamesOutputRenderer,
-  FingerOutputRenderer,
-  HistoryOutputRenderer,
-  JournalOutputRenderer,
-  SoughtOutputRenderer,
-  ChannelListOutputRenderer,
-  NewsOutputRenderer,
-  InOutputRenderer,
-  LoginRenderer,
-  PasswordRenderer,
-  GuestLoginConfirmationRenderer,
-  SessionStartRenderer,
-  SystemRenderer,
-  RawRenderer
-} from './ConsoleRenderer';
-import { GameNotificationRenderer } from './GameNotificationRenderer';
+  SimpleShoutRenderer,
+  SimpleCShoutRenderer,
+  SimpleNotificationRenderer,
+  SimpleSeekAnnouncementRenderer,
+  SimpleMatchRequestRenderer,
+  SimpleIllegalMoveRenderer,
+  SimpleDrawOfferRenderer,
+  SimpleUnobserveRenderer,
+  SimpleGameNotificationRenderer,
+  SimpleWhoOutputRenderer,
+  SimpleGamesOutputRenderer,
+  SimpleFingerOutputRenderer,
+  SimpleHistoryOutputRenderer,
+  SimpleJournalOutputRenderer,
+  SimpleSoughtOutputRenderer,
+  SimpleChannelListOutputRenderer,
+  SimpleNewsOutputRenderer,
+  SimpleInOutputRenderer,
+  SimpleLoginRenderer,
+  SimplePasswordRenderer,
+  SimpleGuestLoginConfirmationRenderer,
+  SimpleSessionStartRenderer,
+  SimpleSystemRenderer,
+  SimpleRawRenderer
+} from './SimpleConsoleRenderer';
 
-// Register all renderers
-function registerAllRenderers() {
-  // Communication renderers
-  MessageRendererRegistry.register(new ChannelTellRenderer());
-  MessageRendererRegistry.register(new DirectTellRenderer());
-  MessageRendererRegistry.register(new ShoutRenderer());
-  MessageRendererRegistry.register(new CShoutRenderer());
+// Register all simple renderers
+function registerRenderers() {
+  // Clear existing renderers
+  MessageRendererRegistry.clear();
   
-  // Game renderers
-  MessageRendererRegistry.register(new GameStartRenderer());
-  MessageRendererRegistry.register(new GameEndRenderer());
-  MessageRendererRegistry.register(new Style12Renderer());
-  MessageRendererRegistry.register(new MovesListRenderer());
-  MessageRendererRegistry.register(new IllegalMoveRenderer());
-  MessageRendererRegistry.register(new DrawOfferRenderer());
-  MessageRendererRegistry.register(new UnobserveRenderer());
-  MessageRendererRegistry.register(new GameNotificationRenderer());
+  // Register all simple renderers
+  MessageRendererRegistry.register(new SimpleShoutRenderer());
+  MessageRendererRegistry.register(new SimpleCShoutRenderer());
+  MessageRendererRegistry.register(new SimpleNotificationRenderer());
+  MessageRendererRegistry.register(new SimpleSeekAnnouncementRenderer());
+  MessageRendererRegistry.register(new SimpleMatchRequestRenderer());
+  MessageRendererRegistry.register(new SimpleIllegalMoveRenderer());
+  MessageRendererRegistry.register(new SimpleDrawOfferRenderer());
+  MessageRendererRegistry.register(new SimpleUnobserveRenderer());
+  MessageRendererRegistry.register(new SimpleGameNotificationRenderer());
   
-  // Seek/match renderers
-  MessageRendererRegistry.register(new SeekAnnouncementRenderer());
-  MessageRendererRegistry.register(new MatchRequestRenderer());
+  // Command outputs
+  MessageRendererRegistry.register(new SimpleWhoOutputRenderer());
+  MessageRendererRegistry.register(new SimpleGamesOutputRenderer());
+  MessageRendererRegistry.register(new SimpleFingerOutputRenderer());
+  MessageRendererRegistry.register(new SimpleHistoryOutputRenderer());
+  MessageRendererRegistry.register(new SimpleJournalOutputRenderer());
+  MessageRendererRegistry.register(new SimpleSoughtOutputRenderer());
+  MessageRendererRegistry.register(new SimpleChannelListOutputRenderer());
+  MessageRendererRegistry.register(new SimpleNewsOutputRenderer());
+  MessageRendererRegistry.register(new SimpleInOutputRenderer());
   
-  // Output renderers
-  MessageRendererRegistry.register(new WhoOutputRenderer());
-  MessageRendererRegistry.register(new GamesOutputRenderer());
-  MessageRendererRegistry.register(new FingerOutputRenderer());
-  MessageRendererRegistry.register(new HistoryOutputRenderer());
-  MessageRendererRegistry.register(new JournalOutputRenderer());
-  MessageRendererRegistry.register(new SoughtOutputRenderer());
-  MessageRendererRegistry.register(new ChannelListOutputRenderer());
-  MessageRendererRegistry.register(new NewsOutputRenderer());
-  MessageRendererRegistry.register(new InOutputRenderer());
+  // System messages
+  MessageRendererRegistry.register(new SimpleLoginRenderer());
+  MessageRendererRegistry.register(new SimplePasswordRenderer());
+  MessageRendererRegistry.register(new SimpleGuestLoginConfirmationRenderer());
+  MessageRendererRegistry.register(new SimpleSessionStartRenderer());
+  MessageRendererRegistry.register(new SimpleSystemRenderer());
+  MessageRendererRegistry.register(new SimpleRawRenderer());
   
-  // System renderers
-  MessageRendererRegistry.register(new NotificationRenderer());
-  MessageRendererRegistry.register(new LoginRenderer());
-  MessageRendererRegistry.register(new PasswordRenderer());
-  MessageRendererRegistry.register(new GuestLoginConfirmationRenderer());
-  MessageRendererRegistry.register(new SessionStartRenderer());
-  MessageRendererRegistry.register(new SystemRenderer());
-  MessageRendererRegistry.register(new RawRenderer());
-  
-  // Default renderer (must be last as it matches everything)
-  MessageRendererRegistry.register(new DefaultRenderer());
+  // Default fallback (must be last)
+  MessageRendererRegistry.register(new SimpleDefaultRenderer());
 }
 
-// Register all renderers on import
-registerAllRenderers();
+// Register on import
+registerRenderers();
 
+// Export the registry
 export { MessageRendererRegistry };
 export * from './MessageRenderer';
-export * from './InteractiveContent';
-export * from './MessageStyles';
