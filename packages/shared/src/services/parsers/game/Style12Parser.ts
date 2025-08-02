@@ -1,5 +1,7 @@
 import { BaseParser } from '../BaseParser';
 import { ParsedMessage, Style12 } from '../../FicsProtocol.types';
+import { RootStore } from '../../../models/RootStore';
+import { GameStartParser } from './GameStartParser';
 
 export class Style12Parser extends BaseParser {
     name = 'style12';
@@ -7,6 +9,18 @@ export class Style12Parser extends BaseParser {
     
     canParse(message: string): boolean {
         return message.includes('<12>');
+    }
+    
+    override handle(message: string, stores: RootStore): ParsedMessage<Style12> | null {
+        // First check if this message also contains game start info
+        const gameStartParser = new GameStartParser();
+        if (gameStartParser.canParse(message)) {
+            console.log('[Style12Parser] Message also contains game start, processing it first');
+            gameStartParser.handle(message, stores);
+        }
+        
+        // Then process the Style12 data
+        return this.parse(message);
     }
     
     parse(message: string): ParsedMessage<Style12> | null {

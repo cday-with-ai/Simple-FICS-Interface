@@ -5,7 +5,7 @@ import { RootStore } from '../../../models/RootStore';
 
 export class GameStartParser extends BaseParser {
     name = 'gameStart';
-    priority = 90;
+    priority = 95; // Higher priority to run before Style12Parser
     
     private mapGameTypeToVariant(gameType: string): 'standard' | 'chess960' | 'losers' | 'suicide' | 'atomic' | 'crazyhouse' | 'wild' {
         const variantMap: Record<string, string> = {
