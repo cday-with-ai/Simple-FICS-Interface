@@ -17,9 +17,11 @@ export class SimpleDefaultRenderer extends MessageRenderer {
   
   render({ message }: MessageRendererProps): React.ReactNode {
     // Just render the raw FICS content with our simple renderer
+    // Pass elements from parsed message if available
+    const elements = message.metadata?.parsedMessage?.elements;
     return (
       <MessageContainer>
-        <SimpleFicsRenderer content={message.content} />
+        <SimpleFicsRenderer content={message.content} elements={elements} />
       </MessageContainer>
     );
   }

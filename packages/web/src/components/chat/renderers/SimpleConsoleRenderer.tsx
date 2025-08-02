@@ -6,7 +6,9 @@ import { SimpleFicsRenderer } from './SimpleFicsRenderer';
 abstract class SimpleConsoleRendererBase extends MessageRenderer {
   render({ message }: MessageRendererProps): React.ReactNode {
     // Use the raw content, preserving FICS formatting
-    return <SimpleFicsRenderer content={message.content} />;
+    // Pass elements from parsed message if available
+    const elements = message.metadata?.parsedMessage?.elements;
+    return <SimpleFicsRenderer content={message.content} elements={elements} />;
   }
 }
 

@@ -26,11 +26,18 @@ const SimpleLink = styled.a`
 interface SimpleFicsRendererProps {
   content: string;
   ansiColors?: boolean;
+  elements?: Array<{
+    type: 'player' | 'command' | 'gameNumber' | 'seekNumber' | 'url' | 'channelNumber';
+    text: string;
+    value: string | number;
+    offset: number;
+  }>;
 }
 
 export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({ 
   content, 
-  ansiColors = true 
+  ansiColors = true,
+  elements = []
 }) => {
   const { ficsStore, preferencesStore } = useRootStore();
   const chatAppearance = preferencesStore.getChatAppearance();
@@ -200,7 +207,62 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
       priority: number;
     }> = [];
     
-    // First, add wrapped URL matches with high priority
+    // First, add parser-provided elements with highest priority
+    elements.forEach((element) => {
+      // Adjust offset if we trimmed a leading newline
+      const adjustedOffset = displayContent !== content ? element.offset - 1 : element.offset;
+      
+      if (adjustedOffset >= 0 && adjustedOffset < text.length) {
+        const elementRender = (() => {
+          switch (element.type) {
+            case 'command':
+              return (
+                <SimpleLink
+                  onClick={(e) => {
+                    e.preventDefault();
+                    ficsStore.sendCommand(element.value as string);
+                  }}
+                >
+                  {element.text}
+                </SimpleLink>
+              );
+            case 'player':
+              return (
+                <SimpleLink
+                  onClick={(e) => {
+                    e.preventDefault();
+                    ficsStore.sendCommand(`finger ${element.text}`);
+                  }}
+                >
+                  {element.text}
+                </SimpleLink>
+              );
+            case 'gameNumber':
+              return (
+                <SimpleLink
+                  onClick={(e) => {
+                    e.preventDefault();
+                    ficsStore.sendCommand(`observe ${element.value}`);
+                  }}
+                >
+                  {element.text}
+                </SimpleLink>
+              );
+            default:
+              return element.text;
+          }
+        })();
+        
+        allMatches.push({
+          start: adjustedOffset,
+          end: adjustedOffset + element.text.length,
+          render: elementRender,
+          priority: 20 // Highest priority for parser elements
+        });
+      }
+    });
+    
+    // Then add wrapped URL matches with high priority
     wrappedUrls.forEach((wrappedUrl) => {
       // Check if this wrapped URL starts with a regular URL pattern
       const urlMatch = text.substring(wrappedUrl.start).match(/^(https?:\/\/[^\s]+)/);
