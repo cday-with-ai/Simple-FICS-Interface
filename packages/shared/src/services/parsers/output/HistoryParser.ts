@@ -11,15 +11,8 @@ export class HistoryParser extends BaseParser {
     }
     
     parse(message: string): ParsedMessage<HistoryOutputData> | null {
-        console.log('[HistoryParser] Raw message:', JSON.stringify(message));
-        const lines = this.splitLines(message);
-        console.log('[HistoryParser] Split into', lines.length, 'lines');
-        
-        // Look for history header
-        const headerLine = lines.find(line => line.includes('History for'));
-        if (!headerLine) return null;
-        
-        const headerMatch = headerLine.match(/History for (\w+):/);
+        // Look for history header first
+        const headerMatch = message.match(/History for (\w+):/);
         if (!headerMatch) return null;
         
         const player = headerMatch[1];
@@ -32,8 +25,15 @@ export class HistoryParser extends BaseParser {
             elements.push(ParserUtils.createPlayerElement(player, headerIndex));
         }
         
+        // Work with the raw message to preserve exact positions
+        const lineEndings = message.includes('\n\r') ? '\n\r' : '\n';
+        const lines = message.split(lineEndings);
+        
         let offset = 0;
-        for (const line of lines) {
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            
             // Parse history entry: "33: + 1631 B 1174 vise          [ br  5   0] B06 Res Wed Jun 25, 19:07 EDT 2025"
             const entryMatch = line.match(/(\d+):\s+([+-=])\s+(\d+)\s+([WBN])\s+(\d+)\s+(\w+)/);
             if (entryMatch) {
@@ -51,14 +51,17 @@ export class HistoryParser extends BaseParser {
                 });
                 
                 // Make the whole line clickable to examine the game
+                const trimmedLine = line.trim();
+                const lineStartIndex = line.indexOf(trimmedLine);
                 elements.push(ParserUtils.createCommandElement(
-                    line.trim(),
+                    trimmedLine,
                     `examine ${player} ${index}`,
-                    offset
+                    offset + lineStartIndex
                 ));
             }
             
-            offset += line.length + 1;
+            // Update offset - include line ending length except for last line
+            offset += line.length + (i < lines.length - 1 ? lineEndings.length : 0);
         }
         
         return {

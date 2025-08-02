@@ -14,12 +14,27 @@ const PreformattedText = styled.pre<{ $fontSize: number }>`
 `;
 
 const SimpleLink = styled.a`
-  color: ${props => props.theme.colors.primary};
-  text-decoration: underline;
+  color: inherit;
+  text-decoration: none;
   cursor: pointer;
   
   &:hover {
-    color: ${props => props.theme.colors.primaryHover};
+    color: ${props => props.theme.colors.primary};
+    text-decoration: underline;
+  }
+`;
+
+const HoverableLineWrapper = styled.span`
+  display: inline;
+  
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  
+  &:hover a {
+    color: ${props => props.theme.colors.primary};
+    text-decoration: underline;
   }
 `;
 
@@ -44,10 +59,6 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
   const { ficsStore, preferencesStore } = useRootStore();
   const chatAppearance = preferencesStore.getChatAppearance();
   
-  // Debug logging
-  if (elements.length > 0) {
-    console.log('[SimpleFicsRenderer] Elements:', elements);
-  }
   
   // Trim leading newline for display only
   const displayContent = content.startsWith('\n') ? content.substring(1) : content;
@@ -219,47 +230,58 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
       // Adjust offset if we trimmed a leading newline
       const adjustedOffset = displayContent !== content ? element.start - 1 : element.start;
       
-      console.log('[SimpleFicsRenderer] Element:', element.type, element.text, 'start:', element.start, 'adjusted:', adjustedOffset, 'textLen:', text.length);
-      
       if (adjustedOffset >= 0 && adjustedOffset < text.length) {
+        // Check if this element spans a full line (for games, journal, history)
+        const isFullLine = element.type === 'command' && 
+          element.text.includes(':') && 
+          (element.text.match(/^\s*\d+\s+/) || element.text.match(/^%\d+:/) || element.text.match(/^\d+:/));
+        
         const elementRender = (() => {
-          switch (element.type) {
-            case 'command':
-              return (
-                <SimpleLink
-                  onClick={(e) => {
-                    e.preventDefault();
-                    ficsStore.sendCommand(element.action || element.value as string);
-                  }}
-                >
-                  {element.text}
-                </SimpleLink>
-              );
-            case 'player':
-              return (
-                <SimpleLink
-                  onClick={(e) => {
-                    e.preventDefault();
-                    ficsStore.sendCommand(`finger ${element.text}`);
-                  }}
-                >
-                  {element.text}
-                </SimpleLink>
-              );
-            case 'gameNumber':
-              return (
-                <SimpleLink
-                  onClick={(e) => {
-                    e.preventDefault();
-                    ficsStore.sendCommand(`observe ${element.value}`);
-                  }}
-                >
-                  {element.text}
-                </SimpleLink>
-              );
-            default:
-              return element.text;
+          const linkContent = (() => {
+            switch (element.type) {
+              case 'command':
+                return (
+                  <SimpleLink
+                    onClick={(e) => {
+                      e.preventDefault();
+                      ficsStore.sendCommand(element.action || element.value as string);
+                    }}
+                  >
+                    {element.text}
+                  </SimpleLink>
+                );
+              case 'player':
+                return (
+                  <SimpleLink
+                    onClick={(e) => {
+                      e.preventDefault();
+                      ficsStore.sendCommand(`finger ${element.text}`);
+                    }}
+                  >
+                    {element.text}
+                  </SimpleLink>
+                );
+              case 'gameNumber':
+                return (
+                  <SimpleLink
+                    onClick={(e) => {
+                      e.preventDefault();
+                      ficsStore.sendCommand(`observe ${element.value}`);
+                    }}
+                  >
+                    {element.text}
+                  </SimpleLink>
+                );
+              default:
+                return element.text;
+            }
+          })();
+          
+          // Wrap full-line links in hoverable wrapper
+          if (isFullLine) {
+            return <HoverableLineWrapper>{linkContent}</HoverableLineWrapper>;
           }
+          return linkContent;
         })();
         
         allMatches.push({
