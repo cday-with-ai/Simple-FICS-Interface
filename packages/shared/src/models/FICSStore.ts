@@ -891,7 +891,8 @@ export class FICSStore {
         // Store game metadata for when Style12 arrives
         // Parse ratings, handling special cases like ++++ and ----
         const parseRating = (rating: string): number => {
-            if (rating === '++++' || rating === '----') return 0;
+            if (rating === '++++') return -1; // Provisional rating
+            if (rating === '----') return -2; // Unrated
             return parseInt(rating) || 0;
         };
         

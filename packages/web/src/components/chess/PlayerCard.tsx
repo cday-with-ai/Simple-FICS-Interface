@@ -85,7 +85,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = observer(({
           <PlayerNameContainer>
             <PlayerName name={name} />
           </PlayerNameContainer>
-          <PlayerRating>{rating}</PlayerRating>
+          <PlayerRating>
+            {rating === -1 ? '++++'  : rating === -2 ? '----' : rating}
+          </PlayerRating>
         </NameWithRating>
       </PlayerInfo>
       
