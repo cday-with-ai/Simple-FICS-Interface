@@ -2,6 +2,7 @@ import { BaseParser } from '../BaseParser';
 import { ParsedMessage, InteractiveElement, GameEnd } from '../../FicsProtocol.types';
 import { ParserUtils } from '../utils';
 import { RootStore } from '../../../models/RootStore';
+import { Style12Parser } from './Style12Parser';
 
 export class GameEndParser extends BaseParser {
     name = 'gameEnd';
@@ -16,6 +17,25 @@ export class GameEndParser extends BaseParser {
         // Only end the game if it's the current one
         if (stores.gameStore.currentGame?.gameId === gameEnd.gameNumber) {
             stores.gameStore.endGame();
+            
+            // If there's a final Style12 position in the message, use it for freestyle mode
+            const style12Match = message.match(/<12>.*$/m);
+            if (style12Match) {
+                // After endGame, set up freestyle mode with the final position
+                const style12Line = style12Match[0];
+                const style12Parser = new Style12Parser();
+                const style12Result = style12Parser.parse(style12Line);
+                
+                if (style12Result?.metadata) {
+                    const style12 = style12Result.metadata;
+                    // Create a freestyle game with the final position
+                    stores.gameStore.updateFromStyle12({
+                        ...style12,
+                        gameNumber: -1, // Mark as freestyle
+                        relation: -3    // Mark as finished game
+                    });
+                }
+            }
         }
         
         // Play end sound

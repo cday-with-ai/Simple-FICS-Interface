@@ -24,7 +24,8 @@ import {
   SimpleGuestLoginConfirmationRenderer,
   SimpleSessionStartRenderer,
   SimpleSystemRenderer,
-  SimpleRawRenderer
+  SimpleRawRenderer,
+  SimpleGameEndRenderer
 } from './SimpleConsoleRenderer';
 
 // Register all simple renderers
@@ -61,6 +62,7 @@ function registerRenderers() {
   MessageRendererRegistry.register(new SimpleSessionStartRenderer());
   MessageRendererRegistry.register(new SimpleSystemRenderer());
   MessageRendererRegistry.register(new SimpleRawRenderer());
+  MessageRendererRegistry.register(new SimpleGameEndRenderer());
   
   // Default fallback (must be last)
   MessageRendererRegistry.register(new SimpleDefaultRenderer());

@@ -116,3 +116,7 @@ export class SimpleSystemRenderer extends SimpleConsoleRendererBase {
 export class SimpleRawRenderer extends SimpleConsoleRendererBase {
   readonly type = 'raw';
 }
+
+export class SimpleGameEndRenderer extends SimpleConsoleRendererBase {
+  readonly type = 'gameEnd';
+}
