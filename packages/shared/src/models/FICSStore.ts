@@ -475,8 +475,9 @@ export class FICSStore {
                         break;
 
                     case 'gameStart':
-                        if (message.data) {
-                            this.handleGameStart(message.data);
+                        const gameStartData = message.data?.metadata || message.data;
+                        if (gameStartData) {
+                            this.handleGameStart(gameStartData);
                         }
                         break;
 
@@ -888,9 +889,15 @@ export class FICSStore {
 
     private handleGameStart(gameStart: GameStart) {
         // Store game metadata for when Style12 arrives
+        // Parse ratings, handling special cases like ++++ and ----
+        const parseRating = (rating: string): number => {
+            if (rating === '++++' || rating === '----') return 0;
+            return parseInt(rating) || 0;
+        };
+        
         this.pendingGameMetadata.set(gameStart.gameNumber, {
-            whiteRating: parseInt(gameStart.whiteRating) || 0,
-            blackRating: parseInt(gameStart.blackRating) || 0,
+            whiteRating: parseRating(gameStart.whiteRating),
+            blackRating: parseRating(gameStart.blackRating),
             variant: this.mapGameTypeToVariant(gameStart.gameType)
         });
         

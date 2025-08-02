@@ -86,7 +86,7 @@ export class GameStartParser extends BaseParser {
         
         // Check for observing game format
         // Rating pattern includes: numbers, ++++, ---- , CEP (computer ratings)
-        const obsMatch = gameLine.match(/Game (\d+): ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+\-CEP]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+\-CEP]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
+        const obsMatch = gameLine.match(/Game (\d+): ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9\+\-CEP]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9\+\-CEP]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
         console.log('[GameStartParser] Trying to parse, obsMatch:', !!obsMatch, obsMatch);
         if (obsMatch) {
             const gameStart: GameStart = {
@@ -123,7 +123,7 @@ export class GameStartParser extends BaseParser {
 
         // Check for creating game format
         // Rating pattern includes: numbers, ++++, ---- , CEP (computer ratings)
-        const createMatch = message.match(/Creating: ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+\-CEP]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9+\-CEP]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
+        const createMatch = message.match(/Creating: ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9\+\-CEP]+)\) ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) \(([0-9\+\-CEP]+)\) (rated|unrated) ([a-zA-Z0-9-]+) (\d+) (\d+)/);
         const gameMatch = message.match(/\{Game (\d+) \(([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*) vs\. ([a-zA-Z0-9_\[\]*-]+(?:\([^)]*\))*)\)/);
 
         console.log('[GameStartParser] Creating format - createMatch:', !!createMatch, createMatch);
