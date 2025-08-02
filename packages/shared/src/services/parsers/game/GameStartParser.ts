@@ -49,6 +49,14 @@ export class GameStartParser extends BaseParser {
         console.log('[GameStartParser] Playing game start sound for observation');
         stores.soundStore?.playStart();
         
+        // IMPORTANT: Process the game start data in FICSStore
+        // This ensures ratings are stored for when Style12 arrives
+        const ficsStore = stores.ficsStore as any; // Type assertion to access private method
+        if (ficsStore && ficsStore.handleGameStart) {
+            console.log('[GameStartParser] Calling handleGameStart directly');
+            ficsStore.handleGameStart(gameStart);
+        }
+        
         // Extract only the game start portion (before Style12 if present)
         let displayContent = message;
         const style12Index = message.indexOf('<12>');

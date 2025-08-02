@@ -227,7 +227,8 @@ export class GameStore {
                     relation: style12.relation,
                     verboseMove: style12.verboseMove,
                     turn: style12.colorToMove,
-                    gameNumber: style12.gameNumber
+                    gameNumber: style12.gameNumber,
+                    pendingMetadata
                 });
                 
                 // Convert Style12 board array to string format for style12ToFen

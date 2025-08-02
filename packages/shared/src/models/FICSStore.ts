@@ -459,6 +459,7 @@ export class FICSStore {
                         const style12Data = message.data.metadata || message.data;
                         // Pass pending metadata if available
                         const pendingMetadata = this.pendingGameMetadata.get(style12Data.gameNumber);
+                        console.log('[FICSStore] Looking for pending metadata for game:', style12Data.gameNumber, 'found:', pendingMetadata);
                         this.rootStore?.gameStore.updateFromStyle12(style12Data, pendingMetadata);
                         // Clean up pending metadata after use
                         if (pendingMetadata) {
@@ -896,11 +897,13 @@ export class FICSStore {
             return parseInt(rating) || 0;
         };
         
-        this.pendingGameMetadata.set(gameStart.gameNumber, {
+        const metadata = {
             whiteRating: parseRating(gameStart.whiteRating),
             blackRating: parseRating(gameStart.blackRating),
             variant: this.mapGameTypeToVariant(gameStart.gameType)
-        });
+        };
+        console.log('[FICSStore] Storing pending game metadata:', gameStart.gameNumber, metadata);
+        this.pendingGameMetadata.set(gameStart.gameNumber, metadata);
         
         // Clean up old pending metadata (older than 5 minutes)
         const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
