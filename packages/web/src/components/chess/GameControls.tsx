@@ -158,11 +158,11 @@ export const GameControls: React.FC<GameControlsProps> = observer(({
       >
         Analysis
       </ControlButton>
-      <ControlButton onClick={onFlipBoard} $variant="secondary">
-        Flip
-      </ControlButton>
       <ControlButton onClick={onSetupFEN} $variant="secondary">
         FEN
+      </ControlButton>
+      <ControlButton onClick={onFlipBoard} $variant="secondary">
+        Flip
       </ControlButton>
     </>
   );
