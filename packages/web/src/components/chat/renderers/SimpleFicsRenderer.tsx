@@ -29,8 +29,10 @@ interface SimpleFicsRendererProps {
   elements?: Array<{
     type: 'player' | 'command' | 'gameNumber' | 'seekNumber' | 'url' | 'channelNumber';
     text: string;
-    value: string | number;
-    offset: number;
+    value?: string | number;
+    action?: string;
+    start: number;
+    end: number;
   }>;
 }
 
@@ -41,6 +43,11 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
 }) => {
   const { ficsStore, preferencesStore } = useRootStore();
   const chatAppearance = preferencesStore.getChatAppearance();
+  
+  // Debug logging
+  if (elements.length > 0) {
+    console.log('[SimpleFicsRenderer] Elements:', elements);
+  }
   
   // Trim leading newline for display only
   const displayContent = content.startsWith('\n') ? content.substring(1) : content;
@@ -210,7 +217,9 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
     // First, add parser-provided elements with highest priority
     elements.forEach((element) => {
       // Adjust offset if we trimmed a leading newline
-      const adjustedOffset = displayContent !== content ? element.offset - 1 : element.offset;
+      const adjustedOffset = displayContent !== content ? element.start - 1 : element.start;
+      
+      console.log('[SimpleFicsRenderer] Element:', element.type, element.text, 'start:', element.start, 'adjusted:', adjustedOffset, 'textLen:', text.length);
       
       if (adjustedOffset >= 0 && adjustedOffset < text.length) {
         const elementRender = (() => {
@@ -220,7 +229,7 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
                 <SimpleLink
                   onClick={(e) => {
                     e.preventDefault();
-                    ficsStore.sendCommand(element.value as string);
+                    ficsStore.sendCommand(element.action || element.value as string);
                   }}
                 >
                   {element.text}

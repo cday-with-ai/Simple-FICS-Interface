@@ -8,6 +8,9 @@ abstract class SimpleConsoleRendererBase extends MessageRenderer {
     // Use the raw content, preserving FICS formatting
     // Pass elements from parsed message if available
     const elements = message.metadata?.parsedMessage?.elements;
+    if (message.metadata?.consoleType === 'gamesOutput' && message.metadata?.parsedMessage) {
+      console.log('[SimpleConsoleRenderer] gamesOutput metadata:', message.metadata);
+    }
     return <SimpleFicsRenderer content={message.content} elements={elements} />;
   }
 }
