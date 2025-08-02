@@ -49,12 +49,19 @@ export class GameStartParser extends BaseParser {
         console.log('[GameStartParser] Playing game start sound for observation');
         stores.soundStore?.playStart();
         
-        // Show the full original message in console to preserve all information
-        // This is important when starting a game while observing another
+        // Extract only the game start portion (before Style12 if present)
+        let displayContent = message;
+        const style12Index = message.indexOf('<12>');
+        if (style12Index > 0) {
+            // Extract content up to Style12, removing trailing whitespace
+            displayContent = message.substring(0, style12Index).trim();
+        }
+        
+        // Show only the game start message in console
         stores.chatStore.addMessage('console', {
             channel: 'console',
             sender: 'FICS',
-            content: message,
+            content: displayContent,
             timestamp: new Date(),
             type: 'system',
             metadata: {
