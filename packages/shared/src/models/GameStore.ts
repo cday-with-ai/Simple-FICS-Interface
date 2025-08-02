@@ -766,12 +766,21 @@ export class GameStore {
             return orientation;
         }
         
-        // If we just finished a game, use the cached orientation
+        // In freestyle mode, always use manual preference
+        // This allows the flip button to work in freestyle mode
+        if (!this.currentGame || this.currentGame.gameId === -1) {
+            const preferencesFlipped = this.rootStore?.preferencesStore?.preferences.boardFlipped;
+            if (preferencesFlipped !== undefined) {
+                return preferencesFlipped;
+            }
+        }
+        
+        // For other non-playing modes, use cached orientation if available
         if (this._lastBoardOrientation !== null) {
             return this._lastBoardOrientation;
         }
         
-        // For non-playing modes, check manual preference first
+        // Otherwise check manual preference
         const preferencesFlipped = this.rootStore?.preferencesStore?.preferences.boardFlipped;
         if (preferencesFlipped !== undefined) {
             return preferencesFlipped;
