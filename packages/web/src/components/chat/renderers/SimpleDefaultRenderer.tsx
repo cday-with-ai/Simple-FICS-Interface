@@ -13,18 +13,25 @@ const MessageContainer = styled.div`
 const LoadMoreLink = styled.button`
   color: ${props => props.theme.colors.primary};
   cursor: pointer;
-  text-decoration: none;
-  background: none;
-  border: none;
-  padding: 4px 8px;
+  background: ${props => props.theme.colors.backgroundSecondary};
+  border: 1px solid ${props => props.theme.colors.primary};
+  padding: 8px 16px;
   font-size: inherit;
   font-family: inherit;
   display: inline-block;
+  border-radius: 4px;
+  transition: all 0.2s ease;
   
   &:hover {
-    text-decoration: underline;
-    background-color: ${props => props.theme.colors.backgroundSecondary};
-    border-radius: 4px;
+    background-color: ${props => props.theme.colors.primary};
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
   
   &:focus {
@@ -39,20 +46,34 @@ const LoadMoreRenderer: React.FC<{ message: any }> = ({ message }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log('Load more clicked, metadata:', message.metadata);
-    const channelNumber = parseInt(message.metadata?.channelNumber || '0');
-    console.log('Channel number:', channelNumber);
-    if (channelNumber > 0) {
-      console.log('Loading more messages for channel:', channelNumber);
-      chatStore.loadMoreHistoricalMessages(channelNumber);
+    console.log('🔵 Load more clicked!');
+    console.log('Message:', message);
+    console.log('Metadata:', message.metadata);
+    
+    const channelNumber = message.metadata?.channelNumber;
+    console.log('Raw channel number:', channelNumber, 'Type:', typeof channelNumber);
+    
+    const parsedChannelNumber = typeof channelNumber === 'string' ? parseInt(channelNumber) : channelNumber;
+    console.log('Parsed channel number:', parsedChannelNumber);
+    
+    if (parsedChannelNumber && parsedChannelNumber > 0) {
+      console.log('✅ Loading more messages for channel:', parsedChannelNumber);
+      try {
+        chatStore.loadMoreHistoricalMessages(parsedChannelNumber);
+      } catch (error) {
+        console.error('❌ Error loading more messages:', error);
+      }
     } else {
-      console.error('Invalid channel number:', channelNumber);
+      console.error('❌ Invalid channel number:', channelNumber, 'parsed as:', parsedChannelNumber);
     }
   };
   
   // Debug: log when component mounts
   React.useEffect(() => {
-    console.log('LoadMoreRenderer mounted with message:', message);
+    console.log('🟢 LoadMoreRenderer mounted');
+    console.log('Message:', message);
+    console.log('Metadata:', message.metadata);
+    console.log('Channel number:', message.metadata?.channelNumber);
   }, []);
   
   return (
@@ -61,7 +82,7 @@ const LoadMoreRenderer: React.FC<{ message: any }> = ({ message }) => {
       onMouseDown={(e) => console.log('Mouse down on load more')}
       type="button"
     >
-      {message.content}
+      📜 Load earlier messages
     </LoadMoreLink>
   );
 };

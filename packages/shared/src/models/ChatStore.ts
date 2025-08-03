@@ -305,10 +305,16 @@ export class ChatStore {
     }
     
     async loadMoreHistoricalMessages(channelNumber: number) {
-        console.log('[ChatStore] loadMoreHistoricalMessages called for channel:', channelNumber);
+        console.log('🔵 [ChatStore] loadMoreHistoricalMessages called');
+        console.log('Channel number:', channelNumber, 'Type:', typeof channelNumber);
+        
+        console.log('RootStore:', this.rootStore);
+        console.log('BackendStore:', this.rootStore?.backendStore);
         
         if (!this.rootStore?.backendStore) {
-            console.error('[ChatStore] No backend store available');
+            console.error('❌ [ChatStore] No backend store available');
+            console.error('RootStore exists:', !!this.rootStore);
+            console.error('BackendStore exists:', !!this.rootStore?.backendStore);
             return;
         }
         
