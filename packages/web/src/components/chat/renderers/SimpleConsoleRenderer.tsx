@@ -1,6 +1,7 @@
 import React from 'react';
 import { MessageRenderer, MessageRendererProps } from './MessageRenderer';
 import { SimpleFicsRenderer } from './SimpleFicsRenderer';
+import { ChatMessage } from '@fics/shared';
 
 // Base class for simple console renderers
 abstract class SimpleConsoleRendererBase extends MessageRenderer {
@@ -111,6 +112,14 @@ export class SimpleSessionStartRenderer extends SimpleConsoleRendererBase {
 
 export class SimpleSystemRenderer extends SimpleConsoleRendererBase {
   readonly type = 'system';
+  
+  canRender(message: ChatMessage): boolean {
+    // Don't render system messages with isLoadMore flag - let DefaultRenderer handle them
+    if (message.metadata?.isLoadMore) {
+      return false;
+    }
+    return super.canRender(message);
+  }
 }
 
 export class SimpleRawRenderer extends SimpleConsoleRendererBase {
