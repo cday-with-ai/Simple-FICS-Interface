@@ -5,7 +5,7 @@ WORKDIR /app/packages/backend
 
 # Copy package files
 COPY packages/backend/package*.json ./
-COPY packages/backend/tsconfig.json ./
+COPY packages/backend/tsconfig.standalone.json ./tsconfig.json
 
 # Install dependencies
 RUN npm install
