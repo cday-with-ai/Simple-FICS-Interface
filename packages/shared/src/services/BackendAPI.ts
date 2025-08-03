@@ -39,7 +39,9 @@ export class BackendAPI {
 
   constructor(baseUrl?: string) {
     // Use environment variable or default to production URL
-    this.baseUrl = baseUrl || process.env.REACT_APP_BACKEND_URL || 'https://simple-fics-interface-production.up.railway.app/api';
+    // In Vite, use import.meta.env instead of process.env
+    const envUrl = typeof window !== 'undefined' && (window as any).VITE_BACKEND_URL;
+    this.baseUrl = baseUrl || envUrl || 'https://simple-fics-interface-production.up.railway.app/api';
     // For local development, you can override with: http://localhost:3011/api
   }
 
