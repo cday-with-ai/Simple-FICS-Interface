@@ -22,9 +22,14 @@ const LoadMoreRenderer: React.FC<{ message: any }> = ({ message }) => {
   const { chatStore } = useRootStore();
   
   const handleClick = () => {
+    console.log('Load more clicked, metadata:', message.metadata);
     const channelNumber = parseInt(message.metadata?.channelNumber || '0');
+    console.log('Channel number:', channelNumber);
     if (channelNumber > 0) {
+      console.log('Loading more messages for channel:', channelNumber);
       chatStore.loadMoreHistoricalMessages(channelNumber);
+    } else {
+      console.error('Invalid channel number:', channelNumber);
     }
   };
   

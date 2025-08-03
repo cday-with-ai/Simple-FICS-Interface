@@ -305,13 +305,24 @@ export class ChatStore {
     }
     
     async loadMoreHistoricalMessages(channelNumber: number) {
-        if (!this.rootStore?.backendStore) return;
+        console.log('[ChatStore] loadMoreHistoricalMessages called for channel:', channelNumber);
+        
+        if (!this.rootStore?.backendStore) {
+            console.error('[ChatStore] No backend store available');
+            return;
+        }
         
         const channelId = `channel-${channelNumber}`;
         const tab = this.tabs.get(channelId);
-        if (!tab || !tab.hasMoreHistory) return;
+        console.log('[ChatStore] Tab found:', tab);
+        
+        if (!tab || !tab.hasMoreHistory) {
+            console.log('[ChatStore] No tab or no more history available');
+            return;
+        }
         
         const currentOffset = tab.historyOffset || 0;
+        console.log('[ChatStore] Current offset:', currentOffset);
         
         try {
             // Load next batch
