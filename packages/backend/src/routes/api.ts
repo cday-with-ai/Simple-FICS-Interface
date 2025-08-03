@@ -4,6 +4,16 @@ import { Database } from '../models/database';
 export function createApiRouter(database: Database): Router {
   const router = Router();
 
+  // Health check endpoint
+  router.get('/health', (req: Request, res: Response) => {
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      service: 'fics-backend',
+      database: database ? 'connected' : 'disconnected'
+    });
+  });
+
   // Get channel messages
   router.get('/channels/:channel/messages', async (req: Request, res: Response) => {
     try {

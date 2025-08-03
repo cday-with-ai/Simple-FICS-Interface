@@ -12,7 +12,9 @@ dist/
 # Database
 data/
 *.db
+*.db-journal
 *.sqlite
+*.sqlite-journal
 
 # Logs
 logs/

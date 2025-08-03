@@ -28,7 +28,7 @@ export class Database {
   private all: (sql: string, params?: any[]) => Promise<any[]>;
 
   constructor(dbPath?: string) {
-    const defaultPath = path.join(process.cwd(), 'data', 'fics-backend.db');
+    const defaultPath = process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'fics-backend.db');
     const finalPath = dbPath || defaultPath;
     
     // Ensure directory exists
