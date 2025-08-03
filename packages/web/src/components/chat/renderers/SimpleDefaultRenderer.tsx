@@ -76,14 +76,27 @@ const LoadMoreRenderer: React.FC<{ message: any }> = ({ message }) => {
     console.log('Channel number:', message.metadata?.channelNumber);
   }, []);
   
+  // Use a link element
   return (
-    <LoadMoreLink 
-      onClick={handleClick}
-      onMouseDown={(e) => console.log('Mouse down on load more')}
-      type="button"
+    <a 
+      href="#"
+      onClick={(e) => {
+        e.preventDefault();
+        console.log('🔴 LINK CLICKED!');
+        handleClick(e);
+      }}
+      style={{
+        color: '#3B82F6',
+        cursor: 'pointer',
+        textDecoration: 'underline',
+        fontSize: 'inherit',
+        fontFamily: 'inherit',
+      }}
+      onMouseEnter={() => console.log('🟡 Mouse enter')}
+      onMouseLeave={() => console.log('🟡 Mouse leave')}
     >
       📜 Load earlier messages
-    </LoadMoreLink>
+    </a>
   );
 };
 
@@ -104,11 +117,8 @@ export class SimpleDefaultRenderer extends MessageRenderer {
     // Check if this is a "load more" message
     if (message.metadata?.isLoadMore) {
       console.log('Rendering LoadMoreRenderer for message:', message);
-      return (
-        <MessageContainer>
-          <LoadMoreRenderer message={message} />
-        </MessageContainer>
-      );
+      // Don't wrap in MessageContainer - render directly
+      return <LoadMoreRenderer message={message} />;
     }
     
     // Just render the raw FICS content with our simple renderer
