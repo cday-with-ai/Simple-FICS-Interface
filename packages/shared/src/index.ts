@@ -5,6 +5,7 @@ export {ChatStore} from './models/ChatStore';
 export {PreferencesStore} from './models/PreferencesStore';
 export {AnalysisStore} from './models/AnalysisStore';
 export {SoundStore} from './models/SoundStore';
+export {BackendStore} from './models/BackendStore';
 export {RootStore, createRootStore} from './models/RootStore';
 
 // Services
@@ -28,6 +29,8 @@ export {SoundService, getSoundService} from './services/SoundService';
 export type {SoundType, SoundServiceInterface} from './services/SoundService';
 export {SettingsRegistry} from './services/SettingsRegistry';
 export type {SettingDefinition, SettingCategory, SettingType, PreviewState, SettingsExport} from './types/Settings.types';
+export {BackendAPI} from './services/BackendAPI';
+export type {ChannelMessage, WhoRecord, ApiResponse} from './services/BackendAPI';
 
 // Contexts (React integration)
 export {
@@ -38,7 +41,8 @@ export {
     useChatStore,
     usePreferencesStore,
     useAnalysisStore,
-    useSoundStore
+    useSoundStore,
+    useBackendStore
 } from './contexts/RootStoreContext';
 
 // Types

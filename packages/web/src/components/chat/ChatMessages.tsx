@@ -164,6 +164,16 @@ export const ChatMessages: React.FC<ChatMessagesProps> = observer(({ onMessageHo
       });
     }
   }, [activeTab?.id]);
+  
+  // Scroll to bottom when historical messages are loaded
+  useEffect(() => {
+    if (containerRef.current && activeTab?.lastHistoryLoad) {
+      const container = containerRef.current;
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    }
+  }, [activeTab?.lastHistoryLoad]);
 
   if (!activeTab) {
     return (

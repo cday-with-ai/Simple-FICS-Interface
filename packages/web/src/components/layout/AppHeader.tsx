@@ -6,6 +6,7 @@ import type { ViewMode, ChessOrientation } from '@fics/shared';
 import { useTheme } from '../../theme';
 import { useAvailableViewModes, useAvailableOrientations } from '../../theme/hooks';
 import { SettingsDialog } from '../settings';
+import { BackendDataModal } from '../backend';
 
 const HeaderContainer = styled.header`
   height: 44px;
@@ -252,6 +253,7 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
   const [showSettings, setShowSettings] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+  const [showBackendData, setShowBackendData] = useState(false);
   
   const handleViewModeChange = (mode: ViewMode) => {
     preferencesStore.updatePreference('viewMode', mode);
@@ -445,6 +447,15 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
               </MenuItemContent>
             </MenuItem>
             
+            <MenuItem onClick={() => {
+              setShowBackendData(true);
+              setShowMenu(false);
+            }}>
+              <MenuItemContent>
+                📊 Backend Data
+              </MenuItemContent>
+            </MenuItem>
+            
             <MenuDivider />
             
             <MenuItem onClick={() => {
@@ -505,6 +516,11 @@ export const AppHeader: React.FC<AppHeaderProps> = observer(({ onMenuClick }) =>
       <SettingsDialog 
         isOpen={showSettings} 
         onClose={() => setShowSettings(false)} 
+      />
+      
+      <BackendDataModal
+        isOpen={showBackendData}
+        onClose={() => setShowBackendData(false)}
       />
     </HeaderContainer>
   );

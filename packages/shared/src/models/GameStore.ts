@@ -56,6 +56,7 @@ export class GameStore {
     shouldFlipBoard: boolean = false; // From style12 flipBoard field
     private _playingColor: 'white' | 'black' | null = null; // Cache player's color when game starts
     private _lastBoardOrientation: boolean | null = null; // Cache the board orientation to preserve it after game ends
+    private _transitioningToFreestyle: boolean = false; // Flag to track game->freestyle transitions
     
     // Clock management
     private clockInterval: NodeJS.Timeout | null = null;
@@ -100,6 +101,7 @@ export class GameStore {
         // - When starting a new real game: orientation resets so you're on the correct side
         if (gameState.gameId > 0) {
             this._lastBoardOrientation = null; // Reset for real games
+            this._transitioningToFreestyle = false; // Clear any transition flag
         }
         this.whiteHoldings = ''; // Reset holdings for new game
         this.blackHoldings = ''; // Reset holdings for new game
@@ -738,6 +740,11 @@ export class GameStore {
         }
     }
     
+    // Method to clear transition flag when user manually interacts
+    clearTransitionFlag() {
+        this._transitioningToFreestyle = false;
+    }
+    
     // Determine if board should be flipped based on game perspective
     get shouldShowFlippedBoard(): boolean {
         let orientation: boolean;
@@ -766,12 +773,22 @@ export class GameStore {
             return orientation;
         }
         
-        // In freestyle mode, always use manual preference
-        // This allows the flip button to work in freestyle mode
+        // In freestyle mode, handle orientation based on how we got here
         if (!this.currentGame || this.currentGame.gameId === -1) {
+            // If we're transitioning from a game to freestyle, preserve orientation
+            if (this._transitioningToFreestyle && this._lastBoardOrientation !== null) {
+                return this._lastBoardOrientation;
+            }
+            
+            // Otherwise, use manual preference
             const preferencesFlipped = this.rootStore?.preferencesStore?.preferences.boardFlipped;
             if (preferencesFlipped !== undefined) {
                 return preferencesFlipped;
+            }
+            
+            // Fallback to cached orientation if no preference set
+            if (this._lastBoardOrientation !== null) {
+                return this._lastBoardOrientation;
             }
         }
         
@@ -860,6 +877,8 @@ export class GameStore {
         // Preserve the last game state before clearing
         if (this.currentGame) {
             this.lastGameState = { ...this.currentGame };
+            // Mark that we're transitioning to freestyle
+            this._transitioningToFreestyle = true;
         }
         this.currentGame = null;
         this._playingColor = null; // Reset playing color

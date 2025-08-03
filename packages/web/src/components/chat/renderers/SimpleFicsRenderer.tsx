@@ -57,7 +57,7 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
   ansiColors = true,
   elements = []
 }) => {
-  const { ficsStore, preferencesStore } = useRootStore();
+  const { ficsStore, preferencesStore, backendStore } = useRootStore();
   const chatAppearance = preferencesStore.getChatAppearance();
   const [contextMenu, setContextMenu] = useState<{ playerName: string; x: number; y: number } | null>(null);
   
@@ -214,6 +214,32 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
       }
     ];
     
+    // Username pattern - only if we have logged-in users cached
+    const usernamePattern: PatternHandler | null = backendStore.loggedInUsers.size > 0 ? {
+      regex: /\b[A-Za-z][A-Za-z0-9_-]{2,16}\b/g, // FICS usernames: start with letter, 3-17 chars total
+      handler: (matches) => {
+        const username = matches[0];
+        if (backendStore.isUserLoggedIn(username)) {
+          return (
+            <SimpleLink
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setContextMenu({ 
+                  playerName: username, 
+                  x: e.clientX, 
+                  y: e.clientY 
+                });
+              }}
+            >
+              {username}
+            </SimpleLink>
+          );
+        }
+        return username; // Return plain text if not logged in
+      }
+    } : null;
+    
     // If we have ANSI colors, parse as HTML
     if (ansiColors && colorProcessed !== text) {
       return <span dangerouslySetInnerHTML={{ __html: colorProcessed }} />;
@@ -358,6 +384,36 @@ export const SimpleFicsRenderer: React.FC<SimpleFicsRendererProps> = observer(({
         }
       }
     });
+    
+    // Process username pattern with lower priority
+    if (usernamePattern) {
+      const regex = new RegExp(usernamePattern.regex);
+      let match;
+      
+      while ((match = regex.exec(text)) !== null) {
+        const start = match.index;
+        const end = start + match[0].length;
+        
+        // Check if this range overlaps with any used range
+        const overlaps = usedRanges.some(([usedStart, usedEnd]) => 
+          (start >= usedStart && start < usedEnd) || 
+          (end > usedStart && end <= usedEnd)
+        );
+        
+        if (!overlaps) {
+          const rendered = usernamePattern.handler(match);
+          // Only add if it's actually a link (not plain text)
+          if (rendered !== match[0]) {
+            allMatches.push({
+              start,
+              end,
+              render: rendered,
+              priority: 0 // Lower priority than other patterns
+            });
+          }
+        }
+      }
+    }
     
     // Sort matches by position and priority
     allMatches.sort((a, b) => {

@@ -265,6 +265,13 @@ export class FICSStore {
             }
         }
         
+        // Handle +tab command
+        if (cmd.startsWith('+tab ')) {
+            const target = cmd.substring(5).trim(); // Get everything after "+tab "
+            this.handleTabCommand(target);
+            return;
+        }
+        
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             // Log the raw command being sent
             console.log('[FICSStore] Sending command:', JSON.stringify(command));
@@ -1128,5 +1135,57 @@ export class FICSStore {
         }
         
         return undefined;
+    }
+    
+    private handleTabCommand(target: string) {
+        if (!target) {
+            this.rootStore?.chatStore.addMessage('console', {
+                channel: 'console',
+                sender: 'System',
+                content: 'Usage: +tab <channelNumber> or +tab <playerName>',
+                timestamp: new Date(),
+                type: 'system'
+            });
+            return;
+        }
+        
+        // Check if it's a number (channel)
+        const channelNumber = parseInt(target);
+        if (!isNaN(channelNumber)) {
+            // It's a channel number
+            const channelId = `channel-${channelNumber}`;
+            
+            // Create the tab if it doesn't exist
+            this.rootStore?.chatStore.createTab(channelId, channelNumber.toString(), 'channel');
+            
+            // Switch to the tab
+            this.rootStore?.chatStore.setActiveTab(channelId);
+            
+            this.rootStore?.chatStore.addMessage('console', {
+                channel: 'console',
+                sender: 'System',
+                content: `Opened channel ${channelNumber} tab.`,
+                timestamp: new Date(),
+                type: 'system'
+            });
+        } else {
+            // It's a player name - match the format used by DirectTellParser
+            const playerName = target;
+            const tabId = playerName.toLowerCase();
+            
+            // Create the tab if it doesn't exist
+            this.rootStore?.chatStore.createTab(tabId, playerName, 'private');
+            
+            // Switch to the tab
+            this.rootStore?.chatStore.setActiveTab(tabId);
+            
+            this.rootStore?.chatStore.addMessage('console', {
+                channel: 'console',
+                sender: 'System',
+                content: `Opened private tab with ${playerName}.`,
+                timestamp: new Date(),
+                type: 'system'
+            });
+        }
     }
 }

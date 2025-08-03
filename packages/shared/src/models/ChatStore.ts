@@ -2,7 +2,16 @@ import {makeAutoObservable, runInAction} from 'mobx';
 
 // Forward declaration to avoid circular dependency
 interface RootStore {
-    // No dependencies needed for ChatStore currently
+    backendStore?: {
+        loadChannelMessages: (channel: number, limit?: number, offset?: number) => Promise<void>;
+        getChannelMessages: (channel: number) => Array<{
+            id: number;
+            channel: number;
+            username: string;
+            message: string;
+            timestamp: string;
+        }>;
+    };
 }
 
 export interface ChatMessage {
@@ -27,6 +36,8 @@ export interface ChatMessage {
         fontFamily?: string | null;
         fontStyle?: string | null;
         isGroupedMessage?: boolean;
+        isHistorical?: boolean; // Flag to indicate this is a historical message from backend
+        isLoadMore?: boolean; // Flag to indicate this is a "load more" link
     };
 }
 
@@ -37,6 +48,9 @@ export interface ChatTab {
     unreadCount: number;
     messages: ChatMessage[];
     order: number;
+    historyOffset?: number; // Track how many historical messages we've loaded
+    hasMoreHistory?: boolean; // Whether there are more messages to load
+    lastHistoryLoad?: number; // Timestamp of last history load to trigger scroll
 }
 
 export class ChatStore {
@@ -78,6 +92,9 @@ export class ChatStore {
             // Look at the last few messages, not just the last one
             const recentMessages = targetTab.messages.slice(-5); // Check last 5 messages
             for (const recentMsg of recentMessages) {
+                // Skip historical messages in duplicate check
+                if (recentMsg.metadata?.isHistorical) continue;
+                
                 // If the content is identical and timestamps are within 1 second, skip
                 if (recentMsg.content === message.content && 
                     Math.abs(new Date(recentMsg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000) {
@@ -119,6 +136,18 @@ export class ChatStore {
                     messages: [],
                     order: maxOrder + 1
                 });
+                
+                // If this is a channel tab and we have backend store, load historical messages
+                if (type === 'channel' && this.rootStore?.backendStore) {
+                    const channelMatch = id.match(/^channel-(\d+)$/);
+                    if (channelMatch) {
+                        const channelNumber = parseInt(channelMatch[1]);
+                        this.loadHistoricalMessages(channelNumber);
+                    }
+                }
+                
+                // For private tabs, we could load user history here if needed
+                // Currently the backend doesn't store private messages, only user online status
             }
         });
     }
@@ -176,6 +205,184 @@ export class ChatStore {
 
     get sortedTabs() {
         return Array.from(this.tabs.values()).sort((a, b) => a.order - b.order);
+    }
+    
+    async loadHistoricalMessages(channelNumber: number) {
+        if (!this.rootStore?.backendStore) return;
+        
+        try {
+            // Load last 100 messages from backend
+            await this.rootStore.backendStore.loadChannelMessages(channelNumber, 100, 0);
+            
+            runInAction(() => {
+                const channelId = `channel-${channelNumber}`;
+                const tab = this.tabs.get(channelId);
+                if (!tab) return;
+                
+                // Get messages from backend store
+                const historicalMessages = this.rootStore!.backendStore!.getChannelMessages(channelNumber);
+                
+                // Backend returns newest first, but we want oldest first for chat display
+                const messagesInOrder = [...historicalMessages].reverse();
+                
+                // Convert backend messages to ChatMessage format
+                const chatMessages: ChatMessage[] = messagesInOrder.map(msg => {
+                    // Convert UTC timestamp to local time
+                    const timestamp = new Date(msg.timestamp);
+                    
+                    return {
+                        id: `historical-${msg.id}`,
+                        channel: channelId,
+                        sender: msg.username,
+                        content: `${msg.username}(${channelNumber}): ${msg.message}`,
+                        timestamp: timestamp,
+                        type: 'message' as const,
+                        metadata: {
+                            consoleType: 'channelTell',
+                            channelNumber: channelNumber.toString(),
+                            isHistorical: true
+                        }
+                    };
+                });
+                
+                // Add a "load more" message at the beginning if we got the full limit
+                const loadedFullLimit = historicalMessages.length === 100;
+                const messages: ChatMessage[] = [];
+                
+                if (loadedFullLimit) {
+                    const loadMoreMessage: ChatMessage = {
+                        id: `load-more-${Date.now()}`,
+                        channel: channelId,
+                        sender: 'System',
+                        content: '📜 Load earlier messages',
+                        timestamp: chatMessages.length > 0 ? chatMessages[0].timestamp : new Date(),
+                        type: 'system',
+                        metadata: {
+                            consoleType: 'system',
+                            color: '#4A90E2',
+                            fontStyle: 'italic',
+                            isLoadMore: true,
+                            channelNumber: channelNumber.toString()
+                        }
+                    };
+                    messages.push(loadMoreMessage);
+                    tab.hasMoreHistory = true;
+                }
+                
+                // Add historical messages
+                messages.push(...chatMessages);
+                
+                // Add separator if we have historical messages
+                if (chatMessages.length > 0) {
+                    const separator: ChatMessage = {
+                        id: `separator-${Date.now()}`,
+                        channel: channelId,
+                        sender: 'System',
+                        content: '--- Historical messages above, live messages below ---',
+                        timestamp: new Date(),
+                        type: 'system',
+                        metadata: {
+                            consoleType: 'system',
+                            color: '#666666',
+                            fontStyle: 'italic'
+                        }
+                    };
+                    messages.push(separator);
+                }
+                
+                // Update tab with messages and offset
+                tab.messages = [...messages, ...tab.messages];
+                tab.historyOffset = 100; // We've loaded the first 100
+                
+                // Trigger a scroll to bottom by adding a timestamp to force re-render
+                tab.lastHistoryLoad = Date.now();
+                
+                console.log(`[ChatStore] Loaded ${chatMessages.length} historical messages for channel ${channelNumber}`);
+            });
+        } catch (error) {
+            console.error(`[ChatStore] Failed to load historical messages for channel ${channelNumber}:`, error);
+        }
+    }
+    
+    async loadMoreHistoricalMessages(channelNumber: number) {
+        if (!this.rootStore?.backendStore) return;
+        
+        const channelId = `channel-${channelNumber}`;
+        const tab = this.tabs.get(channelId);
+        if (!tab || !tab.hasMoreHistory) return;
+        
+        const currentOffset = tab.historyOffset || 0;
+        
+        try {
+            // Load next batch
+            await this.rootStore.backendStore.loadChannelMessages(channelNumber, 100, currentOffset);
+            
+            runInAction(() => {
+                // Get messages from backend store
+                const historicalMessages = this.rootStore!.backendStore!.getChannelMessages(channelNumber);
+                
+                // Backend returns newest first, but we want oldest first for chat display
+                const messagesInOrder = [...historicalMessages].reverse();
+                
+                // Convert backend messages to ChatMessage format
+                const newMessages: ChatMessage[] = messagesInOrder.map(msg => {
+                    const timestamp = new Date(msg.timestamp);
+                    
+                    return {
+                        id: `historical-${msg.id}`,
+                        channel: channelId,
+                        sender: msg.username,
+                        content: `${msg.username}(${channelNumber}): ${msg.message}`,
+                        timestamp: timestamp,
+                        type: 'message' as const,
+                        metadata: {
+                            consoleType: 'channelTell',
+                            channelNumber: channelNumber.toString(),
+                            isHistorical: true
+                        }
+                    };
+                });
+                
+                // Find and remove the old "load more" message
+                const loadMoreIndex = tab.messages.findIndex(msg => msg.metadata?.isLoadMore);
+                if (loadMoreIndex !== -1) {
+                    tab.messages.splice(loadMoreIndex, 1);
+                }
+                
+                // If we loaded a full batch, add a new "load more" at the beginning
+                const loadedFullLimit = historicalMessages.length === 100;
+                if (loadedFullLimit) {
+                    const loadMoreMessage: ChatMessage = {
+                        id: `load-more-${Date.now()}`,
+                        channel: channelId,
+                        sender: 'System',
+                        content: '📜 Load earlier messages',
+                        timestamp: newMessages.length > 0 ? newMessages[0].timestamp : new Date(),
+                        type: 'system',
+                        metadata: {
+                            consoleType: 'system',
+                            color: '#4A90E2',
+                            fontStyle: 'italic',
+                            isLoadMore: true,
+                            channelNumber: channelNumber.toString()
+                        }
+                    };
+                    // Add at the beginning
+                    tab.messages.unshift(...newMessages, loadMoreMessage);
+                } else {
+                    // No more messages to load
+                    tab.hasMoreHistory = false;
+                    tab.messages.unshift(...newMessages);
+                }
+                
+                // Update offset
+                tab.historyOffset = currentOffset + 100;
+                
+                console.log(`[ChatStore] Loaded ${newMessages.length} more historical messages for channel ${channelNumber}`);
+            });
+        } catch (error) {
+            console.error(`[ChatStore] Failed to load more historical messages for channel ${channelNumber}:`, error);
+        }
     }
     
     reorderTabs(fromId: string, toId: string) {

@@ -685,8 +685,10 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     }, []);
 
     const handleFlipBoard = useCallback(() => {
+        // Clear the transition flag so we respect the manual flip
+        gameStore.clearTransitionFlag();
         preferencesStore.updatePreference('boardFlipped', !preferencesStore.preferences.boardFlipped);
-    }, [preferencesStore]);
+    }, [preferencesStore, gameStore]);
     
     const handleUnobserve = useCallback(() => {
         if (gameStore.currentGame) {
