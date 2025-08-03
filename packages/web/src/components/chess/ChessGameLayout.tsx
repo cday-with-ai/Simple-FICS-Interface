@@ -57,10 +57,10 @@ const ChessSection = styled.div<{ $orientation: 'landscape' | 'portrait' }>`
     }
 `;
 
-const GameInfo = styled.div`
+const GameInfo = styled.div<{ $gameInfoColor?: string; $gameInfoFontSize?: number }>`
     text-align: center;
-    font-size: ${props => props.theme.typography.fontSize.sm};
-    color: ${props => props.theme.colors.textSecondary};
+    font-size: ${props => props.$gameInfoFontSize ? `${props.$gameInfoFontSize}px` : props.theme.typography.fontSize.sm};
+    color: ${props => props.$gameInfoColor || props.theme.colors.textSecondary};
     white-space: nowrap;
 `;
 
@@ -169,15 +169,15 @@ const TimeControl = styled.div`
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const LastMoveInfo = styled.div`
-    font-size: ${props => props.theme.typography.fontSize.xs};
-    color: ${props => props.theme.colors.textTertiary};
+const LastMoveInfo = styled.div<{ $gameInfoColor?: string; $gameInfoFontSize?: number }>`
+    font-size: ${props => props.$gameInfoFontSize ? `${props.$gameInfoFontSize}px` : props.theme.typography.fontSize.xs};
+    color: ${props => props.$gameInfoColor || props.theme.colors.textTertiary};
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const OpeningInfo = styled.div`
-    font-size: ${props => props.theme.typography.fontSize.xs};
-    color: ${props => props.theme.colors.textTertiary};
+const OpeningInfo = styled.div<{ $gameInfoColor?: string; $gameInfoFontSize?: number }>`
+    font-size: ${props => props.$gameInfoFontSize ? `${props.$gameInfoFontSize}px` : props.theme.typography.fontSize.xs};
+    color: ${props => props.$gameInfoColor || props.theme.colors.textTertiary};
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
@@ -530,6 +530,10 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
 
     // Use the user's preference for chess orientation instead of device orientation
     const isLandscape = preferencesStore.preferences.chessOrientation === 'landscape';
+    
+    // Get game info display preferences
+    const gameInfoColor = preferencesStore.preferences.gameInfoColor;
+    const gameInfoFontSize = preferencesStore.preferences.gameInfoFontSize;
 
     // Get current position from GameStore - direct access to ensure MobX tracks it
     const position = gameStore.currentPosition || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -880,14 +884,14 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 </PortraitPlayerInfo>
 
                                 <PortraitBottomInfo>
-                                    <LastMoveInfo>
+                                    <LastMoveInfo $gameInfoColor={gameInfoColor} $gameInfoFontSize={gameInfoFontSize}>
                                         {gameStore.premove ? 
                                             `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
                                             (moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none')
                                         }
                                     </LastMoveInfo>
                                     {opening && (
-                                        <OpeningInfo>{opening}</OpeningInfo>
+                                        <OpeningInfo $gameInfoColor={gameInfoColor} $gameInfoFontSize={gameInfoFontSize}>{opening}</OpeningInfo>
                                     )}
                                 </PortraitBottomInfo>
 
@@ -1003,14 +1007,14 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     </BoardWrapper>
                                 </BoardWithAnalysis>
                                 <LandscapeBottomInfo $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
-                                    <LastMoveInfo>
+                                    <LastMoveInfo $gameInfoColor={gameInfoColor} $gameInfoFontSize={gameInfoFontSize}>
                                         {gameStore.premove ? 
                                             `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
                                             (moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none')
                                         }
                                     </LastMoveInfo>
                                     {opening && (
-                                        <OpeningInfo>{opening}</OpeningInfo>
+                                        <OpeningInfo $gameInfoColor={gameInfoColor} $gameInfoFontSize={gameInfoFontSize}>{opening}</OpeningInfo>
                                     )}
                                 </LandscapeBottomInfo>
                                 {isAnalysisActive && (

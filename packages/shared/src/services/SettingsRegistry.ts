@@ -602,6 +602,35 @@ export class SettingsRegistry {
       previewType: 'instant'
     });
 
+    // Game info display settings
+    this.register({
+      id: 'gameInfoColor',
+      category: 'board',
+      label: 'Game Info Text Color',
+      description: 'Color for game info, last move, and opening description text',
+      type: 'color',
+      value: '#4b5563',
+      defaultValue: '#4b5563',
+      keywords: ['game', 'info', 'color', 'text', 'last move', 'opening'],
+      previewType: 'instant'
+    });
+
+    this.register({
+      id: 'gameInfoFontSize',
+      category: 'board',
+      label: 'Game Info Font Size',
+      description: 'Font size for game info text (in pixels)',
+      type: 'number',
+      value: 12,
+      defaultValue: 12,
+      min: 8,
+      max: 20,
+      step: 1,
+      unit: 'px',
+      keywords: ['game', 'info', 'font', 'size', 'text'],
+      previewType: 'instant'
+    });
+
 
     // Clock settings from design doc
 
@@ -878,6 +907,8 @@ export class SettingsRegistry {
       const coordinateColorDark = settings.find(s => s.id === 'coordinateColorDark');
       const lastMoveHighlightColor = settings.find(s => s.id === 'lastMoveHighlightColor');
       const premoveHighlightColor = settings.find(s => s.id === 'premoveHighlightColor');
+      const gameInfoColor = settings.find(s => s.id === 'gameInfoColor');
+      const gameInfoFontSize = settings.find(s => s.id === 'gameInfoFontSize');
       
       const otherSettings = settings.filter(s => 
         s.id !== 'pieceSet' &&
@@ -894,7 +925,9 @@ export class SettingsRegistry {
         s.id !== 'coordinateColorLight' &&
         s.id !== 'coordinateColorDark' &&
         s.id !== 'lastMoveHighlightColor' &&
-        s.id !== 'premoveHighlightColor'
+        s.id !== 'premoveHighlightColor' &&
+        s.id !== 'gameInfoColor' &&
+        s.id !== 'gameInfoFontSize'
       );
       
       const orderedSettings = [];
@@ -914,6 +947,8 @@ export class SettingsRegistry {
       if (coordinateColorDark) orderedSettings.push(coordinateColorDark);
       if (lastMoveHighlightColor) orderedSettings.push(lastMoveHighlightColor);
       if (premoveHighlightColor) orderedSettings.push(premoveHighlightColor);
+      if (gameInfoColor) orderedSettings.push(gameInfoColor);
+      if (gameInfoFontSize) orderedSettings.push(gameInfoFontSize);
       
       // Add any remaining settings
       orderedSettings.push(...otherSettings.sort((a, b) => a.label.localeCompare(b.label)));
