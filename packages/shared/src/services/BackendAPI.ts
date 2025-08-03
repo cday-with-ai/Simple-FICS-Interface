@@ -37,8 +37,10 @@ export interface ApiResponse<T> {
 export class BackendAPI {
   private baseUrl: string;
 
-  constructor(baseUrl: string = 'http://localhost:3011/api') {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    // Use environment variable or default to production URL
+    this.baseUrl = baseUrl || process.env.REACT_APP_BACKEND_URL || 'https://simple-fics-interface-production.up.railway.app/api';
+    // For local development, you can override with: http://localhost:3011/api
   }
 
   private async fetchJSON<T>(url: string): Promise<T> {
