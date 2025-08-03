@@ -1,15 +1,16 @@
 FROM node:18-alpine
 
-WORKDIR /app
+# Create app directory
+WORKDIR /app/packages/backend
 
-# Copy backend package files
+# Copy package files
 COPY packages/backend/package*.json ./
 COPY packages/backend/tsconfig.json ./
 
 # Install dependencies
 RUN npm install
 
-# Copy backend source code
+# Copy source code
 COPY packages/backend/src ./src
 
 # Build the application
