@@ -63,6 +63,17 @@ export class SimpleFICSClient {
   private handleMessage(data: string): void {
     this.messageBuffer += data;
     
+    // Debug logging
+    this.logger.debug(`Raw data received (${data.length} chars): ${JSON.stringify(data.substring(0, 100))}`);
+    this.logger.debug(`Buffer size: ${this.messageBuffer.length}, Contains fics%: ${this.messageBuffer.includes('fics%')}`);
+    
+    // Check for login prompt immediately (before waiting for fics%)
+    if (this.messageBuffer.includes('Press return to enter the server as')) {
+      this.logger.info('Found login prompt, sending empty line');
+      this.send('');
+      this.onLoggedIn();
+    }
+    
     // Split messages by FICS prompt (like the client does)
     const messages: string[] = [];
     let lastPromptIndex = this.messageBuffer.indexOf('fics%');
@@ -74,18 +85,14 @@ export class SimpleFICSClient {
       lastPromptIndex = this.messageBuffer.indexOf('fics%');
     }
     
+    this.logger.debug(`Found ${messages.length} complete messages`);
+    
     // Process each complete message (which may contain multiple lines)
     for (const message of messages) {
       if (message.trim() === '') continue;
       
       // Log the full message for debugging
-      this.logger.debug(`FICS Message: ${JSON.stringify(message)}`);
-      
-      // Handle login success
-      if (message.includes('Press return to enter the server as')) {
-        this.send('');
-        this.onLoggedIn();
-      }
+      this.logger.info(`Processing FICS Message: ${JSON.stringify(message.substring(0, 200))}`);
       
       // Parse channel messages from the full message
       this.parseChannelMessage(message);
@@ -119,6 +126,7 @@ export class SimpleFICSClient {
       const channelMatch = line.match(/^\s*(\w+(?:\([^)]*\))*)\((\d+)\):\s(.*)$/);
       
       if (channelMatch) {
+        this.logger.info(`Found channel message: ${line.substring(0, 100)}`);
         const [, username, channelStr, firstLine] = channelMatch;
         const channel = parseInt(channelStr);
         
