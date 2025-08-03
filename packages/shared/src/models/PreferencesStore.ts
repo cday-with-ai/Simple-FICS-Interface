@@ -80,9 +80,9 @@ export interface Preferences {
     // FICS preferences
     postLoginCommands: string; // Multi-line string of commands to send after login
     
-    // Game info display preferences
-    gameInfoColor: string;
-    gameInfoFontSize: number; // in pixels
+    // Board label display preferences (game #, time control, last move, opening, analysis)
+    boardLabelColor: string;
+    boardLabelFontSize: number; // in pixels
     
     // Internal preferences (for theme system)
     lastSystemThemeCheck?: number;
@@ -148,8 +148,8 @@ set prompt
 set bell off
 set gin off
 set interface Simple FICS Interface`,
-    gameInfoColor: '#4b5563',  // Darker gray color
-    gameInfoFontSize: 12  // Default font size in pixels
+    boardLabelColor: '#4b5563',  // Darker gray color
+    boardLabelFontSize: 12  // Default font size in pixels
 };
 
 export class PreferencesStore {

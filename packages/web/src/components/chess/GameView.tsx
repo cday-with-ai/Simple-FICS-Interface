@@ -19,10 +19,10 @@ const GameViewContainer = styled.div`
   gap: ${props => props.theme.spacing[4]};
 `;
 
-const GameInfo = styled.div`
+const GameInfo = styled.div<{ $boardLabelColor?: string; $boardLabelFontSize?: number }>`
   text-align: center;
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.textSecondary};
+  font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.sm};
+  color: ${props => props.$boardLabelColor || props.theme.colors.textSecondary};
 `;
 
 const BoardWrapper = styled.div`
@@ -34,10 +34,10 @@ const BoardWrapper = styled.div`
   position: relative;
 `;
 
-const MoveInfo = styled.div`
+const MoveInfo = styled.div<{ $boardLabelColor?: string; $boardLabelFontSize?: number }>`
   text-align: center;
-  font-size: ${props => props.theme.typography.fontSize.sm};
-  color: ${props => props.theme.colors.textSecondary};
+  font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.sm};
+  color: ${props => props.$boardLabelColor || props.theme.colors.textSecondary};
   display: flex;
   gap: ${props => props.theme.spacing[4]};
   align-items: center;
@@ -45,6 +45,10 @@ const MoveInfo = styled.div`
 
 export const GameView: React.FC<GameViewProps> = observer(({ className }) => {
   const { gameStore, preferencesStore } = useRootStore();
+  
+  // Get board label display preferences
+  const boardLabelColor = preferencesStore.preferences.boardLabelColor;
+  const boardLabelFontSize = preferencesStore.preferences.boardLabelFontSize;
   
   // Get current position from GameStore
   const position = gameStore.currentPosition || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -94,7 +98,7 @@ export const GameView: React.FC<GameViewProps> = observer(({ className }) => {
 
   return (
     <GameViewContainer className={className}>
-      <GameInfo>{gameInfo}</GameInfo>
+      <GameInfo $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>{gameInfo}</GameInfo>
       
       <BoardWrapper>
         <ChessBoardWithPieces
@@ -107,7 +111,7 @@ export const GameView: React.FC<GameViewProps> = observer(({ className }) => {
         />
       </BoardWrapper>
       
-      <MoveInfo>
+      <MoveInfo $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>
         <span>{moveNotation}</span>
         {opening && <span>• {opening}</span>}
       </MoveInfo>

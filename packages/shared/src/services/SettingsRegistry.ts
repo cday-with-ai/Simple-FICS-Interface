@@ -602,24 +602,24 @@ export class SettingsRegistry {
       previewType: 'instant'
     });
 
-    // Game info display settings
+    // Board label display settings
     this.register({
-      id: 'gameInfoColor',
+      id: 'boardLabelColor',
       category: 'board',
-      label: 'Game Info Text Color',
-      description: 'Color for game info, last move, and opening description text',
+      label: 'Board Label Text Color',
+      description: 'Color for game number, time control, last move, opening, and analysis text',
       type: 'color',
       value: '#4b5563',
       defaultValue: '#4b5563',
-      keywords: ['game', 'info', 'color', 'text', 'last move', 'opening'],
+      keywords: ['board', 'label', 'color', 'text', 'last move', 'opening', 'analysis', 'game'],
       previewType: 'instant'
     });
 
     this.register({
-      id: 'gameInfoFontSize',
+      id: 'boardLabelFontSize',
       category: 'board',
-      label: 'Game Info Font Size',
-      description: 'Font size for game info text (in pixels)',
+      label: 'Board Label Font Size',
+      description: 'Font size for board labels and info text (in pixels)',
       type: 'number',
       value: 12,
       defaultValue: 12,
@@ -627,7 +627,7 @@ export class SettingsRegistry {
       max: 20,
       step: 1,
       unit: 'px',
-      keywords: ['game', 'info', 'font', 'size', 'text'],
+      keywords: ['board', 'label', 'font', 'size', 'text'],
       previewType: 'instant'
     });
 
@@ -907,8 +907,8 @@ export class SettingsRegistry {
       const coordinateColorDark = settings.find(s => s.id === 'coordinateColorDark');
       const lastMoveHighlightColor = settings.find(s => s.id === 'lastMoveHighlightColor');
       const premoveHighlightColor = settings.find(s => s.id === 'premoveHighlightColor');
-      const gameInfoColor = settings.find(s => s.id === 'gameInfoColor');
-      const gameInfoFontSize = settings.find(s => s.id === 'gameInfoFontSize');
+      const boardLabelColor = settings.find(s => s.id === 'boardLabelColor');
+      const boardLabelFontSize = settings.find(s => s.id === 'boardLabelFontSize');
       
       const otherSettings = settings.filter(s => 
         s.id !== 'pieceSet' &&
@@ -926,8 +926,8 @@ export class SettingsRegistry {
         s.id !== 'coordinateColorDark' &&
         s.id !== 'lastMoveHighlightColor' &&
         s.id !== 'premoveHighlightColor' &&
-        s.id !== 'gameInfoColor' &&
-        s.id !== 'gameInfoFontSize'
+        s.id !== 'boardLabelColor' &&
+        s.id !== 'boardLabelFontSize'
       );
       
       const orderedSettings = [];
@@ -947,8 +947,8 @@ export class SettingsRegistry {
       if (coordinateColorDark) orderedSettings.push(coordinateColorDark);
       if (lastMoveHighlightColor) orderedSettings.push(lastMoveHighlightColor);
       if (premoveHighlightColor) orderedSettings.push(premoveHighlightColor);
-      if (gameInfoColor) orderedSettings.push(gameInfoColor);
-      if (gameInfoFontSize) orderedSettings.push(gameInfoFontSize);
+      if (boardLabelColor) orderedSettings.push(boardLabelColor);
+      if (boardLabelFontSize) orderedSettings.push(boardLabelFontSize);
       
       // Add any remaining settings
       orderedSettings.push(...otherSettings.sort((a, b) => a.label.localeCompare(b.label)));

@@ -1,7 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { observer } from 'mobx-react-lite';
-import { useAnalysisStore } from '@fics/shared';
+import { useAnalysisStore, usePreferencesStore } from '@fics/shared';
 import { EvaluationBar } from './EvaluationBar';
 
 const AnalysisSection = styled.div<{ $orientation?: 'vertical' | 'horizontal'; $boardSize?: number }>`
@@ -14,16 +14,16 @@ const AnalysisSection = styled.div<{ $orientation?: 'vertical' | 'horizontal'; $
   box-sizing: border-box;
 `;
 
-const AnalysisInfo = styled.div`
+const AnalysisInfo = styled.div<{ $boardLabelColor?: string; $boardLabelFontSize?: number }>`
   display: flex;
   align-items: center;
   gap: ${props => props.theme.spacing[2]};
-  font-size: ${props => props.theme.typography.fontSize.xs};
+  font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.xs};
   width: 100%;
   
   .depth {
-    color: ${props => props.theme.colors.textTertiary};
-    font-size: ${props => props.theme.typography.fontSize.xs};
+    color: ${props => props.$boardLabelColor || props.theme.colors.textTertiary};
+    font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.xs};
     font-weight: ${props => props.theme.typography.fontWeight.normal};
     white-space: nowrap;
     flex-shrink: 0;
@@ -31,8 +31,8 @@ const AnalysisInfo = styled.div`
   
   .line {
     font-family: ${props => props.theme.typography.fontFamilyMono};
-    color: ${props => props.theme.colors.textTertiary};
-    font-size: ${props => props.theme.typography.fontSize.xs};
+    color: ${props => props.$boardLabelColor || props.theme.colors.textTertiary};
+    font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.xs};
     font-weight: ${props => props.theme.typography.fontWeight.normal};
     flex: 1;
     white-space: nowrap;
@@ -66,10 +66,14 @@ interface AnalysisInfoDisplayProps {
 
 export const AnalysisInfoDisplay: React.FC<AnalysisInfoDisplayProps> = observer(({ className }) => {
   const analysisStore = useAnalysisStore();
+  const preferencesStore = usePreferencesStore();
+  
+  const boardLabelColor = preferencesStore.preferences.boardLabelColor;
+  const boardLabelFontSize = preferencesStore.preferences.boardLabelFontSize;
   
   // Temporarily always show something for debugging
   return (
-    <AnalysisInfo className={className}>
+    <AnalysisInfo className={className} $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>
       <div className="depth">Depth {analysisStore.depth || 0}</div>
       <div className="line">{analysisStore.principalVariation || (analysisStore.currentLine ? analysisStore.currentLine.pv.join(' ') : null) || 'Calculating...'}</div>
     </AnalysisInfo>

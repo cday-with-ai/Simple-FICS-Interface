@@ -157,27 +157,27 @@ const PortraitBottomInfo = styled(BottomBoardInfo)`
     padding: 0 30px;
 `;
 
-const GameNumber = styled.div`
-    font-size: ${props => props.theme.typography.fontSize.xs};
-    color: ${props => props.theme.colors.textTertiary};
+const GameNumber = styled.div<{ $boardLabelColor?: string; $boardLabelFontSize?: number }>`
+    font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.xs};
+    color: ${props => props.$boardLabelColor || props.theme.colors.textTertiary};
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const TimeControl = styled.div`
-    font-size: ${props => props.theme.typography.fontSize.xs};
-    color: ${props => props.theme.colors.textTertiary};
+const TimeControl = styled.div<{ $boardLabelColor?: string; $boardLabelFontSize?: number }>`
+    font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.xs};
+    color: ${props => props.$boardLabelColor || props.theme.colors.textTertiary};
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const LastMoveInfo = styled.div<{ $gameInfoColor?: string; $gameInfoFontSize?: number }>`
-    font-size: ${props => props.$gameInfoFontSize ? `${props.$gameInfoFontSize}px` : props.theme.typography.fontSize.xs};
-    color: ${props => props.$gameInfoColor || props.theme.colors.textTertiary};
+const LastMoveInfo = styled.div<{ $boardLabelColor?: string; $boardLabelFontSize?: number }>`
+    font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.xs};
+    color: ${props => props.$boardLabelColor || props.theme.colors.textTertiary};
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
-const OpeningInfo = styled.div<{ $gameInfoColor?: string; $gameInfoFontSize?: number }>`
-    font-size: ${props => props.$gameInfoFontSize ? `${props.$gameInfoFontSize}px` : props.theme.typography.fontSize.xs};
-    color: ${props => props.$gameInfoColor || props.theme.colors.textTertiary};
+const OpeningInfo = styled.div<{ $boardLabelColor?: string; $boardLabelFontSize?: number }>`
+    font-size: ${props => props.$boardLabelFontSize ? `${props.$boardLabelFontSize}px` : props.theme.typography.fontSize.xs};
+    color: ${props => props.$boardLabelColor || props.theme.colors.textTertiary};
     font-weight: ${props => props.theme.typography.fontWeight.normal};
 `;
 
@@ -531,9 +531,9 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
     // Use the user's preference for chess orientation instead of device orientation
     const isLandscape = preferencesStore.preferences.chessOrientation === 'landscape';
     
-    // Get game info display preferences
-    const gameInfoColor = preferencesStore.preferences.gameInfoColor;
-    const gameInfoFontSize = preferencesStore.preferences.gameInfoFontSize;
+    // Get board label display preferences
+    const boardLabelColor = preferencesStore.preferences.boardLabelColor;
+    const boardLabelFontSize = preferencesStore.preferences.boardLabelFontSize;
 
     // Get current position from GameStore - direct access to ensure MobX tracks it
     const position = gameStore.currentPosition || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -736,8 +736,8 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                         <BoardColumn>
                             <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}} id="board-container">
                                 <PortraitTopInfo>
-                                    <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
-                                    <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
+                                    <GameNumber $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
+                                    <TimeControl $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                     <PortraitControlButtons>
                                         {perspective === 'playing' && (
                                             <>
@@ -884,14 +884,14 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                 </PortraitPlayerInfo>
 
                                 <PortraitBottomInfo>
-                                    <LastMoveInfo $gameInfoColor={gameInfoColor} $gameInfoFontSize={gameInfoFontSize}>
+                                    <LastMoveInfo $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>
                                         {gameStore.premove ? 
                                             `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
                                             (moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none')
                                         }
                                     </LastMoveInfo>
                                     {opening && (
-                                        <OpeningInfo $gameInfoColor={gameInfoColor} $gameInfoFontSize={gameInfoFontSize}>{opening}</OpeningInfo>
+                                        <OpeningInfo $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>{opening}</OpeningInfo>
                                     )}
                                 </PortraitBottomInfo>
 
@@ -987,8 +987,8 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                             <LandscapeBoardSection $hasAnalysis={isAnalysisActive}>
                                 <BoardArea $isWideAspect={isWideAspect}>
                                     <LandscapeTopInfo $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
-                                        <GameNumber>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
-                                        <TimeControl>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
+                                        <GameNumber $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>Game #{gameStateForDisplay?.gameId || '?'}</GameNumber>
+                                        <TimeControl $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>{gameStateForDisplay?.timeControl || '?'}</TimeControl>
                                     </LandscapeTopInfo>
                                     <BoardWithAnalysis $orientation="landscape">
                                         <BoardWrapper $orientation="landscape" $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
@@ -1007,14 +1007,14 @@ export const ChessGameLayout: React.FC<ChessGameLayoutProps> = observer(({classN
                                     </BoardWrapper>
                                 </BoardWithAnalysis>
                                 <LandscapeBottomInfo $chatWidth={chatWidth} $hasAnalysis={isAnalysisActive}>
-                                    <LastMoveInfo $gameInfoColor={gameInfoColor} $gameInfoFontSize={gameInfoFontSize}>
+                                    <LastMoveInfo $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>
                                         {gameStore.premove ? 
                                             `Premove: ${longAlgebraicToDisplaySAN(`${gameStore.premove.from}${gameStore.premove.to}${gameStore.premove.promotion || ''}`, position)}` :
                                             (moveNotation !== 'Starting position' ? `Last move: ${moveNotation}` : 'Last move: none')
                                         }
                                     </LastMoveInfo>
                                     {opening && (
-                                        <OpeningInfo $gameInfoColor={gameInfoColor} $gameInfoFontSize={gameInfoFontSize}>{opening}</OpeningInfo>
+                                        <OpeningInfo $boardLabelColor={boardLabelColor} $boardLabelFontSize={boardLabelFontSize}>{opening}</OpeningInfo>
                                     )}
                                 </LandscapeBottomInfo>
                                 {isAnalysisActive && (
