@@ -62,31 +62,36 @@ export class SimpleFICSClient {
 
   private handleMessage(data: string): void {
     this.messageBuffer += data;
-    const lines = this.messageBuffer.split('\n');
     
-    // Keep the last incomplete line in the buffer
-    this.messageBuffer = lines.pop() || '';
+    // Split messages by FICS prompt (like the client does)
+    const messages: string[] = [];
+    let lastPromptIndex = this.messageBuffer.indexOf('fics%');
     
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-
-      // Log all messages for debugging
-      if (trimmed.length > 0 && !trimmed.includes('fics%')) {
-        this.logger.debug(`FICS: ${trimmed}`);
-      }
-
+    while (lastPromptIndex !== -1) {
+      const message = this.messageBuffer.substring(0, lastPromptIndex);
+      messages.push(message);
+      this.messageBuffer = this.messageBuffer.substring(lastPromptIndex + 5); // Skip 'fics%'
+      lastPromptIndex = this.messageBuffer.indexOf('fics%');
+    }
+    
+    // Process each complete message (which may contain multiple lines)
+    for (const message of messages) {
+      if (message.trim() === '') continue;
+      
+      // Log the full message for debugging
+      this.logger.debug(`FICS Message: ${JSON.stringify(message)}`);
+      
       // Handle login success
-      if (trimmed.includes('Press return to enter the server as')) {
+      if (message.includes('Press return to enter the server as')) {
         this.send('');
         this.onLoggedIn();
       }
-
-      // Parse channel messages
-      this.parseChannelMessage(trimmed);
-
+      
+      // Parse channel messages from the full message
+      this.parseChannelMessage(message);
+      
       // Handle who data
-      this.handleWhoData(trimmed);
+      this.handleWhoData(message);
     }
   }
 
@@ -104,28 +109,89 @@ export class SimpleFICSClient {
     this.startWhoPolling();
   }
 
-  private parseChannelMessage(line: string): void {
-    // Match channel tell format: username(channel): message
-    const channelMatch = line.match(/^(\w+)\((\d+)\):\s+(.*)$/);
-    if (channelMatch) {
-      const [, username, channelStr, message] = channelMatch;
-      const channel = parseInt(channelStr);
+  private parseChannelMessage(message: string): void {
+    // Split the message into lines
+    const lines = message.split('\n');
+    
+    // Look for channel messages in the format: username(channel): message
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const channelMatch = line.match(/^\s*(\w+(?:\([^)]*\))*)\((\d+)\):\s(.*)$/);
       
-      if (this.channels.includes(channel)) {
-        const messageId = `${Date.now()}-${line}`;
-        if (!this.processedMessages.has(messageId)) {
-          this.saveChannelMessage({
-            channel,
-            username,
-            message,
-            raw: line
-          });
-          this.processedMessages.add(messageId);
+      if (channelMatch) {
+        const [, username, channelStr, firstLine] = channelMatch;
+        const channel = parseInt(channelStr);
+        
+        if (this.channels.includes(channel)) {
+          let fullMessage = firstLine;
+          let rawMessage = line;
           
-          // Cleanup old messages
-          if (this.processedMessages.size > 1000) {
-            const toKeep = Array.from(this.processedMessages).slice(-500);
-            this.processedMessages = new Set(toKeep);
+          // Check for multi-line messages
+          let j = i + 1;
+          let continuationFound = false;
+          
+          // Look for a "(told X players in channel Y)" line that ends multi-line messages
+          let toldLineIndex = -1;
+          for (let k = j; k < lines.length; k++) {
+            if (lines[k].match(/^\(told \d+ players? in channel \d+/)) {
+              toldLineIndex = k;
+              break;
+            }
+          }
+          
+          if (toldLineIndex > i + 1) {
+            // Collect all lines between the channel tell and the "told" line
+            const messageLines = [fullMessage];
+            for (let k = i + 1; k < toldLineIndex; k++) {
+              const continuationLine = lines[k];
+              rawMessage += '\n' + continuationLine;
+              
+              // Handle continuation lines that start with \
+              if (continuationLine.match(/^\s*\\/)) {
+                const continuationText = continuationLine.replace(/^\s*\\/, '').trim();
+                if (continuationText && messageLines.length > 0) {
+                  messageLines[messageLines.length - 1] += ' ' + continuationText;
+                }
+              } else {
+                messageLines.push(continuationLine);
+              }
+            }
+            fullMessage = messageLines.join('\n');
+            i = toldLineIndex; // Skip past the processed lines
+          } else {
+            // Handle simple continuation lines (starting with \)
+            while (j < lines.length && lines[j].match(/^\s*\\/)) {
+              continuationFound = true;
+              const continuationLine = lines[j];
+              rawMessage += '\n' + continuationLine;
+              
+              const continuationText = continuationLine.replace(/^\s*\\/, '').trim();
+              if (continuationText) {
+                fullMessage += ' ' + continuationText;
+              }
+              j++;
+            }
+            
+            if (continuationFound) {
+              i = j - 1; // Skip past the continuation lines
+            }
+          }
+          
+          const messageId = `${Date.now()}-${channel}-${username}-${fullMessage.substring(0, 50)}`;
+          if (!this.processedMessages.has(messageId)) {
+            this.saveChannelMessage({
+              channel,
+              username: username.replace(/\([^)]*\)/g, ''), // Strip titles
+              message: fullMessage,
+              raw: rawMessage
+            });
+            this.processedMessages.add(messageId);
+            
+            // Cleanup old messages
+            if (this.processedMessages.size > 1000) {
+              const toKeep = Array.from(this.processedMessages).slice(-500);
+              this.processedMessages = new Set(toKeep);
+            }
           }
         }
       }
@@ -166,20 +232,29 @@ export class SimpleFICSClient {
     this.send('who');
   }
 
-  private handleWhoData(line: string): void {
-    if (line.includes('------ who ------')) {
-      this.isCollectingWho = true;
-      this.whoData = [];
+  private handleWhoData(message: string): void {
+    // Check if this message contains who data
+    if (!message.includes('------ who ------')) {
       return;
     }
-
-    if (this.isCollectingWho) {
-      if (line.match(/^\d+ players? displayed/)) {
-        this.isCollectingWho = false;
-        this.processWhoData();
-      } else if (line.trim()) {
-        this.whoData.push(line);
+    
+    // Extract who data from the message
+    const lines = message.split('\n');
+    const whoStartIndex = lines.findIndex(line => line.includes('------ who ------'));
+    const whoEndIndex = lines.findIndex((line, idx) => idx > whoStartIndex && line.match(/^\d+ players? displayed/));
+    
+    if (whoStartIndex !== -1 && whoEndIndex !== -1) {
+      // Extract the who data lines
+      this.whoData = [];
+      for (let i = whoStartIndex + 1; i < whoEndIndex; i++) {
+        const line = lines[i].trim();
+        if (line) {
+          this.whoData.push(line);
+        }
       }
+      
+      // Process the collected who data
+      this.processWhoData();
     }
   }
 
