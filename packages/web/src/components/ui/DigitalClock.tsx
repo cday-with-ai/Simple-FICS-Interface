@@ -67,8 +67,8 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
         const secs = Math.floor(seconds % 60);
         const tenths = Math.floor((seconds % 1) * 10);
         
-        // When active, blink the colon every second
-        const colon = isActive && Math.floor(seconds) % 2 === 0 ? ' ' : ':';
+        // When active and not finished, blink the colon every second
+        const colon = isActive && !isFinished && Math.floor(seconds) % 2 === 0 ? ' ' : ':';
 
         if (hours > 0) {
             // Show hours:minutes:seconds
@@ -82,7 +82,7 @@ export const DigitalClock: React.FC<DigitalClockProps> = ({
         }
     };
 
-    const isLowTime = time <= lowTimeThreshold && time > 0;
+    const isLowTime = time <= lowTimeThreshold && time > 0 && !isFinished;
 
     return (
         <ClockContainer size={size} className={className}>
@@ -162,8 +162,8 @@ export const AlphaClock: React.FC<DigitalClockProps> = ({
         const secs = Math.floor(seconds % 60);
         const tenths = Math.floor((seconds % 1) * 10);
         
-        // When active, blink the colon every second
-        const colon = isActive && Math.floor(seconds) % 2 === 0 ? ' ' : ':';
+        // When active and not finished, blink the colon every second
+        const colon = isActive && !isFinished && Math.floor(seconds) % 2 === 0 ? ' ' : ':';
 
         if (hours > 0) {
             // Show hours:minutes:seconds
@@ -177,7 +177,7 @@ export const AlphaClock: React.FC<DigitalClockProps> = ({
         }
     };
 
-    const isLowTime = time <= lowTimeThreshold && time > 0;
+    const isLowTime = time <= lowTimeThreshold && time > 0 && !isFinished;
     
     // Map size prop to font size
     const fontSize = size === 'large' ? '48px' : size === 'medium' ? '36px' : '24px';
