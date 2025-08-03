@@ -138,7 +138,7 @@ export class SimpleFICSClient {
         channel: msg.channel,
         username: msg.username,
         message: msg.message,
-        timestamp: new Date(),
+        timestamp: Date.now(), // Use UTC milliseconds instead of Date object
         raw_message: msg.raw
       });
       this.logger.info(`[CH ${msg.channel}] ${msg.username}: ${msg.message}`);
@@ -184,7 +184,7 @@ export class SimpleFICSClient {
   }
 
   private async processWhoData(): Promise<void> {
-    const timestamp = new Date();
+    const timestamp = Date.now(); // Use UTC milliseconds
     const records: WhoRecord[] = [];
 
     for (const line of this.whoData) {

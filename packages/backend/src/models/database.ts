@@ -8,7 +8,7 @@ export interface ChannelMessage {
   channel: number;
   username: string;
   message: string;
-  timestamp: Date;
+  timestamp: number; // UTC milliseconds
   raw_message: string;
 }
 
@@ -17,7 +17,7 @@ export interface WhoRecord {
   username: string;
   rating: string;
   status: string;
-  timestamp: Date;
+  timestamp: number; // UTC milliseconds
   raw_data: string;
 }
 
