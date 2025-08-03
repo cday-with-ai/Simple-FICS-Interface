@@ -257,7 +257,13 @@ Local commands:
           )}
           {hoveredMessageTime && (
             <HeaderTimestamp>
-              Received: {new Date(hoveredMessageTime).toLocaleTimeString()}
+              Received: {(() => {
+                console.log('Hovered timestamp:', hoveredMessageTime, 'Type:', typeof hoveredMessageTime);
+                const date = new Date(hoveredMessageTime);
+                console.log('Date object:', date, 'ISO:', date.toISOString(), 'Local:', date.toLocaleString());
+                // toLocaleString includes both date and time in user's local timezone
+                return date.toLocaleString();
+              })()}
             </HeaderTimestamp>
           )}
         </Header>
